@@ -1,0 +1,3 @@
+[submodule "tests/mini-esgf-data"]
+	path = tests/mini-esgf-data
+	url = https://github.com/roocs/mini-esgf-data.git
