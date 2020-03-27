@@ -9,3 +9,4 @@ __copyright__ = "Copyright 2018 United Kingdom Research and Innovation"
 __license__ = "BSD"
 __version__ = "0.1.0"
 
+from .utils import *
