@@ -1,0 +1,7 @@
+{
+  "pre_processors": [
+        {
+            "func": "tests.dummy_data_utils.pre_processors.change_lat_name"
+        }
+    ]
+}

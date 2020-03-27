@@ -1,0 +1,15 @@
+{
+    "post_processors": [
+        {
+            "args": [100],
+            "func": "tests.dummy_data_utils.post_processors.change_data",
+            "kwargs": null
+        }
+    ],
+
+    "pre_processors": [
+        {
+            "func": "tests.dummy_data_utils.pre_processors.double_array"
+        }
+    ]
+}
