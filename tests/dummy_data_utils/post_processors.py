@@ -1,6 +1,5 @@
 import clisops
 
-
 def drop_lat(ds, *args, **kwargs):
     ds_drop_lat = ds.drop_dims(*args, **kwargs)
     return ds_drop_lat
