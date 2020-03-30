@@ -10,3 +10,5 @@ __license__ = "BSD"
 __version__ = "0.1.0"
 
 from .utils import *
+from .ops import *
+from .config import *
