@@ -1,4 +1,4 @@
-from clisops.clisops.utils.get_coords import get_latitude, get_longitude
+from clisops.utils.get_coords import get_latitude, get_longitude
 
 
 def _get_xy(dset, space):

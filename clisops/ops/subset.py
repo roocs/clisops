@@ -2,7 +2,7 @@ import os
 
 import xarray as xr
 
-from clisops.clisops.utils import map_args
+from clisops.utils import map_args
 
 
 def general_subset(dset, time=None, space=None, level=None, output_type="netcdf",

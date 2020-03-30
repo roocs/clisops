@@ -1,4 +1,4 @@
-from clisops.clisops.utils.get_data import _get_xy
+from clisops.utils.get_data import _get_xy
 
 
 def map_args(dset, **kwargs):
