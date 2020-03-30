@@ -1,0 +1,3 @@
+xarray>=0.15
+dask[complete]
+netcdf4

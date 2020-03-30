@@ -82,7 +82,7 @@ setup(
     include_package_data=True,
     keywords='clisops',
     name='clisops',
-    packages=find_packages(include=['clisops']),
+    packages=find_packages(include=['clisops', 'clisops.*']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
