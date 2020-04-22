@@ -32,20 +32,33 @@ You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/ellesmith88/clisops
+    $ git clone git://github.com/roocs/clisops
 
-Or download the `tarball`_:
-
-.. code-block:: console
-
-    $ curl  -OL https://github.com/ellesmith88/clisops/tarball/master
-
-Once you have a copy of the source, you can install it with:
+Get the submodules with test data:
 
 .. code-block:: console
 
-    $ python setup.py install
+   $ git submodule update --init
 
+Create Conda environment named `clisops`:
 
-.. _Github repo: https://github.com/ellesmith88/clisops
-.. _tarball: https://github.com/ellesmith88/clisops/tarball/master
+.. code-block:: console
+
+   $ conda env create -f environment.yml
+   $ source activate clisops
+
+Install clisops in development mode:
+
+.. code-block:: console
+
+  $ pip install -r requirements.txt
+  $ pip install -r requirements_dev.txt
+  $ python setup.py develop
+
+Run tests:
+
+.. code-block:: console
+
+    $ pytest -v tests/
+
+.. _Github repo: https://github.com/roocs/clisops
