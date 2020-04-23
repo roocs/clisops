@@ -26,11 +26,11 @@ with open("README.md") as readme_file:
     _long_description = readme_file.read()
 
 
-requirements = [ ]
+requirements = [line.strip() for line in open('requirements.txt')]
 
 setup_requirements = ['pytest-runner', ]
 
-test_requirements = ['pytest', ]
+test_requirements = ["pytest", "tox"]
 
 
 setup(
@@ -86,7 +86,7 @@ setup(
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/ellesmith88/clisops',
+    url='https://github.com/roocs/clisops',
     version=_package_version,
     zip_safe=False,
 )

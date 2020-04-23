@@ -1,5 +1,8 @@
 import os
 
+TESTS_HOME = os.path.abspath(os.path.dirname(__file__))
+XCLIM_TESTS_DATA = os.path.join(TESTS_HOME, "xclim-testdata/testdata")
+
 DEFAULT_CMIP5_ARCHIVE_BASE = "/badc/cmip5/data/"
 
 
