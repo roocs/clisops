@@ -19,23 +19,23 @@ jobs:
     #     apt:
     #       packages:
     #         - pandoc
-    # - env: TOXENV=black
-    #   name: "Black and flake8 compliance"
-    #   python: 3.6
-    #   addons:
-    #     apt:
-    #       packages:
-    #         - libspatialindex-dev
-    # - env: TOXENV=py38
-    #   name: "Python3.8 (Linux)"
-    #   python: 3.8
-    #   dist: xenial
-    #   addons:
-    #     apt:
-    #       packages:
-    #         - libspatialindex-dev
-    #         - libnetcdf-dev
-    #         - libhdf5-dev
+    - env: TOXENV=black
+      name: "Black and flake8 compliance"
+      python: 3.6
+      addons:
+        apt:
+          packages:
+            - libspatialindex-dev
+    - env: TOXENV=py38
+      name: "Python3.8 (Linux)"
+      python: 3.8
+      dist: xenial
+      addons:
+        apt:
+          packages:
+            - libspatialindex-dev
+            - libnetcdf-dev
+            - libhdf5-dev
     # - env:
     #     - TOXENV=py37-windows
     #     - PROJ_DIR=/c/OSGeo4W64
@@ -67,21 +67,21 @@ jobs:
     #     - brew link --overwrite python
     #     - python3 -m pip install --upgrade setuptools  # Disabled until homebrew updates python links
     #     - python3 -m pip install --upgrade pip  # Disabled until homebrew updates python links
-    # - env: TOXENV=py37
-    #   name: "Python3.7 (Linux)"
-    #   python: 3.7
-    #   dist: xenial
-    #   addons:
-    #     apt:
-    #       packages:
-    #         - libspatialindex-dev
-    # - env: TOXENV=py36
-    #   name: "Python3.6 (Linux)"
-    #   python: 3.6
-    #   addons:
-    #     apt:
-    #       packages:
-    #         - libspatialindex-dev
+    - env: TOXENV=py37
+      name: "Python3.7 (Linux)"
+      python: 3.7
+      dist: xenial
+      addons:
+        apt:
+          packages:
+            - libspatialindex-dev
+    - env: TOXENV=py36
+      name: "Python3.6 (Linux)"
+      python: 3.6
+      addons:
+        apt:
+          packages:
+            - libspatialindex-dev
     # - env: TOXENV=py36-xarray
     #   name: "Python3.6 (Linux + xarray@master + cftime@master)"
     #   python: 3.6
@@ -110,15 +110,16 @@ jobs:
           - pip install -e .
       script:
           - py.test --cov clisops
-  # allow_failures:
-  #   - env: TOXENV=py38-anaconda
-  #   - env: TOXENV=py37-macOS
-  #   - env:
-  #     - TOXENV=py37-windows
-  #     - PROJ_DIR=/c/OSGeo4W64
-  #     - GDAL_VERSION=3.0.0
-  #     - GDAL_DATA=/c/OSGeo4W64/share/gdal
-  #   - env: TOXENV=py36-xarray
+  allow_failures:
+    - env: TOXENV=black
+    - env: TOXENV=py38-anaconda
+    - env: TOXENV=py37-macOS
+    - env:
+      - TOXENV=py37-windows
+      - PROJ_DIR=/c/OSGeo4W64
+      - GDAL_VERSION=3.0.0
+      - GDAL_DATA=/c/OSGeo4W64/share/gdal
+    - env: TOXENV=py36-xarray
 
 before_install:
     - printenv
