@@ -5,7 +5,7 @@ channels:
 dependencies:
  - numpy>=1.16
  - xarray>=0.15
- - pandas>=0.23
+ - pandas>=1.0.3
  - cftime>=1.0.4
  - netCDF4>=1.4
  - poppler>=0.67

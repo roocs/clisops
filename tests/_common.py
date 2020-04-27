@@ -2,8 +2,7 @@ import os
 
 TESTS_HOME = os.path.abspath(os.path.dirname(__file__))
 XCLIM_TESTS_DATA = os.path.join(TESTS_HOME, "xclim-testdata/testdata")
-
-DEFAULT_CMIP5_ARCHIVE_BASE = "/badc/cmip5/data/"
+DEFAULT_CMIP5_ARCHIVE_BASE = os.path.join(TESTS_HOME, 'mini-esgf-data/test_data/badc/cmip5/data')
 
 
 def cmip5_archive_base():

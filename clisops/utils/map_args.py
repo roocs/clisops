@@ -12,7 +12,7 @@ def map_args(dset, **kwargs):
 
     for key, value in kwargs.items():
 
-        if value == None:
+        if value is None:
             pass
         elif key == 'space':
             args.update(_get_xy(dset, value))
