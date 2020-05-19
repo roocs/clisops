@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from clisops import subset
+from clisops.core import subset
 
 from .._common import XCLIM_TESTS_DATA as TESTS_DATA
 
@@ -770,6 +770,13 @@ class TestSubsetShape:
         vals, counts = np.unique(mask.values[mask.notnull()], return_counts=True)
         assert all(vals == [0, 1, 2])
         assert all(counts == [58, 250, 22])
+
+    def test_subset_multiregions(self):
+        ds = xr.open_dataset(self.nc_file)
+        regions = gpd.read_file(self.multi_regions_geojson)
+        regions.set_index("id")
+        ds_sub = subset.subset_shape(ds, shape=regions)
+        assert ds_sub.notnull().sum() == 58 + 250 + 22
 
 
 class TestDistance:
