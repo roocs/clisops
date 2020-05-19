@@ -16,7 +16,7 @@ def main():
     args = parser.parse_args()
 
     print(f"Arguments: {args._}")
-    print("Replace this message by putting your code into " "clisops.cli.main")
+    print("Replace this message by putting your code into clisops.cli.main")
     return
 
 
