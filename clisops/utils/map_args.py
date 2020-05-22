@@ -8,9 +8,9 @@ def map_args(dset, **kwargs):
 
         if value is None:
             pass
-        elif key == 'space':
+        elif key == "space":
             args.update(_get_xy(dset, value))
-        elif key == 'level':
+        elif key == "level":
             pass
         else:
             args[key] = slice(value[0], value[1])

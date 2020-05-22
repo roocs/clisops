@@ -1,9 +1,10 @@
-import os
 import logging
+import os
 
 import xarray as xr
 
-from clisops.core import subset_bbox, subset_time
+from clisops.core import subset_bbox
+from clisops.core import subset_time
 
 __all__ = [
     "subset",
@@ -14,16 +15,16 @@ def _map_args(time=None, space=None, level=None):
     args = dict()
     if time:
         # TODO: handle timestamps
-        args['start_date'] = time[0].split('-')[0]
-        args['end_date'] = time[1].split('-')[0]
+        args["start_date"] = time[0].split("-")[0]
+        args["end_date"] = time[1].split("-")[0]
     if space:
-        args['lon_bnds'] = (space[0], space[2])
-        args['lat_bnds'] = (space[1], space[3])
+        args["lon_bnds"] = (space[0], space[2])
+        args["lat_bnds"] = (space[1], space[3])
     return args
 
 
 def _subset(dset, time=None, space=None, level=None):
-    logging.debug(f'Before mapping args: {time}, {space}, {level}')
+    logging.debug(f"Before mapping args: {time}, {space}, {level}")
     args = _map_args(time, space, level)
     if space:
         logging.debug(f"subset_bbox with args: {args}")
@@ -34,8 +35,16 @@ def _subset(dset, time=None, space=None, level=None):
     return result
 
 
-def subset(dset, time=None, space=None, level=None, output_type="netcdf",
-           output_dir=None, chunk_rules=None, filenamer="simple_namer"):
+def subset(
+    dset,
+    time=None,
+    space=None,
+    level=None,
+    output_type="netcdf",
+    output_dir=None,
+    chunk_rules=None,
+    filenamer="simple_namer",
+):
     """
     Example:
         dset: Xarray Dataset
@@ -63,11 +72,11 @@ def subset(dset, time=None, space=None, level=None, output_type="netcdf",
 
     result = _subset(dset, time, space, level)
 
-    if output_type == 'netcdf':
-        output_path = os.path.join(output_dir, 'output.nc')
+    if output_type == "netcdf":
+        output_path = os.path.join(output_dir, "output.nc")
         result.to_netcdf(output_path)
 
-        logging.info(f'Wrote output file: {output_path}')
+        logging.info(f"Wrote output file: {output_path}")
         return output_path
 
     return result
