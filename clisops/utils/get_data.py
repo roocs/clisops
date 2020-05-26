@@ -1,4 +1,5 @@
-from clisops.utils.get_coords import get_latitude, get_longitude
+from clisops.utils.get_coords import get_latitude
+from clisops.utils.get_coords import get_longitude
 
 
 def _get_xy(dset, space):
@@ -21,9 +22,9 @@ def _get_xy(dset, space):
 
     xy = {}
 
-    if hasattr(lat, 'name'):
+    if hasattr(lat, "name"):
         xy[lat.name] = slice(space[1], space[3])
-    if hasattr(lon, 'name'):
+    if hasattr(lon, "name"):
         xy[lon.name] = slice(space[0], space[2])
 
     return xy

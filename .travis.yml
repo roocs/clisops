@@ -2,9 +2,9 @@ language: python
 
 os: linux
 
-# branches:
-#   only:
-#     - master
+branches:
+  only:
+    - master
 #     - ^v[0-9]+\.[0-9]+[\.]?[a-c-]?[0-9]?[\w-]+\b
 
 jobs:
@@ -113,13 +113,13 @@ jobs:
   allow_failures:
     - env: TOXENV=black
     - env: TOXENV=py38-anaconda
-    - env: TOXENV=py37-macOS
-    - env:
-      - TOXENV=py37-windows
-      - PROJ_DIR=/c/OSGeo4W64
-      - GDAL_VERSION=3.0.0
-      - GDAL_DATA=/c/OSGeo4W64/share/gdal
-    - env: TOXENV=py36-xarray
+#    - env: TOXENV=py37-macOS
+#    - env:
+#      - TOXENV=py37-windows
+#      - PROJ_DIR=/c/OSGeo4W64
+#      - GDAL_VERSION=3.0.0
+#      - GDAL_DATA=/c/OSGeo4W64/share/gdal
+#    - env: TOXENV=py36-xarray
 
 before_install:
     - printenv
