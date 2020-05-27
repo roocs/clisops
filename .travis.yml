@@ -82,8 +82,8 @@ jobs:
         - pip install -e .
       script:
         - py.test --cov=xclim
-    - env: TOXENV=py37-macOS
-      name: "Python3.7 (macOS)"
+    - env: TOXENV=py38-macOS
+      name: "Python3.8 (macOS)"
       os: osx
       language: shell
       addons:
