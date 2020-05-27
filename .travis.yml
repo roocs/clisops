@@ -73,8 +73,8 @@ jobs:
         - conda config --set always_yes yes --set changeps1 no
         - conda install setuptools
         - conda update -q conda
-        - conda create -n xclim -c conda-forge python=$DESIRED_PYTHON
-        - source activate xclim
+        - conda create -n clisops -c conda-forge python=$DESIRED_PYTHON
+        - source activate clisops
         - conda env update -f environment.yml
         - conda install pytest coveralls pytest-cov
       install:
@@ -112,7 +112,6 @@ jobs:
           packages:
             - libspatialindex-dev
   allow_failures:
-      - env: TOXENV=black
       - env: TOXENV=py38-anaconda
       - env: TOXENV=py38-macOS
       - env:
