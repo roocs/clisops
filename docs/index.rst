@@ -1,5 +1,5 @@
 Welcome to clisops's documentation!
-======================================
+===================================
 
 .. toctree::
    :maxdepth: 2
@@ -8,6 +8,7 @@ Welcome to clisops's documentation!
    readme
    installation
    usage
+   notebooks/index
    modules
    contributing
    authors

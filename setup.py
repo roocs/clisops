@@ -78,7 +78,7 @@ setup(
     # This qualifier can be used to selectively exclude Python versions -
     # in this case early Python 2 and 3 releases
     python_requires=">=3.6.0",
-    entry_points={"console_scripts": ["clisops=clisops.cli:main",],},
+    entry_points={"console_scripts": ["clisops=clisops.cli:main", ], },
     install_requires=requirements,
     long_description=_long_description,
     long_description_content_type="text/markdown",
