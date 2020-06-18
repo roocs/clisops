@@ -37,3 +37,5 @@ This package was created with `Cookiecutter` and the `audreyr/cookiecutter-pypac
 
  * Cookiecutter: https://github.com/audreyr/cookiecutter
  * cookiecutter-pypackage: https://github.com/audreyr/cookiecutter-pypackage
+
+[![Python Black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/python/black)

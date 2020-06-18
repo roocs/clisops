@@ -7,8 +7,8 @@ from clisops.ops.subset import subset
 
 TAS_NC = os.path.join(
     CMIP5_ARCHIVE_BASE,
-    "cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc",
-)  # noqa
+    "cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc",  # noqa
+)
 
 
 def test_general_subset_dset(tmpdir):
