@@ -770,7 +770,7 @@ def subset_bbox(
     else:
         raise (
             Exception(
-                f'{subset_bbox.__name__} requires input data with "lon" and "lat" dimensions, coordinates, or variables.'
+                f'{subset_bbox.__name__} requires input data with "lon" and "lat" dimensions, coordinates, or variables.'  # noqa
             )
         )
 
@@ -826,7 +826,7 @@ def _check_has_overlaps(polygons: gpd.GeoDataFrame):
             non_overlapping.append(p)
     if len(polygons) != len(non_overlapping):
         warnings.warn(
-            f"List of shapes contains overlap between features. Results will vary on feature order.",
+            "List of shapes contains overlap between features. Results will vary on feature order.",
             UserWarning,
             stacklevel=5,
         )
