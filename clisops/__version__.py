@@ -5,4 +5,4 @@
 
 __author__ = "Elle Smith"
 __email__ = "eleanor.smith@stfc.ac.uk"
-__version__ = "0.1.0"
+__version__ = "__version__ = '0.2.0'"
