@@ -1,26 +1,27 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 """The setup script."""
+import os
+
 from setuptools import find_packages
 from setuptools import setup
 
-__author__ = "Elle Smith"
-__contact__ = "eleanor.smith@stfc.ac.uk"
 __copyright__ = "Copyright 2018 United Kingdom Research and Innovation"
-__version__ = "0.1.0"
 __license__ = "BSD"
 
-# One strategy for storing the overall version is to put it in the top-level
-# package's __init__ but Nb. __init__.py files are not needed to declare
-# packages in Python 3
-# from clisops import __version__ as _package_version
 
 # Populate long description setting with content of README
 #
 # Use markdown format read me file as GitHub will render it automatically
 # on package page
-with open("README.md") as readme_file:
+here = os.path.abspath(os.path.dirname(__file__))
+
+with open(os.path.join(here, "README.md")) as readme_file:
     _long_description = readme_file.read()
+
+about = {}
+with open(os.path.join(here, "clisops", "__version__.py"), "r") as f:
+    exec(f.read(), about)
 
 
 requirements = [line.strip() for line in open("requirements.txt")]
@@ -45,8 +46,9 @@ docs_requirements = [
 dev_requirements = [line.strip() for line in open("requirements_dev.txt")]
 
 setup(
-    author=__author__,
-    author_email=__contact__,
+    version=about["__version__"],
+    author=about["__author__"],
+    author_email=about["__email__"],
     # See:
     # https://www.python.org/dev/peps/pep-0301/#distutils-trove-classification
     classifiers=[
@@ -90,6 +92,5 @@ setup(
     tests_require=test_requirements,
     extras_require={"docs": docs_requirements, "dev": dev_requirements},
     url="https://github.com/roocs/clisops",
-    version=__version__,
     # zip_safe=False,
 )
