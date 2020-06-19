@@ -11,3 +11,5 @@ pytest
 pytest-runner
 pre-commit
 black
+nbsphinx
+ipython
