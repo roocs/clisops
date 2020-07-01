@@ -2,25 +2,20 @@ import os
 
 import pytest
 
-from .._common import (
-    CMIP5_TAS_FILE,
-    CMIP5_TAS,
-    CMIP5_ZOSTOGA,
-    CMIP5_RH,
-)
+from .._common import CMIP5_RH
+from .._common import CMIP5_TAS
+from .._common import CMIP5_TAS_FILE
+from .._common import CMIP5_ZOSTOGA
+from clisops.exceptions import InvalidParameterValue
+from clisops.exceptions import MissingParameterValue
 from clisops.ops.subset import subset
-from clisops.exceptions import (
-    InvalidParameterValue,
-    MissingParameterValue,
-)
 
 
 def test_subset_missing_param(tmpdir):
     """ Test subset without time or space param."""
     with pytest.raises(MissingParameterValue):
         subset(
-            dset=CMIP5_TAS_FILE,
-            output_dir=tmpdir,
+            dset=CMIP5_TAS_FILE, output_dir=tmpdir,
         )
 
 
@@ -47,9 +42,7 @@ def test_subset_invalid_time(tmpdir):
 def test_subset_space(tmpdir):
     """ Tests clisops subset function with a space subset."""
     result = subset(
-        dset=CMIP5_TAS_FILE,
-        space=(0.0, 49.0, 10.0, 65.0),
-        output_dir=tmpdir,
+        dset=CMIP5_TAS_FILE, space=(0.0, 49.0, 10.0, 65.0), output_dir=tmpdir,
     )
     assert "output.nc" in result
 
@@ -58,19 +51,15 @@ def test_subset_invalid_space(tmpdir):
     """ Tests subset with invalid space param."""
     with pytest.raises(InvalidParameterValue):
         subset(
-            dset=CMIP5_TAS_FILE,
-            space=("zero", 49.0, 10.0, 65.0),
-            output_dir=tmpdir,
+            dset=CMIP5_TAS_FILE, space=("zero", 49.0, 10.0, 65.0), output_dir=tmpdir,
         )
 
 
-@pytest.mark.xfail(reason='cross the 0 degree meridian not implemented.')
+@pytest.mark.xfail(reason="cross the 0 degree meridian not implemented.")
 def test_subset_space_with_meridian(tmpdir):
     """ Tests clisops subset function with a space subset."""
     result = subset(
-        dset=CMIP5_TAS_FILE,
-        space=(-10.0, 49.0, 10.0, 65.0),
-        output_dir=tmpdir,
+        dset=CMIP5_TAS_FILE, space=(-10.0, 49.0, 10.0, 65.0), output_dir=tmpdir,
     )
     assert "output.nc" in result
 
@@ -120,7 +109,7 @@ def test_subset_with_multiple_files_rh(tmpdir):
 def test_subset_with_tas_series(tmpdir, tas_series):
     """ Test with tas_series fixture"""
     result = subset(
-        dset=tas_series(['20', '22', '25']),
+        dset=tas_series(["20", "22", "25"]),
         time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
         output_dir=tmpdir,
     )
