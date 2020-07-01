@@ -1,20 +1,18 @@
+import logging
+
 from dateutil import parser as date_parser
 
-from .exceptions import (
-    InvalidParameterValue,
-    MissingParameterValue,
-)
-
-import logging
+from .exceptions import InvalidParameterValue
+from .exceptions import MissingParameterValue
 
 
 def parse_date(text):
     parsed = date_parser.parse(text)
-    return parsed.isoformat().split('T')[0]
+    return parsed.isoformat().split("T")[0]
 
 
 def parse_date_year(text):
-    return parse_date(text).split('-')[0]
+    return parse_date(text).split("-")[0]
 
 
 def _map_time(time):
