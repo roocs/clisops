@@ -1,5 +1,3 @@
-from pathlib import Path
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -9,8 +7,8 @@ import xarray as xr
 
 
 @pytest.fixture
-def tmp_netcdf_filename(tmpdir):
-    return Path(tmpdir).joinpath("testfile.nc")
+def tmp_netcdf_filename(tmp_path):
+    return tmp_path.joinpath("testfile.nc")
 
 
 @pytest.fixture

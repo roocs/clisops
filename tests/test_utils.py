@@ -1,147 +1,66 @@
-import os
-
 import pytest
-import xarray as xr
+from dateutil.parser import ParserError
 
-from ._common import CMIP5_ARCHIVE_BASE
 from clisops import utils
+from clisops.exceptions import InvalidParameterValue
+from clisops.exceptions import MissingParameterValue
 
 
-CMIP5_FPATHS = [
-    os.path.join(
-        CMIP5_ARCHIVE_BASE,
-        "cmip5/output1/INM/inmcm4/rcp45/mon/ocean/Omon/r1i1p1/latest/zostoga/*.nc",
-    ),
-    os.path.join(
-        CMIP5_ARCHIVE_BASE,
-        "cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
-    ),
-    os.path.join(
-        CMIP5_ARCHIVE_BASE,
-        "cmip5/output1/MOHC/HadGEM2-ES/historical/mon/land/Lmon/r1i1p1/latest/rh/*.nc",
-    ),
-]
+def test_parse_date():
+    assert "2020-05-19" == utils.parse_date("2020-05-19")
+    assert "1999-01-01" == utils.parse_date("1999-01-01T00:00:00")
+    with pytest.raises(ParserError):
+        utils.parse_date("tomorrow")
 
 
-def test_get_main_var_1():
-    ds = xr.open_mfdataset(CMIP5_FPATHS[0])
-    var_id = utils.get_coords.get_main_variable(ds)
-    assert var_id == "zostoga"
+def test_parse_date_year():
+    assert "2020" == utils.parse_date_year("2020-05-20")
+    with pytest.raises(ParserError):
+        utils.parse_date_year("yesterday")
 
 
-def test_get_main_var_2():
-    ds = xr.open_mfdataset(CMIP5_FPATHS[1])
-    var_id = utils.get_coords.get_main_variable(ds)
-    assert var_id == "tas"
+def test_map_params():
+    args = utils.map_params(
+        time=("1999-01-01T00:00:00", "2100-12-30T00:00:00"),
+        space=(-5.0, 49.0, 10.0, 65),
+        level=(1000.0,),
+    )
+    assert args["start_date"] == "1999"
+    assert args["end_date"] == "2100"
+    assert args["lon_bnds"] == (-5, 10)
+    assert args["lat_bnds"] == (49, 65)
 
 
-def test_get_main_var_3():
-    ds = xr.open_mfdataset(CMIP5_FPATHS[2])
-    var_id = utils.get_coords.get_main_variable(ds)
-    assert var_id == "rh"
+def test_map_params_time():
+    args = utils.map_params(time=("1999-01-01", "2100-12"),)
+    assert args["start_date"] == "1999"
+    assert args["end_date"] == "2100"
 
 
-@pytest.mark.xfail(reason="test missing")
-def test_get_coord_by_attr_valid():
-    """ Tests clisops utils.get_coord_by_attr with a real attribute e.g.
-        standard_name or long_name"""
-    assert False
+def test_map_params_invalid_time():
+    with pytest.raises(InvalidParameterValue):
+        utils.map_params(time=("1999-01-01T00:00:00", "maybe tomorrow"),)
+    with pytest.raises(InvalidParameterValue):
+        utils.map_params(time=("", "2100"),)
 
 
-@pytest.mark.xfail(reason="test missing")
-def test_get_coord_by_attr_invalid():
-    """ Tests clisops utils.get_coord_by_attr with an attribute that
-        doesn't exist."""
-    assert False
+def test_map_params_space():
+    args = utils.map_params(space=(0, 10, 50, 60),)
+    assert args["lon_bnds"] == (0, 50)
+    assert args["lat_bnds"] == (10, 60)
+    # allow also strings
+    args = utils.map_params(space=("0", "10", "50", "60"),)
+    assert args["lon_bnds"] == (0, 50)
+    assert args["lat_bnds"] == (10, 60)
 
 
-@pytest.mark.xfail(reason="test missing")
-def test_get_latitude():
-    """ Tests clisops utils.get_latitude with a dataset that has
-        a latitude coord with standard name latitude."""
-    assert False
+def test_map_params_invalid_space():
+    with pytest.raises(InvalidParameterValue):
+        utils.map_params(space=(0, 10, 50),)
+    with pytest.raises(InvalidParameterValue):
+        utils.map_params(space=("zero", 10, 50, 60),)
 
 
-@pytest.mark.xfail(reason="test missing")
-def test_get_latitude_fail():
-    """ Tests clisops utils.get_latitude with a dataset on a coord that
-    doesn't have the standard name latitude"""
-    assert False
-
-
-@pytest.mark.xfail(reason="test missing")
-def test_get_longitude():
-    """ Tests clisops utils.get_longitude with a dataset that has
-        a latitude coord with standard name longitude."""
-    assert False
-
-
-@pytest.mark.xfail(reason="test missing")
-def test_get_longitude_fail():
-    """ Tests clisops utils.get_longitude with a dataset on a coord that
-    doesn't have the standard name longitude"""
-    assert False
-
-
-@pytest.mark.xfail(reason="test missing")
-def test_get_xy_no_space():
-    """ Tests clisops utils._get_xy with a dataset but no space
-        argument."""
-    assert False
-
-
-@pytest.mark.xfail(reason="test missing")
-def test_get_xy_space():
-    """ Tests clisops utils._get_xy with a dataset and space
-        argument."""
-    assert False
-
-
-@pytest.mark.xfail(reason="test missing")
-def test_get_xy_invalid_space():
-    """ Tests clisops utils._get_xy with a dataset and space
-        argument that is out of the range of the latitudes
-        and longitudes."""
-    assert False
-
-
-@pytest.mark.xfail(reason="test missing")
-def test_map_args_no_kwargs():
-    """ Tests clisops.map_args with no kwargs. """
-    assert False
-
-
-@pytest.mark.xfail(reason="test missing")
-def test_map_args_space():
-    """ Tests clisops.map_args with only space kwarg."""
-    assert False
-
-
-@pytest.mark.xfail(reason="test missing")
-def test_map_args_level():
-    """ Tests clisops.map_args with only level kwarg."""
-    assert False
-
-
-@pytest.mark.xfail(reason="test missing")
-def test_map_args_level_and_space():
-    """ Tests clisops.map_args with level and space kwargs."""
-    assert False
-
-
-@pytest.mark.xfail(reason="test missing")
-def test_map_args_include_time():
-    """ Tests clisops.map_args with level and space and time kwargs."""
-    assert False
-
-
-@pytest.mark.xfail(reason="test missing")
-def test_map_args_all_none():
-    """ Tests clisops.map_args with level and space and time kwargs all set to None."""
-    assert False
-
-
-@pytest.mark.xfail(reason="test missing")
-def test_map_args_invalid():
-    """ Tests clisops.map_args with a kwarg that isn't level, space or time."""
-    assert False
+def test_map_params_missing_param():
+    with pytest.raises(MissingParameterValue):
+        utils.map_params()

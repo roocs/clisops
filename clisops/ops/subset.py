@@ -5,31 +5,22 @@ import xarray as xr
 
 from clisops.core import subset_bbox
 from clisops.core import subset_time
+from clisops import utils
 
 __all__ = [
     "subset",
 ]
 
 
-def _map_args(time=None, space=None, level=None):
-    args = dict()
-    if time:
-        # TODO: handle timestamps
-        args["start_date"] = time[0].split("-")[0]
-        args["end_date"] = time[1].split("-")[0]
-    if space:
-        args["lon_bnds"] = (space[0], space[2])
-        args["lat_bnds"] = (space[1], space[3])
-    return args
-
-
 def _subset(dset, time=None, space=None, level=None):
     logging.debug(f"Before mapping args: {time}, {space}, {level}")
-    args = _map_args(time, space, level)
+    args = utils.map_params(time, space, level)
     if space:
+        # subset with space and optionally time
         logging.debug(f"subset_bbox with args: {args}")
         result = subset_bbox(dset, **args)
     else:
+        # subset with time only
         logging.debug(f"subset_time with args: {args}")
         result = subset_time(dset, **args)
     return result
@@ -68,7 +59,7 @@ def subset(
     """
     # Convert all inputs to Xarray Datasets
     if isinstance(dset, str):
-        dset = xr.open_dataset(dset)
+        dset = xr.open_mfdataset(dset)
 
     result = _subset(dset, time, space, level)
 
