@@ -1,5 +1,9 @@
 # History
 
+# 0.2.1 (2020-07-08)
+
+* Fixed docs version (#25).
+
 ## 0.2.0 (2020-06-19)
 
 * Integration of xclim subset module in `clisops.core.subset`.
