@@ -1,5 +1,9 @@
 # History
 
+# 0.3.0 (2020-07-23)
+
+* Update testdata and subset module (#34).
+
 # 0.2.1 (2020-07-08)
 
 * Fixed docs version (#25).
