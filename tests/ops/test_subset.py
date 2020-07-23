@@ -2,13 +2,10 @@ import os
 
 import pytest
 
-from .._common import CMIP5_RH
-from .._common import CMIP5_TAS
-from .._common import CMIP5_TAS_FILE
-from .._common import CMIP5_ZOSTOGA
-from clisops.exceptions import InvalidParameterValue
-from clisops.exceptions import MissingParameterValue
+from clisops.exceptions import InvalidParameterValue, MissingParameterValue
 from clisops.ops.subset import subset
+
+from .._common import CMIP5_RH, CMIP5_TAS, CMIP5_TAS_FILE, CMIP5_ZOSTOGA
 
 
 def test_subset_missing_param(tmpdir):
