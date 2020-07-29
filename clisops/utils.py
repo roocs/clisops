@@ -2,8 +2,7 @@ import logging
 
 from dateutil import parser as date_parser
 
-from .exceptions import InvalidParameterValue
-from .exceptions import MissingParameterValue
+from .exceptions import InvalidParameterValue, MissingParameterValue
 
 
 def parse_date(text):

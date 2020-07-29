@@ -2,8 +2,7 @@ import pytest
 from dateutil.parser import ParserError
 
 from clisops import utils
-from clisops.exceptions import InvalidParameterValue
-from clisops.exceptions import MissingParameterValue
+from clisops.exceptions import InvalidParameterValue, MissingParameterValue
 
 
 def test_parse_date():

@@ -3,9 +3,8 @@ import os
 
 import xarray as xr
 
-from clisops.core import subset_bbox
-from clisops.core import subset_time
 from clisops import utils
+from clisops.core import subset_bbox, subset_time
 
 __all__ = [
     "subset",
