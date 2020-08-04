@@ -1,5 +1,9 @@
 # History
 
+# 0.3.1 (2020-07-30)
+
+* Add missing `rtree` dependency to ensure correct spatial indexing.
+
 # 0.3.0 (2020-07-23)
 
 * Update testdata and subset module (#34).
