@@ -1,6 +1,6 @@
 # History
 
-# 0.3.1 (2020-07-30)
+# 0.3.1 (2020-08-04)
 
 * Add missing `rtree` dependency to ensure correct spatial indexing.
 
