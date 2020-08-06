@@ -1,5 +1,6 @@
 """Subset module."""
 import logging
+import sys
 import warnings
 from functools import wraps
 from pathlib import Path
@@ -11,6 +12,7 @@ import pandas as pd
 import xarray
 from pyproj import Geod
 from pyproj.crs import CRS
+from roocs_utils.xarray_utils.xarray_utils import get_coord_type
 from shapely import vectorized
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import cascaded_union, split
@@ -147,20 +149,41 @@ def check_latlon_dimnames(func):
                 formatted_args.append(argument)
                 continue
 
-            if not {"lon", "lat"}.issubset(dims):
-                if {"long"}.issubset(dims):
-                    conversion["long"] = "lon"
-                elif {"latitude", "longitude"}.issubset(dims):
-                    conversion["latitude"] = "lat"
-                    conversion["longitude"] = "lon"
-                elif {"lats", "lons"}.issubset(dims):
-                    conversion["lats"] = "lat"
-                    conversion["lons"] = "lon"
-                if not conversion and not {"rlon", "rlat"}.issubset(dims):
-                    warnings.warn(
-                        f"lat and lon-like dimensions are not found among arg `{argument}` dimensions: {list(dims)}."
-                    )
-                argument = argument.rename(conversion)
+            coords = {
+                coord_id: get_coord_type(argument.coords[coord_id])
+                for coord_id in argument.coords
+            }
+
+            for key, value in coords.items():
+                if value == "latitude":
+                    conversion[key] = "lat"
+                if value == "longitude":
+                    conversion[key] = "lon"
+
+            if not {"longitude", "latitude"}.issubset(coords.values()) and not {
+                "rlon",
+                "rlat",
+            }.issubset(coords.keys()):
+                warnings.warn(
+                    f"lat and lon-like dimensions are not found among arg `{argument}` dimensions: {list(dims)}."
+                )
+            argument = argument.rename(conversion)
+
+            #
+            # if not {"lon", "lat"}.issubset(dims):
+            #     if {"long"}.issubset(dims):
+            #         conversion["long"] = "lon"
+            #     elif {"latitude", "longitude"}.issubset(dims):
+            #         conversion["latitude"] = "lat"
+            #         conversion["longitude"] = "lon"
+            #     elif {"lats", "lons"}.issubset(dims):
+            #         conversion["lats"] = "lat"
+            #         conversion["lons"] = "lon"
+            #     if not conversion and not {"rlon", "rlat"}.issubset(dims):
+            #         warnings.warn(
+            #             f"lat and lon-like dimensions are not found among arg `{argument}` dimensions: {list(dims)}."
+            #         )
+            #     argument = argument.rename(conversion)
 
             formatted_args.append(argument)
 
