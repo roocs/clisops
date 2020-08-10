@@ -6,6 +6,7 @@ from functools import wraps
 from pathlib import Path
 from typing import Optional, Sequence, Tuple, Union
 
+import cf_xarray
 import geopandas as gpd
 import numpy as np
 import pandas as pd
@@ -148,6 +149,21 @@ def check_latlon_dimnames(func):
                 logging.info(f"No file or no dimensions found in arg `{argument}`.")
                 formatted_args.append(argument)
                 continue
+
+            # if argument.cf["latitude"]:
+            #     conversion[argument.cf["latitude"].name] = "lat"
+            # if argument.cf["longitude"]:
+            #     conversion[argument.cf["longitude"].name] = "lon"
+            #
+            # argument = argument.rename(conversion)
+            #
+            # if not ("lat", "lon") in conversion and not {
+            #     "rlon",
+            #     "rlat",
+            # }.issubset(dims):
+            #     warnings.warn(
+            #         f"lat and lon-like dimensions are not found among arg `{argument}` dimensions: {list(dims)}."
+            #     )
 
             coords = {
                 coord_id: get_coord_type(argument.coords[coord_id])
