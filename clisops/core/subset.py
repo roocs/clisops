@@ -29,6 +29,8 @@ __all__ = [
 def check_start_end_dates(func):
     @wraps(func)
     def func_checker(*args, **kwargs):
+        # import pdb;
+        # pdb.set_trace()
         """Verify that start and end dates are valid in a time subsetting function."""
         da = args[0]
         if "start_date" not in kwargs or kwargs["start_date"] is None:
@@ -942,6 +944,7 @@ def subset_time(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
+
     """Subset input DataArray or Dataset based on start and end years.
     Return a subset of a DataArray or Dataset for dates falling within the provided bounds.
     Parameters
