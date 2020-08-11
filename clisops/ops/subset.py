@@ -56,6 +56,7 @@ def subset(
     :param filenamer:
     :return:
     """
+
     # Convert all inputs to Xarray Datasets
     if isinstance(ds, str):
         ds = xr.open_mfdataset(ds)

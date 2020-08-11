@@ -81,7 +81,7 @@ setup(
     python_requires=">=3.6.0",
     install_requires=[
         requirements,
-        "roocs_utils @ git+https://github.com/cedadev/roocs_utils.git@v0.1.0",
+        "roocs_utils @ git+https://github.com/cedadev/roocs_utils.git@",
     ],
     long_description=_long_description,
     long_description_content_type="text/markdown",

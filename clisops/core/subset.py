@@ -1,19 +1,16 @@
 """Subset module."""
 import logging
-import sys
 import warnings
 from functools import wraps
 from pathlib import Path
 from typing import Optional, Sequence, Tuple, Union
 
-import cf_xarray
 import geopandas as gpd
 import numpy as np
 import pandas as pd
 import xarray
 from pyproj import Geod
 from pyproj.crs import CRS
-from roocs_utils.xarray_utils.xarray_utils import get_coord_type
 from shapely import vectorized
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import cascaded_union, split
@@ -90,7 +87,6 @@ def check_lons(func):
     def func_checker(*args, **kwargs):
         """
         Reformat user-specified "lon" or "lon_bnds" values based on the lon dimensions of a supplied Dataset or DataArray.
-
         Examines an xarray object longitude dimensions and depending on extent (either -180 to +180 or 0 to +360),
         will reformat user-specified lon values to be synonymous with xarray object boundaries.
         Returns a numpy array of reformatted `lon` or `lon_bnds` in kwargs with min() and max() values.
@@ -133,7 +129,6 @@ def check_latlon_dimnames(func):
     def func_checker(*args, **kwargs):
         """
         Examine the names of the latitude and longitude dimensions and rename them temporarily.
-
         Checks here ensure that the names supplied via the xarray object dims are changed to be synonymous with subset
         algorithm dimensions, conversions are saved and are then undone to the processed file.
         """
@@ -150,56 +145,20 @@ def check_latlon_dimnames(func):
                 formatted_args.append(argument)
                 continue
 
-            # if argument.cf["latitude"]:
-            #     conversion[argument.cf["latitude"].name] = "lat"
-            # if argument.cf["longitude"]:
-            #     conversion[argument.cf["longitude"].name] = "lon"
-            #
-            # argument = argument.rename(conversion)
-            #
-            # if not ("lat", "lon") in conversion and not {
-            #     "rlon",
-            #     "rlat",
-            # }.issubset(dims):
-            #     warnings.warn(
-            #         f"lat and lon-like dimensions are not found among arg `{argument}` dimensions: {list(dims)}."
-            #     )
-
-            coords = {
-                coord_id: get_coord_type(argument.coords[coord_id])
-                for coord_id in argument.coords
-            }
-
-            for key, value in coords.items():
-                if value == "latitude":
-                    conversion[key] = "lat"
-                if value == "longitude":
-                    conversion[key] = "lon"
-
-            if not {"longitude", "latitude"}.issubset(coords.values()) and not {
-                "rlon",
-                "rlat",
-            }.issubset(coords.keys()):
-                warnings.warn(
-                    f"lat and lon-like dimensions are not found among arg `{argument}` dimensions: {list(dims)}."
-                )
-            argument = argument.rename(conversion)
-
-            #
-            # if not {"lon", "lat"}.issubset(dims):
-            #     if {"long"}.issubset(dims):
-            #         conversion["long"] = "lon"
-            #     elif {"latitude", "longitude"}.issubset(dims):
-            #         conversion["latitude"] = "lat"
-            #         conversion["longitude"] = "lon"
-            #     elif {"lats", "lons"}.issubset(dims):
-            #         conversion["lats"] = "lat"
-            #         conversion["lons"] = "lon"
-            #     if not conversion and not {"rlon", "rlat"}.issubset(dims):
-            #         warnings.warn(
-            #             f"lat and lon-like dimensions are not found among arg `{argument}` dimensions: {list(dims)}."
-            #         )
-            #     argument = argument.rename(conversion)
+            if not {"lon", "lat"}.issubset(dims):
+                if {"long"}.issubset(dims):
+                    conversion["long"] = "lon"
+                elif {"latitude", "longitude"}.issubset(dims):
+                    conversion["latitude"] = "lat"
+                    conversion["longitude"] = "lon"
+                elif {"lats", "lons"}.issubset(dims):
+                    conversion["lats"] = "lat"
+                    conversion["lons"] = "lon"
+                if not conversion and not {"rlon", "rlat"}.issubset(dims):
+                    warnings.warn(
+                        f"lat and lon-like dimensions are not found among arg `{argument}` dimensions: {list(dims)}."
+                    )
+                argument = argument.rename(conversion)
 
             formatted_args.append(argument)
 
@@ -218,11 +177,9 @@ def convert_lat_lon_to_da(func):
     def func_checker(*args, **kwargs):
         """
         Transform input lat, lon to DataArrays.
-
         Input can be int, float or any iterable.
         Expects a DataArray as first argument and checks is dim "site" already exists,
         uses "_site" in that case.
-
         If the input are not already DataArrays, the new lon and lat objects are 1D DataArrays
         with dimension "site".
         """
@@ -254,11 +211,9 @@ def wrap_lons_and_split_at_greenwich(func):
     def func_checker(*args, **kwargs):
         """
         Split and reproject polygon vectors in a GeoDataFrame whose values cross the Greenwich Meridian.
-
         Begins by examining whether the geometry bounds the supplied cross longitude = 0 and if so, proceeds to split
         the polygons at the meridian into new polygons and erase a small buffer to prevent invalid geometries when
         transforming the lons from WGS84 to WGS84 +lon_wrap=180 (longitudes from 0 to 360).
-
         Returns a GeoDataFrame with the new features in a wrap_lon WGS84 projection if needed.
         """
         try:
@@ -344,9 +299,7 @@ def create_mask_vectorize(
     check_overlap: bool = False,
 ):
     """Create a mask with values corresponding to the features in a GeoDataFrame using vectorize methods.
-
     The returned mask's points have the value of the first geometry of `poly` they fall in.
-
     Parameters
     ----------
     x_dim : xarray.DataArray
@@ -359,11 +312,9 @@ def create_mask_vectorize(
       Shift vector longitudes by -180,180 degrees to 0,360 degrees; Default = False
     check_overlap: bool
       Perform a check to verify if shapes contain overlapping geometries.
-
     Returns
     -------
     xarray.DataArray
-
     Examples
     --------
     >>> import geopandas as gpd  # doctest: +SKIP
@@ -427,9 +378,7 @@ def create_mask(
     check_overlap: bool = False,
 ):
     """Create a mask with values corresponding to the features in a GeoDataFrame using spatial join methods.
-
     The returned mask's points have the value of the first geometry of `poly` they fall in.
-
     Parameters
     ----------
     x_dim : xarray.DataArray
@@ -442,11 +391,9 @@ def create_mask(
       Shift vector longitudes by -180,180 degrees to 0,360 degrees; Default = False
     check_overlap: bool
       Perform a check to verify if shapes contain overlapping geometries.
-
     Returns
     -------
     xarray.DataArray
-
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
@@ -525,10 +472,8 @@ def subset_shape(
     end_date: Optional[str] = None,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
     """Subset a DataArray or Dataset spatially (and temporally) using a vector shape and date selection.
-
     Return a subset of a DataArray or Dataset for grid points falling within the area of a Polygon and/or
     MultiPolygon shape, or grid points along the path of a LineString and/or MultiLineString.
-
     Parameters
     ----------
     ds : Union[xarray.DataArray, xarray.Dataset]
@@ -551,12 +496,10 @@ def subset_shape(
       End date of the subset.
       Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
       Defaults to last day of input data-array.
-
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
       A subset of `ds`
-
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
@@ -695,13 +638,10 @@ def subset_bbox(
     end_date: Optional[str] = None,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
     """Subset a DataArray or Dataset spatially (and temporally) using a lat lon bounding box and date selection.
-
     Return a subset of a DataArray or Dataset for grid points falling within a spatial bounding box
     defined by longitude and latitudinal bounds and for dates falling within provided bounds.
-
     TODO: returns the what?
     In the case of a lat-lon rectilinear grid, this simply returns the
-
     Parameters
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
@@ -718,12 +658,10 @@ def subset_bbox(
       End date of the subset.
       Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
       Defaults to last day of input data-array.
-
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
       Subsetted xarray.DataArray or xarray.Dataset
-
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
@@ -810,19 +748,16 @@ def assign_bounds(
     bounds: Tuple[Optional[float], Optional[float]], coord: xarray.Coordinate
 ) -> tuple:
     """Replace unset boundaries by the minimum and maximum coordinates.
-
     Parameters
     ----------
     bounds : Tuple[Optional[float], Optional[float]]
       Boundaries.
     coord : xarray.Coordinate
       Grid coordinates.
-
     Returns
     -------
     tuple
       Lower and upper grid boundaries.
-
     """
     if bounds[0] > bounds[1]:
         bounds = np.flip(bounds)
@@ -903,12 +838,10 @@ def subset_gridpoint(
     add_distance: bool = False,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
     """Extract one or more nearest gridpoint(s) from datarray based on lat lon coordinate(s).
-
     Return a subsetted data array (or Dataset) for the grid point(s) falling nearest the input longitude and latitude
     coordinates. Optionally subset the data array for years falling within provided date bounds.
     Time series can optionally be subsetted by dates.
     If 1D sequences of coordinates are given, the gridpoints will be concatenated along the new dimension "site".
-
     Parameters
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
@@ -928,12 +861,10 @@ def subset_gridpoint(
     tolerance : Optional[float]
       Masks values if the distance to the nearest gridpoint is larger than tolerance in meters.
     add_distance: bool
-
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
       Subsetted xarray.DataArray or xarray.Dataset
-
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
@@ -1012,9 +943,7 @@ def subset_time(
     end_date: Optional[str] = None,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
     """Subset input DataArray or Dataset based on start and end years.
-
     Return a subset of a DataArray or Dataset for dates falling within the provided bounds.
-
     Parameters
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
@@ -1027,12 +956,10 @@ def subset_time(
       End date of the subset.
       Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
       Defaults to last day of input data-array.
-
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
       Subsetted xarray.DataArray or xarray.Dataset
-
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
@@ -1054,7 +981,6 @@ def subset_time(
     ...
     # Subset with specific start_dates and end_dates
     >>> tnSub = subset_time(ds.tasmin,start_date='1990-03-13',end_date='1990-08-17')  # doctest: +SKIP
-
     Notes
     -----
     TODO add notes about different calendar types. Avoid "%Y-%m-31". If you want complete month use only "%Y-%m".
@@ -1070,7 +996,6 @@ def distance(
     lat: Union[float, Sequence[float], xarray.DataArray],
 ):
     """Return distance to a point in meters.
-
     Parameters
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
@@ -1079,12 +1004,10 @@ def distance(
       Longitude coordinate.
     lat : Union[float, Sequence[float], xarray.DataArray]
       Latitude coordinate.
-
     Returns
     -------
     xarray.DataArray
       Distance in meters to point.
-
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP

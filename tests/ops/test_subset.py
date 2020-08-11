@@ -9,11 +9,9 @@ from .._common import CMIP5_RH, CMIP5_TAS, CMIP5_TAS_FILE, CMIP5_ZOSTOGA
 
 
 def test_subset_missing_param(tmpdir):
-    """ Test subset without time or area param."""
+    """ Test subset without area param."""
     with pytest.raises(MissingParameterValue):
-        subset(
-            ds=CMIP5_TAS_FILE, output_dir=tmpdir,
-        )
+        subset(ds=CMIP5_TAS_FILE, output_dir=tmpdir)
 
 
 def test_subset_time(tmpdir):
@@ -21,6 +19,7 @@ def test_subset_time(tmpdir):
     result = subset(
         ds=CMIP5_TAS_FILE,
         time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
+        area=(0, -90.0, 360.0, 90.0),
         output_dir=tmpdir,
     )
     assert "output.nc" in result
@@ -32,6 +31,7 @@ def test_subset_invalid_time(tmpdir):
         subset(
             ds=CMIP5_TAS_FILE,
             time=("yesterday", "2020-12-30T00:00:00"),
+            area=(0, -90.0, 360.0, 90.0),
             output_dir=tmpdir,
         )
 
@@ -86,6 +86,7 @@ def test_subset_with_multiple_files_zostoga(tmpdir):
     result = subset(
         ds=CMIP5_ZOSTOGA,
         time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
+        area=(0, -90.0, 360.0, 90.0),
         output_dir=tmpdir,
     )
     assert "output.nc" in result
@@ -96,6 +97,7 @@ def test_subset_with_multiple_files_rh(tmpdir):
     result = subset(
         ds=CMIP5_RH,
         time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
+        area=(0, -90.0, 360.0, 90.0),
         output_dir=tmpdir,
     )
     assert "output.nc" in result
@@ -106,6 +108,7 @@ def test_subset_with_tas_series(tmpdir, tas_series):
     result = subset(
         ds=tas_series(["20", "22", "25"]),
         time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
+        area=(0, -90.0, 360.0, 90.0),
         output_dir=tmpdir,
     )
     assert "output.nc" in result
