@@ -29,7 +29,6 @@ __all__ = [
 def check_start_end_dates(func):
     @wraps(func)
     def func_checker(*args, **kwargs):
-
         """Verify that start and end dates are valid in a time subsetting function."""
         da = args[0]
         if "start_date" not in kwargs or kwargs["start_date"] is None:
@@ -676,11 +675,11 @@ def subset_bbox(
       Start date of the subset.
       Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
       Defaults to first day of input data-array.
-
     end_date : Optional[str]
       End date of the subset.
       Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
       Defaults to last day of input data-array.
+
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
@@ -973,9 +972,9 @@ def subset_time(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
-
     """Subset input DataArray or Dataset based on start and end years.
     Return a subset of a DataArray or Dataset for dates falling within the provided bounds.
+
     Parameters
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
@@ -988,10 +987,12 @@ def subset_time(
       End date of the subset.
       Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
       Defaults to last day of input data-array.
+
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
       Subsetted xarray.DataArray or xarray.Dataset
+
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
@@ -1013,6 +1014,7 @@ def subset_time(
     ...
     # Subset with specific start_dates and end_dates
     >>> tnSub = subset_time(ds.tasmin,start_date='1990-03-13',end_date='1990-08-17')  # doctest: +SKIP
+
     Notes
     -----
     TODO add notes about different calendar types. Avoid "%Y-%m-31". If you want complete month use only "%Y-%m".
@@ -1028,6 +1030,7 @@ def distance(
     lat: Union[float, Sequence[float], xarray.DataArray],
 ):
     """Return distance to a point in meters.
+
     Parameters
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
@@ -1036,10 +1039,12 @@ def distance(
       Longitude coordinate.
     lat : Union[float, Sequence[float], xarray.DataArray]
       Latitude coordinate.
+
     Returns
     -------
     xarray.DataArray
       Distance in meters to point.
+
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
