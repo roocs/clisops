@@ -8,15 +8,14 @@ from .exceptions import InvalidParameterValue, MissingParameterValue
 
 def map_params(time=None, area=None, level=None):
     args = dict()
-
     area, time, level = parameterise.parametrise_clisops(
-        time=time, level=level, area=area
+        time=time, area=area, level=level
     )
 
     if time:
-        args.update(time.asdict())
+        args.update(time)
     if area:
-        args.update(area.asdict())
+        args.update(area)
     if level:
         # TODO: level is missing
         pass

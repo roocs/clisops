@@ -28,16 +28,18 @@ def test_map_params():
         area=(-5.0, 49.0, 10.0, 65),
         level=(1000.0, 1000.0),
     )
-    assert args["start_date"] == "1999-01-01T00:00:00"
-    assert args["end_date"] == "2100-12-30T00:00:00"
+
+    # have a look at what date was used in clisops master
+    assert args["start_date"] == "1999"
+    assert args["end_date"] == "2100"
     assert args["lon_bnds"] == (-5, 10)
     assert args["lat_bnds"] == (49, 65)
 
 
 def test_map_params_time():
     args = utils.map_params(time=("1999-01-01", "2100-12"), area=(0, -90, 360, 90))
-    assert args["start_date"] == "1999-01-01T00:00:00"
-    assert args["end_date"] == "2100-12-30T00:00:00"
+    assert args["start_date"] == "1999"
+    assert args["end_date"] == "2100"
 
 
 def test_map_params_invalid_time():
@@ -66,6 +68,10 @@ def test_map_params_invalid_area():
         utils.map_params(area=("zero", 10, 50, 60),)
 
 
+@pytest.mark.xfail(
+    reason="Time, Level and area can all be none as they default to max/min values"
+    "in core.subset"
+)
 def test_map_params_missing_param():
     with pytest.raises(MissingParameterValue):
         utils.map_params()

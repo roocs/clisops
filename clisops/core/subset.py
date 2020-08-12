@@ -29,8 +29,7 @@ __all__ = [
 def check_start_end_dates(func):
     @wraps(func)
     def func_checker(*args, **kwargs):
-        # import pdb;
-        # pdb.set_trace()
+
         """Verify that start and end dates are valid in a time subsetting function."""
         da = args[0]
         if "start_date" not in kwargs or kwargs["start_date"] is None:

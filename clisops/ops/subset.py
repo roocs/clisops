@@ -14,6 +14,7 @@ __all__ = [
 def _subset(ds, time=None, area=None, level=None):
     logging.debug(f"Before mapping args: {time}, {area}, {level}")
     args = utils.map_params(time, area, level)
+
     if area:
         # subset with space and optionally time
         logging.debug(f"subset_bbox with args: {args}")

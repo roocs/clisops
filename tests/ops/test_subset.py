@@ -8,6 +8,10 @@ from clisops.ops.subset import subset
 from .._common import CMIP5_RH, CMIP5_TAS, CMIP5_TAS_FILE, CMIP5_ZOSTOGA
 
 
+@pytest.mark.xfail(
+    reason="Time, Level and area can all be none as they default to max/min values"
+    "in core.subset"
+)
 def test_subset_missing_param(tmpdir):
     """ Test subset without area param."""
     with pytest.raises(MissingParameterValue):
@@ -86,7 +90,6 @@ def test_subset_with_multiple_files_zostoga(tmpdir):
     result = subset(
         ds=CMIP5_ZOSTOGA,
         time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
-        area=(0, -90.0, 360.0, 90.0),
         output_dir=tmpdir,
     )
     assert "output.nc" in result
@@ -108,7 +111,6 @@ def test_subset_with_tas_series(tmpdir, tas_series):
     result = subset(
         ds=tas_series(["20", "22", "25"]),
         time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
-        area=(0, -90.0, 360.0, 90.0),
         output_dir=tmpdir,
     )
     assert "output.nc" in result
