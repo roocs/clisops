@@ -8,7 +8,7 @@ from .exceptions import InvalidParameterValue, MissingParameterValue
 
 def map_params(time=None, area=None, level=None):
     args = dict()
-    area, time, level = parameterise.parametrise_clisops(
+    area, time, level = parameterise.parameterise_clisops(
         time=time, area=area, level=level
     )
 
