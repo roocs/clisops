@@ -15,7 +15,9 @@ def _subset(ds, time=None, area=None, level=None):
     logging.debug(
         f"Before mapping parameters: time: {time}, area: {area}, level: {level}"
     )
-    args = utils.map_params(time, area, level)
+
+    args = utils.map_params(ds, time, area, level)
+
     if "lon_bnds" and "lat_bnds" in args:
         # subset with space and optionally time
         logging.debug(f"subset_bbox with parameters: {args}")
@@ -61,7 +63,7 @@ def subset(
 
     # Convert all inputs to Xarray Datasets
     if isinstance(ds, str):
-        ds = xr.open_mfdataset(ds)
+        ds = xr.open_mfdataset(ds, use_cftime=True, combine="by_coords")
 
     result = _subset(ds, time, area, level)
 

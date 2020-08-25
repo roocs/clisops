@@ -2,6 +2,7 @@ import os
 
 import pytest
 from roocs_utils.exceptions import InvalidParameterValue, MissingParameterValue
+from roocs_utils.parameter import area_parameter, time_parameter
 
 from clisops.ops.subset import subset
 
@@ -29,12 +30,44 @@ def test_subset_time(tmpdir):
     assert "output.nc" in result
 
 
+def test_subset_args_as_parameter_classes(tmpdir):
+    """ Tests clisops subset function with a time subset
+    with the arguments as parameter classes from roocs-utils."""
+
+    time = time_parameter.TimeParameter(("2020-01-01T00:00:00", "2020-12-30T00:00:00"))
+    area = area_parameter.AreaParameter((0, -90.0, 360.0, 90.0))
+
+    result = subset(ds=CMIP5_TAS_FILE, time=time, area=area, output_dir=tmpdir,)
+    assert "output.nc" in result
+
+
 def test_subset_invalid_time(tmpdir):
     """ Tests subset with invalid time param."""
     with pytest.raises(InvalidParameterValue):
         subset(
             ds=CMIP5_TAS_FILE,
             time=("yesterday", "2020-12-30T00:00:00"),
+            area=(0, -90.0, 360.0, 90.0),
+            output_dir=tmpdir,
+        )
+
+
+def test_subset_ds_is_none(tmpdir):
+    """ Tests subset with ds=None."""
+    with pytest.raises(MissingParameterValue):
+        subset(
+            ds=None,
+            time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
+            area=(0, -90.0, 360.0, 90.0),
+            output_dir=tmpdir,
+        )
+
+
+def test_subset_no_ds(tmpdir):
+    """ Tests subset with no dataset provided."""
+    with pytest.raises(TypeError):
+        subset(
+            time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
             area=(0, -90.0, 360.0, 90.0),
             output_dir=tmpdir,
         )
