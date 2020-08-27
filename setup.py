@@ -42,8 +42,6 @@ docs_requirements = [
     "matplotlib",
 ]
 
-dev_requirements = [line.strip() for line in open("requirements_dev.txt")]
-
 setup(
     version=about["__version__"],
     author=about["__author__"],
@@ -79,7 +77,10 @@ setup(
     # This qualifier can be used to selectively exclude Python versions -
     # in this case early Python 2 and 3 releases
     python_requires=">=3.6.0",
-    install_requires=requirements,
+    install_requires=[
+        requirements,
+        "roocs_utils @ git+https://github.com/roocs/roocs-utils.git",
+    ],
     long_description=_long_description,
     long_description_content_type="text/markdown",
     include_package_data=True,
@@ -89,7 +90,7 @@ setup(
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
-    extras_require={"docs": docs_requirements, "dev": dev_requirements},
+    extras_require={"docs": docs_requirements},
     url="https://github.com/roocs/clisops",
     # zip_safe=False,
 )

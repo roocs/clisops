@@ -973,7 +973,6 @@ def subset_time(
     end_date: Optional[str] = None,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
     """Subset input DataArray or Dataset based on start and end years.
-
     Return a subset of a DataArray or Dataset for dates falling within the provided bounds.
 
     Parameters
