@@ -37,7 +37,12 @@ def test_subset_args_as_parameter_classes(tmpdir):
     time = time_parameter.TimeParameter(("2020-01-01T00:00:00", "2020-12-30T00:00:00"))
     area = area_parameter.AreaParameter((0, -90.0, 360.0, 90.0))
 
-    result = subset(ds=CMIP5_TAS_FILE, time=time, area=area, output_dir=tmpdir,)
+    result = subset(
+        ds=CMIP5_TAS_FILE,
+        time=time,
+        area=area,
+        output_dir=tmpdir,
+    )
     assert "output.nc" in result
 
 
@@ -75,7 +80,11 @@ def test_subset_no_ds(tmpdir):
 
 def test_subset_area(tmpdir):
     """ Tests clisops subset function with a area subset."""
-    result = subset(ds=CMIP5_TAS_FILE, area=(0.0, 49.0, 10.0, 65.0), output_dir=tmpdir,)
+    result = subset(
+        ds=CMIP5_TAS_FILE,
+        area=(0.0, 49.0, 10.0, 65.0),
+        output_dir=tmpdir,
+    )
     assert "output.nc" in result
 
 
@@ -83,7 +92,9 @@ def test_subset_invalid_area(tmpdir):
     """ Tests subset with invalid area param."""
     with pytest.raises(InvalidParameterValue):
         subset(
-            ds=CMIP5_TAS_FILE, area=("zero", 49.0, 10.0, 65.0), output_dir=tmpdir,
+            ds=CMIP5_TAS_FILE,
+            area=("zero", 49.0, 10.0, 65.0),
+            output_dir=tmpdir,
         )
 
 
@@ -91,7 +102,9 @@ def test_subset_invalid_area(tmpdir):
 def test_subset_area_with_meridian(tmpdir):
     """ Tests clisops subset function with a area subset."""
     result = subset(
-        ds=CMIP5_TAS_FILE, area=(-10.0, 49.0, 10.0, 65.0), output_dir=tmpdir,
+        ds=CMIP5_TAS_FILE,
+        area=(-10.0, 49.0, 10.0, 65.0),
+        output_dir=tmpdir,
     )
     assert "output.nc" in result
 
