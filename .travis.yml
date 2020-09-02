@@ -85,8 +85,9 @@ jobs:
         - source activate clisops
         # The following is a workaround until roocs-utils has a package on conda-forge
         - conda install -c conda-forge conda-merge
+        - mv environment.yml clisops_environment.yml
         - bash -c "curl -L $ROOCS_UTILS_ENV -o roocs_utils_environment.yml"
-        - conda-merge environment.yml roocs_utils_environment.yml > environment.yml
+        - conda-merge roocs_utils_environment.yml clisops_environment.yml > environment.yml
         # end of workaround
         - conda env update -f environment.yml
         - conda install pytest coveralls pytest-cov
