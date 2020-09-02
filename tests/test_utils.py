@@ -59,11 +59,17 @@ def test_map_params_invalid_time():
 
 
 def test_map_params_area():
-    args = utils.map_params(ds=CMIP5_TAS_FILE, area=(0, 10, 50, 60),)
+    args = utils.map_params(
+        ds=CMIP5_TAS_FILE,
+        area=(0, 10, 50, 60),
+    )
     assert args["lon_bnds"] == (0, 50)
     assert args["lat_bnds"] == (10, 60)
     # allow also strings
-    args = utils.map_params(ds=CMIP5_TAS_FILE, area=("0", "10", "50", "60"),)
+    args = utils.map_params(
+        ds=CMIP5_TAS_FILE,
+        area=("0", "10", "50", "60"),
+    )
     assert args["lon_bnds"] == (0, 50)
     assert args["lat_bnds"] == (10, 60)
 
@@ -71,11 +77,13 @@ def test_map_params_area():
 def test_map_params_invalid_area():
     with pytest.raises(InvalidParameterValue):
         utils.map_params(
-            ds=CMIP5_TAS_FILE, area=(0, 10, 50),
+            ds=CMIP5_TAS_FILE,
+            area=(0, 10, 50),
         )
     with pytest.raises(InvalidParameterValue):
         utils.map_params(
-            ds=CMIP5_TAS_FILE, area=("zero", 10, 50, 60),
+            ds=CMIP5_TAS_FILE,
+            area=("zero", 10, 50, 60),
         )
 
 
