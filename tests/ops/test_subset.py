@@ -31,7 +31,7 @@ def test_subset_time(tmpdir):
 
 
 def test_subset_args_as_parameter_classes(tmpdir):
-    """ Tests clisops subset function with a time subset
+    """Tests clisops subset function with a time subset
     with the arguments as parameter classes from roocs-utils."""
 
     time = time_parameter.TimeParameter(("2020-01-01T00:00:00", "2020-12-30T00:00:00"))
