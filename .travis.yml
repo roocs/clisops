@@ -55,7 +55,7 @@ jobs:
         - source activate clisops
         # The following is a workaround until roocs-utils has a package on conda-forge
         - conda install -c conda-forge conda-merge
-        - bash -c "curl -L $(ROOCS_UTILS_ENV) -o roocs_utils_environment.yml"
+        - bash -c "curl -L $ROOCS_UTILS_ENV -o roocs_utils_environment.yml"
         - conda-merge environment.yml roocs_utils_environment.yml > environment.yml
         # end of workaround
         - conda env update -f environment.yml
@@ -69,6 +69,7 @@ jobs:
         - TOXENV=py37-windows
         - DESIRED_PYTHON=3.7
         - MINICONDA_PATH=$(cygpath --windows /c/miniconda)
+        - ROOCS_UTILS_ENV="https://github.com/roocs/roocs-utils/raw/master/environment.yml"
       name: "Python3.7 (Windows + Anaconda via Chocolatey)"
       os: windows
       language: shell
@@ -82,6 +83,11 @@ jobs:
         - conda update -q conda
         - conda create -n clisops -c conda-forge python=$DESIRED_PYTHON
         - source activate clisops
+        # The following is a workaround until roocs-utils has a package on conda-forge
+        - conda install -c conda-forge conda-merge
+        - bash -c "curl -L $ROOCS_UTILS_ENV -o roocs_utils_environment.yml"
+        - conda-merge environment.yml roocs_utils_environment.yml > environment.yml
+        # end of workaround
         - conda env update -f environment.yml
         - conda install pytest coveralls pytest-cov
       install:
@@ -121,10 +127,6 @@ jobs:
   allow_failures:
       - env: TOXENV=py38-anaconda
       - env: TOXENV=py38-macOS
-      - env:
-        - TOXENV=py37-windows
-        - DESIRED_PYTHON=3.7
-        - MINICONDA_PATH=$(cygpath --windows /c/miniconda)
 
 before_install:
     - printenv
