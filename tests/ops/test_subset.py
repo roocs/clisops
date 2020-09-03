@@ -9,6 +9,10 @@ from clisops.ops.subset import subset
 from .._common import CMIP5_RH, CMIP5_TAS, CMIP5_TAS_FILE, CMIP5_ZOSTOGA
 
 
+def _check_output_nc(result, fname='output_001.nc'):
+    assert fname in [os.path.basename(_) for _ in result]
+    
+
 @pytest.mark.xfail(
     reason="Time, Level and area can all be none as they default to max/min values"
     "in core.subset"
@@ -26,8 +30,10 @@ def test_subset_time(tmpdir):
         time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
         area=(0, -90.0, 360.0, 90.0),
         output_dir=tmpdir,
+        output_type='nc',
+        file_namer='simple'
     )
-    assert "output.nc" in result
+    _check_output_nc(result)
 
 
 def test_subset_args_as_parameter_classes(tmpdir):
@@ -42,8 +48,10 @@ def test_subset_args_as_parameter_classes(tmpdir):
         time=time,
         area=area,
         output_dir=tmpdir,
+        output_type='nc',
+        file_namer='simple'
     )
-    assert "output.nc" in result
+    _check_output_nc(result)
 
 
 def test_subset_invalid_time(tmpdir):
@@ -78,14 +86,28 @@ def test_subset_no_ds(tmpdir):
         )
 
 
-def test_subset_area(tmpdir):
-    """ Tests clisops subset function with a area subset."""
+def test_subset_area_simple_file_name(tmpdir):
+    """ Tests clisops subset function with a area subset (simple file name)."""
     result = subset(
         ds=CMIP5_TAS_FILE,
         area=(0.0, 49.0, 10.0, 65.0),
         output_dir=tmpdir,
+        output_type='nc',
+        file_namer='simple'
     )
-    assert "output.nc" in result
+    _check_output_nc(result)
+
+
+def test_subset_area_project_file_name(tmpdir):
+    """ Tests clisops subset function with a area subset (derived file name)."""
+    result = subset(
+        ds=CMIP5_TAS_FILE,
+        area=(0.0, 49.0, 10.0, 65.0),
+        output_dir=tmpdir,
+        output_type='nc',
+        file_namer='standard'
+    )
+    _check_output_nc(result, "tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-20301116.nc")
 
 
 def test_subset_invalid_area(tmpdir):
@@ -105,8 +127,10 @@ def test_subset_area_with_meridian(tmpdir):
         ds=CMIP5_TAS_FILE,
         area=(-10.0, 49.0, 10.0, 65.0),
         output_dir=tmpdir,
+        output_type='nc',
+        file_namer='simple'
     )
-    assert "output.nc" in result
+    _check_output_nc(result)
 
 
 def test_subset_with_time_and_area(tmpdir):
@@ -116,8 +140,10 @@ def test_subset_with_time_and_area(tmpdir):
         time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
         area=(0.0, 49.0, 10.0, 65.0),
         output_dir=tmpdir,
+        output_type='nc',
+        file_namer='simple'
     )
-    assert "output.nc" in result
+    _check_output_nc(result)
 
 
 def test_subset_with_multiple_files_tas(tmpdir):
@@ -127,8 +153,10 @@ def test_subset_with_multiple_files_tas(tmpdir):
         time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
         area=(0.0, 49.0, 10.0, 65.0),
         output_dir=tmpdir,
+        output_type='nc',
+        file_namer='simple'
     )
-    assert "output.nc" in result
+    _check_output_nc(result)
 
 
 def test_subset_with_multiple_files_zostoga(tmpdir):
@@ -137,8 +165,10 @@ def test_subset_with_multiple_files_zostoga(tmpdir):
         ds=CMIP5_ZOSTOGA,
         time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
         output_dir=tmpdir,
+        output_type='nc',
+        file_namer='simple'
     )
-    assert "output.nc" in result
+    _check_output_nc(result)
 
 
 def test_subset_with_multiple_files_rh(tmpdir):
@@ -148,8 +178,10 @@ def test_subset_with_multiple_files_rh(tmpdir):
         time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
         area=(0, -90.0, 360.0, 90.0),
         output_dir=tmpdir,
+        output_type='nc',
+        file_namer='simple'
     )
-    assert "output.nc" in result
+    _check_output_nc(result)
 
 
 def test_subset_with_tas_series(tmpdir, tas_series):
@@ -158,5 +190,8 @@ def test_subset_with_tas_series(tmpdir, tas_series):
         ds=tas_series(["20", "22", "25"]),
         time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
         output_dir=tmpdir,
+        output_type='nc',
+        file_namer='simple'
     )
-    assert "output.nc" in result
+    _check_output_nc(result)
+

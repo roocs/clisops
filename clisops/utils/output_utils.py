@@ -4,6 +4,41 @@ from roocs_utils.utils.common import parse_size
 import roocs_utils.xarray_utils.xarray_utils as xu
 
 
+SUPPORTED_FORMATS = {
+    'netcdf': {
+         'method': 'to_netcdf',
+         'extension': 'nc'
+    },
+    'nc': {
+         'method': 'to_netcdf',
+         'extension': 'nc'
+    },
+    'zarr': {
+         'method': 'to_zarr',
+         'extension': 'zarr'
+    },
+    'xarray': {
+         'method': None,
+         'extension': None
+    }
+}
+
+
+def check_format(fmt):
+    if fmt not in SUPPORTED_FORMATS:
+        raise KeyError(f'Format not recognised: "{fmt}". Must be one of: {SUPPORTED_FORMATS}.')
+
+
+def get_format_writer(fmt):
+    check_format(fmt)
+    return SUPPORTED_FORMATS[fmt]['method']
+
+
+def get_format_extension(fmt):
+    check_format(fmt)
+    return SUPPORTED_FORMATS[fmt]['extension']
+
+
 def _format_time(tm):
     return tm.strftime('%Y-%m-%d')
 

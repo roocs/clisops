@@ -5,6 +5,8 @@ import xarray as xr
 
 from clisops import utils
 from clisops.core import subset_bbox, subset_time
+from clisops.utils.output_utils import get_time_slices, get_format_writer
+from clisops.utils.file_namers import get_file_namer
 
 __all__ = [
     "subset",
@@ -13,7 +15,7 @@ __all__ = [
 
 def _subset(ds, time=None, area=None, level=None):
     logging.debug(
-        f"Before mapping parameters: time: {time}, area: {area}, level: {level}"
+        f"Mapping parameters: time: {time}, area: {area}, level: {level}"
     )
 
     args = utils.map_params(ds, time, area, level)
@@ -34,10 +36,10 @@ def subset(
     time=None,
     area=None,
     level=None,
-    output_type="netcdf",
     output_dir=None,
-    chunk_rules=None,
-    filenamer="simple_namer",
+    output_type="netcdf",
+    split_method="time:auto",
+    file_namer="standard",
 ):
     """
     Example:
@@ -45,19 +47,19 @@ def subset(
         time: ("1999-01-01T00:00:00", "2100-12-30T00:00:00")
         area: (-5.,49.,10.,65)
         level: (1000.,)
-        output_type: "netcdf"
         output_dir: "/cache/wps/procs/req0111"
-        chunk_rules: "time:decade"
-        filenamer: "facet_namer"
+        output_type: "netcdf"
+        split_method: "time:auto"
+        file_namer: "standard"
 
     :param ds:
     :param time:
     :param area:
     :param level:
-    :param output_type:
     :param output_dir:
-    :param chunk_rules:
-    :param filenamer:
+    :param output_type:
+    :param split_method:
+    :param file_namer:
     :return:
     """
 
@@ -65,13 +67,26 @@ def subset(
     if isinstance(ds, str):
         ds = xr.open_mfdataset(ds, use_cftime=True, combine="by_coords")
 
-    result = _subset(ds, time, area, level)
+    time_slices = get_time_slices(ds)  
+    outputs = []
 
-    if output_type == "netcdf":
-        output_path = os.path.join(output_dir, "output.nc")
-        result.to_netcdf(output_path)
+    namer = get_file_namer(file_namer)()
 
+    for tslice in time_slices:
+        result_ds = _subset(ds, tslice, area, level)
+
+        fmt_method = get_format_writer(output_type)
+        
+        if not fmt_method: outputs.append(result_ds)
+
+        file_name = namer.get_file_name(result_ds, fmt=output_type)
+
+        writer = getattr(result_ds, fmt_method)
+        output_path = os.path.join(output_dir, file_name)
+
+        writer(output_path)
         logging.info(f"Wrote output file: {output_path}")
-        return output_path
 
-    return result
+        outputs.append(output_path)
+
+    return outputs
