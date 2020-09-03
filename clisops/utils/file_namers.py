@@ -7,17 +7,6 @@ from clisops import CONFIG
 from clisops.utils.output_utils import get_format_extension
 
 
-OLD_OLD_attr_defaults = {
-    "model_id": "no-model",
-    "source_id": "no-model",
-    "frequency": "no-freq",
-    "experiment": "no-expt",
-    "realization": "X",
-    "initialization_method": "X",
-    "physics_version": "X",
-}
-
-
 def get_file_namer(name):
     namers = {"standard": StandardFileNamer, "simple": SimpleFileNamer}
 
