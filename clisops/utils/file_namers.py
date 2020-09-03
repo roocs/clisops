@@ -39,6 +39,12 @@ class SimpleFileNamer(_BaseFileNamer):
 
 
 class StandardFileNamer(SimpleFileNamer):
+    def _get_project(self, ds):
+        try:
+            return get_project_name(ds)
+        except Exception:
+            return None
+
     def get_file_name(self, ds, format=None):
         template = self._get_template(ds)
 
@@ -48,6 +54,7 @@ class StandardFileNamer(SimpleFileNamer):
 
         self._count += 1
 
+        attr_defaults = CONFIG[f"project:{self._get_project(ds)}"]["attr_defaults"]
         attrs = attr_defaults.copy()
         attrs.update(ds.attrs)
 
@@ -58,13 +65,9 @@ class StandardFileNamer(SimpleFileNamer):
 
     def _get_template(self, ds):
         try:
-            project = get_project_name(ds)
+            return CONFIG[f"project:{self._get_project(ds)}"]["file_name_template"]
         except Exception:
-            project = None
-
-        return CONFIG.get([f"project:{project}"], None).get(
-            ["file_name_template"], None
-        )
+            return None
 
     def _resolve_derived_attrs(self, ds, attrs, template):
         if "__derive__var_id" in template:
