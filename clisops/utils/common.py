@@ -3,7 +3,7 @@ import logging
 from dateutil import parser as date_parser
 from roocs_utils.parameter import parameterise
 
-from .exceptions import InvalidParameterValue, MissingParameterValue
+from ..exceptions import InvalidParameterValue, MissingParameterValue
 
 
 def map_params(ds, time=None, area=None, level=None):

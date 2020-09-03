@@ -28,6 +28,7 @@ jobs:
         apt:
           packages:
             - libspatialindex-dev
+            - libudunits2-dev
     - env: TOXENV=py38
       name: "Python3.8 (Linux)"
       python: 3.8
@@ -37,6 +38,7 @@ jobs:
             - libspatialindex-dev
             - libnetcdf-dev
             - libhdf5-dev
+            - libudunits2-dev
     - env:
         - TOXENV=py38-anaconda
         - ROOCS_UTILS_ENV="https://github.com/roocs/roocs-utils/raw/master/environment.yml"
@@ -107,6 +109,7 @@ jobs:
           packages:
             - netcdf
             - spatialindex
+            - udunits
             - python@3.8
       before_install:
         - printenv
@@ -119,6 +122,7 @@ jobs:
         apt:
           packages:
             - libspatialindex-dev
+            - libudunits2-dev
     - env: TOXENV=py36
       name: "Python3.6 (Linux)"
       python: 3.6
@@ -126,6 +130,7 @@ jobs:
         apt:
           packages:
             - libspatialindex-dev
+            - libudunits2-dev
   allow_failures:
       - env:
         - TOXENV=py38-anaconda
