@@ -10,7 +10,24 @@ def _open(coll):
     return ds
 
 
-def test_get_time_slices():
+def test_get_time_slices_single_slice():
+
+    tas = _open(CMIP5_TAS)
+
+    test_data = [
+        (tas, 1000000, 1,    # Setting file limit to 1000000 bytes
+            ('2005-12-16', '2299-12-16')),
+        (tas, None, 1,        # Using size limit from CONFIG
+            ('2005-12-16', '2299-12-16')),
+    ]
+
+    for ds, limit, n_times, slices, in test_data:
+
+        resp = get_time_slices(ds, limit)
+        assert resp[0] == slices
+
+
+def test_get_time_slices_mutiple_slices():
 
     tas = _open(CMIP5_TAS)
 
@@ -19,10 +36,6 @@ def test_get_time_slices():
             ('2005-12-16', '2089-03-16'), 
             ('2089-04-16', '2172-06-16'),
             ('2255-11-16', '2299-12-16')),
-        (tas, 10000000, 1,
-            ('2005-12-16', '2299-12-16'),
-            None,
-            ('2005-12-16', '2299-12-16')),
         (tas, 32000, 2,
             ('2005-12-16', '2172-06-16'),
             None,

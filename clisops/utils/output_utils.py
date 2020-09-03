@@ -22,7 +22,7 @@ def get_time_slices(ds, file_size_limit=None):
 
     # Use default file size limit if not provided
     if not file_size_limit:
-        file_size_limit = parse_size(CONFIG['clisops:read']['file_size_limit'])
+        file_size_limit = parse_size(CONFIG['clisops:write']['file_size_limit'])
    
     var_id = xu.get_main_variable(ds)
     times = ds[var_id].time.values
