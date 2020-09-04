@@ -26,7 +26,7 @@ def write_roocs_cfg():
     base_dir = {{ base_dir }}/mini-esgf-data/test_data/group_workspaces/jasmin2/cp4cds1/vol1/data
 
     [project:c3s-cmip6]
-    base_dir = "NOT DEFINED YET"
+    base_dir = NOT DEFINED YET
 
     [project:c3s-cordex]
     base_dir = {{ base_dir }}/mini-esgf-data/test_data/group_workspaces/jasmin2/cp4cds1/vol1/data
