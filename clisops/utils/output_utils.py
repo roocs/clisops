@@ -1,3 +1,6 @@
+import xarray as xr
+import pandas as pd
+
 from clisops import CONFIG
 
 from roocs_utils.utils.common import parse_size
@@ -39,16 +42,41 @@ def get_format_extension(fmt):
     return SUPPORTED_FORMATS[fmt]['extension']
 
 
-def _format_time(tm):
-    return tm.strftime('%Y-%m-%d')
+def _format_time(tm, fmt='%Y-%m-%d'):
+    # Convert to datetime if time is a numpy datetime
+    if not hasattr(tm, 'strftime'):
+        tm = pd.to_datetime(str(tm)) 
+
+    return tm.strftime(fmt)
 
 
-def get_time_slices(ds, file_size_limit=None):
+def filter_times_within(times, start=None, end=None):
     """
-    Take an xarray Dataset, assume it can be split on the time axis into
-    a sequence of slices. Use the prescribed file size limit to generate
-    a list of ("YYYY-MM-DD", "YYYY-MM-DD") slices so that the output files
-    do not (significantly) exceed the file size limit.
+    Takes an array of datetimes, returning a reduced array if start or end times
+    are defined and are within the main array.
+    """
+    filtered = []
+
+    for tm in times:
+        ft = _format_time(tm, '%Y-%m-%dT%H:%M:%S')
+        if start is not None and ft < start: continue
+        if end is not None and ft > end:
+            break
+
+        filtered.append(tm)
+
+    return filtered
+ 
+
+def get_time_slices(ds, start=None, end=None, file_size_limit=None):
+    """
+    Take an xarray Dataset or DataArray, assume it can be split on the time axis 
+    into a sequence of slices. Optionally, take a start and end date to specify 
+    a sub-slice of the main time axis. 
+
+    Use the prescribed file size limit to generate a list of 
+    ("YYYY-MM-DD", "YYYY-MM-DD") slices so that the output files do
+    not (significantly) exceed the file size limit.
 
     :param ds: xarray Dataset
     :file_size_limit: a string specifying "<number><units>"
@@ -58,18 +86,26 @@ def get_time_slices(ds, file_size_limit=None):
     # Use default file size limit if not provided
     if not file_size_limit:
         file_size_limit = parse_size(CONFIG['clisops:write']['file_size_limit'])
-   
-    var_id = xu.get_main_variable(ds)
-    times = ds[var_id].time.values
+  
+    if isinstance(ds, xr.DataArray):
+        da = ds
+    else: 
+        var_id = xu.get_main_variable(ds)
+        da = ds[var_id]
 
+    times = filter_times_within(da.time.values, start=start, end=end)
     n_times = len(times)
-    bytes_per_time_step = ds[var_id].nbytes / n_times
+
+    if n_times == 0:
+        raise Exception('Zero time steps found between {start} and {end}.')
+
+    bytes_per_time_step = da.nbytes / n_times
 
     n_slices = n_times * bytes_per_time_step / file_size_limit
     slice_length = int(n_times // n_slices)
 
     if slice_length == 0:
-        raise Exception(f'Unable to calculate slice length for variable "{var_id}".')
+        raise Exception('Unable to calculate slice length for splitting output files.')
 
     slices = []
     indx = 0
@@ -77,12 +113,12 @@ def get_time_slices(ds, file_size_limit=None):
 
     while indx <= final_indx:
 
-        start = indx
+        start_indx = indx
         indx += slice_length
-        end = indx - 1
+        end_indx = indx - 1
 
-        if end > final_indx: end = final_indx
-        slices.append((f'{_format_time(times[start])}', f'{_format_time(times[end])}'))
+        if end_indx > final_indx: end_indx = final_indx
+        slices.append((f'{_format_time(times[start_indx])}', f'{_format_time(times[end_indx])}'))
 
     return slices
 

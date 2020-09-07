@@ -62,7 +62,9 @@ def test_subset_invalid_time(tmpdir):
             time=("yesterday", "2020-12-30T00:00:00"),
             area=(0, -90.0, 360.0, 90.0),
             output_dir=tmpdir,
-        )
+            output_type='nc',
+            file_namer='simple'
+    )
 
 
 def test_subset_ds_is_none(tmpdir):
@@ -163,7 +165,7 @@ def test_subset_with_multiple_files_zostoga(tmpdir):
     """ Tests with multiple tas files"""
     result = subset(
         ds=CMIP5_ZOSTOGA,
-        time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
+        time=("2000-01-01T00:00:00", "2020-12-30T00:00:00"),
         output_dir=tmpdir,
         output_type='nc',
         file_namer='simple'
@@ -175,7 +177,7 @@ def test_subset_with_multiple_files_rh(tmpdir):
     """ Tests with multiple rh files"""
     result = subset(
         ds=CMIP5_RH,
-        time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
+        time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
         area=(0, -90.0, 360.0, 90.0),
         output_dir=tmpdir,
         output_type='nc',
@@ -188,7 +190,7 @@ def test_subset_with_tas_series(tmpdir, tas_series):
     """ Test with tas_series fixture"""
     result = subset(
         ds=tas_series(["20", "22", "25"]),
-        time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
+        time=("2000-07-01T00:00:00", "2020-12-30T00:00:00"),
         output_dir=tmpdir,
         output_type='nc',
         file_namer='simple'

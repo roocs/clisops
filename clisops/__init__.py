@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 """Top-level package for clisops."""
 
+import logging
+import logging.config
+logging.config.fileConfig('logging.conf')
+
 import dask
 
 from roocs_utils.config import get_config
