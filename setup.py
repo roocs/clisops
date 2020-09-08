@@ -79,7 +79,7 @@ setup(
     python_requires=">=3.6.0",
     install_requires=[
         requirements,
-        "roocs_utils @ git+https://github.com/roocs/roocs-utils.git@master#egg=roocs_utils",
+        "roocs_utils @ git+https://github.com/roocs/roocs-utils.git",
     ],
     long_description=_long_description,
     long_description_content_type="text/markdown",
