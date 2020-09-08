@@ -5,8 +5,8 @@ from roocs_utils.parameter import parameterise
 
 from clisops import logging, utils
 from clisops.core import subset_bbox, subset_time
-from clisops.utils.file_namers import get_file_namer
-from clisops.utils.output_utils import get_format_writer, get_output, get_time_slices
+from clisops.utils.file_namers import get_output
+from clisops.utils.output_utils import get_time_slices
 
 __all__ = [
     "subset",
@@ -72,8 +72,6 @@ def subset(
     )
     outputs = []
 
-    namer = get_file_namer(file_namer)()
-
     for tslice in time_slices:
         # update args with tslice start and end
         args["start_date"], args["end_date"] = tslice[0], tslice[1]
@@ -81,7 +79,7 @@ def subset(
         LOGGER.info(f"Processing subset for times: {tslice}")
         result_ds = _subset(ds, args)
 
-        output = get_output(result_ds, output_type, output_dir, namer)
+        output = get_output(result_ds, output_type, output_dir, file_namer)
 
         outputs.append(output)
 
