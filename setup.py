@@ -79,7 +79,7 @@ setup(
     python_requires=">=3.6.0",
     install_requires=[
         requirements,
-        "roocs_utils @ git+https://github.com/roocs/roocs-utils.git",
+        "roocs_utils @ git+https://github.com/roocs/roocs-utils.git@master#egg=roocs_utils",
     ],
     long_description=_long_description,
     long_description_content_type="text/markdown",
@@ -87,7 +87,7 @@ setup(
     keywords="clisops",
     name="clisops",
     packages=find_packages(),
-    package_data={"clisops": ["etc/roocs.ini"]},
+    package_data={"clisops": ["etc/roocs.ini", "etc/logging.conf"]},
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
