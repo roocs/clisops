@@ -70,7 +70,6 @@ def subset(
     time_slices = get_time_slices(
         ds, split_method, start=args["start_date"], end=args["end_date"]
     )
-    print(time_slices)
     outputs = []
 
     namer = get_file_namer(file_namer)()
