@@ -1,13 +1,12 @@
 import os
 
 import xarray as xr
-
 from roocs_utils.parameter import parameterise
 
-from clisops import utils, logging
+from clisops import logging, utils
 from clisops.core import subset_bbox, subset_time
-from clisops.utils.output_utils import get_time_slices, get_format_writer
 from clisops.utils.file_namers import get_file_namer
+from clisops.utils.output_utils import get_format_writer, get_output, get_time_slices
 
 __all__ = [
     "subset",
@@ -16,11 +15,7 @@ __all__ = [
 LOGGER = logging.getLogger(__file__)
 
 
-
-def _subset(ds, time=None, area=None, level=None):
-    LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
-
-    args = utils.map_params(ds, time, area, level)
+def _subset(ds, args):
 
     if "lon_bnds" and "lat_bnds" in args:
         # subset with space and optionally time
@@ -65,33 +60,30 @@ def subset(
     :return:
     """
 
-    parameters = parameterise.parameterise(time=time, area=area, level=level)
-
     # Convert all inputs to Xarray Datasets
     if isinstance(ds, str):
         ds = xr.open_mfdataset(ds, use_cftime=True, combine="by_coords")
 
-    time_slices = get_time_slices(ds, *parameters['time'].tuple)
+    LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
+    args = utils.map_params(ds, time, area, level)
+
+    time_slices = get_time_slices(
+        ds, split_method, start=args["start_date"], end=args["end_date"]
+    )
+    print(time_slices)
     outputs = []
 
     namer = get_file_namer(file_namer)()
 
     for tslice in time_slices:
+        # update args with tslice start and end
+        args["start_date"], args["end_date"] = tslice[0], tslice[1]
 
-        LOGGER.info(f'Processing subset for times: {tslice}')
-        result_ds = _subset(ds, tslice, parameters['area'].tuple, parameters['level'].tuple)
+        LOGGER.info(f"Processing subset for times: {tslice}")
+        result_ds = _subset(ds, args)
 
-        fmt_method = get_format_writer(output_type)
-        if not fmt_method: outputs.append(result_ds)
+        output = get_output(result_ds, output_type, output_dir, namer)
 
-        file_name = namer.get_file_name(result_ds, fmt=output_type)
-
-        writer = getattr(result_ds, fmt_method)
-        output_path = os.path.join(output_dir, file_name)
-
-        writer(output_path)
-        LOGGER.info(f"Wrote output file: {output_path}")
-
-        outputs.append(output_path)
+        outputs.append(output)
 
     return outputs

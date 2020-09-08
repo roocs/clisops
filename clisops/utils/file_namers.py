@@ -34,7 +34,7 @@ class StandardFileNamer(SimpleFileNamer):
         except Exception:
             return None
 
-    def get_file_name(self, ds, fmt='nc'):
+    def get_file_name(self, ds, fmt="nc"):
         template = self._get_template(ds)
 
         if not template:
@@ -66,7 +66,7 @@ class StandardFileNamer(SimpleFileNamer):
             attrs["__derive__time_range"] = self._get_time_range(ds)
 
         if "__derive__extension" in template:
-            attrs["__derive__extension"] = get_format_extension(fmt) 
+            attrs["__derive__extension"] = get_format_extension(fmt)
 
     def _get_time_range(self, da):
         times = da.time.values

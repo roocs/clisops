@@ -2,14 +2,14 @@ import pytest
 from dateutil.parser import ParserError
 from roocs_utils.exceptions import InvalidParameterValue, MissingParameterValue
 
-from clisops import utils, CONFIG
+from clisops import CONFIG, utils
 
 from ._common import CMIP5_TAS_FILE
 
 
 def test_local_config_loads():
-    assert 'clisops:read' in CONFIG
-    assert 'file_size_limit' in CONFIG['clisops:write']
+    assert "clisops:read" in CONFIG
+    assert "file_size_limit" in CONFIG["clisops:write"]
 
 
 @pytest.mark.xfail(reason="parse_date removed as date parsed in TimeParameter class")
