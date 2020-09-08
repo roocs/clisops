@@ -14,7 +14,6 @@ SUPPORTED_FORMATS = {
     "nc": {"method": "to_netcdf", "extension": "nc"},
     "zarr": {"method": "to_zarr", "extension": "zarr"},
     "xarray": {"method": None, "extension": None},
-    None: {"method": None, "extension": "dat"},
 }
 
 

@@ -1,3 +1,4 @@
+import pytest
 import xarray as xr
 
 from clisops.utils.file_namers import get_file_namer
@@ -7,13 +8,22 @@ def test_SimpleFileNamer():
     s = get_file_namer("simple")()
 
     checks = [
-        (("my.stuff", None), "output_001.dat"),
-        (("other", "netcdf"), "output_002.nc"),
+        (("other", "netcdf"), "output_001.nc"),
     ]
 
     for args, expected in checks:
         resp = s.get_file_name(*args)
         assert resp == expected
+
+
+def test_SimpleFileNamer_no_fmt():
+    s = get_file_namer("simple")()
+
+    checks = (("my.stuff", None),)
+
+    for args in checks:
+        with pytest.raises(KeyError):
+            s.get_file_name(*args)
 
 
 def test_StandardFileNamer_no_project_match():
@@ -25,11 +35,8 @@ def test_StandardFileNamer_no_project_match():
     mock_ds = Thing()
     mock_ds.attrs = {}
 
-    checks = [(mock_ds, "output_001.dat")]
-
-    for ds, expected in checks:
-        resp = s.get_file_name(ds)
-        assert resp == expected
+    with pytest.raises(KeyError):
+        s.get_file_name(mock_ds)
 
 
 def test_StandardFileNamer_cmip5():

@@ -38,8 +38,8 @@ def test_map_params():
     )
 
     # have a look at what date was used in clisops master
-    assert args["start_date"] == "1999"
-    assert args["end_date"] == "2100"
+    assert args["start_date"] == "1999-01-01T00:00:00"
+    assert args["end_date"] == "2100-12-30T00:00:00"
     assert args["lon_bnds"] == (-5, 10)
     assert args["lat_bnds"] == (49, 65)
 
@@ -48,8 +48,8 @@ def test_map_params_time():
     args = utils.map_params(
         ds=CMIP5_TAS_FILE, time=("1999-01-01", "2100-12"), area=(0, -90, 360, 90)
     )
-    assert args["start_date"] == "1999"
-    assert args["end_date"] == "2100"
+    assert args["start_date"] == "1999-01-01T00:00:00"
+    assert args["end_date"] == "2100-12-30T00:00:00"
 
 
 def test_map_params_invalid_time():
