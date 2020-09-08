@@ -1,7 +1,11 @@
 import pytest
 import xarray as xr
 
+from clisops import CONFIG
+from clisops.ops.subset import subset
 from clisops.utils.file_namers import get_file_namer
+
+from ._common import CMIP5_TAS
 
 
 def test_SimpleFileNamer():
@@ -24,6 +28,26 @@ def test_SimpleFileNamer_no_fmt():
     for args in checks:
         with pytest.raises(KeyError):
             s.get_file_name(*args)
+
+
+def test_SimpleFileNamer_with_chunking(tmpdir):
+    start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
+    area = (0.0, 10.0, 175.0, 90.0)
+
+    config_max_file_size = CONFIG["clisops:write"]["file_size_limit"]
+    temp_max_file_size = "10KB"
+    CONFIG["clisops:write"]["file_size_limit"] = temp_max_file_size
+    outputs = subset(
+        ds=CMIP5_TAS,
+        time=(start_time, end_time),
+        area=area,
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+    CONFIG["clisops:write"]["file_size_limit"] = config_max_file_size
+    for output in outputs:
+        assert "output_001.nc" in output
 
 
 def test_StandardFileNamer_no_project_match():
