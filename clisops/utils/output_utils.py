@@ -5,7 +5,9 @@ import xarray as xr
 from roocs_utils.utils.common import parse_size
 from roocs_utils.xarray_utils import xarray_utils as xu
 
-from clisops import CONFIG
+from clisops import CONFIG, logging
+
+LOGGER = logging.getLogger(__file__)
 
 SUPPORTED_FORMATS = {
     "netcdf": {"method": "to_netcdf", "extension": "nc"},
@@ -120,3 +122,21 @@ def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None
         )
 
     return slices
+
+
+def get_output(result_ds, output_type, output_dir, namer):
+
+    fmt_method = get_format_writer(output_type)
+
+    if not fmt_method:
+        LOGGER.info(f"Returning output as {type(result_ds)}")
+        return result_ds
+
+    file_name = namer.get_file_name(result_ds, fmt=output_type)
+
+    writer = getattr(result_ds, fmt_method)
+    output_path = os.path.join(output_dir, file_name)
+
+    writer(output_path)
+    LOGGER.info(f"Wrote output file: {output_path}")
+    return output_path

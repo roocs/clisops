@@ -4,10 +4,8 @@ import sys
 from roocs_utils.project_utils import get_project_name
 from roocs_utils.xarray_utils import xarray_utils as xu
 
-from clisops import CONFIG, logging
+from clisops import CONFIG
 from clisops.utils.output_utils import get_format_extension, get_format_writer
-
-LOGGER = logging.getLogger(__file__)
 
 
 def get_file_namer(name):
@@ -74,22 +72,3 @@ class StandardFileNamer(SimpleFileNamer):
     def _get_time_range(self, da):
         times = da.time.values
         return times.min().strftime("%Y%m%d") + "-" + times.max().strftime("%Y%m%d")
-
-
-def get_output(result_ds, output_type, output_dir, file_namer):
-
-    namer = get_file_namer(file_namer)()
-    fmt_method = get_format_writer(output_type)
-
-    if not fmt_method:
-        LOGGER.info(f"Returning output as {type(result_ds)}")
-        return result_ds
-
-    file_name = namer.get_file_name(result_ds, fmt=output_type)
-
-    writer = getattr(result_ds, fmt_method)
-    output_path = os.path.join(output_dir, file_name)
-
-    writer(output_path)
-    LOGGER.info(f"Wrote output file: {output_path}")
-    return output_path

@@ -46,9 +46,13 @@ def test_SimpleFileNamer_with_chunking(tmpdir):
         output_type="nc",
         file_namer="simple",
     )
+
     CONFIG["clisops:write"]["file_size_limit"] = config_max_file_size
+
+    count = 0
     for output in outputs:
-        assert "output_001.nc" in output
+        count += 1
+        assert f"output_00{count}.nc" in output
 
 
 def test_StandardFileNamer_no_project_match():
