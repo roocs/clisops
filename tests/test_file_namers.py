@@ -12,7 +12,8 @@ def test_SimpleFileNamer():
     s = get_file_namer("simple")()
 
     checks = [
-        (("other", "netcdf"), "output_001.nc"),
+        (("my.stuff", "netcdf"), "output_001.nc"),
+        (("other", "netcdf"), "output_002.nc"),
     ]
 
     for args, expected in checks:
