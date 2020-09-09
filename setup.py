@@ -87,7 +87,7 @@ setup(
     keywords="clisops",
     name="clisops",
     packages=find_packages(),
-    package_data={"clisops": ["etc/roocs.ini"]},
+    package_data={"clisops": ["etc/roocs.ini", "etc/logging.conf"]},
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
