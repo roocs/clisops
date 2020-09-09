@@ -8,7 +8,7 @@ from ..exceptions import InvalidParameterValue, MissingParameterValue
 
 def map_params(ds, time=None, area=None, level=None):
     args = dict()
-    # import pdb;pdb.set_trace()
+
     parameters = parameterise.parameterise(
         collection=ds, time=time, area=area, level=level
     )

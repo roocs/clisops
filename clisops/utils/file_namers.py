@@ -1,19 +1,11 @@
+import os
 import sys
 
 from roocs_utils.project_utils import get_project_name
 from roocs_utils.xarray_utils import xarray_utils as xu
 
 from clisops import CONFIG
-
-attr_defaults = {
-    "model_id": "no-model",
-    "source_id": "no-model",
-    "frequency": "no-freq",
-    "experiment": "no-expt",
-    "realization": "X",
-    "initialization_method": "X",
-    "physics_version": "X",
-}
+from clisops.utils.output_utils import get_format_extension, get_format_writer
 
 
 def get_file_namer(name):
@@ -26,12 +18,10 @@ class _BaseFileNamer(object):
     def __init__(self):
         self._count = 0
 
-    def _get_extension(self, format=None):
-        return {"netcdf": "nc"}.get(format, "dat")
-
-    def get_file_name(self, ds, format=None):
+    def get_file_name(self, ds, fmt=None):
         self._count += 1
-        return f"output_{self._count:03d}.{self._get_extension(format=format)}"
+        extension = get_format_extension(fmt)
+        return f"output_{self._count:03d}.{extension}"
 
 
 class SimpleFileNamer(_BaseFileNamer):
@@ -45,7 +35,7 @@ class StandardFileNamer(SimpleFileNamer):
         except Exception:
             return None
 
-    def get_file_name(self, ds, format=None):
+    def get_file_name(self, ds, fmt="nc"):
         template = self._get_template(ds)
 
         if not template:
@@ -58,7 +48,7 @@ class StandardFileNamer(SimpleFileNamer):
         attrs = attr_defaults.copy()
         attrs.update(ds.attrs)
 
-        self._resolve_derived_attrs(ds, attrs, template)
+        self._resolve_derived_attrs(ds, attrs, template, fmt=fmt)
         file_name = template.format(**attrs)
 
         return file_name
@@ -69,12 +59,15 @@ class StandardFileNamer(SimpleFileNamer):
         except Exception:
             return None
 
-    def _resolve_derived_attrs(self, ds, attrs, template):
+    def _resolve_derived_attrs(self, ds, attrs, template, fmt=None):
         if "__derive__var_id" in template:
             attrs["__derive__var_id"] = xu.get_main_variable(ds)
 
         if "__derive__time_range" in template:
             attrs["__derive__time_range"] = self._get_time_range(ds)
+
+        if "__derive__extension" in template:
+            attrs["__derive__extension"] = get_format_extension(fmt)
 
     def _get_time_range(self, da):
         times = da.time.values

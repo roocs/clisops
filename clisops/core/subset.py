@@ -68,7 +68,6 @@ def check_start_end_dates(func):
                 stacklevel=2,
             )
             kwargs["end_date"] = da.time.max().dt.strftime("%Y").values
-
         if (
             da.time.sel(time=kwargs["start_date"]).min()
             > da.time.sel(time=kwargs["end_date"]).max()

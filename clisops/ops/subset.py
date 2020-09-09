@@ -1,30 +1,29 @@
-import logging
 import os
 
 import xarray as xr
+from roocs_utils.parameter import parameterise
 
-from clisops import utils
+from clisops import logging, utils
 from clisops.core import subset_bbox, subset_time
+from clisops.utils.file_namers import get_file_namer
+from clisops.utils.output_utils import get_output, get_time_slices
 
 __all__ = [
     "subset",
 ]
 
+LOGGER = logging.getLogger(__file__)
 
-def _subset(ds, time=None, area=None, level=None):
-    logging.debug(
-        f"Before mapping parameters: time: {time}, area: {area}, level: {level}"
-    )
 
-    args = utils.map_params(ds, time, area, level)
+def _subset(ds, args):
 
     if "lon_bnds" and "lat_bnds" in args:
         # subset with space and optionally time
-        logging.debug(f"subset_bbox with parameters: {args}")
+        LOGGER.debug(f"subset_bbox with parameters: {args}")
         result = subset_bbox(ds, **args)
     else:
         # subset with time only
-        logging.debug(f"subset_time with parameters: {args}")
+        LOGGER.debug(f"subset_time with parameters: {args}")
         result = subset_time(ds, **args)
     return result
 
@@ -34,10 +33,10 @@ def subset(
     time=None,
     area=None,
     level=None,
-    output_type="netcdf",
     output_dir=None,
-    chunk_rules=None,
-    filenamer="simple_namer",
+    output_type="netcdf",
+    split_method="time:auto",
+    file_namer="standard",
 ):
     """
     Example:
@@ -45,19 +44,19 @@ def subset(
         time: ("1999-01-01T00:00:00", "2100-12-30T00:00:00")
         area: (-5.,49.,10.,65)
         level: (1000.,)
-        output_type: "netcdf"
         output_dir: "/cache/wps/procs/req0111"
-        chunk_rules: "time:decade"
-        filenamer: "facet_namer"
+        output_type: "netcdf"
+        split_method: "time:auto"
+        file_namer: "standard"
 
     :param ds:
     :param time:
     :param area:
     :param level:
-    :param output_type:
     :param output_dir:
-    :param chunk_rules:
-    :param filenamer:
+    :param output_type:
+    :param split_method:
+    :param file_namer:
     :return:
     """
 
@@ -65,13 +64,25 @@ def subset(
     if isinstance(ds, str):
         ds = xr.open_mfdataset(ds, use_cftime=True, combine="by_coords")
 
-    result = _subset(ds, time, area, level)
+    LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
+    args = utils.map_params(ds, time, area, level)
 
-    if output_type == "netcdf":
-        output_path = os.path.join(output_dir, "output.nc")
-        result.to_netcdf(output_path)
+    time_slices = get_time_slices(
+        ds, split_method, start=args["start_date"], end=args["end_date"]
+    )
+    outputs = []
 
-        logging.info(f"Wrote output file: {output_path}")
-        return output_path
+    namer = get_file_namer(file_namer)()
 
-    return result
+    for tslice in time_slices:
+        # update args with tslice start and end
+        args["start_date"], args["end_date"] = tslice[0], tslice[1]
+
+        LOGGER.info(f"Processing subset for times: {tslice}")
+        result_ds = _subset(ds, args)
+
+        output = get_output(result_ds, output_type, output_dir, namer)
+
+        outputs.append(output)
+
+    return outputs
