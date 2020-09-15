@@ -1,7 +1,9 @@
 import os
+import tempfile
 
 import xarray as xr
 from roocs_utils.parameter import parameterise
+from roocs_utils.xarray_utils import xarray_utils as xu
 
 from clisops import logging, utils
 from clisops.core import subset_bbox, subset_time
@@ -16,7 +18,6 @@ LOGGER = logging.getLogger(__file__)
 
 
 def _subset(ds, args):
-
     if "lon_bnds" and "lat_bnds" in args:
         # subset with space and optionally time
         LOGGER.debug(f"subset_bbox with parameters: {args}")
@@ -73,7 +74,6 @@ def subset(
     outputs = []
 
     namer = get_file_namer(file_namer)()
-
     for tslice in time_slices:
         # update args with tslice start and end
         args["start_date"], args["end_date"] = tslice[0], tslice[1]
