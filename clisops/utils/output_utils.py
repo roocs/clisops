@@ -135,10 +135,14 @@ def get_output(result_ds, output_type, output_dir, namer):
 
     file_name = namer.get_file_name(result_ds, fmt=output_type)
 
-    writer = getattr(result_ds, fmt_method)
+    # writer = getattr(result_ds, fmt_method)
     output_path = os.path.join(output_dir, file_name)
 
     # TODO: compute=True is blocking wps process. How to handle?
-    writer(output_path, compute=False)
+    # writer(output_path, compute=False)
+    if fmt_method == 'to_netcdf':
+        result_ds.to_netcdf(output_path, compute=False)
+    else:
+        raise NotImplementedError('output format not supported')
     LOGGER.info(f"Wrote output file: {output_path}")
     return output_path
