@@ -127,6 +127,7 @@ def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None
 def get_output(result_ds, output_type, output_dir, namer):
 
     fmt_method = get_format_writer(output_type)
+    LOGGER.info(f"fmt_method={fmt_method}, output_type={output_type}")
 
     if not fmt_method:
         LOGGER.info(f"Returning output as {type(result_ds)}")
@@ -137,6 +138,7 @@ def get_output(result_ds, output_type, output_dir, namer):
     writer = getattr(result_ds, fmt_method)
     output_path = os.path.join(output_dir, file_name)
 
-    writer(output_path)
+    # TODO: compute=True is blocking wps process. How to handle?
+    writer(output_path, compute=False)
     LOGGER.info(f"Wrote output file: {output_path}")
     return output_path
