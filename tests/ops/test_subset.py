@@ -3,6 +3,7 @@ import sys
 from unittest.mock import Mock
 
 import pytest
+import xarray as xr
 from memory_profiler import memory_usage
 from roocs_utils.exceptions import InvalidParameterValue, MissingParameterValue
 from roocs_utils.parameter import area_parameter, time_parameter
@@ -10,9 +11,10 @@ from roocs_utils.utils.common import parse_size
 
 import clisops
 from clisops import CONFIG
-from clisops.ops.subset import subset
-from clisops.utils import output_utils
-from clisops.utils.output_utils import _format_time, get_time_slices
+from clisops.ops.subset import _subset, subset
+from clisops.utils import map_params, output_utils
+from clisops.utils.file_namers import get_file_namer
+from clisops.utils.output_utils import _format_time, get_output, get_time_slices
 
 from .._common import CMIP5_RH, CMIP5_TAS, CMIP5_TAS_FILE, CMIP5_ZOSTOGA
 
@@ -308,92 +310,3 @@ def test_area_within_area_subset_chunked():
     for ds in outputs:
         assert area[0] <= ds.lon.data <= area[2]
         assert area[1] <= ds.lat.data <= area[3]
-
-
-def subset_for_test(real_data, start_time, end_time):
-    subset(
-        ds=real_data,
-        time=(start_time, end_time),
-        area=(0.0, 49.0, 10.0, 65.0),
-        output_type="xarray",
-        file_namer="simple",
-    )
-
-
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
-def test_memory_limit():
-    """ check memory does not greatly exceed dask chunk limit """
-
-    real_data = (
-        "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES"
-        "/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc"
-    )
-
-    start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
-
-    config_max_file_size = CONFIG["clisops:write"]["file_size_limit"]
-    config_mem_limit = CONFIG["clisops:read"]["chunk_memory_limit"]
-
-    CONFIG["clisops:write"]["file_size_limit"] = "95MiB"
-    CONFIG["clisops:read"]["chunk_memory_limit"] = "80MiB"
-
-    memory = memory_usage((subset_for_test, (real_data, start_time, end_time)))
-
-    upper_limit = 80 * 1.1
-
-    assert max(memory) <= upper_limit
-
-    CONFIG["clisops:write"]["file_size_limit"] = config_max_file_size
-    CONFIG["clisops:read"]["chunk_memory_limit"] = config_mem_limit
-
-
-@pytest.mark.skipif(
-    os.path.isdir("/group_workspaces") is False, reason="data not available"
-)
-def test_memory_limit_bigger_file():
-    real_data = (
-        "/group_workspaces/jasmin2/cp4cds1/vol1/data/c3s-cordex/output/EUR-11/IPSL/MOHC-HadGEM2-ES/rcp85"
-        "/r1i1p1/IPSL-WRF381P/v1/day/psl/v20190212/*.nc"
-    )
-
-    start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
-
-    config_mem_limit = CONFIG["clisops:read"]["chunk_memory_limit"]
-    config_max_file_size = CONFIG["clisops:write"]["file_size_limit"]
-
-    CONFIG["clisops:write"]["file_size_limit"] = "750MiB"
-    CONFIG["clisops:read"]["chunk_memory_limit"] = "100MiB"
-
-    memory = memory_usage((subset_for_test, (real_data, start_time, end_time)))
-
-    upper_limit = 100 * 1.1
-
-    assert max(memory) <= upper_limit
-
-    CONFIG["clisops:write"]["file_size_limit"] = config_max_file_size
-    CONFIG["clisops:read"]["chunk_memory_limit"] = config_mem_limit
-
-
-@pytest.fixture(params=["0.4MiB", "45MiB", "570MiB", "45MiB"])
-def mem_limit(request):
-    id = request.param
-    return id
-
-
-@pytest.mark.skipif(
-    os.path.isdir("/group_workspaces") is False, reason="data not available"
-)
-def test_memory_limit_even_bigger_file(mem_limit):
-    output_utils.get_chunk_mem_limit = Mock(return_value=mem_limit)
-
-    real_data = (
-        "/group_workspaces/jasmin2/cp4cds1/vol1/data/c3s-cmip5/output1/MOHC/HadGEM2-ES/rcp85/3hr"
-        "/atmos/3hr/r1i1p1/vas/v20111002/*.nc"
-    )
-
-    start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
-
-    memory = memory_usage((subset_for_test, (real_data, start_time, end_time)))
-    upper_limit = 500
-
-    assert max(memory) <= upper_limit

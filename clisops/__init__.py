@@ -24,7 +24,7 @@ def get_chunk_mem_limit():
     return chunk_memory_limit
 
 
-# if chunk_memory_limit:
+# if get_chunk_mem_limit():
 #     dask.config.set({"array.chunk-size": get_chunk_mem_limit()})
 
 

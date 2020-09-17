@@ -1,5 +1,6 @@
 import math
 import os
+import sys
 
 import pandas as pd
 import xarray as xr
@@ -131,8 +132,9 @@ def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None
     return slices
 
 
-def get_chunk_length(da):
-    size = da.nbytes
+def get_chunk_length(ds):
+    da = get_da(ds)
+    size = da.nbytes  # this is much smaller than expected
     n_times = len(da.time.values)
     mem_limit = parse_size(get_chunk_mem_limit())
 
@@ -148,7 +150,7 @@ def get_chunk_length(da):
 
 def _get_chunked_dataset(ds):
     da = get_da(ds)
-    chunk_length = get_chunk_length(da)
+    chunk_length = get_chunk_length(ds)
     chunked_ds = ds.chunk({"time": chunk_length})
     da.unify_chunks()
     return chunked_ds
@@ -160,8 +162,7 @@ def get_output(ds, output_type, output_dir, namer):
 
     if not fmt_method:
         LOGGER.info(f"Returning output as {type(ds)}")
-        chunked_ds = _get_chunked_dataset(ds)
-        return chunked_ds
+        return ds
 
     file_name = namer.get_file_name(ds, fmt=output_type)
 
