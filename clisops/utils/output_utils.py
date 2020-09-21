@@ -61,7 +61,17 @@ def filter_times_within(times, start=None, end=None):
     return filtered
 
 
-def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None):
+def get_da(ds):
+    if isinstance(ds, xr.DataArray):
+        da = ds
+    else:
+        var_id = xu.get_main_variable(ds)
+        da = ds[var_id]
+
+    return da
+
+
+def get_time_slices(da, split_method, start=None, end=None, file_size_limit=None):
     """
     Take an xarray Dataset or DataArray, assume it can be split on the time axis
     into a sequence of slices. Optionally, take a start and end date to specify
@@ -71,7 +81,7 @@ def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None
     ("YYYY-MM-DD", "YYYY-MM-DD") slices so that the output files do
     not (significantly) exceed the file size limit.
 
-    :param ds: xarray Dataset
+    :param da: xarray Dataset
     :file_size_limit: a string specifying "<number><units>"
     :param start:
     :param end:
@@ -86,12 +96,6 @@ def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None
     # Use default file size limit if not provided
     if not file_size_limit:
         file_size_limit = parse_size(CONFIG["clisops:write"]["file_size_limit"])
-
-    if isinstance(ds, xr.DataArray):
-        da = ds
-    else:
-        var_id = xu.get_main_variable(ds)
-        da = ds[var_id]
 
     times = filter_times_within(da.time.values, start=start, end=end)
     n_times = len(times)
@@ -124,7 +128,7 @@ def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None
     return slices
 
 
-def get_output(result_ds, output_type, output_dir, namer):
+def get_output(result_ds, var_id, output_type, output_dir, namer):
 
     fmt_method = get_format_writer(output_type)
 
@@ -132,7 +136,7 @@ def get_output(result_ds, output_type, output_dir, namer):
         LOGGER.info(f"Returning output as {type(result_ds)}")
         return result_ds
 
-    file_name = namer.get_file_name(result_ds, fmt=output_type)
+    file_name = namer.get_file_name(result_ds, var_id, fmt=output_type)
 
     writer = getattr(result_ds, fmt_method)
     output_path = os.path.join(output_dir, file_name)

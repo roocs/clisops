@@ -2,11 +2,12 @@ import os
 
 import xarray as xr
 from roocs_utils.parameter import parameterise
+from roocs_utils.xarray_utils import xarray_utils as xu
 
 from clisops import logging, utils
 from clisops.core import subset_bbox, subset_time
 from clisops.utils.file_namers import get_file_namer
-from clisops.utils.output_utils import get_output, get_time_slices
+from clisops.utils.output_utils import get_da, get_output, get_time_slices
 
 __all__ = [
     "subset",
@@ -66,9 +67,10 @@ def subset(
 
     LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
     args = utils.map_params(ds, time, area, level)
+    da = get_da(ds)
 
     time_slices = get_time_slices(
-        ds, split_method, start=args["start_date"], end=args["end_date"]
+        da, split_method, start=args["start_date"], end=args["end_date"]
     )
     outputs = []
 
@@ -81,7 +83,8 @@ def subset(
         LOGGER.info(f"Processing subset for times: {tslice}")
         result_ds = _subset(ds, args)
 
-        output = get_output(result_ds, output_type, output_dir, namer)
+        var_id = xu.get_main_variable(ds)
+        output = get_output(result_ds, var_id, output_type, output_dir, namer)
 
         outputs.append(output)
 
