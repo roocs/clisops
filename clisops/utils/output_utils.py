@@ -127,6 +127,7 @@ def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None
 def get_output(result_ds, output_type, output_dir, namer):
 
     fmt_method = get_format_writer(output_type)
+    LOGGER.info(f"fmt_method={fmt_method}, output_type={output_type}")
 
     if not fmt_method:
         LOGGER.info(f"Returning output as {type(result_ds)}")
@@ -134,9 +135,18 @@ def get_output(result_ds, output_type, output_dir, namer):
 
     file_name = namer.get_file_name(result_ds, fmt=output_type)
 
-    writer = getattr(result_ds, fmt_method)
+    # writer = getattr(result_ds, fmt_method)
     output_path = os.path.join(output_dir, file_name)
 
-    writer(output_path)
+    # TODO: writing output works currently only in sync mode.
+    # https://github.com/roocs/rook/issues/55
+    # writer(output_path, compute=True)
+    if fmt_method == 'to_netcdf':
+        # TODO: https://docs.dask.org/en/latest/scheduling.html
+        import dask
+        with dask.config.set(scheduler='synchronous'):
+            result_ds.to_netcdf(output_path, compute=True)
+    else:
+        raise NotImplementedError('output format not supported')
     LOGGER.info(f"Wrote output file: {output_path}")
     return output_path
