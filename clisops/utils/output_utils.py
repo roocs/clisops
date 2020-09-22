@@ -50,7 +50,6 @@ def filter_times_within(times, start=None, end=None):
     are defined and are within the main array.
     """
     filtered = []
-    # import pdb;pdb.set_trace()
     for tm in times:
         ft = _format_time(tm, "%Y-%m-%dT%H:%M:%S")
         if start is not None and ft < start:
