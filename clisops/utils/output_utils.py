@@ -141,12 +141,13 @@ def get_output(result_ds, output_type, output_dir, namer):
     # TODO: writing output works currently only in sync mode.
     # https://github.com/roocs/rook/issues/55
     # writer(output_path, compute=True)
-    if fmt_method == 'to_netcdf':
+    if fmt_method == "to_netcdf":
         # TODO: https://docs.dask.org/en/latest/scheduling.html
         import dask
-        with dask.config.set(scheduler='synchronous'):
+
+        with dask.config.set(scheduler="synchronous"):
             result_ds.to_netcdf(output_path, compute=True)
     else:
-        raise NotImplementedError('output format not supported')
+        raise NotImplementedError("output format not supported")
     LOGGER.info(f"Wrote output file: {output_path}")
     return output_path
