@@ -83,7 +83,7 @@ def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None
     ("YYYY-MM-DD", "YYYY-MM-DD") slices so that the output files do
     not (significantly) exceed the file size limit.
 
-    :param da: xarray Dataset
+    :param ds: xarray Dataset
     :file_size_limit: a string specifying "<number><units>"
     :param start:
     :param end:

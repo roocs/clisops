@@ -8,7 +8,7 @@ from roocs_utils.xarray_utils import xarray_utils as xu
 from clisops import logging, utils
 from clisops.core import subset_bbox, subset_time
 from clisops.utils.file_namers import get_file_namer
-from clisops.utils.output_utils import get_da, get_output, get_time_slices
+from clisops.utils.output_utils import get_output, get_time_slices
 
 __all__ = [
     "subset",

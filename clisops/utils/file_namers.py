@@ -62,7 +62,6 @@ class StandardFileNamer(SimpleFileNamer):
     def _resolve_derived_attrs(self, ds, attrs, template, fmt=None):
         if "__derive__var_id" in template:
             attrs["__derive__var_id"] = xu.get_main_variable(ds)
-            print("here=", xu.get_main_variable(ds))
 
         if "__derive__time_range" in template:
             attrs["__derive__time_range"] = self._get_time_range(ds)
