@@ -1,11 +1,13 @@
+import math
 import os
+import sys
 
 import pandas as pd
 import xarray as xr
 from roocs_utils.utils.common import parse_size
 from roocs_utils.xarray_utils import xarray_utils as xu
 
-from clisops import CONFIG, logging
+from clisops import CONFIG, chunk_memory_limit, logging
 
 LOGGER = logging.getLogger(__file__)
 
@@ -48,7 +50,6 @@ def filter_times_within(times, start=None, end=None):
     are defined and are within the main array.
     """
     filtered = []
-
     for tm in times:
         ft = _format_time(tm, "%Y-%m-%dT%H:%M:%S")
         if start is not None and ft < start:
@@ -71,7 +72,8 @@ def get_da(ds):
     return da
 
 
-def get_time_slices(da, split_method, start=None, end=None, file_size_limit=None):
+def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None):
+
     """
     Take an xarray Dataset or DataArray, assume it can be split on the time axis
     into a sequence of slices. Optionally, take a start and end date to specify
@@ -96,6 +98,8 @@ def get_time_slices(da, split_method, start=None, end=None, file_size_limit=None
     # Use default file size limit if not provided
     if not file_size_limit:
         file_size_limit = parse_size(CONFIG["clisops:write"]["file_size_limit"])
+
+    da = get_da(ds)
 
     times = filter_times_within(da.time.values, start=start, end=end)
     n_times = len(times)
@@ -128,19 +132,57 @@ def get_time_slices(da, split_method, start=None, end=None, file_size_limit=None
     return slices
 
 
-def get_output(result_ds, var_id, output_type, output_dir, namer):
+def get_chunk_length(da):
+    size = da.nbytes
+    n_times = len(da.time.values)
+    mem_limit = parse_size(chunk_memory_limit)
+
+    if size > 0:
+        n_chunks = math.ceil(size / mem_limit)
+    else:
+        n_chunks = 1
+
+    chunk_length = math.ceil(n_times / n_chunks)
+
+    return chunk_length
+
+
+def _get_chunked_dataset(ds):
+    da = get_da(ds)
+    chunk_length = get_chunk_length(da)
+    chunked_ds = ds.chunk({"time": chunk_length})
+    da.unify_chunks()
+    return chunked_ds
+
+
+def get_output(ds, output_type, output_dir, namer):
 
     fmt_method = get_format_writer(output_type)
+    LOGGER.info(f"fmt_method={fmt_method}, output_type={output_type}")
 
     if not fmt_method:
-        LOGGER.info(f"Returning output as {type(result_ds)}")
-        return result_ds
+        LOGGER.info(f"Returning output as {type(ds)}")
+        return ds
 
-    file_name = namer.get_file_name(result_ds, var_id, fmt=output_type)
+    file_name = namer.get_file_name(ds, fmt=output_type)
 
-    writer = getattr(result_ds, fmt_method)
+    chunked_ds = _get_chunked_dataset(ds)
+
+    # writer = getattr(result_ds, fmt_method)
+
     output_path = os.path.join(output_dir, file_name)
 
-    writer(output_path)
+    # TODO: writing output works currently only in sync mode.
+    # https://github.com/roocs/rook/issues/55
+    # writer(output_path, compute=True)
+    if fmt_method == "to_netcdf":
+        # TODO: https://docs.dask.org/en/latest/scheduling.html
+        import dask
+
+        with dask.config.set(scheduler="synchronous"):
+            chunked_ds.to_netcdf(output_path, compute=False)
+            chunked_ds.compute()
+    else:
+        raise NotImplementedError("output format not supported")
     LOGGER.info(f"Wrote output file: {output_path}")
     return output_path

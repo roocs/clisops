@@ -1,3 +1,5 @@
+import os
+
 import pytest
 from dateutil.parser import ParserError
 from roocs_utils.exceptions import InvalidParameterValue, MissingParameterValue
@@ -10,6 +12,12 @@ from ._common import CMIP5_TAS_FILE
 def test_local_config_loads():
     assert "clisops:read" in CONFIG
     assert "file_size_limit" in CONFIG["clisops:write"]
+
+
+def test_dask_env_variables():
+    assert os.getenv("MKL_NUM_THREADS") == "1"
+    assert os.getenv("OPENBLAS_NUM_THREADS") == "1"
+    assert os.getenv("OMP_NUM_THREADS") == "1"
 
 
 @pytest.mark.xfail(reason="parse_date removed as date parsed in TimeParameter class")

@@ -18,7 +18,7 @@ class _BaseFileNamer(object):
     def __init__(self):
         self._count = 0
 
-    def get_file_name(self, ds, var_id, fmt=None):
+    def get_file_name(self, ds, fmt=None):
         self._count += 1
         extension = get_format_extension(fmt)
         return f"output_{self._count:03d}.{extension}"
@@ -35,12 +35,12 @@ class StandardFileNamer(SimpleFileNamer):
         except Exception:
             return None
 
-    def get_file_name(self, ds, var_id, fmt="nc"):
+    def get_file_name(self, ds, fmt="nc"):
         template = self._get_template(ds)
 
         if not template:
             # Default to parent class namer if no method found
-            return super().get_file_name(ds, var_id)
+            return super().get_file_name(ds)
 
         self._count += 1
 
@@ -48,7 +48,7 @@ class StandardFileNamer(SimpleFileNamer):
         attrs = attr_defaults.copy()
         attrs.update(ds.attrs)
 
-        self._resolve_derived_attrs(ds, var_id, attrs, template, fmt=fmt)
+        self._resolve_derived_attrs(ds, attrs, template, fmt=fmt)
         file_name = template.format(**attrs)
 
         return file_name
@@ -59,9 +59,10 @@ class StandardFileNamer(SimpleFileNamer):
         except Exception:
             return None
 
-    def _resolve_derived_attrs(self, ds, var_id, attrs, template, fmt=None):
+    def _resolve_derived_attrs(self, ds, attrs, template, fmt=None):
         if "__derive__var_id" in template:
-            attrs["__derive__var_id"] = var_id
+            attrs["__derive__var_id"] = xu.get_main_variable(ds)
+            print("here=", xu.get_main_variable(ds))
 
         if "__derive__time_range" in template:
             attrs["__derive__time_range"] = self._get_time_range(ds)

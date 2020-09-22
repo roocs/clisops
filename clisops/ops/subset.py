@@ -1,4 +1,5 @@
 import os
+import tempfile
 
 import xarray as xr
 from roocs_utils.parameter import parameterise
@@ -17,7 +18,6 @@ LOGGER = logging.getLogger(__file__)
 
 
 def _subset(ds, args):
-
     if "lon_bnds" and "lat_bnds" in args:
         # subset with space and optionally time
         LOGGER.debug(f"subset_bbox with parameters: {args}")
@@ -67,15 +67,13 @@ def subset(
 
     LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
     args = utils.map_params(ds, time, area, level)
-    da = get_da(ds)
 
     time_slices = get_time_slices(
-        da, split_method, start=args["start_date"], end=args["end_date"]
+        ds, split_method, start=args["start_date"], end=args["end_date"]
     )
     outputs = []
 
     namer = get_file_namer(file_namer)()
-
     for tslice in time_slices:
         # update args with tslice start and end
         args["start_date"], args["end_date"] = tslice[0], tslice[1]
@@ -83,8 +81,7 @@ def subset(
         LOGGER.info(f"Processing subset for times: {tslice}")
         result_ds = _subset(ds, args)
 
-        var_id = xu.get_main_variable(ds)
-        output = get_output(result_ds, var_id, output_type, output_dir, namer)
+        output = get_output(result_ds, output_type, output_dir, namer)
 
         outputs.append(output)
 
