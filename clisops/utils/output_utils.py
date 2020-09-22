@@ -7,7 +7,7 @@ import xarray as xr
 from roocs_utils.utils.common import parse_size
 from roocs_utils.xarray_utils import xarray_utils as xu
 
-from clisops import CONFIG, get_chunk_mem_limit, logging
+from clisops import CONFIG, chunk_memory_limit, logging
 
 LOGGER = logging.getLogger(__file__)
 
@@ -134,9 +134,9 @@ def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None
 
 def get_chunk_length(ds):
     da = get_da(ds)
-    size = da.nbytes  # this is much smaller than expected
+    size = da.nbytes
     n_times = len(da.time.values)
-    mem_limit = parse_size(get_chunk_mem_limit())
+    mem_limit = parse_size(chunk_memory_limit)
 
     if size > 0:
         n_chunks = math.ceil(size / mem_limit)
@@ -159,6 +159,7 @@ def _get_chunked_dataset(ds):
 def get_output(ds, output_type, output_dir, namer):
 
     fmt_method = get_format_writer(output_type)
+    LOGGER.info(f"fmt_method={fmt_method}, output_type={output_type}")
 
     if not fmt_method:
         LOGGER.info(f"Returning output as {type(ds)}")
@@ -168,9 +169,21 @@ def get_output(ds, output_type, output_dir, namer):
 
     chunked_ds = _get_chunked_dataset(ds)
 
-    writer = getattr(chunked_ds, fmt_method)
+    # writer = getattr(result_ds, fmt_method)
+
     output_path = os.path.join(output_dir, file_name)
 
-    writer(output_path)
+    # TODO: writing output works currently only in sync mode.
+    # https://github.com/roocs/rook/issues/55
+    # writer(output_path, compute=True)
+    if fmt_method == "to_netcdf":
+        # TODO: https://docs.dask.org/en/latest/scheduling.html
+        import dask
+
+        with dask.config.set(scheduler="synchronous"):
+            chunked_ds.to_netcdf(output_path, compute=False)
+            chunked_ds.compute()
+    else:
+        raise NotImplementedError("output format not supported")
     LOGGER.info(f"Wrote output file: {output_path}")
     return output_path

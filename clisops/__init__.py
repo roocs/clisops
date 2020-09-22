@@ -19,14 +19,10 @@ CONFIG = get_config(clisops)
 
 
 # Set the memory limit for each dask chunk
-def get_chunk_mem_limit():
-    chunk_memory_limit = CONFIG["clisops:read"].get("chunk_memory_limit", None)
-    return chunk_memory_limit
-
+chunk_memory_limit = CONFIG["clisops:read"].get("chunk_memory_limit", None)
 
 # if get_chunk_mem_limit():
 #     dask.config.set({"array.chunk-size": get_chunk_mem_limit()})
-
 
 for key, value in CONFIG["environment"].items():
     os.environ[key.upper()] = value
