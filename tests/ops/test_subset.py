@@ -4,7 +4,6 @@ from unittest.mock import Mock
 
 import pytest
 import xarray as xr
-from memory_profiler import memory_usage
 from roocs_utils.exceptions import InvalidParameterValue, MissingParameterValue
 from roocs_utils.parameter import area_parameter, time_parameter
 from roocs_utils.utils.common import parse_size
