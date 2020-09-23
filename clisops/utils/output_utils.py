@@ -73,6 +73,7 @@ def get_da(ds):
 
 
 def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None):
+
     """
     Take an xarray Dataset or DataArray, assume it can be split on the time axis
     into a sequence of slices. Optionally, take a start and end date to specify
@@ -131,8 +132,7 @@ def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None
     return slices
 
 
-def get_chunk_length(ds):
-    da = get_da(ds)
+def get_chunk_length(da):
     size = da.nbytes
     n_times = len(da.time.values)
     mem_limit = parse_size(chunk_memory_limit)
@@ -149,7 +149,7 @@ def get_chunk_length(ds):
 
 def _get_chunked_dataset(ds):
     da = get_da(ds)
-    chunk_length = get_chunk_length(ds)
+    chunk_length = get_chunk_length(da)
     chunked_ds = ds.chunk({"time": chunk_length})
     da.unify_chunks()
     return chunked_ds

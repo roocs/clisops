@@ -36,7 +36,7 @@ def test_get_time_slices_single_slice():
         assert resp[0] == slices
 
 
-def test_get_time_slices_mutiple_slices():
+def test_get_time_slices_multiple_slices():
 
     tas = _open(CMIP5_TAS)
 
