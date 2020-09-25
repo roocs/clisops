@@ -180,8 +180,8 @@ def get_output(ds, output_type, output_dir, namer):
         import dask
 
         with dask.config.set(scheduler="synchronous"):
-            chunked_ds.to_netcdf(output_path, compute=False)
-            chunked_ds.compute()
+            delayed_obj = chunked_ds.to_netcdf(output_path, compute=False)
+            delayed_obj.compute()
     else:
         raise NotImplementedError("output format not supported")
     LOGGER.info(f"Wrote output file: {output_path}")
