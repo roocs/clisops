@@ -1,5 +1,6 @@
-import os
-import tempfile
+from datetime import datetime as dt
+from pathlib import Path
+from typing import List, Optional, Tuple, Union
 
 import xarray as xr
 from roocs_utils.parameter import parameterise
@@ -30,17 +31,39 @@ def _subset(ds, args):
 
 
 def subset(
-    ds,
-    time=None,
-    area=None,
-    level=None,
-    output_dir=None,
+    ds: Union[xr.Dataset, str, Path],
+    *,
+    time: Optional[Tuple[dt, dt]] = None,
+    area: Optional[
+        Tuple[
+            Union[int, float], Union[int, float], Union[int, float], Union[int, float]
+        ]
+    ] = None,
+    level: Optional[int] = None,
+    output_dir: Union[str, Path],
     output_type="netcdf",
     split_method="time:auto",
     file_namer="standard",
-):
+) -> List[Union[str, Path]]:
     """
-    Example:
+
+    Parameters
+    ----------
+    ds: xr.Dataset
+    time: Tuple[dt, dt], optional
+    area: Tuple[Union[int, float], Union[int, float],Union[int, float],Union[int, float]], optional
+    level: int, optional
+    output_dir: Union[str, Path]
+    output_type: {"netcdf", "nc", "zarr", "xarray"}
+    split_method: {"time:auto"}
+    file_namer: {"standard"}
+
+    Returns
+    -------
+    List[Union[str, Path]]
+
+    Examples
+    --------
         ds: Xarray Dataset
         time: ("1999-01-01T00:00:00", "2100-12-30T00:00:00")
         area: (-5.,49.,10.,65)
@@ -50,36 +73,28 @@ def subset(
         split_method: "time:auto"
         file_namer: "standard"
 
-    :param ds:
-    :param time:
-    :param area:
-    :param level:
-    :param output_dir:
-    :param output_type:
-    :param split_method:
-    :param file_namer:
-    :return:
     """
-
     # Convert all inputs to Xarray Datasets
-    if isinstance(ds, str):
-        ds = xr.open_mfdataset(ds, use_cftime=True, combine="by_coords")
+    if isinstance(ds, str) or isinstance(ds, Path):
+        dataset = xr.open_mfdataset(ds, use_cftime=True, combine="by_coords")
+    else:
+        dataset = ds
 
     LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
-    args = utils.map_params(ds, time, area, level)
+    args = utils.map_params(dataset, time, area, level)
 
     time_slices = get_time_slices(
-        ds, split_method, start=args["start_date"], end=args["end_date"]
+        dataset, split_method, start=args["start_date"], end=args["end_date"]
     )
-    outputs = []
 
+    outputs = list()
     namer = get_file_namer(file_namer)()
     for tslice in time_slices:
         # update args with tslice start and end
         args["start_date"], args["end_date"] = tslice[0], tslice[1]
 
         LOGGER.info(f"Processing subset for times: {tslice}")
-        result_ds = _subset(ds, args)
+        result_ds = _subset(dataset, args)
 
         output = get_output(result_ds, output_type, output_dir, namer)
 

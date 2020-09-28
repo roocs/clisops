@@ -1,6 +1,7 @@
 import math
 import os
-import sys
+from datetime import datetime as dt
+from typing import List, Tuple, Union
 
 import pandas as pd
 import xarray as xr
@@ -17,6 +18,8 @@ SUPPORTED_FORMATS = {
     "zarr": {"method": "to_zarr", "extension": "zarr"},
     "xarray": {"method": None, "extension": None},
 }
+
+SUPPORTED_SPLIT_METHODS = ["time:auto"]
 
 
 def check_format(fmt):
@@ -36,7 +39,7 @@ def get_format_extension(fmt):
     return SUPPORTED_FORMATS[fmt]["extension"]
 
 
-def _format_time(tm, fmt="%Y-%m-%d"):
+def _format_time(tm: Union[str, dt], fmt="%Y-%m-%d"):
     # Convert to datetime if time is a numpy datetime
     if not hasattr(tm, "strftime"):
         tm = pd.to_datetime(str(tm))
@@ -72,9 +75,16 @@ def get_da(ds):
     return da
 
 
-def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None):
+def get_time_slices(
+    ds: Union[xr.Dataset, xr.DataArray],
+    split_method,
+    start=None,
+    end=None,
+    file_size_limit: str = None,
+) -> List[Tuple[str, str]]:
 
     """
+
     Take an xarray Dataset or DataArray, assume it can be split on the time axis
     into a sequence of slices. Optionally, take a start and end date to specify
     a sub-slice of the main time axis.
@@ -83,17 +93,24 @@ def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None
     ("YYYY-MM-DD", "YYYY-MM-DD") slices so that the output files do
     not (significantly) exceed the file size limit.
 
-    :param ds: xarray Dataset
-    :file_size_limit: a string specifying "<number><units>"
-    :param start:
-    :param end:
-    :param file_size_limit:
-    :param split_method:
-    :return: list of tuples of date strings.
+    Parameters
+    ----------
+    ds: Union[xr.Dataset, xr.DataArray]
+    split_method
+    start
+    end
+    file_size_limit: str
+      a string specifying "<number><units>".
+
+    Returns
+    -------
+    List[Tuple[str, str]]
     """
 
-    if split_method != "time:auto":
-        raise NotImplementedError(f"The split method {split_method} is not implemeted.")
+    if split_method not in SUPPORTED_SPLIT_METHODS:
+        raise NotImplementedError(
+            f"The split method {split_method} is not implemented."
+        )
 
     # Use default file size limit if not provided
     if not file_size_limit:
@@ -105,7 +122,7 @@ def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None
     n_times = len(times)
 
     if n_times == 0:
-        raise Exception("Zero time steps found between {start} and {end}.")
+        raise Exception(f"Zero time steps found between {start} and {end}.")
 
     n_slices = da.nbytes / file_size_limit
     slice_length = int(n_times // n_slices)

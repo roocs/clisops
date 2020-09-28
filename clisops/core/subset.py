@@ -14,6 +14,7 @@ from pyproj.crs import CRS
 from shapely import vectorized
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import cascaded_union, split
+from xarray.core.utils import get_temp_dimname
 
 __all__ = [
     "create_mask",
@@ -197,7 +198,7 @@ def convert_lat_lon_to_da(func):
             except TypeError:  # They have no len : not iterables
                 lat = [lat]
                 lon = [lon]
-            ptdim = xarray.core.utils.get_temp_dimname(args[0].dims, "site")
+            ptdim = get_temp_dimname(args[0].dims, "site")
             if ptdim != "site" and len(lat) > 1:
                 warnings.warn(
                     f"Dimension 'site' already on input, output will use {ptdim} instead."
@@ -328,7 +329,7 @@ def create_mask_vectorize(
     --------
     >>> import geopandas as gpd  # doctest: +SKIP
     >>> import xarray as xr  # doctest: +SKIP
-    >>> from xclim.subset import create_mask_vectorize  # doctest: +SKIP
+    >>> from clisops.core.subset import create_mask_vectorize  # doctest: +SKIP
     >>> ds = xr.open_dataset(path_to_tasmin_file)  # doctest: +SKIP
     >>> polys = gpd.read_file(path_to_multi_shape_file)  # doctest: +SKIP
     ...
@@ -411,7 +412,7 @@ def create_mask(
     --------
     >>> import xarray as xr  # doctest: +SKIP
     >>> import geopandas as gpd  # doctest: +SKIP
-    >>> from xclim.subset import create_mask  # doctest: +SKIP
+    >>> from clisops.core.subset import create_mask  # doctest: +SKIP
     >>> ds = xr.open_dataset(path_to_tasmin_file)  # doctest: +SKIP
     >>> polys = gpd.read_file(path_to_multi_shape_file)  # doctest: +SKIP
     ...
@@ -520,7 +521,7 @@ def subset_shape(
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
-    >>> from xclim.subset import subset_shape  # doctest: +SKIP
+    >>> from clisops.core.subset import subset_shape  # doctest: +SKIP
     >>> pr = xr.open_dataset(path_to_pr_file).pr  # doctest: +SKIP
     ...
     # Subset data array by shape
@@ -687,7 +688,7 @@ def subset_bbox(
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
-    >>> from xclim.subset import subset_bbox  # doctest: +SKIP
+    >>> from clisops.core.subset import subset_bbox  # doctest: +SKIP
     >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
     ...
     # Subset lat lon
@@ -897,7 +898,7 @@ def subset_gridpoint(
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
-    >>> from xclim.subset import subset_gridpoint  # doctest: +SKIP
+    >>> from clisops.core.subset import subset_gridpoint  # doctest: +SKIP
     >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
     ...
     # Subset lat lon point
@@ -995,7 +996,7 @@ def subset_time(
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
-    >>> from xclim.subset import subset_time  # doctest: +SKIP
+    >>> from clisops.core.subset import subset_time  # doctest: +SKIP
     >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
     ...
     # Subset complete years
@@ -1047,7 +1048,7 @@ def distance(
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
-    >>> from xclim.subset import distance  # doctest: +SKIP
+    >>> from clisops.core.subset import distance  # doctest: +SKIP
     ...
     To get the indices from closest point, use:
     >>> da = xr.open_dataset(path_to_pr_file).pr  # doctest: +SKIP
