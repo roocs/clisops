@@ -40,7 +40,7 @@ def subset(
         ]
     ] = None,
     level: Optional[int] = None,
-    output_dir: Union[str, Path],
+    output_dir: Optional[Union[str, Path]] = None,
     output_type="netcdf",
     split_method="time:auto",
     file_namer="standard",
@@ -53,7 +53,7 @@ def subset(
     time: Tuple[dt, dt], optional
     area: Tuple[Union[int, float], Union[int, float],Union[int, float],Union[int, float]], optional
     level: int, optional
-    output_dir: Union[str, Path]
+    output_dir: Union[str, Path], optional
     output_type: {"netcdf", "nc", "zarr", "xarray"}
     split_method: {"time:auto"}
     file_namer: {"standard"}
