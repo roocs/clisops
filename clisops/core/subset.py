@@ -15,6 +15,8 @@ from shapely import vectorized
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import cascaded_union, split
 
+from roocs_utils.utils.time_utils import to_isoformat
+
 __all__ = [
     "create_mask",
     "create_mask_vectorize",
@@ -24,13 +26,6 @@ __all__ = [
     "subset_shape",
     "subset_time",
 ]
-
-#TODO: put this in roocs-utils, and refactor dachar to use it
-def _format_time(tm):
-    if type(tm) == np.datetime64:
-        return str(tm).split(".")[0]
-    else:
-        return tm.isoformat()
 
 
 def check_start_end_dates(func):
@@ -56,8 +51,8 @@ def check_start_end_dates(func):
             kwargs["end_date"] = str(kwargs["end_date"])
 
         try:
-            sel_times = da.time.sel(time=kwargs["start_date"])
-            if len(sel_times) == 0:
+            sel_time = da.time.sel(time=kwargs["start_date"])
+            if sel_time.size == 0:
                 raise ValueError()
         except KeyError:
             warnings.warn(
@@ -69,15 +64,16 @@ def check_start_end_dates(func):
             kwargs["start_date"] = da.time.min().dt.strftime("%Y").values
         except ValueError:
             warnings.warn(
-                '"start_date" has been nudged to nearest valid time step in xarray object.'
+                '"start_date" has been nudged to nearest valid time step in xarray object.',
                 UserWarning,
                 stacklevel=2,
             )
-            kwargs["start_date"] = da.time.min().dt.strftime("%Y").values
+            nudged = da.time.sel(time=slice(kwargs["start_date"], None)).values[0]
+            kwargs["start_date"] = to_isoformat(nudged)
 
         try:
-            sel_times = da.time.sel(time=kwargs["end_date"])
-            if len(sel_times) == 0:
+            sel_time = da.time.sel(time=kwargs["end_date"])
+            if sel_time.size == 0:
                 raise ValueError()
         except KeyError:
             warnings.warn(
@@ -89,11 +85,12 @@ def check_start_end_dates(func):
             kwargs["end_date"] = da.time.max().dt.strftime("%Y").values
         except ValueError:
             warnings.warn(
-                '"end_date" has been nudged to nearest valid time step in xarray object.'
+                '"end_date" has been nudged to nearest valid time step in xarray object.',
                 UserWarning,
                 stacklevel=2,
             )
-            kwargs["end_date"] = da.time.min().dt.strftime("%Y").values
+            nudged = da.time.sel(time=slice(None, kwargs["end_date"])).values[-1] 
+            kwargs["end_date"] = to_isoformat(nudged)
 
         if (
             da.time.sel(time=kwargs["start_date"]).min()
