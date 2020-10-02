@@ -25,6 +25,13 @@ __all__ = [
     "subset_time",
 ]
 
+#TODO: put this in roocs-utils, and refactor dachar to use it
+def _format_time(tm):
+    if type(tm) == np.datetime64:
+        return str(tm).split(".")[0]
+    else:
+        return tm.isoformat()
+
 
 def check_start_end_dates(func):
     @wraps(func)
