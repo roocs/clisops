@@ -4,6 +4,8 @@ import sys
 
 import pandas as pd
 import xarray as xr
+import dask
+
 from roocs_utils.utils.common import parse_size
 from roocs_utils.xarray_utils import xarray_utils as xu
 
@@ -165,24 +167,19 @@ def get_output(ds, output_type, output_dir, namer):
         return ds
 
     file_name = namer.get_file_name(ds, fmt=output_type)
-
     chunked_ds = _get_chunked_dataset(ds)
 
-    # writer = getattr(result_ds, fmt_method)
-
+    if not output_dir: output_dir = '.'
     output_path = os.path.join(output_dir, file_name)
 
-    # TODO: writing output works currently only in sync mode.
-    # https://github.com/roocs/rook/issues/55
-    # writer(output_path, compute=True)
-    if fmt_method == "to_netcdf":
-        # TODO: https://docs.dask.org/en/latest/scheduling.html
-        import dask
+    # TODO: writing output works currently only in sync mode, see:
+    #  - https://github.com/roocs/rook/issues/55
+    #  - https://docs.dask.org/en/latest/scheduling.html
+    with dask.config.set(scheduler="synchronous"):
 
-        with dask.config.set(scheduler="synchronous"):
-            delayed_obj = chunked_ds.to_netcdf(output_path, compute=False)
-            delayed_obj.compute()
-    else:
-        raise NotImplementedError("output format not supported")
+        writer = getattr(chunked_ds, fmt_method)
+        delayed_obj = writer(output_path, compute=False)
+        delayed_obj.compute()
+
     LOGGER.info(f"Wrote output file: {output_path}")
     return output_path

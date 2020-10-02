@@ -68,21 +68,19 @@ def subset(
     LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
     args = utils.map_params(ds, time, area, level)
 
-    time_slices = get_time_slices(
-        ds, split_method, start=args["start_date"], end=args["end_date"]
-    )
+    subset_ds = _subset(ds, args)
+
     outputs = []
-
     namer = get_file_namer(file_namer)()
-    for tslice in time_slices:
-        # update args with tslice start and end
-        args["start_date"], args["end_date"] = tslice[0], tslice[1]
 
+    time_slices = get_time_slices(subset_ds, split_method) 
+
+    for tslice in time_slices:
+
+        result_ds = subset_ds.sel(time=slice(tslice[0], tslice[1]))
         LOGGER.info(f"Processing subset for times: {tslice}")
-        result_ds = _subset(ds, args)
 
         output = get_output(result_ds, output_type, output_dir, namer)
-
         outputs.append(output)
 
     return outputs
