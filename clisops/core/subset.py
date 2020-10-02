@@ -49,7 +49,9 @@ def check_start_end_dates(func):
             kwargs["end_date"] = str(kwargs["end_date"])
 
         try:
-            da.time.sel(time=kwargs["start_date"])
+            sel_times = da.time.sel(time=kwargs["start_date"])
+            if len(sel_times) == 0:
+                raise ValueError()
         except KeyError:
             warnings.warn(
                 '"start_date" not found within input date time range. Defaulting to minimum time step in '
@@ -58,8 +60,18 @@ def check_start_end_dates(func):
                 stacklevel=2,
             )
             kwargs["start_date"] = da.time.min().dt.strftime("%Y").values
+        except ValueError:
+            warnings.warn(
+                '"start_date" has been nudged to nearest valid time step in xarray object.'
+                UserWarning,
+                stacklevel=2,
+            )
+            kwargs["start_date"] = da.time.min().dt.strftime("%Y").values
+
         try:
-            da.time.sel(time=kwargs["end_date"])
+            sel_times = da.time.sel(time=kwargs["end_date"])
+            if len(sel_times) == 0:
+                raise ValueError()
         except KeyError:
             warnings.warn(
                 '"end_date" not found within input date time range. Defaulting to maximum time step in '
@@ -68,6 +80,14 @@ def check_start_end_dates(func):
                 stacklevel=2,
             )
             kwargs["end_date"] = da.time.max().dt.strftime("%Y").values
+        except ValueError:
+            warnings.warn(
+                '"end_date" has been nudged to nearest valid time step in xarray object.'
+                UserWarning,
+                stacklevel=2,
+            )
+            kwargs["end_date"] = da.time.min().dt.strftime("%Y").values
+
         if (
             da.time.sel(time=kwargs["start_date"]).min()
             > da.time.sel(time=kwargs["end_date"]).max()
