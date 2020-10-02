@@ -101,7 +101,7 @@ def test_subset_area_simple_file_name(tmpdir):
     """ Tests clisops subset function with a area subset (simple file name)."""
     result = subset(
         ds=CMIP5_TAS_FILE,
-        area=(0.0, 49.0, 10.0, 65.0),
+        area=(0.0, 10.0, 10.0, 65.0),
         output_dir=tmpdir,
         output_type="nc",
         file_namer="simple",
@@ -113,7 +113,7 @@ def test_subset_area_project_file_name(tmpdir):
     """ Tests clisops subset function with a area subset (derived file name)."""
     result = subset(
         ds=CMIP5_TAS_FILE,
-        area=(0.0, 49.0, 10.0, 65.0),
+        area=(0.0, 10.0, 10.0, 65.0),
         output_dir=tmpdir,
         output_type="nc",
         file_namer="standard",
@@ -149,7 +149,7 @@ def test_subset_with_time_and_area(tmpdir):
     result = subset(
         ds=CMIP5_TAS_FILE,
         time=("2019-01-01T00:00:00", "2020-12-30T00:00:00"),
-        area=(0.0, 49.0, 10.0, 65.0),
+        area=(0.0, 0.0, 10.0, 65.0),
         output_dir=tmpdir,
         output_type="nc",
         file_namer="simple",
@@ -162,7 +162,7 @@ def test_subset_with_multiple_files_tas(tmpdir):
     result = subset(
         ds=CMIP5_TAS,
         time=("2001-01-01T00:00:00", "2020-12-30T00:00:00"),
-        area=(0.0, 49.0, 10.0, 65.0),
+        area=(0.0, 0.0, 10.0, 65.0),
         output_dir=tmpdir,
         output_type="nc",
         file_namer="simple",
@@ -222,10 +222,11 @@ def test_time_slices_in_subset_tas():
     config_max_file_size = CONFIG["clisops:write"]["file_size_limit"]
     temp_max_file_size = "10KB"
     CONFIG["clisops:write"]["file_size_limit"] = temp_max_file_size
+
     outputs = subset(
         ds=CMIP5_TAS,
         time=(start_time, end_time),
-        area=(0.0, 49.0, 10.0, 65.0),
+        area=(0.0, 5.0, 50.0, 90.0),
         output_type="xarray",
         file_namer="simple",
     )
@@ -256,7 +257,7 @@ def test_time_slices_in_subset_rh():
     outputs = subset(
         ds=CMIP5_RH,
         time=(start_time, end_time),
-        area=(0.0, 49.0, 10.0, 65.0),
+        area=(0.0, 5.0, 50.0, 90.0),
         output_type="xarray",
         file_namer="simple",
     )
