@@ -11,11 +11,10 @@ import pandas as pd
 import xarray
 from pyproj import Geod
 from pyproj.crs import CRS
+from roocs_utils.utils.time_utils import to_isoformat
 from shapely import vectorized
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import cascaded_union, split
-
-from roocs_utils.utils.time_utils import to_isoformat
 
 __all__ = [
     "create_mask",

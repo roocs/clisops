@@ -2,10 +2,9 @@ import math
 import os
 import sys
 
+import dask
 import pandas as pd
 import xarray as xr
-import dask
-
 from roocs_utils.utils.common import parse_size
 from roocs_utils.xarray_utils import xarray_utils as xu
 
@@ -170,7 +169,7 @@ def get_output(ds, output_type, output_dir, namer):
     chunked_ds = _get_chunked_dataset(ds)
 
     if not output_dir:
-        output_dir = '.'
+        output_dir = "."
     output_path = os.path.join(output_dir, file_name)
 
     # TODO: writing output works currently only in sync mode, see:

@@ -74,14 +74,12 @@ class TestSubsetTime:
 
         with pytest.warns(None) as record:
             subset.subset_time(
-                da,
-                start_date='2064-01-01T00:00:00',
-                end_date='2065-02-01T03:12:01'
+                da, start_date="2064-01-01T00:00:00", end_date="2065-02-01T03:12:01"
             )
-        assert ([str(q.message) for q in record] ==
-                ['"start_date" has been nudged to nearest valid time step in xarray object.',
-                    '"end_date" has been nudged to nearest valid time step in xarray object.']
-                )
+        assert [str(q.message) for q in record] == [
+            '"start_date" has been nudged to nearest valid time step in xarray object.',
+            '"end_date" has been nudged to nearest valid time step in xarray object.',
+        ]
 
     def test_time_start_only(self):
         da = xr.open_dataset(self.nc_poslons).tas
