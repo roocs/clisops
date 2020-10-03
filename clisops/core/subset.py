@@ -11,6 +11,7 @@ import pandas as pd
 import xarray
 from pyproj import Geod
 from pyproj.crs import CRS
+from roocs_utils.utils.time_utils import to_isoformat
 from shapely import vectorized
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import cascaded_union, split
@@ -49,7 +50,9 @@ def check_start_end_dates(func):
             kwargs["end_date"] = str(kwargs["end_date"])
 
         try:
-            da.time.sel(time=kwargs["start_date"])
+            sel_time = da.time.sel(time=kwargs["start_date"])
+            if sel_time.size == 0:
+                raise ValueError()
         except KeyError:
             warnings.warn(
                 '"start_date" not found within input date time range. Defaulting to minimum time step in '
@@ -58,8 +61,19 @@ def check_start_end_dates(func):
                 stacklevel=2,
             )
             kwargs["start_date"] = da.time.min().dt.strftime("%Y").values
+        except ValueError:
+            warnings.warn(
+                '"start_date" has been nudged to nearest valid time step in xarray object.',
+                UserWarning,
+                stacklevel=2,
+            )
+            nudged = da.time.sel(time=slice(kwargs["start_date"], None)).values[0]
+            kwargs["start_date"] = to_isoformat(nudged)
+
         try:
-            da.time.sel(time=kwargs["end_date"])
+            sel_time = da.time.sel(time=kwargs["end_date"])
+            if sel_time.size == 0:
+                raise ValueError()
         except KeyError:
             warnings.warn(
                 '"end_date" not found within input date time range. Defaulting to maximum time step in '
@@ -68,6 +82,15 @@ def check_start_end_dates(func):
                 stacklevel=2,
             )
             kwargs["end_date"] = da.time.max().dt.strftime("%Y").values
+        except ValueError:
+            warnings.warn(
+                '"end_date" has been nudged to nearest valid time step in xarray object.',
+                UserWarning,
+                stacklevel=2,
+            )
+            nudged = da.time.sel(time=slice(None, kwargs["end_date"])).values[-1]
+            kwargs["end_date"] = to_isoformat(nudged)
+
         if (
             da.time.sel(time=kwargs["start_date"]).min()
             > da.time.sel(time=kwargs["end_date"]).max()
