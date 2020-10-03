@@ -169,7 +169,8 @@ def get_output(ds, output_type, output_dir, namer):
     file_name = namer.get_file_name(ds, fmt=output_type)
     chunked_ds = _get_chunked_dataset(ds)
 
-    if not output_dir: output_dir = '.'
+    if not output_dir:
+        output_dir = '.'
     output_path = os.path.join(output_dir, file_name)
 
     # TODO: writing output works currently only in sync mode, see:

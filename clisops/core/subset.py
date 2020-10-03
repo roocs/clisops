@@ -89,7 +89,7 @@ def check_start_end_dates(func):
                 UserWarning,
                 stacklevel=2,
             )
-            nudged = da.time.sel(time=slice(None, kwargs["end_date"])).values[-1] 
+            nudged = da.time.sel(time=slice(None, kwargs["end_date"])).values[-1]
             kwargs["end_date"] = to_isoformat(nudged)
 
         if (

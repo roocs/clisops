@@ -73,7 +73,7 @@ def subset(
     outputs = []
     namer = get_file_namer(file_namer)()
 
-    time_slices = get_time_slices(subset_ds, split_method) 
+    time_slices = get_time_slices(subset_ds, split_method)
 
     for tslice in time_slices:
 
