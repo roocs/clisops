@@ -1,5 +1,6 @@
 """Subset module."""
 import logging
+import numbers
 import warnings
 from functools import wraps
 from pathlib import Path
@@ -12,6 +13,7 @@ import xarray
 from pyproj import Geod
 from pyproj.crs import CRS
 from roocs_utils.utils.time_utils import to_isoformat
+from roocs_utils.xarray_utils import xarray_utils as xu
 from shapely import vectorized
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import cascaded_union, split
@@ -24,6 +26,7 @@ __all__ = [
     "subset_gridpoint",
     "subset_shape",
     "subset_time",
+    "subset_level",
 ]
 
 
@@ -98,6 +101,87 @@ def check_start_end_dates(func):
             raise ValueError(
                 f'Start date ("{kwargs["start_date"]}") is after end date ("{kwargs["end_date"]}").'
             )
+
+        return func(*args, **kwargs)
+
+    return func_checker
+
+
+def check_start_end_levels(func):
+    @wraps(func)
+    def func_checker(*args, **kwargs):
+        """Verify that first and last levels are valid in a level subsetting function."""
+        da = args[0]
+
+        level = xu.get_coord_by_type(da, "level")
+
+        if "first_level" not in kwargs or kwargs["first_level"] is None:
+            # use string for first level only - .sel() will include all levels
+            kwargs["first_level"] = float(level.min())
+        if "last_level" not in kwargs or kwargs["last_level"] is None:
+            # use string for last level only - .sel() will include all levels
+            kwargs["last_level"] = float(level.max())
+
+        # Check inputs are numbers, if not, try to convert to floats
+        for key in ("first_level", "last_level"):
+            if not isinstance(kwargs[key], numbers.Number):
+                try:
+                    kwargs[key] = float(kwargs[key])
+                    warnings.warn(
+                        f'"{key}" should be a number, it has been converted to a float.',
+                        UserWarning,
+                        stacklevel=2,
+                    )
+                except Exception:
+                    raise ValueError(
+                        f'"{key}" could not parsed. It must be provided as a number'
+                    )
+
+        try:
+            sel_level = level.sel(**{level.name: kwargs["first_level"]})
+            if sel_level.size == 0:
+                raise ValueError()
+        except KeyError:
+            warnings.warn(
+                '"first_level" not found within input level range. Defaulting to first level in '
+                "xarray object.",
+                UserWarning,
+                stacklevel=2,
+            )
+            kwargs["first_level"] = level.min()
+        except ValueError:
+            warnings.warn(
+                '"first_level" has been nudged to nearest valid level in xarray object.',
+                UserWarning,
+                stacklevel=2,
+            )
+            nudged = level.sel(
+                **{level.name: slice(kwargs["first_level"], None)}
+            ).values[0]
+            kwargs["first_level"] = nudged
+
+        try:
+            sel_level = level.sel(**{level.name: kwargs["last_level"]})
+            if sel_level.size == 0:
+                raise ValueError()
+        except KeyError:
+            warnings.warn(
+                '"last_level" not found within input level range. Defaulting to last level in '
+                "xarray object.",
+                UserWarning,
+                stacklevel=2,
+            )
+            kwargs["last_level"] = level.max()
+        except ValueError:
+            warnings.warn(
+                '"last_level" has been nudged to nearest valid level in xarray object.',
+                UserWarning,
+                stacklevel=2,
+            )
+            nudged = level.sel(
+                **{level.name: slice(kwargs["last_level"], None)}
+            ).values[-1]
+            kwargs["last_level"] = nudged
 
         return func(*args, **kwargs)
 
@@ -506,6 +590,8 @@ def subset_shape(
     buffer: Optional[Union[int, float]] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    first_level: Optional[Union[float, int]] = None,
+    last_level: Optional[Union[float, int]] = None,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
     """Subset a DataArray or Dataset spatially (and temporally) using a vector shape and date selection.
 
@@ -534,6 +620,14 @@ def subset_shape(
       End date of the subset.
       Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
       Defaults to last day of input data-array.
+    first_level : Optional[Union[int, float]]
+      First level of the subset.
+      Can be either an integer or float.
+      Defaults to first level of input data-array.
+    last_level : Optional[Union[int, float]]
+      Last level of the subset.
+      Can be either an integer or float.
+      Defaults to last level of input data-array.
 
     Returns
     -------
@@ -595,6 +689,9 @@ def subset_shape(
 
     if start_date or end_date:
         ds_copy = subset_time(ds_copy, start_date=start_date, end_date=end_date)
+
+    if first_level or last_level:
+        ds_copy = subset_level(ds_copy, first_level=first_level, last_level=last_level)
 
     # Determine whether CRS types are the same between shape and raster
     if shape_crs is not None:
@@ -676,6 +773,8 @@ def subset_bbox(
     lat_bnds: Union[np.array, Tuple[Optional[float], Optional[float]]] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    first_level: Optional[Union[float, int]] = None,
+    last_level: Optional[Union[float, int]] = None,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
     """Subset a DataArray or Dataset spatially (and temporally) using a lat lon bounding box and date selection.
 
@@ -701,6 +800,14 @@ def subset_bbox(
       End date of the subset.
       Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
       Defaults to last day of input data-array.
+    first_level : Optional[Union[int, float]]
+      First level of the subset.
+      Can be either an integer or float.
+      Defaults to first level of input data-array.
+    last_level : Optional[Union[int, float]]
+      Last level of the subset.
+      Can be either an integer or float.
+      Defaults to last level of input data-array.
 
     Returns
     -------
@@ -785,6 +892,9 @@ def subset_bbox(
 
     if start_date or end_date:
         da = subset_time(da, start_date=start_date, end_date=end_date)
+
+    if first_level or last_level:
+        da = subset_level(da, first_level=first_level, last_level=last_level)
 
     return da
 
@@ -882,6 +992,8 @@ def subset_gridpoint(
     lat: Optional[Union[float, Sequence[float], xarray.DataArray]] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    first_level: Optional[Union[float, int]] = None,
+    last_level: Optional[Union[float, int]] = None,
     tolerance: Optional[float] = None,
     add_distance: bool = False,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
@@ -908,6 +1020,14 @@ def subset_gridpoint(
       End date of the subset.
       Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
       Defaults to last day of input data-array.
+    first_level : Optional[Union[int, float]]
+      First level of the subset.
+      Can be either an integer or float.
+      Defaults to first level of input data-array.
+    last_level : Optional[Union[int, float]]
+      Last level of the subset.
+      Can be either an integer or float.
+      Defaults to last level of input data-array.
     tolerance : Optional[float]
       Masks values if the distance to the nearest gridpoint is larger than tolerance in meters.
     add_distance: bool
@@ -985,6 +1105,9 @@ def subset_gridpoint(
     if start_date or end_date:
         da = subset_time(da, start_date=start_date, end_date=end_date)
 
+    if first_level or last_level:
+        da = subset_level(da, first_level=first_level, last_level=last_level)
+
     return da
 
 
@@ -1042,6 +1165,57 @@ def subset_time(
     TODO add notes about different calendar types. Avoid "%Y-%m-31". If you want complete month use only "%Y-%m".
     """
     return da.sel(time=slice(start_date, end_date))
+
+
+@check_start_end_levels
+def subset_level(
+    da: Union[xarray.DataArray, xarray.Dataset],
+    first_level: Optional[Union[int, float]] = None,
+    last_level: Optional[Union[int, float]] = None,
+) -> Union[xarray.DataArray, xarray.Dataset]:
+    """Subset input DataArray or Dataset based on first and last levels.
+    Return a subset of a DataArray or Dataset for levels falling within the provided bounds.
+
+    Parameters
+    ----------
+    da : Union[xarray.DataArray, xarray.Dataset]
+      Input data.
+    first_level : Optional[Union[int, float]]
+      First level of the subset.
+      Can be either an integer or float.
+      Defaults to first level of input data-array.
+    last_level : Optional[Union[int, float]]
+      Last level of the subset.
+      Can be either an integer or float.
+      Defaults to last level of input data-array.
+
+    Returns
+    -------
+    Union[xarray.DataArray, xarray.Dataset]
+      Subsetted xarray.DataArray or xarray.Dataset
+
+    Examples
+    --------
+    >>> import xarray as xr  # doctest: +SKIP
+    >>> from xclim.subset import subset_time  # doctest: +SKIP
+    >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
+    ...
+    # Subset complete levels
+    >>> prSub = subset_level(ds.pr,first_level=0,last_level=30)  # doctest: +SKIP
+    ...
+    # Subset single level
+    >>> prSub = subset_level(ds.pr,first_level=1000,last_level=1000)  # doctest: +SKIP
+    ...
+    # Subset multiple variables in a single dataset
+    >>> ds = xr.open_mfdataset([path_to_tasmax_file, path_to_tasmin_file])  # doctest: +SKIP
+    >>> dsSub = subset_time(ds,first_level=1000.0,last_level=850.0)  # doctest: +SKIP
+
+    Notes
+    -----
+    TBA
+    """
+    level = xu.get_coord_by_type(da, "level")
+    return da.sel(**{level.name: slice(first_level, last_level)})
 
 
 @convert_lat_lon_to_da

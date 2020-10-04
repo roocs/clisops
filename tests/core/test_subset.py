@@ -819,3 +819,154 @@ class TestDistance:
         k = d.argmin()
         i, j = np.unravel_index(k, da.data.shape)
         assert d[i, j] == d.min()
+
+
+class TestSubsetLevel:
+    nc_plev = os.path.join(
+        TESTS_DATA,
+        "cmip6",
+        "o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
+    )
+    plevs = [
+        100000,
+        92500,
+        85000,
+        70000,
+        60000,
+        50000,
+        40000,
+        30000,
+        25000,
+        20000,
+        15000,
+        10000,
+        7000,
+        5000,
+        3000,
+        2000,
+        1000,
+        500,
+        100,
+    ]
+
+    def test_level_simple(self):
+        da = xr.open_dataset(self.nc_plev).o3
+        lev_st = 100000.0
+        lev_ed = 100.0
+
+        out = subset.subset_level(da, first_level=lev_st, last_level=lev_ed)
+        out1 = subset.subset_level(da, first_level=f"{lev_st}", last_level=f"{lev_ed}")
+        np.testing.assert_array_equal(out, out1)
+        np.testing.assert_array_equal(out.plev.min(), lev_ed)
+        np.testing.assert_array_equal(out.plev.max(), lev_st)
+
+    def test_time_dates_outofbounds(self):
+        da = xr.open_dataset(self.nc_poslons).tas
+        yr_st = "1776"
+        yr_ed = "2077"
+
+        with pytest.warns(None) as record:
+            out = subset.subset_time(
+                da, start_date=f"{yr_st}-01", end_date=f"{yr_ed}-01"
+            )
+        np.testing.assert_array_equal(out.time.dt.year.min(), da.time.dt.year.min())
+        np.testing.assert_array_equal(out.time.dt.year.max(), da.time.dt.year.max())
+
+        assert (
+            '"start_date" not found within input date time range. Defaulting to minimum time step in xarray object.'
+            in [str(q.message) for q in record]
+        )
+        assert (
+            '"end_date" not found within input date time range. Defaulting to maximum time step in xarray object.'
+            in [str(q.message) for q in record]
+        )
+
+    def test_warnings(self):
+        da = xr.open_dataset(self.nc_poslons).tas
+
+        with pytest.raises(ValueError) as record:
+            subset.subset_time(da, start_date="2059", end_date="2050")
+
+        with pytest.raises(TypeError):
+            subset.subset_time(da, start_yr=2050, end_yr=2059)
+
+        with pytest.warns(None) as record:
+            subset.subset_time(
+                da,
+                start_date=2050,
+                end_date=2055,
+            )
+        assert (
+            'start_date and end_date require dates in (type: str) using formats of "%Y", "%Y-%m" or "%Y-%m-%d".'
+            in [str(q.message) for q in record]
+        )
+
+        with pytest.warns(None) as record:
+            subset.subset_time(
+                da, start_date="2064-01-01T00:00:00", end_date="2065-02-01T03:12:01"
+            )
+        assert [str(q.message) for q in record] == [
+            '"start_date" has been nudged to nearest valid time step in xarray object.',
+            '"end_date" has been nudged to nearest valid time step in xarray object.',
+        ]
+
+    def test_time_start_only(self):
+        da = xr.open_dataset(self.nc_poslons).tas
+        yr_st = "2050"
+
+        # start date only
+        with pytest.warns(None):
+            out = subset.subset_time(da, start_date=f"{yr_st}-01")
+        np.testing.assert_array_equal(out.time.dt.year.min(), int(yr_st))
+        np.testing.assert_array_equal(out.time.dt.year.max(), da.time.dt.year.max())
+
+        with pytest.warns(None):
+            out = subset.subset_time(da, start_date=f"{yr_st}-07")
+        np.testing.assert_array_equal(out.time.dt.year.min(), int(yr_st))
+        np.testing.assert_array_equal(out.time.min().dt.month, 7)
+        np.testing.assert_array_equal(out.time.dt.year.max(), da.time.dt.year.max())
+        np.testing.assert_array_equal(out.time.max(), da.time.max())
+
+        with pytest.warns(None):
+            out = subset.subset_time(da, start_date=f"{yr_st}-07-15")
+        np.testing.assert_array_equal(out.time.dt.year.min(), int(yr_st))
+        np.testing.assert_array_equal(out.time.min().dt.month, 7)
+        np.testing.assert_array_equal(out.time.min().dt.day, 15)
+        np.testing.assert_array_equal(out.time.dt.year.max(), da.time.dt.year.max())
+        np.testing.assert_array_equal(out.time.max(), da.time.max())
+
+    def test_time_end_only(self):
+        da = xr.open_dataset(self.nc_poslons).tas
+        yr_ed = "2059"
+
+        # end date only
+        with pytest.warns(None):
+            out = subset.subset_time(da, end_date=f"{yr_ed}-01")
+        np.testing.assert_array_equal(out.time.dt.year.max(), int(yr_ed))
+        np.testing.assert_array_equal(out.time.max().dt.month, 1)
+        np.testing.assert_array_equal(out.time.max().dt.day, 31)
+        np.testing.assert_array_equal(out.time.min(), da.time.min())
+
+        with pytest.warns(None):
+            out = subset.subset_time(da, end_date=f"{yr_ed}-06-15")
+        np.testing.assert_array_equal(out.time.dt.year.max(), int(yr_ed))
+        np.testing.assert_array_equal(out.time.max().dt.month, 6)
+        np.testing.assert_array_equal(out.time.max().dt.day, 15)
+        np.testing.assert_array_equal(out.time.min(), da.time.min())
+
+    def test_time_incomplete_years(self):
+        da = xr.open_dataset(self.nc_poslons).tas
+        yr_st = "2050"
+        yr_ed = "2059"
+
+        out = subset.subset_time(
+            da, start_date=f"{yr_st}-07-01", end_date=f"{yr_ed}-06-30"
+        )
+        out1 = subset.subset_time(da, start_date=f"{yr_st}-07", end_date=f"{yr_ed}-06")
+        np.testing.assert_array_equal(out, out1)
+        np.testing.assert_array_equal(out.time.dt.year.min(), int(yr_st))
+        np.testing.assert_array_equal(out.time.min().dt.month, 7)
+        np.testing.assert_array_equal(out.time.min().dt.day, 1)
+        np.testing.assert_array_equal(out.time.dt.year.max(), int(yr_ed))
+        np.testing.assert_array_equal(out.time.max().dt.month, 6)
+        np.testing.assert_array_equal(out.time.max().dt.day, 30)
