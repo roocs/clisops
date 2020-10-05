@@ -117,10 +117,10 @@ def check_start_end_levels(func):
 
         if "first_level" not in kwargs or kwargs["first_level"] is None:
             # use string for first level only - .sel() will include all levels
-            kwargs["first_level"] = float(level.min())
+            kwargs["first_level"] = float(level.values[0])
         if "last_level" not in kwargs or kwargs["last_level"] is None:
             # use string for last level only - .sel() will include all levels
-            kwargs["last_level"] = float(level.max())
+            kwargs["last_level"] = float(level.values[-1])
 
         # Check inputs are numbers, if not, try to convert to floats
         for key in ("first_level", "last_level"):
@@ -133,55 +133,53 @@ def check_start_end_levels(func):
                         stacklevel=2,
                     )
                 except Exception:
-                    raise ValueError(
+                    raise TypeError(
                         f'"{key}" could not parsed. It must be provided as a number'
                     )
 
         try:
-            sel_level = level.sel(**{level.name: kwargs["first_level"]})
-            if sel_level.size == 0:
+            if float(kwargs["first_level"]) not in [float(lev) for lev in level.values]:
                 raise ValueError()
-        except KeyError:
-            warnings.warn(
-                '"first_level" not found within input level range. Defaulting to first level in '
-                "xarray object.",
-                UserWarning,
-                stacklevel=2,
-            )
-            kwargs["first_level"] = level.min()
         except ValueError:
-            warnings.warn(
-                '"first_level" has been nudged to nearest valid level in xarray object.',
-                UserWarning,
-                stacklevel=2,
-            )
-            nudged = level.sel(
-                **{level.name: slice(kwargs["first_level"], None)}
-            ).values[0]
-            kwargs["first_level"] = nudged
+            try:
+                kwargs["first_level"] = level.sel(
+                    **{level.name: slice(kwargs["first_level"], None)}
+                ).values[0]
+                warnings.warn(
+                    '"first_level" has been nudged to nearest valid level in xarray object.',
+                    UserWarning,
+                    stacklevel=2,
+                )
+            except IndexError:
+                warnings.warn(
+                    '"first_level" not found within input level range. Defaulting to first level '
+                    "in xarray object.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                kwargs["first_level"] = float(level.values[0])
 
         try:
-            sel_level = level.sel(**{level.name: kwargs["last_level"]})
-            if sel_level.size == 0:
+            if float(kwargs["last_level"]) not in [float(lev) for lev in level.values]:
                 raise ValueError()
-        except KeyError:
-            warnings.warn(
-                '"last_level" not found within input level range. Defaulting to last level in '
-                "xarray object.",
-                UserWarning,
-                stacklevel=2,
-            )
-            kwargs["last_level"] = level.max()
         except ValueError:
-            warnings.warn(
-                '"last_level" has been nudged to nearest valid level in xarray object.',
-                UserWarning,
-                stacklevel=2,
-            )
-            nudged = level.sel(
-                **{level.name: slice(kwargs["last_level"], None)}
-            ).values[-1]
-            kwargs["last_level"] = nudged
+            try:
+                kwargs["last_level"] = level.sel(
+                    **{level.name: slice(None, kwargs["last_level"])}
+                ).values[-1]
+                warnings.warn(
+                    '"last_level" has been nudged to nearest valid level in xarray object.',
+                    UserWarning,
+                    stacklevel=2,
+                )
+            except IndexError:
+                warnings.warn(
+                    '"last_level" not found within input level range. Defaulting to last level '
+                    "in xarray object.",
+                    UserWarning,
+                    stacklevel=2,
+                )
+                kwargs["last_level"] = float(level.values[-1])
 
         return func(*args, **kwargs)
 
