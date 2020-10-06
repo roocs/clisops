@@ -113,7 +113,12 @@ def check_start_end_levels(func):
         """Verify that first and last levels are valid in a level subsetting function."""
         da = args[0]
 
-        level = xu.get_coord_by_type(da, "level")
+        level = xu.get_coord_by_type(da, "level", ignore_aux_coords=True)
+
+        if level is None:
+            raise Exception(
+                '{subset_level.__name__} requires input data a recognisable "level" coordinate.'
+            )
 
         if "first_level" not in kwargs or kwargs["first_level"] is None:
             # use string for first level only - .sel() will include all levels
