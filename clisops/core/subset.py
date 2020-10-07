@@ -117,7 +117,8 @@ def check_start_end_levels(func):
 
         if level is None:
             raise Exception(
-                '{subset_level.__name__} requires input data a recognisable "level" coordinate.'
+                f"{subset_level.__name__} requires input data that has a "
+                'recognisable "level" coordinate.'
             )
 
         if "first_level" not in kwargs or kwargs["first_level"] is None:
@@ -438,7 +439,7 @@ def create_mask_vectorize(
     --------
     >>> import geopandas as gpd  # doctest: +SKIP
     >>> import xarray as xr  # doctest: +SKIP
-    >>> from xclim.subset import create_mask_vectorize  # doctest: +SKIP
+    >>> from clisops.core.subset import create_mask_vectorize  # doctest: +SKIP
     >>> ds = xr.open_dataset(path_to_tasmin_file)  # doctest: +SKIP
     >>> polys = gpd.read_file(path_to_multi_shape_file)  # doctest: +SKIP
     ...
@@ -521,7 +522,7 @@ def create_mask(
     --------
     >>> import xarray as xr  # doctest: +SKIP
     >>> import geopandas as gpd  # doctest: +SKIP
-    >>> from xclim.subset import create_mask  # doctest: +SKIP
+    >>> from clisops.core.subset import create_mask  # doctest: +SKIP
     >>> ds = xr.open_dataset(path_to_tasmin_file)  # doctest: +SKIP
     >>> polys = gpd.read_file(path_to_multi_shape_file)  # doctest: +SKIP
     ...
@@ -640,7 +641,7 @@ def subset_shape(
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
-    >>> from xclim.subset import subset_shape  # doctest: +SKIP
+    >>> from clisops.core.subset import subset_shape  # doctest: +SKIP
     >>> pr = xr.open_dataset(path_to_pr_file).pr  # doctest: +SKIP
     ...
     # Subset data array by shape
@@ -820,7 +821,7 @@ def subset_bbox(
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
-    >>> from xclim.subset import subset_bbox  # doctest: +SKIP
+    >>> from clisops.core.subset import subset_bbox  # doctest: +SKIP
     >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
     ...
     # Subset lat lon
@@ -1043,7 +1044,7 @@ def subset_gridpoint(
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
-    >>> from xclim.subset import subset_gridpoint  # doctest: +SKIP
+    >>> from clisops.core.subset import subset_gridpoint  # doctest: +SKIP
     >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
     ...
     # Subset lat lon point
@@ -1144,7 +1145,7 @@ def subset_time(
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
-    >>> from xclim.subset import subset_time  # doctest: +SKIP
+    >>> from clisops.core.subset import subset_time  # doctest: +SKIP
     >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
     ...
     # Subset complete years
@@ -1184,11 +1185,11 @@ def subset_level(
     da : Union[xarray.DataArray, xarray.Dataset]
       Input data.
     first_level : Optional[Union[int, float]]
-      First level of the subset.
+      First level of the subset (specified as the value, not the index).
       Can be either an integer or float.
       Defaults to first level of input data-array.
     last_level : Optional[Union[int, float]]
-      Last level of the subset.
+      Last level of the subset (specified as the value, not the index).
       Can be either an integer or float.
       Defaults to last level of input data-array.
 
@@ -1200,7 +1201,7 @@ def subset_level(
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
-    >>> from xclim.subset import subset_time  # doctest: +SKIP
+    >>> from clisops.core.subset import subset_time  # doctest: +SKIP
     >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
     ...
     # Subset complete levels
@@ -1247,7 +1248,7 @@ def distance(
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
-    >>> from xclim.subset import distance  # doctest: +SKIP
+    >>> from clisops.core.subset import distance  # doctest: +SKIP
     ...
     To get the indices from closest point, use:
     >>> da = xr.open_dataset(path_to_pr_file).pr  # doctest: +SKIP
