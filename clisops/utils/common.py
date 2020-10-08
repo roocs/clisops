@@ -13,7 +13,7 @@ def map_params(ds, time=None, area=None, level=None):
         collection=ds, time=time, area=area, level=level
     )
 
-    for parameter in ["time", "area"]:  # , 'level']: # level not implemented yet
+    for parameter in ["time", "area", "level"]:
 
         if parameters.get(parameter).tuple is not None:
             args.update(parameters.get(parameter).asdict())

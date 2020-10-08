@@ -6,7 +6,7 @@ from roocs_utils.parameter import parameterise
 from roocs_utils.xarray_utils import xarray_utils as xu
 
 from clisops import logging, utils
-from clisops.core import subset_bbox, subset_time
+from clisops.core import subset_bbox, subset_level, subset_time
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import get_output, get_time_slices
 
@@ -19,13 +19,30 @@ LOGGER = logging.getLogger(__file__)
 
 def _subset(ds, args):
     if "lon_bnds" and "lat_bnds" in args:
-        # subset with space and optionally time
+        # subset with space and optionally time and level
         LOGGER.debug(f"subset_bbox with parameters: {args}")
         result = subset_bbox(ds, **args)
     else:
+        kwargs = {}
+        valid_args = ["start_date", "end_date"]
+        for arg in valid_args:
+            kwargs.setdefault(arg, args.get(arg, None))
+
         # subset with time only
-        LOGGER.debug(f"subset_time with parameters: {args}")
-        result = subset_time(ds, **args)
+        if any(kwargs.values()):
+            LOGGER.debug(f"subset_time with parameters: {kwargs}")
+            result = subset_time(ds, **kwargs)
+
+        kwargs = {}
+        valid_args = ["first_level", "last_level"]
+        for arg in valid_args:
+            kwargs.setdefault(arg, args.get(arg, None))
+
+        # subset with level only
+        if any(kwargs.values()):
+            LOGGER.debug(f"subset_level with parameters: {kwargs}")
+            result = subset_level(ds, **kwargs)
+
     return result
 
 

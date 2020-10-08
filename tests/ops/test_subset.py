@@ -2,6 +2,7 @@ import os
 import sys
 from unittest.mock import Mock
 
+import numpy as np
 import pytest
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue, MissingParameterValue
@@ -15,11 +16,15 @@ from clisops.utils import map_params, output_utils
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import _format_time, get_output, get_time_slices
 
-from .._common import CMIP5_RH, CMIP5_TAS, CMIP5_TAS_FILE, CMIP5_ZOSTOGA
+from .._common import CMIP5_RH, CMIP5_TAS, CMIP5_TAS_FILE, CMIP5_ZOSTOGA, CMIP6_O3
 
 
 def _check_output_nc(result, fname="output_001.nc"):
     assert fname in [os.path.basename(_) for _ in result]
+
+
+def _load_ds(fpath):
+    return xr.open_mfdataset(fpath)
 
 
 @pytest.mark.xfail(
@@ -310,3 +315,21 @@ def test_area_within_area_subset_chunked():
     for ds in outputs:
         assert area[0] <= ds.lon.data <= area[2]
         assert area[1] <= ds.lat.data <= area[3]
+
+
+def test_subset_level(tmpdir):
+    """ Tests clisops subset function with a level subset."""
+    # Levels are: 100000, ..., 100
+    ds = _load_ds(CMIP6_O3)
+
+    result1 = subset(ds=CMIP6_O3, level="100000/100", output_type="xarray")
+
+    np.testing.assert_array_equal(result1[0].o3.values, ds.o3.values)
+
+    result2 = subset(ds=CMIP6_O3, level="100/100", output_type="xarray")
+
+    np.testing.assert_array_equal(result2[0].o3.shape, (1200, 1, 2, 3))
+
+    result3 = subset(ds=CMIP6_O3, level="101/-23.234", output_type="xarray")
+
+    np.testing.assert_array_equal(result3[0].o3.values, result2[0].o3.values)

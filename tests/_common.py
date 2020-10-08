@@ -9,6 +9,9 @@ XCLIM_TESTS_DATA = os.path.join(TESTS_HOME, "xclim-testdata/testdata")
 DEFAULT_CMIP5_ARCHIVE_BASE = os.path.join(
     TESTS_HOME, "mini-esgf-data/test_data/badc/cmip5/data"
 )
+DEFAULT_CMIP6_ARCHIVE_BASE = os.path.join(
+    TESTS_HOME, "mini-esgf-data/test_data/badc/cmip6/data"
+)
 
 
 def write_roocs_cfg():
@@ -44,8 +47,13 @@ def cmip5_archive_base():
     return DEFAULT_CMIP5_ARCHIVE_BASE
 
 
-CMIP5_ARCHIVE_BASE = cmip5_archive_base()
+def cmip6_archive_base():
+    if "CMIP6_ARCHIVE_BASE" in os.environ:
+        return os.environ["CMIP6_ARCHIVE_BASE"]
+    return DEFAULT_CMIP6_ARCHIVE_BASE
 
+
+CMIP5_ARCHIVE_BASE = cmip5_archive_base()
 
 CMIP5_ZOSTOGA = os.path.join(
     CMIP5_ARCHIVE_BASE,
@@ -65,4 +73,12 @@ CMIP5_RH = os.path.join(
 CMIP5_TAS_FILE = os.path.join(
     CMIP5_ARCHIVE_BASE,
     "cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc",  # noqa
+)
+
+CMIP6_ARCHIVE_BASE = cmip6_archive_base()
+
+CMIP6_O3 = os.path.join(
+    XCLIM_TESTS_DATA,
+    "cmip6",
+    "o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
 )
