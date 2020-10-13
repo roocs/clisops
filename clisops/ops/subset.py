@@ -18,6 +18,7 @@ LOGGER = logging.getLogger(__file__)
 
 
 def _subset(ds, args):
+
     if "lon_bnds" and "lat_bnds" in args:
         # subset with space and optionally time and level
         LOGGER.debug(f"subset_bbox with parameters: {args}")
@@ -32,6 +33,9 @@ def _subset(ds, args):
         if any(kwargs.values()):
             LOGGER.debug(f"subset_time with parameters: {kwargs}")
             result = subset_time(ds, **kwargs)
+
+        else:
+            result = ds
 
         kwargs = {}
         valid_args = ["first_level", "last_level"]
