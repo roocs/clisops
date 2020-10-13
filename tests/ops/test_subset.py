@@ -27,14 +27,15 @@ def _load_ds(fpath):
     return xr.open_mfdataset(fpath)
 
 
-@pytest.mark.xfail(
-    reason="Time, Level and area can all be none as they default to max/min values"
-    "in core.subset"
-)
-def test_subset_missing_param(tmpdir):
+def test_subset_no_params(tmpdir):
     """ Test subset without area param."""
-    with pytest.raises(MissingParameterValue):
-        subset(ds=CMIP5_TAS_FILE, output_dir=tmpdir)
+    result = subset(
+        ds=CMIP5_TAS_FILE,
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+    _check_output_nc(result)
 
 
 def test_subset_time(tmpdir):
