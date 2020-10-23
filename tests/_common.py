@@ -9,6 +9,7 @@ XCLIM_TESTS_DATA = os.path.join(TESTS_HOME, "xclim-testdata/testdata")
 DEFAULT_CMIP5_ARCHIVE_BASE = os.path.join(
     TESTS_HOME, "mini-esgf-data/test_data/badc/cmip5/data"
 )
+REAL_C3S_CMIP5_ARCHIVE_BASE = "/group_workspaces/jasmin2/cp4cds1/vol1/data/"
 DEFAULT_CMIP6_ARCHIVE_BASE = os.path.join(
     TESTS_HOME, "mini-esgf-data/test_data/badc/cmip6/data"
 )
@@ -81,4 +82,9 @@ CMIP6_O3 = os.path.join(
     XCLIM_TESTS_DATA,
     "cmip6",
     "o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
+)
+
+C3S_CMIP5 = os.path.join(
+    REAL_C3S_CMIP5_ARCHIVE_BASE,
+    "c3s-cmip5/output1/NCC/NorESM1-ME/rcp60/mon/seaIce/OImon/r1i1p1/tsice/v20120614/*.nc",
 )
