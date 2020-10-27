@@ -2,6 +2,7 @@ graft clisops
 include *.md
 global-exclude __pycache__
 global-exclude *.py[co]
+prune tests
 
 include LICENSE
 include requirements.txt
