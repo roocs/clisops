@@ -22,4 +22,4 @@ dependencies:
  - cfunits>=3.2.7
  - udunits2>=2.2
  - pip:
-    - -e git+https://github.com/roocs/roocs-utils.git@master#egg=roocs_utils
+    - roocs-utils>=0.1.4

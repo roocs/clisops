@@ -13,5 +13,4 @@ dask[complete]>=2.6
 pyproj>=2.5
 bottleneck~=1.3.1
 python-dateutil>=2.8.1
-# This package needs to be made available on PyPI or explicitly installed
-# git+git://github.com/roocs/roocs-utils.git@master#egg=roocs_utils
+roocs-utils>=0.1.4
