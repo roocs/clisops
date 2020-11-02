@@ -374,8 +374,8 @@ def test_coord_variables_exist():
     """
     ds = _load_ds(C3S_CMIP5_TSICE)
 
-    assert "lat" in ds.variables
-    assert "lon" in ds.variables
+    assert "lat" in ds.coords
+    assert "lon" in ds.coords
 
     result = subset(
         ds=C3S_CMIP5_TSICE,
@@ -384,8 +384,8 @@ def test_coord_variables_exist():
         output_type="xarray",
     )
 
-    assert "lat" in result[0].variables
-    assert "lon" in result[0].variables
+    assert "lat" in result[0].coords
+    assert "lon" in result[0].coords
 
 
 @pytest.mark.skipif(
@@ -399,10 +399,10 @@ def test_coord_variables_subsetted_i_j():
 
     ds = _load_ds(C3S_CMIP5_TSICE)
 
-    assert "lat" in ds.variables
-    assert "lon" in ds.variables
-    assert "i" in ds.variables
-    assert "j" in ds.variables
+    assert "lat" in ds.coords
+    assert "lon" in ds.coords
+    assert "i" in ds.dims
+    assert "j" in ds.dims
 
     area = (5.0, 10.0, 20.0, 65.0)
 
@@ -434,10 +434,10 @@ def test_coord_variables_subsetted_rlat_rlon():
 
     ds = _load_ds(C3S_CMIP5_TOS)
 
-    assert "lat" in ds.variables
-    assert "lon" in ds.variables
-    assert "rlat" in ds.variables
-    assert "rlon" in ds.variables
+    assert "lat" in ds.coords
+    assert "lon" in ds.coords
+    assert "rlat" in ds.dims
+    assert "rlon" in ds.dims
 
     area = (5.0, 10.0, 20.0, 65.0)
 
