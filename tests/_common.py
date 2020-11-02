@@ -84,7 +84,13 @@ CMIP6_O3 = os.path.join(
     "o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
 )
 
-C3S_CMIP5 = os.path.join(
+C3S_CMIP5_TSICE = os.path.join(
     REAL_C3S_CMIP5_ARCHIVE_BASE,
     "c3s-cmip5/output1/NCC/NorESM1-ME/rcp60/mon/seaIce/OImon/r1i1p1/tsice/v20120614/*.nc",
+)
+
+
+C3S_CMIP5_TOS = os.path.join(
+    REAL_C3S_CMIP5_ARCHIVE_BASE,
+    "c3s-cmip5/output1/BCC/bcc-csm1-1-m/historical/mon/ocean/Omon/r1i1p1/tos/v20120709/*.nc",
 )
