@@ -20,23 +20,6 @@ def test_dask_env_variables():
     assert os.getenv("OMP_NUM_THREADS") == "1"
 
 
-@pytest.mark.xfail(reason="parse_date removed as date parsed in TimeParameter class")
-def test_parse_date():
-    assert "2020-05-19" == utils.parse_date("2020-05-19")
-    assert "1999-01-01" == utils.parse_date("1999-01-01T00:00:00")
-    with pytest.raises(ParserError):
-        utils.parse_date("tomorrow")
-
-
-@pytest.mark.xfail(
-    reason="parse_date_year removed as date parsed in TimeParameter class"
-)
-def test_parse_date_year():
-    assert "2020" == utils.parse_date_year("2020-05-20")
-    with pytest.raises(ParserError):
-        utils.parse_date_year("yesterday")
-
-
 def test_map_params():
     args = utils.map_params(
         ds=CMIP5_TAS_FILE,
@@ -98,12 +81,3 @@ def test_map_params_invalid_area():
             ds=CMIP5_TAS_FILE,
             area=("zero", 10, 50, 60),
         )
-
-
-@pytest.mark.xfail(
-    reason="Time, Level and area can all be none as they default to max/min values"
-    "in core.subset"
-)
-def test_map_params_missing_param():
-    with pytest.raises(MissingParameterValue):
-        utils.map_params()

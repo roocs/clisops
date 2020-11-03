@@ -819,3 +819,110 @@ class TestDistance:
         k = d.argmin()
         i, j = np.unravel_index(k, da.data.shape)
         assert d[i, j] == d.min()
+
+
+class TestSubsetLevel:
+    nc_plev = os.path.join(
+        TESTS_DATA,
+        "cmip6",
+        "o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
+    )
+    plevs = [
+        100000,
+        92500,
+        85000,
+        70000,
+        60000,
+        50000,
+        40000,
+        30000,
+        25000,
+        20000,
+        15000,
+        10000,
+        7000,
+        5000,
+        3000,
+        2000,
+        1000,
+        500,
+        100,
+    ]
+
+    def test_simple(self):
+        da = xr.open_dataset(self.nc_plev).o3
+        lev_st = 100000.0
+        lev_ed = 100.0
+
+        out = subset.subset_level(da, first_level=lev_st, last_level=lev_ed)
+        out1 = subset.subset_level(da, first_level=f"{lev_st}", last_level=f"{lev_ed}")
+        np.testing.assert_array_equal(out, out1)
+        np.testing.assert_array_equal(out.plev.min(), lev_ed)
+        np.testing.assert_array_equal(out.plev.max(), lev_st)
+
+    def test_level_outofbounds(self):
+        da = xr.open_dataset(self.nc_plev).o3
+        lev_st = 10000000
+        lev_ed = 10
+
+        with pytest.warns(None) as record:
+            out = subset.subset_level(da, first_level=lev_st, last_level=lev_ed)
+
+        np.testing.assert_array_equal(out.plev.min(), da.plev.min())
+        np.testing.assert_array_equal(out.plev.max(), da.plev.max())
+
+        assert (
+            '"first_level" has been nudged to nearest valid level in xarray object.'
+            in [str(q.message) for q in record]
+        )
+        assert (
+            '"last_level" has been nudged to nearest valid level in xarray object.'
+            in [str(q.message) for q in record]
+        )
+
+    def test_warnings(self):
+        da = xr.open_dataset(self.nc_plev).o3
+
+        with pytest.raises(TypeError):
+            subset.subset_level(da, first_level=da, last_level=da)
+
+        with pytest.warns(None) as record:
+            subset.subset_level(da, first_level="1000", last_level="1000")
+        assert (
+            '"first_level" should be a number, it has been converted to a float.'
+            in [str(q.message) for q in record]
+        )
+
+        with pytest.warns(None) as record:
+            subset.subset_level(da, first_level=81200, last_level=54100.6)
+        assert [str(q.message) for q in record] == [
+            '"first_level" has been nudged to nearest valid level in xarray object.',
+            '"last_level" has been nudged to nearest valid level in xarray object.',
+        ]
+
+    def test_level_first_only(self):
+        da = xr.open_dataset(self.nc_plev).o3
+        lev_st = 100000
+
+        # first level only
+        with pytest.warns(None):
+            out = subset.subset_level(da, first_level=lev_st, last_level=lev_st)
+
+        np.testing.assert_array_equal(out.plev.values[0], da.plev.values[0])
+        np.testing.assert_array_equal(out.plev.values[-1], da.plev.values[0])
+
+    def test_nudge_levels(self):
+        da = xr.open_dataset(self.nc_plev).o3
+        # good_levels = [40000, 30000]
+        # good_indices = [6, 7]
+
+        with pytest.warns(None):
+            out = subset.subset_level(da, first_level=37000.2342, last_level=27777)
+
+        np.testing.assert_array_equal(out.plev.values[0], da.plev.values[7])
+        np.testing.assert_array_equal(out.plev.values[-1], da.plev.values[7])
+
+        with pytest.warns(None):
+            out = subset.subset_level(da, first_level=41562, last_level=29999)
+
+        np.testing.assert_array_equal(out.plev.values[:], da.plev.values[6:8])
