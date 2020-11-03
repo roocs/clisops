@@ -2,7 +2,6 @@ import os
 import tempfile
 
 import xarray as xr
-from roocs_utils.parameter import parameterise
 from roocs_utils.xarray_utils import xarray_utils as xu
 
 from clisops import logging, utils
