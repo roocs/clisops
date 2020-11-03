@@ -16,7 +16,15 @@ from clisops.utils import map_params, output_utils
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import _format_time, get_output, get_time_slices
 
-from .._common import CMIP5_RH, CMIP5_TAS, CMIP5_TAS_FILE, CMIP5_ZOSTOGA, CMIP6_O3
+from .._common import (
+    C3S_CMIP5_TOS,
+    C3S_CMIP5_TSICE,
+    CMIP5_RH,
+    CMIP5_TAS,
+    CMIP5_TAS_FILE,
+    CMIP5_ZOSTOGA,
+    CMIP6_O3,
+)
 
 
 def _check_output_nc(result, fname="output_001.nc"):
@@ -334,3 +342,114 @@ def test_subset_level(tmpdir):
     result3 = subset(ds=CMIP6_O3, level="101/-23.234", output_type="xarray")
 
     np.testing.assert_array_equal(result3[0].o3.values, result2[0].o3.values)
+
+
+def test_aux_variables():
+    """
+    test auxiliary variables are remembered in output dataset
+    Have to create a netcdf file with auxiliary variable
+    """
+
+    ds = _load_ds("tests/ops/file.nc")
+
+    assert "do_i_get_written" in ds.variables
+
+    result = subset(
+        ds=ds,
+        time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
+        area=(0.0, 10.0, 10.0, 65.0),
+        output_type="xarray",
+    )
+
+    assert "do_i_get_written" in result[0].variables
+
+
+@pytest.mark.skipif(
+    os.path.isdir("/group_workspaces") is False, reason="data not available"
+)
+def test_coord_variables_exist():
+    """
+    check coord variables e.g. lat/lon when original data
+    is on an irregular grid exist in output dataset
+    """
+    ds = _load_ds(C3S_CMIP5_TSICE)
+
+    assert "lat" in ds.coords
+    assert "lon" in ds.coords
+
+    result = subset(
+        ds=C3S_CMIP5_TSICE,
+        time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
+        area=(0.0, 10.0, 10.0, 65.0),
+        output_type="xarray",
+    )
+
+    assert "lat" in result[0].coords
+    assert "lon" in result[0].coords
+
+
+@pytest.mark.skipif(
+    os.path.isdir("/group_workspaces") is False, reason="data not available"
+)
+def test_coord_variables_subsetted_i_j():
+    """
+    check coord variables e.g. lat/lon when original data
+    is on an irregular grid are subsetted correctly in output dataset
+    """
+
+    ds = _load_ds(C3S_CMIP5_TSICE)
+
+    assert "lat" in ds.coords
+    assert "lon" in ds.coords
+    assert "i" in ds.dims
+    assert "j" in ds.dims
+
+    area = (5.0, 10.0, 20.0, 65.0)
+
+    result = subset(
+        ds=C3S_CMIP5_TSICE,
+        time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
+        area=area,
+        output_type="xarray",
+    )
+
+    # check within 10% of expected subset value
+    assert abs(area[1] - float(result[0].lat.min())) / area[1] <= 0.1
+    assert abs(float(result[0].lat.max()) - area[3]) / area[3] <= 0.1
+
+    with pytest.raises(AssertionError):
+        assert abs(area[0] - float(result[0].lon.min())) / area[0] <= 0.1
+        assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
+        # working for lat but not lon in this example
+
+
+@pytest.mark.skipif(
+    os.path.isdir("/group_workspaces") is False, reason="data not available"
+)
+def test_coord_variables_subsetted_rlat_rlon():
+    """
+    check coord variables e.g. lat/lon when original data
+    is on an irregular grid are subsetted correctly in output dataset
+    """
+
+    ds = _load_ds(C3S_CMIP5_TOS)
+
+    assert "lat" in ds.coords
+    assert "lon" in ds.coords
+    assert "rlat" in ds.dims
+    assert "rlon" in ds.dims
+
+    area = (5.0, 10.0, 20.0, 65.0)
+
+    result = subset(
+        ds=C3S_CMIP5_TOS,
+        time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
+        area=area,
+        output_type="xarray",
+    )
+
+    # check within 10% of expected subset value
+    assert abs(area[1] - float(result[0].lat.min())) / area[1] <= 0.1
+    assert abs(float(result[0].lat.max()) - area[3]) / area[3] <= 0.1
+    assert abs(area[0] - float(result[0].lon.min())) / area[0] <= 0.1
+    assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
