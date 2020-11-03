@@ -96,12 +96,10 @@ def subset(
     """
     # Convert all inputs to Xarray Datasets
     if isinstance(ds, str) or isinstance(ds, Path):
-        dataset = xr.open_mfdataset(ds, use_cftime=True, combine="by_coords")
-    else:
-        dataset = ds
+        ds = xr.open_mfdataset(ds, use_cftime=True, combine="by_coords")
 
     LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
-    args = utils.map_params(dataset, time, area, level)
+    args = utils.map_params(ds, time, area, level)
 
     subset_ds = _subset(ds, args)
 
