@@ -9,9 +9,7 @@ from ..exceptions import InvalidParameterValue, MissingParameterValue
 def map_params(ds, time=None, area=None, level=None):
     args = dict()
 
-    parameters = parameterise.parameterise(
-        collection=ds, time=time, area=area, level=level
-    )
+    parameters = parameterise(collection=ds, time=time, area=area, level=level)
 
     for parameter in ["time", "area", "level"]:
 
