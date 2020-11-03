@@ -10,6 +10,7 @@ __pycache__/
 .Python
 env/
 build/
+src/
 develop-eggs/
 dist/
 downloads/
@@ -103,3 +104,6 @@ ENV/
 
 # macos
 default.profraw
+
+#JetBrains
+.idea/

@@ -1,8 +1,4 @@
-import os
-import tempfile
-
 import xarray as xr
-from roocs_utils.xarray_utils import xarray_utils as xu
 
 from clisops import logging, utils
 from clisops.core import subset_bbox, subset_level, subset_time
