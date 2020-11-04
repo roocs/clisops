@@ -83,14 +83,14 @@ def subset(
 
     Examples
     --------
-        ds: Xarray Dataset
-        time: ("1999-01-01T00:00:00", "2100-12-30T00:00:00")
-        area: (-5.,49.,10.,65)
-        level: (1000.,)
-        output_dir: "/cache/wps/procs/req0111"
-        output_type: "netcdf"
-        split_method: "time:auto"
-        file_namer: "standard"
+    ds: Xarray Dataset
+    time: ("1999-01-01T00:00:00", "2100-12-30T00:00:00")
+    area: (-5.,49.,10.,65)
+    level: (1000.,)
+    output_dir: "/cache/wps/procs/req0111"
+    output_type: "netcdf"
+    split_method: "time:auto"
+    file_namer: "standard"
 
     """
     # Convert all inputs to Xarray Datasets

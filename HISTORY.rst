@@ -91,7 +91,7 @@ Other Changes
 * Pre-commit is now used to launch code formatting inspections for local development.
 
 
-0.1.0 (2020-04-22)
+v0.1.0 (2020-04-22)
 ------------------
 
 * First release.
