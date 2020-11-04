@@ -20,4 +20,4 @@ dependencies:
  - pyproj>=2.5
  - udunits2>=2.2
  - pip:
-    - -e git+https://github.com/roocs/roocs-utils.git@master#egg=roocs_utils
+    - roocs_utils>=0.1.4

@@ -1,8 +1,9 @@
 graft clisops
-include *.md
+include *.rst
 global-exclude __pycache__
 global-exclude *.py[co]
 
+recursive-include etc *
 include LICENSE
 include requirements.txt
 include requirements_dev.txt

@@ -76,7 +76,7 @@ def subset(
     output_dir: Union[str, Path], optional
     output_type: {"netcdf", "nc", "zarr", "xarray"}
     split_method: {"time:auto"}
-    file_namer: {"standard"}
+    file_namer: {"standard", "simple"}
 
     Returns
     -------

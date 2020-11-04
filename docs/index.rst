@@ -5,10 +5,14 @@ Welcome to clisops's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   readme
    installation
    usage
+   api
    notebooks/index
    contributing
+   authors
+   history
 
 Indices and tables
 ==================
