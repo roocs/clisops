@@ -10,8 +10,7 @@ __license__ = "BSD"
 
 here = os.path.abspath(os.path.dirname(__file__))
 
-with open(os.path.join(here, "README.md")) as readme_file:
-    _long_description = readme_file.read()
+_long_description = open(os.path.join(here, "README.rst")).read()
 
 about = dict()
 with open(os.path.join(here, "clisops", "__version__.py"), "r") as f:
