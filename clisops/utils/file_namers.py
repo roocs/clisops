@@ -1,11 +1,8 @@
-import os
-import sys
-
 from roocs_utils.project_utils import get_project_name
 from roocs_utils.xarray_utils import xarray_utils as xu
 
 from clisops import CONFIG
-from clisops.utils.output_utils import get_format_extension, get_format_writer
+from clisops.utils.output_utils import get_format_extension
 
 
 def get_file_namer(name):
@@ -56,7 +53,7 @@ class StandardFileNamer(SimpleFileNamer):
     def _get_template(self, ds):
         try:
             return CONFIG[f"project:{self._get_project(ds)}"]["file_name_template"]
-        except Exception:
+        except KeyError:
             return None
 
     def _resolve_derived_attrs(self, ds, attrs, template, fmt=None):

@@ -21,4 +21,4 @@ dependencies:
  - udunits2>=2.2
  - python-dateutil>=2.8.1
  - pip:
-    - roocs_utils>=0.1.4
+    - roocs-utils>=0.1.4
