@@ -14,8 +14,7 @@ Core subset functionality
 Subset operation
 ================
 
-.. automodule:: clisops.ops.subset.subset
+.. automodule:: clisops.ops.subset
    :noindex:
    :members:
-   :undoc-members:
    :show-inheritance:
