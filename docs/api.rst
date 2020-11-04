@@ -28,7 +28,7 @@ Common functions
    :noindex:
    :members:
    :undoc-members:
-   :show-inheritance
+   :show-inheritance:
 
 
 Output Utilities
@@ -38,7 +38,7 @@ Output Utilities
    :noindex:
    :members:
    :undoc-members:
-   :show-inheritance
+   :show-inheritance:
 
 
 File Namers
@@ -48,4 +48,4 @@ File Namers
    :noindex:
    :members:
    :undoc-members:
-   :show-inheritance
+   :show-inheritance:

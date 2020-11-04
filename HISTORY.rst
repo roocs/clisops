@@ -1,10 +1,8 @@
 Version History
 ===============
-History
-=======
 
-0.4.0 (2020-11-5)
-==================
+v0.4.0 (2020-11-5)
+-----------------
 
 Adding new features, updating doc strings and documentation and inclusion of static type support.
 
@@ -53,32 +51,31 @@ Other Changes
 * tests now use ``mini-esgf-data`` by default.
 
 
-0.3.1 (2020-08-04)
-==================
+v0.3.1 (2020-08-04)
+-------------------
 
 Other Changes
 ^^^^^^^^^^^^^
 * Add missing ``rtree`` dependency to ensure correct spatial indexing.
 
 
-0.3.0 (2020-07-23)
-==================
+v0.3.0 (2020-07-23)
+------------------
 
 Other Changes
 ^^^^^^^^^^^^^
 * Update testdata and subset module (#34).
 
 
-0.2.1 (2020-07-08)
-==================
-
+v0.2.1 (2020-07-08)
+-------------------
 
 Other Changes
 ^^^^^^^^^^^^^
 * Fixed docs version (#25).
 
 
-0.2.0 (2020-06-19)
+v0.2.0 (2020-06-19)
 ------------------
 
 New Features
