@@ -63,7 +63,7 @@ def subset(
     output_type="netcdf",
     split_method="time:auto",
     file_namer="standard",
-) -> List[Union[str, Path]]:
+) -> List[Union[xr.Dataset, Path]]:
     """
 
     Parameters
@@ -79,7 +79,7 @@ def subset(
 
     Returns
     -------
-    List[Union[str, Path]]
+    List[Union[xr.Dataset, Path]]
 
     Examples
     --------

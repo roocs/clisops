@@ -2,6 +2,7 @@ from roocs_utils.parameter import parameterise
 
 
 def map_params(ds, time=None, area=None, level=None):
+    """ Generates a dictionary of subset limit from parameters, which can be passed to subset """
     args = dict()
 
     parameters = parameterise(collection=ds, time=time, area=area, level=level)

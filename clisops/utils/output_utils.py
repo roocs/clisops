@@ -24,6 +24,7 @@ SUPPORTED_SPLIT_METHODS = ["time:auto"]
 
 
 def check_format(fmt):
+    """ Checks requested format exists. """
     if fmt not in SUPPORTED_FORMATS:
         raise KeyError(
             f'Format not recognised: "{fmt}". Must be one of: {SUPPORTED_FORMATS}.'
@@ -31,17 +32,19 @@ def check_format(fmt):
 
 
 def get_format_writer(fmt):
+    """ Finds the output method for the requested output format. """
     check_format(fmt)
     return SUPPORTED_FORMATS[fmt]["method"]
 
 
 def get_format_extension(fmt):
+    """ Finds the extension for the requested output format. """
     check_format(fmt)
     return SUPPORTED_FORMATS[fmt]["extension"]
 
 
 def _format_time(tm: Union[str, dt], fmt="%Y-%m-%d"):
-    # Convert to datetime if time is a numpy datetime
+    """ Convert to datetime if time is a numpy datetime """
     if not hasattr(tm, "strftime"):
         tm = pd.to_datetime(str(tm))
 
@@ -67,6 +70,7 @@ def filter_times_within(times, start=None, end=None):
 
 
 def get_da(ds):
+    """ Returns xr.DataArray when format of ds may be either."""
     if isinstance(ds, xr.DataArray):
         da = ds
     else:
@@ -151,6 +155,11 @@ def get_time_slices(
 
 
 def get_chunk_length(da):
+    """
+    Calculate the chunk length to use when chunking xarray datasets.
+
+    Based on memory limit provided in config and the size of th dataset.
+    """
     size = da.nbytes
     n_times = len(da.time.values)
     mem_limit = parse_size(chunk_memory_limit)
@@ -166,6 +175,9 @@ def get_chunk_length(da):
 
 
 def _get_chunked_dataset(ds):
+    """
+    Chunk xr.Dataset and return chunked dataset
+    """
     da = get_da(ds)
     chunk_length = get_chunk_length(da)
     chunked_ds = ds.chunk({"time": chunk_length})
@@ -175,6 +187,10 @@ def _get_chunked_dataset(ds):
 
 def get_output(ds, output_type, output_dir, namer):
 
+    """
+    Return output after applying chunking and determining
+    the output format and chunking
+    """
     fmt_method = get_format_writer(output_type)
     LOGGER.info(f"fmt_method={fmt_method}, output_type={output_type}")
 

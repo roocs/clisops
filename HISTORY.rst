@@ -6,7 +6,7 @@ History
 0.4.0 (2020-11-5)
 ==================
 
-Adding new features, updating doc strings and inclusion of static typing
+Adding new features, updating doc strings and documentation and inclusion of static type support.
 
 
 Breaking Changes
