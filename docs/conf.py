@@ -52,7 +52,7 @@ napoleon_use_rtype = False
 napoleon_use_param = False
 napoleon_use_ivar = True
 
-nbsphinx_execute = "never"
+nbsphinx_execute = "auto"
 nbsphinx_timeout = 300
 
 # Add any paths that contain templates here, relative to this directory.
