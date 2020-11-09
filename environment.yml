@@ -20,5 +20,3 @@ dependencies:
  - pyproj>=2.5
  - udunits2>=2.2
  - python-dateutil>=2.8.1
- - pip:
-    - roocs-utils>=0.1.4
