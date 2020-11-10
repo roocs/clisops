@@ -85,10 +85,11 @@ Ready to contribute? Here's how to set up ``clisops`` for local development.
     tests, including testing other Python versions with tox:
 
     $ flake8 clisops tests
-    $ python setup.py test or py.test
+    $ black --target-version py36 clisops tests
+    $ python setup.py test  # (or py.test)
     $ tox
 
-    To get flake8 and tox, just pip install them into your virtualenv.
+    To get flake8, black, and tox, just pip install them into your virtualenv.
 
 #.
     Commit your changes and push your branch to GitHub:
@@ -110,6 +111,6 @@ Before you submit a pull request, check that it meets these guidelines:
 #. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.md.
-#. The pull request should work for Python 2.7, 3.4, 3.5 and 3.6, and for PyPy. Check
+#. The pull request should work for Python 3.6, 3.7, 3.8, and 3.9. Check
    https://travis-ci.com/github/roocs/clisops/pull_requests
    and make sure that the tests pass for all supported Python versions.

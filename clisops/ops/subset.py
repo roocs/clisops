@@ -94,7 +94,7 @@ def subset(
 
     """
     # Convert all inputs to Xarray Datasets
-    if isinstance(ds, str) or isinstance(ds, Path):
+    if isinstance(ds, (str, Path)):
         ds = xr.open_mfdataset(ds, use_cftime=True, combine="by_coords")
 
     LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
