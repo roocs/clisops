@@ -89,7 +89,7 @@ Ready to contribute? Here's how to set up ``clisops`` for local development.
     $ python setup.py test  # (or py.test)
     $ tox
 
-    To get flake8 and tox, just pip install them into your virtualenv.
+    To get flake8, black, and tox, just pip install them into your virtualenv.
 
 #.
     Commit your changes and push your branch to GitHub:
