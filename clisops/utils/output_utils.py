@@ -1,6 +1,7 @@
 import math
 import os
-import sys
+from datetime import datetime as dt
+from typing import List, Tuple, Union
 
 import dask
 import pandas as pd
@@ -19,8 +20,11 @@ SUPPORTED_FORMATS = {
     "xarray": {"method": None, "extension": None},
 }
 
+SUPPORTED_SPLIT_METHODS = ["time:auto"]
+
 
 def check_format(fmt):
+    """ Checks requested format exists. """
     if fmt not in SUPPORTED_FORMATS:
         raise KeyError(
             f'Format not recognised: "{fmt}". Must be one of: {SUPPORTED_FORMATS}.'
@@ -28,17 +32,19 @@ def check_format(fmt):
 
 
 def get_format_writer(fmt):
+    """ Finds the output method for the requested output format. """
     check_format(fmt)
     return SUPPORTED_FORMATS[fmt]["method"]
 
 
 def get_format_extension(fmt):
+    """ Finds the extension for the requested output format. """
     check_format(fmt)
     return SUPPORTED_FORMATS[fmt]["extension"]
 
 
-def _format_time(tm, fmt="%Y-%m-%d"):
-    # Convert to datetime if time is a numpy datetime
+def _format_time(tm: Union[str, dt], fmt="%Y-%m-%d"):
+    """ Convert to datetime if time is a numpy datetime """
     if not hasattr(tm, "strftime"):
         tm = pd.to_datetime(str(tm))
 
@@ -64,6 +70,7 @@ def filter_times_within(times, start=None, end=None):
 
 
 def get_da(ds):
+    """ Returns xr.DataArray when format of ds may be either."""
     if isinstance(ds, xr.DataArray):
         da = ds
     else:
@@ -73,9 +80,16 @@ def get_da(ds):
     return da
 
 
-def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None):
+def get_time_slices(
+    ds: Union[xr.Dataset, xr.DataArray],
+    split_method,
+    start=None,
+    end=None,
+    file_size_limit: str = None,
+) -> List[Tuple[str, str]]:
 
     """
+
     Take an xarray Dataset or DataArray, assume it can be split on the time axis
     into a sequence of slices. Optionally, take a start and end date to specify
     a sub-slice of the main time axis.
@@ -84,17 +98,24 @@ def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None
     ("YYYY-MM-DD", "YYYY-MM-DD") slices so that the output files do
     not (significantly) exceed the file size limit.
 
-    :param ds: xarray Dataset
-    :file_size_limit: a string specifying "<number><units>"
-    :param start:
-    :param end:
-    :param file_size_limit:
-    :param split_method:
-    :return: list of tuples of date strings.
+    Parameters
+    ----------
+    ds: Union[xr.Dataset, xr.DataArray]
+    split_method
+    start
+    end
+    file_size_limit: str
+      a string specifying "<number><units>".
+
+    Returns
+    -------
+    List[Tuple[str, str]]
     """
 
-    if split_method != "time:auto":
-        raise NotImplementedError(f"The split method {split_method} is not implemeted.")
+    if split_method not in SUPPORTED_SPLIT_METHODS:
+        raise NotImplementedError(
+            f"The split method {split_method} is not implemented."
+        )
 
     # Use default file size limit if not provided
     if not file_size_limit:
@@ -106,7 +127,7 @@ def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None
     n_times = len(times)
 
     if n_times == 0:
-        raise Exception("Zero time steps found between {start} and {end}.")
+        raise Exception(f"Zero time steps found between {start} and {end}.")
 
     n_slices = da.nbytes / file_size_limit
     slice_length = int(n_times // n_slices)
@@ -134,6 +155,11 @@ def get_time_slices(ds, split_method, start=None, end=None, file_size_limit=None
 
 
 def get_chunk_length(da):
+    """
+    Calculate the chunk length to use when chunking xarray datasets.
+
+    Based on memory limit provided in config and the size of th dataset.
+    """
     size = da.nbytes
     n_times = len(da.time.values)
     mem_limit = parse_size(chunk_memory_limit)
@@ -149,6 +175,9 @@ def get_chunk_length(da):
 
 
 def _get_chunked_dataset(ds):
+    """
+    Chunk xr.Dataset and return chunked dataset
+    """
     da = get_da(ds)
     chunk_length = get_chunk_length(da)
     chunked_ds = ds.chunk({"time": chunk_length})
@@ -158,6 +187,10 @@ def _get_chunked_dataset(ds):
 
 def get_output(ds, output_type, output_dir, namer):
 
+    """
+    Return output after applying chunking and determining
+    the output format and chunking
+    """
     fmt_method = get_format_writer(output_type)
     LOGGER.info(f"fmt_method={fmt_method}, output_type={output_type}")
 

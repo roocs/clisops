@@ -17,6 +17,7 @@ from roocs_utils.xarray_utils import xarray_utils as xu
 from shapely import vectorized
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import cascaded_union, split
+from xarray.core.utils import get_temp_dimname
 
 __all__ = [
     "create_mask",
@@ -308,7 +309,7 @@ def convert_lat_lon_to_da(func):
             except TypeError:  # They have no len : not iterables
                 lat = [lat]
                 lon = [lon]
-            ptdim = xarray.core.utils.get_temp_dimname(args[0].dims, "site")
+            ptdim = get_temp_dimname(args[0].dims, "site")
             if ptdim != "site" and len(lat) > 1:
                 warnings.warn(
                     f"Dimension 'site' already on input, output will use {ptdim} instead."

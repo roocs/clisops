@@ -6,3 +6,4 @@ Examples
    :maxdepth: 1
 
    subset
+   core_subset

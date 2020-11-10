@@ -1,3 +1,7 @@
+from datetime import datetime as dt
+from pathlib import Path
+from typing import List, Optional, Tuple, Union
+
 import xarray as xr
 
 from clisops import logging, utils
@@ -46,39 +50,51 @@ def _subset(ds, args):
 
 
 def subset(
-    ds,
-    time=None,
-    area=None,
-    level=None,
-    output_dir=None,
+    ds: Union[xr.Dataset, str, Path],
+    *,
+    time: Optional[Tuple[dt, dt]] = None,
+    area: Optional[
+        Tuple[
+            Union[int, float], Union[int, float], Union[int, float], Union[int, float]
+        ]
+    ] = None,
+    level: Optional[int] = None,
+    output_dir: Optional[Union[str, Path]] = None,
     output_type="netcdf",
     split_method="time:auto",
     file_namer="standard",
-):
-    """
-    Example:
-        ds: Xarray Dataset
-        time: ("1999-01-01T00:00:00", "2100-12-30T00:00:00")
-        area: (-5.,49.,10.,65)
-        level: (1000.,)
-        output_dir: "/cache/wps/procs/req0111"
-        output_type: "netcdf"
-        split_method: "time:auto"
-        file_namer: "standard"
-
-    :param ds:
-    :param time:
-    :param area:
-    :param level:
-    :param output_dir:
-    :param output_type:
-    :param split_method:
-    :param file_namer:
-    :return:
+) -> List[Union[xr.Dataset, Path]]:
     """
 
+    Parameters
+    ----------
+    ds: xr.Dataset
+    time: Tuple[dt, dt], optional
+    area: Tuple[Union[int, float], Union[int, float],Union[int, float],Union[int, float]], optional
+    level: int, optional
+    output_dir: Union[str, Path], optional
+    output_type: {"netcdf", "nc", "zarr", "xarray"}
+    split_method: {"time:auto"}
+    file_namer: {"standard", "simple"}
+
+    Returns
+    -------
+    List[Union[xr.Dataset, Path]]
+
+    Examples
+    --------
+    ds: Xarray Dataset
+    time: ("1999-01-01T00:00:00", "2100-12-30T00:00:00")
+    area: (-5.,49.,10.,65)
+    level: (1000.,)
+    output_dir: "/cache/wps/procs/req0111"
+    output_type: "netcdf"
+    split_method: "time:auto"
+    file_namer: "standard"
+
+    """
     # Convert all inputs to Xarray Datasets
-    if isinstance(ds, str):
+    if isinstance(ds, (str, Path)):
         ds = xr.open_mfdataset(ds, use_cftime=True, combine="by_coords")
 
     LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
@@ -86,13 +102,12 @@ def subset(
 
     subset_ds = _subset(ds, args)
 
-    outputs = []
+    outputs = list()
     namer = get_file_namer(file_namer)()
 
     time_slices = get_time_slices(subset_ds, split_method)
 
     for tslice in time_slices:
-
         result_ds = subset_ds.sel(time=slice(tslice[0], tslice[1]))
         LOGGER.info(f"Processing subset for times: {tslice}")
 
