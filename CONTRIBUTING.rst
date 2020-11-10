@@ -85,7 +85,8 @@ Ready to contribute? Here's how to set up ``clisops`` for local development.
     tests, including testing other Python versions with tox:
 
     $ flake8 clisops tests
-    $ python setup.py test or py.test
+    $ black --target-version py36 clisops tests
+    $ python setup.py test  # (or py.test)
     $ tox
 
     To get flake8 and tox, just pip install them into your virtualenv.
