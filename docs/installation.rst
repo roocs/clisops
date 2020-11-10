@@ -9,7 +9,7 @@ Stable release
 --------------
 
 .. Warning::
-    clisops requires `libspatialindex-dev` (for rtree) to be installed prior to installation by pip.
+    clisops requires `libspatialindex-dev` (for rtree) and `libudunits2-dev` to be installed prior to installation by pip.
 
 To install clisops, run this command in your terminal:
 
