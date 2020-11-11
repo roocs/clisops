@@ -1,4 +1,3 @@
-from datetime import datetime as dt
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
@@ -17,7 +16,6 @@ LOGGER = logging.getLogger(__file__)
 
 
 def _subset(ds, args):
-
     if "lon_bnds" and "lat_bnds" in args:
         # subset with space and optionally time and level
         LOGGER.debug(f"subset_bbox with parameters: {args}")
@@ -50,36 +48,49 @@ def _subset(ds, args):
 
 
 def subset(
-    ds: Union[xr.Dataset, str, Path],
+    ds: Union[xr.Dataset, str],
     *,
-    time: Optional[Tuple[dt, dt]] = None,
+    time: Optional[Union[str, Tuple[str, str]]] = None,
     area: Optional[
-        Tuple[
-            Union[int, float], Union[int, float], Union[int, float], Union[int, float]
+        Union[
+            str,
+            Tuple[
+                Union[int, float, str],
+                Union[int, float, str],
+                Union[int, float, str],
+                Union[int, float, str],
+            ],
         ]
     ] = None,
-    level: Optional[int] = None,
+    level: Optional[
+        Union[str, Tuple[Union[int, float, str], Union[int, float, str]]]
+    ] = None,
     output_dir: Optional[Union[str, Path]] = None,
     output_type="netcdf",
     split_method="time:auto",
     file_namer="standard",
-) -> List[Union[xr.Dataset, Path]]:
+) -> List[Union[xr.Dataset, str]]:
     """
 
     Parameters
     ----------
-    ds: xr.Dataset
-    time: Tuple[dt, dt], optional
-    area: Tuple[Union[int, float], Union[int, float],Union[int, float],Union[int, float]], optional
-    level: int, optional
-    output_dir: Union[str, Path], optional
+    ds: Union[xr.Dataset, str]
+    time: Optional[Union[str, Tuple[str, str]]] = None
+    area: Optional[Union[str,
+                             Tuple[
+                                 Union[int, float, str], Union[int, float, str],
+                                 Union[int, float, str], Union[int, float, str]
+                             ]
+        ]] = None
+    level: Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]]]] = None
+    output_dir: Optional[Union[str, Path]] = None
     output_type: {"netcdf", "nc", "zarr", "xarray"}
     split_method: {"time:auto"}
     file_namer: {"standard", "simple"}
 
     Returns
     -------
-    List[Union[xr.Dataset, Path]]
+    List[Union[xr.Dataset, str]]
 
     Examples
     --------
