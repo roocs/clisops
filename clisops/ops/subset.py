@@ -75,13 +75,18 @@ def subset(
     Parameters
     ----------
     ds: Union[xr.Dataset, str]
-    time: Optional[Union[str, Tuple[str, str]]] = None
-    area: Optional[Union[str,
-                             Tuple[
-                                 Union[int, float, str], Union[int, float, str],
-                                 Union[int, float, str], Union[int, float, str]
-                             ]
-        ]] = None
+    time: Optional[Union[str, Tuple[str, str]]] = None,
+    area: Optional[
+        Union[
+            str,
+            Tuple[
+                Union[int, float, str],
+                Union[int, float, str],
+                Union[int, float, str],
+                Union[int, float, str],
+            ],
+        ]
+    ] = None,
     level: Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]]]] = None
     output_dir: Optional[Union[str, Path]] = None
     output_type: {"netcdf", "nc", "zarr", "xarray"}
