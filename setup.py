@@ -32,7 +32,7 @@ docs_requirements = [
     "ipython",
     "ipykernel",
     "jupyter_client",
-    "matplotlib",
+    "matplotlib<3.3",
 ]
 
 setup(
