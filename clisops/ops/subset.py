@@ -48,7 +48,7 @@ def _subset(ds, args):
 
 
 def subset(
-    ds: Union[xr.Dataset, str],
+    ds: Union[xr.Dataset, str, Path],
     *,
     time: Optional[Union[str, Tuple[str, str]]] = None,
     area: Optional[
