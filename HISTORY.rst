@@ -4,9 +4,14 @@ Version History
 Unreleased
 ----------
 
+Breaking Changes
+^^^^^^^^^^^^^^^^
+* Rtree<=0.9.1 required.
+
 Other Changes
 ^^^^^^^^^^^^^
-* Static types updated to include missing but permitted types
+* udunits2>=2.2 removed as a requirement to make clisops completely pip installable.
+* Static types updated to include missing but permitted types.
 
 
 v0.4.0 (2020-11-5)

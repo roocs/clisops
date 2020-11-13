@@ -1,4 +1,1 @@
-libudunits2-dev
 libspatialindex-dev
-libnetcdf-dev
-libhdf5-dev
