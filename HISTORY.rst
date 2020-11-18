@@ -6,11 +6,12 @@ Unreleased
 
 Breaking Changes
 ^^^^^^^^^^^^^^^^
-* Rtree<=0.9.1 required.
+* Moved ``core.subset.create_mask_vectorize`` to ``core.subset.create_mask``. The old spatial join option was removed. ``core.subset.subset_shape`` lost its ``vectorize`` kwarg, as it is now default.
 
 Other Changes
 ^^^^^^^^^^^^^
 * udunits2>=2.2 removed as a requirement to make clisops completely pip installable.
+* rtee and libspatialindex remove as requirements, making it easier to install through pip.
 * Static types updated to include missing but permitted types.
 
 

@@ -8,7 +8,6 @@ from typing import Optional, Sequence, Tuple, Union
 
 import geopandas as gpd
 import numpy as np
-import pandas as pd
 import xarray
 from pyproj import Geod
 from pyproj.crs import CRS
@@ -21,7 +20,6 @@ from xarray.core.utils import get_temp_dimname
 
 __all__ = [
     "create_mask",
-    "create_mask_vectorize",
     "distance",
     "subset_bbox",
     "subset_gridpoint",
@@ -407,7 +405,7 @@ def wrap_lons_and_split_at_greenwich(func):
 
 
 @wrap_lons_and_split_at_greenwich
-def create_mask_vectorize(
+def create_mask(
     *,
     x_dim: xarray.DataArray = None,
     y_dim: xarray.DataArray = None,
@@ -445,7 +443,7 @@ def create_mask_vectorize(
     >>> polys = gpd.read_file(path_to_multi_shape_file)  # doctest: +SKIP
     ...
     # Get a mask from all polygons in the shape file
-    >>> mask = create_mask_vectorize(x_dim=ds.lon, y_dim=ds.lat, poly=polys)  # doctest: +SKIP
+    >>> mask = create_mask(x_dim=ds.lon, y_dim=ds.lat, poly=polys)  # doctest: +SKIP
     >>> ds = ds.assign_coords(regions=mask)  # doctest: +SKIP
     ...
     # Operations can be applied to each regions with  `groupby`. Ex:
@@ -477,7 +475,7 @@ def create_mask_vectorize(
 
     # try vectorize
     mask = np.zeros(lat1.shape) + np.nan
-    for pp in poly.index:
+    for pp in reversed(poly.index):
         for vv in poly[poly.index == pp].geometry.values:
             b1 = vectorized.contains(vv, lon1.flatten(), lat1.flatten()).reshape(
                 lat1.shape
@@ -489,107 +487,10 @@ def create_mask_vectorize(
     return mask
 
 
-@wrap_lons_and_split_at_greenwich
-def create_mask(
-    *,
-    x_dim: xarray.DataArray = None,
-    y_dim: xarray.DataArray = None,
-    poly: gpd.GeoDataFrame = None,
-    wrap_lons: bool = False,
-    check_overlap: bool = False,
-):
-    """Create a mask with values corresponding to the features in a GeoDataFrame using spatial join methods.
-
-    The returned mask's points have the value of the first geometry of `poly` they fall in.
-
-    Parameters
-    ----------
-    x_dim : xarray.DataArray
-      X or longitudinal dimension of xarray object.
-    y_dim : xarray.DataArray
-      Y or latitudinal dimension of xarray object.
-    poly : gpd.GeoDataFrame
-      GeoDataFrame used to create the xarray.DataArray mask.
-    wrap_lons : bool
-      Shift vector longitudes by -180,180 degrees to 0,360 degrees; Default = False
-    check_overlap: bool
-      Perform a check to verify if shapes contain overlapping geometries.
-
-    Returns
-    -------
-    xarray.DataArray
-
-    Examples
-    --------
-    >>> import xarray as xr  # doctest: +SKIP
-    >>> import geopandas as gpd  # doctest: +SKIP
-    >>> from clisops.core.subset import create_mask  # doctest: +SKIP
-    >>> ds = xr.open_dataset(path_to_tasmin_file)  # doctest: +SKIP
-    >>> polys = gpd.read_file(path_to_multi_shape_file)  # doctest: +SKIP
-    ...
-    # Get a mask from all polygons in the shape file
-    >>> mask = create_mask(x_dim=ds.lon, y_dim=ds.lat, poly=polys)  # doctest: +SKIP
-    >>> ds = ds.assign_coords(regions=mask)  # doctest: +SKIP
-    ...
-    # Operations can be applied to each regions with  `groupby`. Ex:
-    >>> ds = ds.groupby('regions').mean()  # doctest: +SKIP
-    ...
-    # Extra step to retrieve the names of those polygons stored in the "id" column
-    >>> region_names = xr.DataArray(polys.id, dims=('regions',))  # doctest: +SKIP
-    >>> ds = ds.assign_coords(regions_names=region_names)  # doctest: +SKIP
-    """
-    wgs84 = CRS(4326)
-
-    if check_overlap:
-        _check_has_overlaps(polygons=poly)
-    if wrap_lons:
-        warnings.warn("Wrapping longitudes at 180 degrees.")
-
-    if len(x_dim.shape) == 1 & len(y_dim.shape) == 1:
-        # create a 2d grid of lon, lat values
-        lon1, lat1 = np.meshgrid(
-            np.asarray(x_dim.values), np.asarray(y_dim.values), indexing="ij"
-        )
-        dims_out = x_dim.dims + y_dim.dims
-        coords_out = dict()
-        coords_out[dims_out[0]] = x_dim.values
-        coords_out[dims_out[1]] = y_dim.values
-    else:
-        lon1 = x_dim.values
-        lat1 = y_dim.values
-        dims_out = x_dim.dims
-        coords_out = x_dim.coords
-
-    # create pandas Dataframe from NetCDF lat and lon points
-    df = pd.DataFrame(
-        {"id": np.arange(0, lon1.size), "lon": lon1.flatten(), "lat": lat1.flatten()}
-    )
-    df["Coordinates"] = list(zip(df.lon, df.lat))
-    df["Coordinates"] = df["Coordinates"].apply(Point)
-
-    # create GeoDataFrame (spatially referenced with shifted longitude values if needed).
-    if wrap_lons:
-        wgs84 = CRS.from_string(
-            "+proj=longlat +datum=WGS84 +no_defs +type=crs +lon_wrap=180"
-        )
-    gdf_points = gpd.GeoDataFrame(df, geometry="Coordinates", crs=wgs84)
-
-    # spatial join geodata points with region polygons and remove duplicates
-    point_in_poly = gpd.tools.sjoin(gdf_points, poly, how="left", op="intersects")
-    point_in_poly = point_in_poly.loc[~point_in_poly.index.duplicated(keep="first")]
-
-    # extract polygon ids for points
-    mask = point_in_poly["index_right"]
-    mask_2d = np.array(mask).reshape(lat1.shape[0], lat1.shape[1])
-    mask_2d = xarray.DataArray(mask_2d, dims=dims_out, coords=coords_out)
-    return mask_2d
-
-
 @check_latlon_dimnames
 def subset_shape(
     ds: Union[xarray.DataArray, xarray.Dataset],
     shape: Union[str, Path, gpd.GeoDataFrame],
-    vectorize: bool = True,
     raster_crs: Optional[Union[str, int]] = None,
     shape_crs: Optional[Union[str, int]] = None,
     buffer: Optional[Union[int, float]] = None,
@@ -609,8 +510,6 @@ def subset_shape(
       Input values.
     shape : Union[str, Path, gpd.GeoDataFrame]
       Path to shape file, or directly a geodataframe. Supports formats compatible with geopandas.
-    vectorize: bool
-      Whether to use the spatialjoin or vectorize backend.
     raster_crs : Optional[Union[str, int]]
       EPSG number or PROJ4 string.
     shape_crs : Optional[Union[str, int]]
@@ -730,15 +629,9 @@ def subset_shape(
                 raster_crs = wgs84
     _check_crs_compatibility(shape_crs=shape_crs, raster_crs=raster_crs)
 
-    # Create mask using the vectorize or spatial join methods.
-    if vectorize:
-        mask_2d = create_mask_vectorize(
-            x_dim=ds_copy.lon, y_dim=ds_copy.lat, poly=poly, wrap_lons=wrap_lons
-        )
-    else:
-        mask_2d = create_mask(
-            x_dim=ds_copy.lon, y_dim=ds_copy.lat, poly=poly, wrap_lons=wrap_lons
-        )
+    mask_2d = create_mask(
+        x_dim=ds_copy.lon, y_dim=ds_copy.lat, poly=poly, wrap_lons=wrap_lons
+    )
 
     if np.all(mask_2d.isnull()):
         raise ValueError(
