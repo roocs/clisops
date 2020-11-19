@@ -1,19 +1,13 @@
-import logging
-
-from dateutil import parser as date_parser
 from roocs_utils.parameter import parameterise
-
-from ..exceptions import InvalidParameterValue, MissingParameterValue
 
 
 def map_params(ds, time=None, area=None, level=None):
+    """ Generates a dictionary of subset limit from parameters, which can be passed to subset """
     args = dict()
-    # import pdb;pdb.set_trace()
-    parameters = parameterise.parameterise(
-        collection=ds, time=time, area=area, level=level
-    )
 
-    for parameter in ["time", "area"]:  # , 'level']: # level not implemented yet
+    parameters = parameterise(collection=ds, time=time, area=area, level=level)
+
+    for parameter in ["time", "area", "level"]:
 
         if parameters.get(parameter).tuple is not None:
             args.update(parameters.get(parameter).asdict())

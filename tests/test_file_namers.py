@@ -1,19 +1,58 @@
+import pytest
 import xarray as xr
 
+from clisops import CONFIG
+from clisops.ops.subset import subset
 from clisops.utils.file_namers import get_file_namer
+
+from ._common import CMIP5_TAS
 
 
 def test_SimpleFileNamer():
     s = get_file_namer("simple")()
 
     checks = [
-        (("my.stuff", None), "output_001.dat"),
+        (("my.stuff", "netcdf"), "output_001.nc"),
         (("other", "netcdf"), "output_002.nc"),
     ]
 
     for args, expected in checks:
         resp = s.get_file_name(*args)
         assert resp == expected
+
+
+def test_SimpleFileNamer_no_fmt():
+    s = get_file_namer("simple")()
+
+    checks = (("my.stuff", None),)
+
+    for args in checks:
+        with pytest.raises(KeyError):
+            s.get_file_name(*args)
+
+
+def test_SimpleFileNamer_with_chunking(tmpdir):
+    start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
+    area = (0.0, 10.0, 175.0, 90.0)
+
+    config_max_file_size = CONFIG["clisops:write"]["file_size_limit"]
+    temp_max_file_size = "10KB"
+    CONFIG["clisops:write"]["file_size_limit"] = temp_max_file_size
+    outputs = subset(
+        ds=CMIP5_TAS,
+        time=(start_time, end_time),
+        area=area,
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+
+    CONFIG["clisops:write"]["file_size_limit"] = config_max_file_size
+
+    count = 0
+    for output in outputs:
+        count += 1
+        assert f"output_00{count}.nc" in output
 
 
 def test_StandardFileNamer_no_project_match():
@@ -25,11 +64,8 @@ def test_StandardFileNamer_no_project_match():
     mock_ds = Thing()
     mock_ds.attrs = {}
 
-    checks = [(mock_ds, "output_001.dat")]
-
-    for ds, expected in checks:
-        resp = s.get_file_name(ds)
-        assert resp == expected
+    with pytest.raises(KeyError):
+        s.get_file_name(mock_ds)
 
 
 def test_StandardFileNamer_cmip5():

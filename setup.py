@@ -8,20 +8,13 @@ from setuptools import find_packages, setup
 __copyright__ = "Copyright 2018 United Kingdom Research and Innovation"
 __license__ = "BSD"
 
-
-# Populate long description setting with content of README
-#
-# Use markdown format read me file as GitHub will render it automatically
-# on package page
 here = os.path.abspath(os.path.dirname(__file__))
 
-with open(os.path.join(here, "README.md")) as readme_file:
-    _long_description = readme_file.read()
+_long_description = open(os.path.join(here, "README.rst")).read()
 
-about = {}
+about = dict()
 with open(os.path.join(here, "clisops", "__version__.py"), "r") as f:
     exec(f.read(), about)
-
 
 requirements = [line.strip() for line in open("requirements.txt")]
 
@@ -75,24 +68,18 @@ setup(
     ],
     description="clisops - climate simulation operations.",
     license=__license__,
-    # This qualifier can be used to selectively exclude Python versions -
-    # in this case early Python 2 and 3 releases
     python_requires=">=3.6.0",
-    install_requires=[
-        requirements,
-        "roocs_utils @ git+https://github.com/roocs/roocs-utils.git",
-    ],
+    install_requires=requirements,
     long_description=_long_description,
-    long_description_content_type="text/markdown",
+    long_description_content_type="text/x-rst",
     include_package_data=True,
     keywords="clisops",
     name="clisops",
     packages=find_packages(),
-    package_data={"clisops": ["etc/roocs.ini"]},
+    package_data={"clisops": ["etc/roocs.ini", "etc/logging.conf"]},
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
     extras_require={"docs": docs_requirements},
     url="https://github.com/roocs/clisops",
-    # zip_safe=False,
 )
