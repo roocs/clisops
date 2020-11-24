@@ -73,7 +73,7 @@ jobs:
       script:
         - py.test --cov=xclim
     - if: type = push
-      env: TOXENV=py38-macOS
+      env: TOXENV=py3x-macOS
       name: "Python3.x (macOS + Homebrew)"
       os: osx
       language: shell
