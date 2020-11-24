@@ -18,4 +18,4 @@ Co-Developers
 Contributors
 ------------
 
-None yet. Why not be the first?
+* Pascal Bourgault bourgault.pascal@ouranos.ca `@aulemahal <https://github.com/aulemahal>`_
