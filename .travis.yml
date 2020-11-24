@@ -88,7 +88,8 @@ jobs:
         - pip install -e .
       script:
         - py.test --cov=xclim
-    - env: TOXENV=py38-macOS
+    - if: type = push
+      env: TOXENV=py38-macOS
       name: "Python3.8 (macOS)"
       os: osx
       language: shell
