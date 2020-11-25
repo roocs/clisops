@@ -12,15 +12,15 @@ branches:
 jobs:
   fast_finish: true
   include:
-    - env:
-        - TOXENV=docs
-        - READTHEDOCS=true
-      name: "Documentation"
-      python: 3.6
-      addons:
-        apt:
-          packages:
-            - pandoc
+#    - env:
+#        - TOXENV=docs
+#        - READTHEDOCS=true
+#      name: "Documentation"
+#      python: 3.6
+#      addons:
+#        apt:
+#          packages:
+#            - pandoc
     - env: TOXENV=black
       name: "Black and flake8 compliance"
       python: 3.6
@@ -72,8 +72,9 @@ jobs:
         - pip install -e .
       script:
         - py.test --cov=xclim
-    - env: TOXENV=py38-macOS
-      name: "Python3.8 (macOS)"
+    - if: type = push
+      env: TOXENV=macOS
+      name: "Python3.x (macOS + Homebrew)"
       os: osx
       language: shell
       addons:
@@ -81,7 +82,7 @@ jobs:
           update: true
           packages:
             - netcdf
-            - python@3.8
+            - python@3.x
       before_install:
         - printenv
       install:
