@@ -12,40 +12,24 @@ branches:
 jobs:
   fast_finish: true
   include:
-    - env:
-        - TOXENV=docs
-        - READTHEDOCS=true
-      name: "Documentation"
-      python: 3.6
-      addons:
-        apt:
-          packages:
-            - pandoc
-            - libspatialindex-dev
-            - libnetcdf-dev
-            - libhdf5-dev
-            - libudunits2-dev
+#    - env:
+#        - TOXENV=docs
+#        - READTHEDOCS=true
+#      name: "Documentation"
+#      python: 3.6
+#      addons:
+#        apt:
+#          packages:
+#            - pandoc
     - env: TOXENV=black
       name: "Black and flake8 compliance"
       python: 3.6
-      addons:
-        apt:
-          packages:
-            - libspatialindex-dev
-            - libudunits2-dev
     - env: TOXENV=py38
       name: "Python3.8 (Linux)"
       python: 3.8
-      addons:
-        apt:
-          packages:
-            - libspatialindex-dev
-            - libnetcdf-dev
-            - libhdf5-dev
-            - libudunits2-dev
     - env:
         - TOXENV=py38-anaconda
-        - ROOCS_UTILS_ENV="https://github.com/roocs/roocs-utils/raw/master/environment.yml"
+        # - ROOCS_UTILS_ENV="https://github.com/roocs/roocs-utils/raw/master/environment.yml"
       name: "Python3.8 (Linux + Anaconda)"
       python: 3.8
       before_install:
@@ -60,10 +44,10 @@ jobs:
         - conda create -n clisops -c conda-forge python=$TRAVIS_PYTHON_VERSION
         - source activate clisops
         # The following is a workaround until roocs-utils has a package on conda-forge
-        - conda install -c conda-forge conda-merge
-        - mv environment.yml clisops_environment.yml
-        - bash -c "curl -L $ROOCS_UTILS_ENV -o roocs_utils_environment.yml"
-        - conda-merge roocs_utils_environment.yml clisops_environment.yml > environment.yml
+        # - conda install -c conda-forge conda-merge
+        # - mv environment.yml clisops_environment.yml
+        # - bash -c "curl -L $ROOCS_UTILS_ENV -o roocs_utils_environment.yml"
+        # - conda-merge roocs_utils_environment.yml clisops_environment.yml > environment.yml
         # end of workaround
         - conda env update -f environment.yml
         - conda install pytest coveralls pytest-cov
@@ -76,7 +60,7 @@ jobs:
         - TOXENV=py37-windows
         - DESIRED_PYTHON=3.7
         - MINICONDA_PATH=$(cygpath --windows /c/miniconda)
-        - ROOCS_UTILS_ENV="https://github.com/roocs/roocs-utils/raw/master/environment.yml"
+        # - ROOCS_UTILS_ENV="https://github.com/roocs/roocs-utils/raw/master/environment.yml"
       name: "Python3.7 (Windows + Anaconda via Chocolatey)"
       os: windows
       language: shell
@@ -91,10 +75,10 @@ jobs:
         - conda create -n clisops -c conda-forge python=$DESIRED_PYTHON
         - source activate clisops
         # The following is a workaround until roocs-utils has a package on conda-forge
-        - conda install -c conda-forge conda-merge
-        - mv environment.yml clisops_environment.yml
-        - bash -c "curl -L $ROOCS_UTILS_ENV -o roocs_utils_environment.yml"
-        - conda-merge roocs_utils_environment.yml clisops_environment.yml > environment.yml
+        # - conda install -c conda-forge conda-merge
+        # - mv environment.yml clisops_environment.yml
+        # - bash -c "curl -L $ROOCS_UTILS_ENV -o roocs_utils_environment.yml"
+        # - conda-merge roocs_utils_environment.yml clisops_environment.yml > environment.yml
         # end of workaround
         - conda env update -f environment.yml
         - conda install pytest coveralls pytest-cov
@@ -103,8 +87,9 @@ jobs:
         - pip install -e .
       script:
         - py.test --cov=xclim
-    - env: TOXENV=py38-macOS
-      name: "Python3.8 (macOS)"
+    - if: type = push
+      env: TOXENV=macOS
+      name: "Python3.x (macOS + Homebrew)"
       os: osx
       language: shell
       addons:
@@ -112,9 +97,7 @@ jobs:
           update: true
           packages:
             - netcdf
-            - spatialindex
-            - udunits
-            - python@3.8
+            - python@3.x
       before_install:
         - printenv
       install:
@@ -122,19 +105,9 @@ jobs:
     - env: TOXENV=py37
       name: "Python3.7 (Linux)"
       python: 3.7
-      addons:
-        apt:
-          packages:
-            - libspatialindex-dev
-            - libudunits2-dev
     - env: TOXENV=py36
       name: "Python3.6 (Linux)"
       python: 3.6
-      addons:
-        apt:
-          packages:
-            - libspatialindex-dev
-            - libudunits2-dev
   allow_failures:
       - env:
         - TOXENV=py38-anaconda
