@@ -95,7 +95,7 @@ jobs:
       python: 3.6
   allow_failures:
       - env: TOXENV=py38-anaconda
-      - env: TOXENV=py38-macOS
+      - env: TOXENV=macOS
       - env:
         - TOXENV=py37-windows
         - DESIRED_PYTHON=3.7
