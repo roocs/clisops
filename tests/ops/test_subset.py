@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 from unittest.mock import Mock
 
 import numpy as np
@@ -32,6 +33,8 @@ def _check_output_nc(result, fname="output_001.nc"):
 
 
 def _load_ds(fpath):
+    if isinstance(fpath, (str, Path)):
+        return xr.open_dataset(fpath)
     return xr.open_mfdataset(fpath)
 
 

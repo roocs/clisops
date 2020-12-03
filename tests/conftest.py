@@ -5,9 +5,6 @@ import xarray as xr
 
 from tests._common import write_roocs_cfg
 
-# from xclim.core.calendar import calendars
-
-
 write_roocs_cfg()
 
 

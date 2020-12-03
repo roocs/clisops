@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import xarray as xr
+from roocs_utils.exceptions import MissingParameterValue
 
 from clisops import logging, utils
 from clisops.core import subset_bbox, subset_level, subset_time
@@ -110,8 +111,14 @@ def subset(
 
     """
     # Convert all inputs to Xarray Datasets
-    if isinstance(ds, (str, Path)):
+    if ds is None:
+        raise MissingParameterValue
+    elif isinstance(ds, (xr.Dataset, xr.DataArray)):
+        pass
+    elif isinstance(ds, str) or not Path(ds).is_file():
         ds = xr.open_mfdataset(ds, use_cftime=True, combine="by_coords")
+    elif isinstance(ds, Path):
+        ds = xr.open_dataset(ds, use_cftime=True)
 
     LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
     args = utils.map_params(ds, time, area, level)
