@@ -119,10 +119,10 @@ def subset(
 
     if isinstance(ds, (str, Path)):
         ds = expand_wildcards(ds)
-    if len(ds) > 1:
-        ds = xr.open_mfdataset(ds, use_cftime=True, combine="by_coords")
-    else:
-        ds = xr.open_dataset(ds[0], use_cftime=True)
+        if len(ds) > 1:
+            ds = xr.open_mfdataset(ds, use_cftime=True, combine="by_coords")
+        else:
+            ds = xr.open_dataset(ds[0], use_cftime=True)
 
     LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
     args = utils.map_params(ds, time, area, level)
