@@ -1,3 +1,5 @@
+import platform
+
 import pytest
 import xarray as xr
 
@@ -141,6 +143,9 @@ def test_StandardFileNamer_cmip6_use_default_attr_names():
         assert resp == expected
 
 
+@pytest.mark.skipif(
+    platform.system() == "Windows", "Git modules not working on Windows"
+)
 def test_StandardFileNamer_c3s_cordex():
     s = get_file_namer("standard")()
 
@@ -163,6 +168,9 @@ def test_StandardFileNamer_c3s_cordex():
         assert resp == expected
 
 
+@pytest.mark.skipif(
+    platform.system() == "Windows", "Git modules not working on Windows"
+)
 def test_StandardFileNamer_c3s_cordex_use_default_attr_names():
     s = get_file_namer("standard")()
 
