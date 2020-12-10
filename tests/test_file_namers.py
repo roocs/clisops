@@ -144,7 +144,8 @@ def test_StandardFileNamer_cmip6_use_default_attr_names():
 
 
 @pytest.mark.skipif(
-    platform.system() == "Windows", "Git modules not working on Windows"
+    condition="platform.system() == 'Windows'",
+    reason="Git modules not working on Windows",
 )
 def test_StandardFileNamer_c3s_cordex():
     s = get_file_namer("standard")()
@@ -169,7 +170,8 @@ def test_StandardFileNamer_c3s_cordex():
 
 
 @pytest.mark.skipif(
-    platform.system() == "Windows", "Git modules not working on Windows"
+    condition="platform.system() == 'Windows'",
+    reason="Git modules not working on Windows",
 )
 def test_StandardFileNamer_c3s_cordex_use_default_attr_names():
     s = get_file_namer("standard")()
