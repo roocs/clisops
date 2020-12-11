@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import xarray as xr
-from roocs_utils.exceptions import MissingParameterValue
 
 from clisops import logging, utils
 from clisops.core import subset_bbox, subset_level, subset_time
@@ -111,12 +110,6 @@ def subset(
     | file_namer: "standard"
 
     """
-    # Convert all inputs to Xarray Datasets
-    if ds is None:
-        raise MissingParameterValue
-    elif isinstance(ds, (xr.Dataset, xr.DataArray)):
-        pass
-
     if isinstance(ds, (str, Path)):
         ds = expand_wildcards(ds)
         if len(ds) > 1:
