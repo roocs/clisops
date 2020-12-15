@@ -18,7 +18,7 @@ Other Changes
 * Better handling for paths in ``ops.subset`` allowing windows build to be fixed.
 
 
-v0.4.0 (2020-11-5)
+v0.4.0 (2020-11-10)
 -----------------
 
 Adding new features, updating doc strings and documentation and inclusion of static type support.
@@ -59,7 +59,7 @@ Bug Fixes
 Other Changes
 ^^^^^^^^^^^^^
 
-* cfunits dependency removed - not needed.
+* ``cfunits`` dependency removed - not needed.
 * requirements.txt and environment.yml synced.
 * Documentation updated to include API.
 * Read the docs build now tested in CI pipeline.
