@@ -2,6 +2,7 @@ graft clisops
 include *.rst
 global-exclude __pycache__
 global-exclude *.py[co]
+prune tests
 
 recursive-include etc *
 include LICENSE

@@ -5,6 +5,7 @@ import xarray as xr
 
 from clisops import logging, utils
 from clisops.core import subset_bbox, subset_level, subset_time
+from clisops.utils.common import expand_wildcards
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import get_output, get_time_slices
 
@@ -109,9 +110,12 @@ def subset(
     | file_namer: "standard"
 
     """
-    # Convert all inputs to Xarray Datasets
     if isinstance(ds, (str, Path)):
-        ds = xr.open_mfdataset(ds, use_cftime=True, combine="by_coords")
+        ds = expand_wildcards(ds)
+        if len(ds) > 1:
+            ds = xr.open_mfdataset(ds, use_cftime=True, combine="by_coords")
+        else:
+            ds = xr.open_dataset(ds[0], use_cftime=True)
 
     LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
     args = utils.map_params(ds, time, area, level)
