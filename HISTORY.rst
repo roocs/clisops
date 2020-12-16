@@ -8,7 +8,7 @@ Breaking Changes
 ^^^^^^^^^^^^^^^^
 * Moved ``core.subset.create_mask_vectorize`` to ``core.subset.create_mask``. The old spatial join option was removed.
 ``core.subset.subset_shape`` lost its ``vectorize`` kwarg, as it is now default.
-* ``roocs-utils``>0.2.0 used
+* ``roocs-utils``>0.1.5 used
 
 Other Changes
 ^^^^^^^^^^^^^
