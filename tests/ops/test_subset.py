@@ -323,6 +323,35 @@ def test_area_within_area_subset_cmip6():
     assert np.isclose(ds.lat.data[0], 36.76056)
 
 
+def test_subset_with_lat_lon_single_values():
+    """Creates subset where lat and lon only have one value. Then
+    subsets that. This tests that the `lat_bnds` and `lon_bnds`
+    are not being reversed by the `_check_desc_coords` function in
+    `clisops.core.subset`.
+    """
+    area = (100.0, 10.0, 300.0, 90.0)
+
+    outputs = subset(
+        ds=CMIP6_RLDS,
+        time=("2001-01-01T00:00:00", "2002-12-30T00:00:00"),
+        area=area,
+        output_type="xarray",
+    )
+
+    ds = outputs[0]
+
+    outputs2 = subset(
+        ds=ds,
+        time=("2001-01-01T00:00:00", "2002-12-30T00:00:00"),
+        area=area,
+        output_type="xarray",
+    )
+
+    ds2 = outputs2[0]
+    assert len(ds2.lat) == 1
+    assert len(ds2.lon) == 1
+
+
 def test_area_within_area_subset_chunked():
 
     start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
