@@ -11,6 +11,7 @@ import numpy as np
 import xarray
 from pyproj import Geod
 from pyproj.crs import CRS
+from pyproj.exceptions import CRSError
 from roocs_utils.utils.time_utils import to_isoformat
 from roocs_utils.xarray_utils import xarray_utils as xu
 from shapely import vectorized
@@ -438,7 +439,7 @@ def create_mask(
     --------
     >>> import geopandas as gpd  # doctest: +SKIP
     >>> import xarray as xr  # doctest: +SKIP
-    >>> from clisops.core.subset import create_mask_vectorize  # doctest: +SKIP
+    >>> from clisops.core.subset import create_mask  # doctest: +SKIP
     >>> ds = xr.open_dataset(path_to_tasmin_file)  # doctest: +SKIP
     >>> polys = gpd.read_file(path_to_multi_shape_file)  # doctest: +SKIP
     ...
@@ -604,7 +605,11 @@ def subset_shape(
         except ValueError:
             raise
     else:
-        shape_crs = CRS(poly.crs)
+        try:
+            shape_crs = CRS(poly.crs)
+        except CRSError:
+            poly.crs = wgs84
+            shape_crs = wgs84
 
     wrap_lons = False
     if raster_crs is not None:
@@ -621,12 +626,18 @@ def subset_shape(
         try:
             # Extract CF-compliant CRS_WKT from crs variable.
             raster_crs = CRS.from_cf(ds_copy.crs.attrs)
-        except AttributeError:
-            if np.min(ds_copy.lon) >= 0 and np.max(ds_copy.lon) <= 360:
+        except AttributeError as e:
+            # This is guessing that lons are wrapped around at 180+ but without much information, this might not be true
+            if np.min(ds_copy.lon) >= -180 and np.max(ds_copy.lon) <= 180:
+                raster_crs = wgs84
+            elif np.min(ds_copy.lon) >= 0 and np.max(ds_copy.lon) <= 360:
                 wrap_lons = True
                 raster_crs = wgs84_wrapped
             else:
-                raster_crs = wgs84
+                raise CRSError(
+                    "Raster CRS is not known and does not resemble WGS84."
+                ) from e
+
     _check_crs_compatibility(shape_crs=shape_crs, raster_crs=raster_crs)
 
     mask_2d = create_mask(
