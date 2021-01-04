@@ -1,12 +1,20 @@
+from pathlib import Path
+
 import xarray as xr
 
+from clisops.utils.common import expand_wildcards
 from clisops.utils.output_utils import get_time_slices
 
 from ._common import CMIP5_RH, CMIP5_TAS
 
 
 def _open(coll):
-    ds = xr.open_mfdataset(coll, use_cftime=True, combine="by_coords")
+    if isinstance(coll, (str, Path)):
+        coll = expand_wildcards(coll)
+    if len(coll) > 1:
+        ds = xr.open_mfdataset(coll, use_cftime=True, combine="by_coords")
+    else:
+        ds = xr.open_dataset(coll[0], use_cftime=True)
     return ds
 
 
