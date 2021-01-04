@@ -15,6 +15,9 @@ DEFAULT_CMIP6_ARCHIVE_BASE = os.path.join(
     TESTS_HOME, "mini-esgf-data/test_data/badc/cmip6/data"
 )
 
+# This is now only required for json files
+XCLIM_TESTS_DATA = os.path.join(TESTS_HOME, "xclim-testdata/testdata")
+
 
 def write_roocs_cfg():
     cfg_templ = """
@@ -75,7 +78,7 @@ CMIP5_RH = os.path.join(
 CMIP5_TAS_FILE = str(
     get_file(
         "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc",
-        branch="add_cmip5_hadgem",
+        branch="add_cmip5_hadgem",  # This will be removed once the branch is merged into "main"
     )
 )
 
