@@ -15,7 +15,7 @@ from xarray.tutorial import file_md5_checksum
 
 _default_cache_dir = Path.home() / ".clisops_testing_data"
 
-LOGGER = logging.getLogger("RAVEN")
+LOGGER = logging.getLogger(__file__)
 
 __all__ = ["get_file", "open_dataset", "query_folder"]
 
