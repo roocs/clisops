@@ -474,14 +474,18 @@ def create_mask(
         dims_out = x_dim.dims
         coords_out = x_dim.coords
 
-    # try vectorize
+    # vectorize
     mask = np.zeros(lat1.shape) + np.nan
     for pp in reversed(poly.index):
         for vv in poly[poly.index == pp].geometry.values:
-            b1 = vectorized.contains(vv, lon1.flatten(), lat1.flatten()).reshape(
+            contained = vectorized.contains(vv, lon1.flatten(), lat1.flatten()).reshape(
                 lat1.shape
             )
-            mask[b1] = pp
+            touched = vectorized.touches(vv, lon1.flatten(), lat1.flatten()).reshape(
+                lat1.shape
+            )
+            intersection = np.logical_or(contained, touched)
+            mask[intersection] = pp
 
     mask = xarray.DataArray(mask, dims=dims_out, coords=coords_out)
 
