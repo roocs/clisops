@@ -539,6 +539,12 @@ def subset_shape(
     Union[xarray.DataArray, xarray.Dataset]
       A subset of `ds`
 
+    Notes
+    -----
+    If no CRS is found in the shape provided (e.g. RFC-7946 GeoJSON, https://en.wikipedia.org/wiki/GeoJSON),
+    assumes a decimal degree datum (CRS84). Be advised that EPSG:4326 and OGC:CRS84 are not identical as axis order of
+    lat and long differs between the two (for more information, see: https://github.com/OSGeo/gdal/issues/2035).
+
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
