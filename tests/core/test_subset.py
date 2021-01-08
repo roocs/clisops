@@ -443,8 +443,8 @@ class TestSubsetBbox:
         # We don't test for equality with previous datasets.
         # Without coords, sel defaults to isel which doesn't include the last element.
 
-    #TODO this test doesn't seem to do anything : remove?
-    #Note - previous failure was from using a lon/lat bnds where there is no data. Changed below
+    # TODO: this test doesn't seem to do anything : remove?
+    # Note - previous failure was from using a lon/lat bnds where there is no data. Changed below
     # def test_irregular_straight_lon_lat(self):
     #     ds = xr.open_dataset(self.nc_2dlonlat)
     #     # pass
