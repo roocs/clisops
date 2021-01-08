@@ -738,6 +738,7 @@ def subset_bbox(
     # Subset lat lon
     >>> prSub = subset_bbox(ds.pr, lon_bnds=[-75, -70], lat_bnds=[40, 45])  # doctest: +SKIP
     """
+
     # Rectilinear case (lat and lon are the 1D dimensions)
     if ("lat" in da.dims) or ("lon" in da.dims):
 
@@ -848,7 +849,7 @@ def in_bounds(bounds: Tuple[float, float], coord: xarray.Coordinate) -> bool:
 
 def _check_desc_coords(coord, bounds, dim):
     """If Dataset coordinates are descending reverse bounds."""
-    if np.all(coord.diff(dim=dim) < 0):
+    if np.all(coord.diff(dim=dim) < 0) and len(coord) > 1:
         bounds = np.flip(bounds)
     return bounds
 
