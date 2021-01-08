@@ -5,7 +5,7 @@ import xarray as xr
 from clisops.utils.common import expand_wildcards
 from clisops.utils.output_utils import get_time_slices
 
-from ._common import CMIP5_RH, CMIP5_TAS
+from ._common import CMIP5_TAS
 
 
 def _open(coll):

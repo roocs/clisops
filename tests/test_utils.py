@@ -1,8 +1,7 @@
 import os
 
 import pytest
-from dateutil.parser import ParserError
-from roocs_utils.exceptions import InvalidParameterValue, MissingParameterValue
+from roocs_utils.exceptions import InvalidParameterValue
 
 from clisops import CONFIG, utils
 

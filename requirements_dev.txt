@@ -10,6 +10,7 @@ twine
 pytest
 pytest-runner
 pre-commit
-black
+black>=20.8b1
 nbsphinx
 ipython
+jinja2>=2.11
