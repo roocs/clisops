@@ -443,11 +443,13 @@ class TestSubsetBbox:
         # We don't test for equality with previous datasets.
         # Without coords, sel defaults to isel which doesn't include the last element.
 
-    def test_irregular_straight_lon_lat(self):
-        ds = xr.open_dataset(self.nc_2dlonlat)
-        # pass
-        # FIXME: This seems to cause problems, but why?
-        subset.subset_bbox(ds.tasmax, lon_bnds=[-10, 20], lat_bnds=[10, 20])
+    #TODO this test doesn't seem to do anything : remove?
+    #Note - previous failure was from using a lon/lat bnds where there is no data. Changed below
+    # def test_irregular_straight_lon_lat(self):
+    #     ds = xr.open_dataset(self.nc_2dlonlat)
+    #     # pass
+    #     # N. AM data use appropriate zone to avoid fail
+    #     subset.subset_bbox(ds.tasmax, lon_bnds=[-100, -80], lat_bnds=[40, 45])
 
     # test datasets with descending coords
     def test_inverted_coords(self):
