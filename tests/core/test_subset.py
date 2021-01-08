@@ -4,6 +4,7 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import xarray as xr
+from shapely.geometry import Polygon
 
 from clisops.core import subset
 from clisops.utils import get_file
@@ -772,6 +773,20 @@ class TestSubsetShape:
         regions.set_index("id")
         ds_sub = subset.subset_shape(ds, shape=regions)
         assert ds_sub.notnull().sum() == 58 + 250 + 22
+
+    def test_vectorize_touches_polygons(self):
+        """Check that points touching the polygon are included in subset."""
+        # Create simple polygon
+        poly = Polygon([[0, 0], [1, 0], [1, 1]])
+        shape = gpd.GeoDataFrame(geometry=[poly])
+        # Create simple data array
+        da = xr.DataArray(
+            data=[[0, 1], [2, 3]],
+            dims=("lon", "lat"),
+            coords={"lon": [0, 1], "lat": [0, 1]},
+        )
+        sub = subset.subset_shape(da, shape=shape)
+        assert sub.notnull().sum() == 3
 
 
 class TestDistance:
