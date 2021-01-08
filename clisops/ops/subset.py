@@ -2,7 +2,6 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import xarray as xr
-from roocs_utils.exceptions import MissingParameterValue
 
 from clisops import logging, utils
 from clisops.core import subset_bbox, subset_level, subset_time
