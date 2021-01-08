@@ -421,7 +421,7 @@ class TestSubsetBbox:
 
     def test_irregular_inverted_dataset(self):
         da = xr.open_dataset(self.nc_2dlonlat)
-        da_rev = da.sortby('rlat', ascending=False).sortby('rlon', ascending=False)
+        da_rev = da.sortby("rlat", ascending=False).sortby("rlon", ascending=False)
         out = subset.subset_bbox(da, lon_bnds=[-150, -100], lat_bnds=[10, 60])
         out_rev = subset.subset_bbox(da_rev, lon_bnds=[-150, -100], lat_bnds=[10, 60])
         variables = list(da.data_vars)
@@ -433,7 +433,9 @@ class TestSubsetBbox:
 
         # ensure results are equal to previous test on DataArray only
         out1 = subset.subset_bbox(da.tasmax, lon_bnds=[-150, -100], lat_bnds=[10, 60])
-        out1_rev = subset.subset_bbox(da_rev.tasmax, lon_bnds=[-150, -100], lat_bnds=[10, 60])
+        out1_rev = subset.subset_bbox(
+            da_rev.tasmax, lon_bnds=[-150, -100], lat_bnds=[10, 60]
+        )
         diff = (out1 - out1_rev).values
         np.testing.assert_array_equal(np.unique(diff[~np.isnan(diff)]), 0)
 
