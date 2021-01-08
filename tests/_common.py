@@ -4,16 +4,20 @@ from pathlib import Path
 
 from jinja2 import Template
 
+from clisops.utils import get_file
+
 ROOCS_CFG = str(Path(tempfile.gettempdir()).joinpath("roocs.ini").absolute())
 TESTS_HOME = Path(__file__).absolute().parent
-XCLIM_TESTS_DATA = TESTS_HOME.joinpath("xclim-testdata/testdata")
+REAL_C3S_CMIP5_ARCHIVE_BASE = Path("/group_workspaces/jasmin2/cp4cds1/vol1/data/")
 DEFAULT_CMIP5_ARCHIVE_BASE = TESTS_HOME.joinpath(
     "mini-esgf-data/test_data/badc/cmip5/data"
 )
-REAL_C3S_CMIP5_ARCHIVE_BASE = Path("/group_workspaces/jasmin2/cp4cds1/vol1/data/")
 DEFAULT_CMIP6_ARCHIVE_BASE = TESTS_HOME.joinpath(
     "mini-esgf-data/test_data/badc/cmip6/data"
 )
+
+# This is now only required for json files
+XCLIM_TESTS_DATA = os.path.join(TESTS_HOME, "xclim-testdata/testdata")
 
 
 def write_roocs_cfg():
@@ -69,21 +73,29 @@ CMIP5_RH = CMIP5_ARCHIVE_BASE.joinpath(
     "cmip5/output1/MOHC/HadGEM2-ES/historical/mon/land/Lmon/r1i1p1/latest/rh/*.nc",
 )
 
-CMIP5_TAS_FILE = CMIP5_ARCHIVE_BASE.joinpath(
-    "cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc",  # noqa
+CMIP5_TAS_FILE = str(
+    get_file(
+        "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc",
+        branch="add_cmip5_hadgem",  # This will be removed once the branch is merged into "main"
+    )
 )
 
 CMIP6_ARCHIVE_BASE = cmip6_archive_base()
 
-CMIP6_O3 = XCLIM_TESTS_DATA.joinpath(
-    "cmip6",
-    "o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
+CMIP6_O3 = str(
+    get_file(
+        "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
+    )
+)
+
+CMIP6_RLDS = CMIP6_ARCHIVE_BASE.joinpath(
+    "CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803",
+    "rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc",
 )
 
 C3S_CMIP5_TSICE = REAL_C3S_CMIP5_ARCHIVE_BASE.joinpath(
     "c3s-cmip5/output1/NCC/NorESM1-ME/rcp60/mon/seaIce/OImon/r1i1p1/tsice/v20120614/*.nc",
 )
-
 
 C3S_CMIP5_TOS = REAL_C3S_CMIP5_ARCHIVE_BASE.joinpath(
     "c3s-cmip5/output1/BCC/bcc-csm1-1-m/historical/mon/ocean/Omon/r1i1p1/tos/v20120709/*.nc",
