@@ -786,7 +786,8 @@ def subset_bbox(
         args = dict()
         for i, d in enumerate(da.lat.dims):
             coords = da[d][ind[i]]
-            args[d] = slice(coords.min().values, coords.max().values)
+            bnds = _check_desc_coords(coord=da[d], bounds=[coords.min().values, coords.max().values], dim=d)
+            args[d] = slice(*bnds)
         # If the dims of lat and lon do not have coords, sel defaults to isel,
         # and then the last element is not returned.
         da = da.sel(**args)
