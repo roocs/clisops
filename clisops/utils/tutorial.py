@@ -40,9 +40,10 @@ def _get(
         url = "/".join((github_url, "raw", branch, fullname.as_posix()))
         LOGGER.info("Fetching remote file: %s" % fullname.as_posix())
         urlretrieve(url, local_file)
+
         try:
             url = "/".join((github_url, "raw", branch, md5name.as_posix()))
-            LOGGER.info("Fetching remote file md5: %s" % fullname.as_posix())
+            LOGGER.info("Fetching remote file md5: %s" % md5name.as_posix())
             urlretrieve(url, md5file)
         except HTTPError as e:
             msg = f"{md5name.as_posix()} not found. Aborting file retrieval."
@@ -50,10 +51,11 @@ def _get(
             raise FileNotFoundError(msg) from e
 
         localmd5 = file_md5_checksum(local_file)
+
         try:
             with open(md5file) as f:
                 remotemd5 = f.read()
-            if localmd5 != remotemd5:
+            if localmd5.strip() != remotemd5.strip():
                 local_file.unlink()
                 msg = """
                     MD5 checksum does not match, try downloading dataset again.
