@@ -1,21 +1,15 @@
 import os
-import sys
 from pathlib import Path
-from unittest.mock import Mock
 
 import numpy as np
 import pytest
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue, MissingParameterValue
 from roocs_utils.parameter import area_parameter, time_parameter
-from roocs_utils.utils.common import parse_size
 
-import clisops
 from clisops import CONFIG
-from clisops.ops.subset import _subset, subset
-from clisops.utils import map_params, output_utils
-from clisops.utils.file_namers import get_file_namer
-from clisops.utils.output_utils import _format_time, get_output, get_time_slices
+from clisops.ops.subset import subset
+from clisops.utils.output_utils import _format_time
 
 from .._common import (
     C3S_CMIP5_TOS,
