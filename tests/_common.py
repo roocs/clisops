@@ -169,6 +169,38 @@ CMIP6_RLDS = str(
     )
 )
 
+CMIP6_SICONC = str(
+    get_file(
+        'test_data/badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/SImon/siconc/gn/latest/siconc_SImon_CESM2_historical_r1i1p1f1_gn_185001-201412.nc',
+        **MINI_ESGF_KWARGS
+    )
+)
+
+C3S_CORDEX_PSL_FILES = [
+    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20060101-20101231.nc',
+    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20510101-20601231.nc',
+    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20110101-20201231.nc',
+    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20610101-20701231.nc',
+    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20210101-20301231.nc',
+    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20710101-20801231.nc',
+    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20310101-20401231.nc',
+    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20810101-20901231.nc',
+    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20410101-20501231.nc',
+    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20910101-20991201.nc'
+]
+
+_ = get_file(
+    [os.path.join('test_data/group_workspaces/jasmin2/cp4cds1/vol1/data/c3s-cordex/output/EUR-11/IPSL/MOHC-HadGEM2-ES/rcp85/r1i1p1/IPSL-WRF381P/v1/day/psl/v20190212', nc_path)
+        for nc_path in C3S_CORDEX_PSL_FILES
+    ],
+    **MINI_ESGF_KWARGS
+)
+
+C3S_CORDEX_PSL = os.path.join(
+    MINI_ESGF_CACHE_DIR,
+    'master/test_data/group_workspaces/jasmin2/cp4cds1/vol1/data/c3s-cordex/output/EUR-11/IPSL/MOHC-HadGEM2-ES/rcp85/r1i1p1/IPSL-WRF381P/v1/day/psl/v20190212/*.nc'
+)
+
 C3S_CMIP5_TSICE = os.path.join(
     REAL_C3S_CMIP5_ARCHIVE_BASE,
     "c3s-cmip5/output1/NCC/NorESM1-ME/rcp60/mon/seaIce/OImon/r1i1p1/tsice/v20120614/*.nc",

@@ -7,7 +7,7 @@ from clisops import CONFIG
 from clisops.ops.subset import subset
 from clisops.utils.file_namers import get_file_namer
 
-from ._common import CMIP5_TAS
+from ._common import CMIP5_TAS, CMIP6_SICONC, C3S_CORDEX_PSL
 
 
 def test_SimpleFileNamer():
@@ -74,8 +74,7 @@ def test_StandardFileNamer_cmip5():
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        "tests/mini-esgf-data/test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES"
-        "/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
+        CMIP5_TAS,
         use_cftime=True,
         combine="by_coords",
     )
@@ -91,8 +90,7 @@ def test_StandardFileNamer_cmip5_use_default_attr_names():
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        "tests/mini-esgf-data/test_data/badc/cmip5/data/cmip5/output1/MOHC"
-        "/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
+        CMIP5_TAS,
         use_cftime=True,
         combine="by_coords",
     )
@@ -109,8 +107,7 @@ def test_StandardFileNamer_cmip6():
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        "tests/mini-esgf-data/test_data/badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/SImon"
-        "/siconc/gn/latest/*.nc",
+        CMIP6_SICONC,
         use_cftime=True,
         combine="by_coords",
     )
@@ -126,8 +123,7 @@ def test_StandardFileNamer_cmip6_use_default_attr_names():
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        "tests/mini-esgf-data/test_data/badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/SImon"
-        "/siconc/gn/latest/*.nc",
+        CMIP6_SICONC,
         use_cftime=True,
         combine="by_coords",
     )
@@ -151,8 +147,7 @@ def test_StandardFileNamer_c3s_cordex():
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        "tests/mini-esgf-data/test_data/group_workspaces/jasmin2/cp4cds1/vol1/data/c3s-cordex/output/EUR-11"
-        "/IPSL/MOHC-HadGEM2-ES/rcp85/r1i1p1/IPSL-WRF381P/v1/day/psl/v20190212/*.nc",
+        C3S_CORDEX_PSL,
         use_cftime=True,
         combine="by_coords",
     )
@@ -177,8 +172,7 @@ def test_StandardFileNamer_c3s_cordex_use_default_attr_names():
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        "tests/mini-esgf-data/test_data/group_workspaces/jasmin2/cp4cds1/vol1/data/c3s-cordex/output/EUR-11"
-        "/IPSL/MOHC-HadGEM2-ES/rcp85/r1i1p1/IPSL-WRF381P/v1/day/psl/v20190212/*.nc",
+        C3S_CORDEX_PSL,
         use_cftime=True,
         combine="by_coords",
     )
