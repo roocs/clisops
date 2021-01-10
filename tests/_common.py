@@ -1,6 +1,7 @@
 import os
 import tempfile
 from pathlib import Path
+import pytest
 import xarray as xr
 
 from jinja2 import Template
@@ -61,6 +62,14 @@ def cmip6_archive_base():
     return DEFAULT_CMIP6_ARCHIVE_BASE
 
 
+def resolve_files(base_dir, kwargs, file_list):
+    get_file(
+        [os.path.join(base_dir, nc_file) for nc_file in file_list],
+        **kwargs
+    )
+    return os.path.join(kwargs['cache_dir'], kwargs['branch'], base_dir, '*.nc')
+
+
 CMIP5_ARCHIVE_BASE = cmip5_archive_base()
 
 MINI_ESGF_KWARGS = dict(
@@ -74,87 +83,70 @@ MINI_ESGF_KWARGS = dict(
 #    "cmip5/output1/INM/inmcm4/rcp45/mon/ocean/Omon/r1i1p1/latest/zostoga/*.nc",
 #)
 
-CMIP5_ZOSTOGA = str(
-    get_file(
+@pytest.fixture
+def cmip5_zostoga():
+    return str(get_file(
         'test_data/badc/cmip5/data/cmip5/output1/INM/inmcm4/rcp45/mon/ocean/Omon/r1i1p1/latest/zostoga/zostoga_Omon_inmcm4_rcp45_r1i1p1_200601-210012.nc',
         **MINI_ESGF_KWARGS
-    )
-)
+    ))
 
 #CMIP5_TAS = os.path.join(
 #    CMIP5_ARCHIVE_BASE,
 #    "cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
 #)
 
-CMIP5_TAS_FILES = [
-    'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc',
-    'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_209912-212411.nc',
-    'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_219912-222411.nc',
-    'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_229912-229912.nc',
-    'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_203012-205511.nc',
-    'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_212412-214911.nc',
-    'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_222412-224911.nc',
-    'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_205512-208011.nc',
-    'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_214912-217411.nc',
-    'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_224912-227411.nc',
-    'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_208012-209912.nc',
-    'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_217412-219911.nc',
-    'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_227412-229911.nc'
-]
-
-_ = get_file(
-    [os.path.join('test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas', nc_path)
-        for nc_path in CMIP5_TAS_FILES
-    ],
-    **MINI_ESGF_KWARGS
-)
-
-CMIP5_TAS = os.path.join(
-    MINI_ESGF_CACHE_DIR,
-    'master/test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc'
-)
+@pytest.fixture
+def cmip5_tas():
+    return resolve_files(
+        'test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas',
+        MINI_ESGF_KWARGS,
+        ['tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc',
+         'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_209912-212411.nc',
+         'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_219912-222411.nc',
+         'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_229912-229912.nc',
+         'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_203012-205511.nc',
+         'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_212412-214911.nc',
+         'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_222412-224911.nc',
+         'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_205512-208011.nc',
+         'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_214912-217411.nc',
+         'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_224912-227411.nc',
+         'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_208012-209912.nc',
+         'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_217412-219911.nc',
+         'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_227412-229911.nc']
+    )
 
 #CMIP5_RH = os.path.join(
 #    CMIP5_ARCHIVE_BASE,
 #    "cmip5/output1/MOHC/HadGEM2-ES/historical/mon/land/Lmon/r1i1p1/latest/rh/*.nc",
 #)
 
-CMIP5_RH_FILES = [
-    'rh_Lmon_HadGEM2-ES_historical_r1i1p1_185912-188411.nc',
-    'rh_Lmon_HadGEM2-ES_historical_r1i1p1_190912-193411.nc',
-    'rh_Lmon_HadGEM2-ES_historical_r1i1p1_195912-198411.nc',
-    'rh_Lmon_HadGEM2-ES_historical_r1i1p1_188412-190911.nc',
-    'rh_Lmon_HadGEM2-ES_historical_r1i1p1_193412-195911.nc',
-    'rh_Lmon_HadGEM2-ES_historical_r1i1p1_198412-200511.nc'
-]
+@pytest.fixture
+def cmip5_rh():
+    return resolve_files(
+        'test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/historical/mon/land/Lmon/r1i1p1/latest/rh',
+        MINI_ESGF_KWARGS,
+        ['rh_Lmon_HadGEM2-ES_historical_r1i1p1_185912-188411.nc',
+         'rh_Lmon_HadGEM2-ES_historical_r1i1p1_190912-193411.nc',
+         'rh_Lmon_HadGEM2-ES_historical_r1i1p1_195912-198411.nc',
+         'rh_Lmon_HadGEM2-ES_historical_r1i1p1_188412-190911.nc',
+         'rh_Lmon_HadGEM2-ES_historical_r1i1p1_193412-195911.nc',
+         'rh_Lmon_HadGEM2-ES_historical_r1i1p1_198412-200511.nc']
+    )
 
-_ = get_file(
-    [os.path.join('test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/historical/mon/land/Lmon/r1i1p1/latest/rh', nc_path)
-        for nc_path in CMIP5_RH_FILES
-    ],
-    **MINI_ESGF_KWARGS
-)
-
-CMIP5_RH = os.path.join(
-    MINI_ESGF_CACHE_DIR,
-    'master/test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/historical/mon/land/Lmon/r1i1p1/latest/rh/*.nc'
-)
-
-
-CMIP5_TAS_FILE = str(
-    get_file(
+@pytest.fixture
+def cmip5_tas_file():
+    return str(get_file(
         "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc",
         branch="add_cmip5_hadgem",  # This will be removed once the branch is merged into "main"
-    )
-)
+    ))
 
 CMIP6_ARCHIVE_BASE = cmip6_archive_base()
 
-CMIP6_O3 = str(
-    get_file(
+@pytest.fixture
+def cmip6_o3():
+    return = str(get_file(
         "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
-    )
-)
+    ))
 
 #CMIP6_RLDS = os.path.join(
 #    CMIP6_ARCHIVE_BASE,
@@ -162,44 +154,36 @@ CMIP6_O3 = str(
 #    "rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc",
 #)
 
-CMIP6_RLDS = str(
-    get_file(
+@pytest.fixture
+def cmip6_rlds():
+    return str(get_file(
         'test_data/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc',
         **MINI_ESGF_KWARGS
-    )
-)
+    ))
 
-CMIP6_SICONC = str(
-    get_file(
+@pytest.fixture
+def cmip6_siconc():
+    return str(get_file(
         'test_data/badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/SImon/siconc/gn/latest/siconc_SImon_CESM2_historical_r1i1p1f1_gn_185001-201412.nc',
         **MINI_ESGF_KWARGS
+    ))
+
+@pytest.fixture
+def c3s_cordex_psl():
+    return resolve_files(
+        'test_data/group_workspaces/jasmin2/cp4cds1/vol1/data/c3s-cordex/output/EUR-11/IPSL/MOHC-HadGEM2-ES/rcp85/r1i1p1/IPSL-WRF381P/v1/day/psl/v20190212',
+        MINI_ESGF_KWARGS,
+        ['psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20060101-20101231.nc',
+         'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20510101-20601231.nc',
+         'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20110101-20201231.nc',
+         'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20610101-20701231.nc',
+         'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20210101-20301231.nc',
+         'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20710101-20801231.nc',
+         'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20310101-20401231.nc',
+         'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20810101-20901231.nc',
+         'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20410101-20501231.nc',
+         'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20910101-20991201.nc']
     )
-)
-
-C3S_CORDEX_PSL_FILES = [
-    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20060101-20101231.nc',
-    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20510101-20601231.nc',
-    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20110101-20201231.nc',
-    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20610101-20701231.nc',
-    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20210101-20301231.nc',
-    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20710101-20801231.nc',
-    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20310101-20401231.nc',
-    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20810101-20901231.nc',
-    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20410101-20501231.nc',
-    'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20910101-20991201.nc'
-]
-
-_ = get_file(
-    [os.path.join('test_data/group_workspaces/jasmin2/cp4cds1/vol1/data/c3s-cordex/output/EUR-11/IPSL/MOHC-HadGEM2-ES/rcp85/r1i1p1/IPSL-WRF381P/v1/day/psl/v20190212', nc_path)
-        for nc_path in C3S_CORDEX_PSL_FILES
-    ],
-    **MINI_ESGF_KWARGS
-)
-
-C3S_CORDEX_PSL = os.path.join(
-    MINI_ESGF_CACHE_DIR,
-    'master/test_data/group_workspaces/jasmin2/cp4cds1/vol1/data/c3s-cordex/output/EUR-11/IPSL/MOHC-HadGEM2-ES/rcp85/r1i1p1/IPSL-WRF381P/v1/day/psl/v20190212/*.nc'
-)
 
 C3S_CMIP5_TSICE = os.path.join(
     REAL_C3S_CMIP5_ARCHIVE_BASE,

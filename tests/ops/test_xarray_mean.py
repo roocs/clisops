@@ -1,8 +1,6 @@
 import numpy as np
 import xarray as xr
 
-from .._common import CMIP5_TAS
-
 nan = np.nan
 
 
@@ -28,9 +26,9 @@ def test_xarray_da_mean_skipna_none():
     assert mean == 10
 
 
-def test_xarray_da_mean_keep_attrs_true():
+def test_xarray_da_mean_keep_attrs_true(cmip5_tas):
     ds = xr.open_mfdataset(
-        CMIP5_TAS,
+        cmip5_tas,
         combine="by_coords",
         use_cftime=True,
     )
@@ -41,9 +39,9 @@ def test_xarray_da_mean_keep_attrs_true():
     assert ds.attrs == ds_mean.attrs
 
 
-def test_xarray_da_mean_keep_attrs_false():
+def test_xarray_da_mean_keep_attrs_false(cmip5_tas):
     ds = xr.open_mfdataset(
-        CMIP5_TAS,
+        cmip5_tas,
         combine="by_coords",
         use_cftime=True,
     )
