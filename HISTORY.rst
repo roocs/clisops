@@ -13,7 +13,7 @@ second evaluation for shapes touching grid-points.
 Other Changes
 ^^^^^^^^^^^^^
 * Using file caching to gather ``xclim`` test data.
-* Change made to ``core.subset.subset_bbox._check_desc_coords to cope with subsetting when only one latitude or
+* Change made to ``core.subset.subset_bbox._check_desc_coords`` to cope with subsetting when only one latitude or
 longitude exists in the input dataset
 
 
