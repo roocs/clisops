@@ -4,16 +4,16 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import xarray as xr
+from shapely.geometry import Polygon
 
 from clisops.core import subset
+from clisops.utils import get_file
 
 from .._common import XCLIM_TESTS_DATA as TESTS_DATA
 
 
 class TestSubsetTime:
-    nc_poslons = os.path.join(
-        TESTS_DATA, "cmip3", "tas.sresb1.giss_model_e_r.run1.atm.da.nc"
-    )
+    nc_poslons = get_file("cmip3/tas.sresb1.giss_model_e_r.run1.atm.da.nc")
 
     def test_simple(self):
         da = xr.open_dataset(self.nc_poslons).tas
@@ -144,13 +144,10 @@ class TestSubsetTime:
 
 
 class TestSubsetGridPoint:
-    nc_poslons = os.path.join(
-        TESTS_DATA, "cmip3", "tas.sresb1.giss_model_e_r.run1.atm.da.nc"
-    )
-    nc_file = os.path.join(
-        TESTS_DATA, "NRCANdaily", "nrcan_canada_daily_tasmax_1990.nc"
-    )
-    nc_2dlonlat = os.path.join(TESTS_DATA, "CRCM5", "tasmax_bby_198406_se.nc")
+    nc_poslons = get_file("cmip3/tas.sresb1.giss_model_e_r.run1.atm.da.nc")
+    nc_tasmax_file = get_file("NRCANdaily/nrcan_canada_daily_tasmax_1990.nc")
+    nc_tasmin_file = get_file("NRCANdaily/nrcan_canada_daily_tasmin_1990.nc")
+    nc_2dlonlat = get_file("CRCM5/tasmax_bby_198406_se.nc")
 
     def test_time_simple(self):
         da = xr.open_dataset(self.nc_poslons).tas
@@ -171,7 +168,7 @@ class TestSubsetGridPoint:
 
     def test_dataset(self):
         da = xr.open_mfdataset(
-            [self.nc_file, self.nc_file.replace("tasmax", "tasmin")],
+            [self.nc_tasmax_file, self.nc_tasmin_file],
             combine="by_coords",
         )
         lon = -72.4
@@ -186,7 +183,7 @@ class TestSubsetGridPoint:
     )
     @pytest.mark.parametrize("add_distance", [True, False])
     def test_simple(self, lat, lon, add_distance):
-        da = xr.open_dataset(self.nc_file).tasmax
+        da = xr.open_dataset(self.nc_tasmax_file).tasmax
 
         out = subset.subset_gridpoint(da, lon=lon, lat=lat, add_distance=add_distance)
         np.testing.assert_almost_equal(out.lon, lon, 1)
@@ -307,13 +304,10 @@ class TestSubsetGridPoint:
 
 
 class TestSubsetBbox:
-    nc_poslons = os.path.join(
-        TESTS_DATA, "cmip3", "tas.sresb1.giss_model_e_r.run1.atm.da.nc"
-    )
-    nc_file = os.path.join(
-        TESTS_DATA, "NRCANdaily", "nrcan_canada_daily_tasmax_1990.nc"
-    )
-    nc_2dlonlat = os.path.join(TESTS_DATA, "CRCM5", "tasmax_bby_198406_se.nc")
+    nc_poslons = get_file("cmip3/tas.sresb1.giss_model_e_r.run1.atm.da.nc")
+    nc_tasmax_file = get_file("NRCANdaily/nrcan_canada_daily_tasmax_1990.nc")
+    nc_tasmin_file = get_file("NRCANdaily/nrcan_canada_daily_tasmin_1990.nc")
+    nc_2dlonlat = get_file("CRCM5/tasmax_bby_198406_se.nc")
     lon = [-75.4, -68]
     lat = [44.1, 47.1]
     lonGCM = [-70.0, -60.0]
@@ -321,7 +315,7 @@ class TestSubsetBbox:
 
     def test_dataset(self):
         da = xr.open_mfdataset(
-            [self.nc_file, self.nc_file.replace("tasmax", "tasmin")],
+            [self.nc_tasmax_file, self.nc_tasmin_file],
             combine="by_coords",
         )
         out = subset.subset_bbox(da, lon_bnds=self.lon, lat_bnds=self.lat)
@@ -332,7 +326,7 @@ class TestSubsetBbox:
         np.testing.assert_array_equal(out.tasmin.shape, out.tasmax.shape)
 
     def test_simple(self):
-        da = xr.open_dataset(self.nc_file).tasmax
+        da = xr.open_dataset(self.nc_tasmax_file).tasmax
 
         out = subset.subset_bbox(da, lon_bnds=self.lon, lat_bnds=self.lat)
         assert out.lon.values.size != 0
@@ -445,7 +439,7 @@ class TestSubsetBbox:
         assert np.all(out.lat <= np.max(self.lat))
 
     def test_badly_named_latlons(self):
-        da = xr.open_dataset(self.nc_file)
+        da = xr.open_dataset(self.nc_tasmax_file)
         extended_latlons = {"lat": "latitude", "lon": "longitude"}
         da_extended_names = da.rename(extended_latlons)
         out = subset.subset_bbox(
@@ -464,7 +458,7 @@ class TestSubsetBbox:
         assert {"lons", "lats"}.issubset(out.dims)
 
     def test_single_bounds_rectilinear(self):
-        da = xr.open_dataset(self.nc_file).tasmax
+        da = xr.open_dataset(self.nc_tasmax_file).tasmax
 
         out = subset.subset_bbox(da, lon_bnds=self.lon)
         assert out.lon.values.size != 0
@@ -596,13 +590,9 @@ class TestSubsetBbox:
 
 
 class TestSubsetShape:
-    nc_file = os.path.join(
-        TESTS_DATA, "cmip5", "tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc"
-    )
-    lons_2d_nc_file = os.path.join(TESTS_DATA, "CRCM5", "tasmax_bby_198406_se.nc")
-    nc_file_neglons = os.path.join(
-        TESTS_DATA, "NRCANdaily", "nrcan_canada_daily_tasmax_1990.nc"
-    )
+    nc_file = get_file("cmip5/tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc")
+    lons_2d_nc_file = get_file("CRCM5/tasmax_bby_198406_se.nc")
+    nc_file_neglons = get_file("NRCANdaily/nrcan_canada_daily_tasmax_1990.nc")
     meridian_geojson = os.path.join(TESTS_DATA, "cmip5", "meridian.json")
     meridian_multi_geojson = os.path.join(TESTS_DATA, "cmip5", "meridian_multi.json")
     poslons_geojson = os.path.join(TESTS_DATA, "cmip5", "poslons.json")
@@ -784,6 +774,20 @@ class TestSubsetShape:
         ds_sub = subset.subset_shape(ds, shape=regions)
         assert ds_sub.notnull().sum() == 58 + 250 + 22
 
+    def test_vectorize_touches_polygons(self):
+        """Check that points touching the polygon are included in subset."""
+        # Create simple polygon
+        poly = Polygon([[0, 0], [1, 0], [1, 1]])
+        shape = gpd.GeoDataFrame(geometry=[poly])
+        # Create simple data array
+        da = xr.DataArray(
+            data=[[0, 1], [2, 3]],
+            dims=("lon", "lat"),
+            coords={"lon": [0, 1], "lat": [0, 1]},
+        )
+        sub = subset.subset_shape(da, shape=shape)
+        assert sub.notnull().sum() == 3
+
 
 class TestDistance:
     def test_values(self):
@@ -820,10 +824,8 @@ class TestDistance:
 
 
 class TestSubsetLevel:
-    nc_plev = os.path.join(
-        TESTS_DATA,
-        "cmip6",
-        "o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
+    nc_plev = get_file(
+        "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc"
     )
     plevs = [
         100000,
