@@ -307,6 +307,7 @@ def test_area_within_area_subset():
 
 def test_area_within_area_subset_cmip6():
     area = (100.0, 10.0, 300.0, 90.0)
+
     outputs = subset(
         ds=CMIP6_RLDS,
         time=("2001-01-01T00:00:00", "2002-12-30T00:00:00"),
