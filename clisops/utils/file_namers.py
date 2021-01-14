@@ -92,5 +92,13 @@ class StandardFileNamer(SimpleFileNamer):
 
     def _get_time_range(self, da):
         """ Finds the time range of the data in the output. """
-        times = da.time.values
-        return times.min().strftime("%Y%m%d") + "-" + times.max().strftime("%Y%m%d")
+        try:
+            times = da.time.values
+            return (
+                "_"
+                + times.min().strftime("%Y%m%d")
+                + "-"
+                + times.max().strftime("%Y%m%d")
+            )
+        except AttributeError:
+            return ""

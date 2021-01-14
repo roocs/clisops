@@ -120,14 +120,18 @@ def subset(
     args = utils.map_params(ds, time, area, level)
 
     subset_ds = _subset(ds, args)
-
+    # import pdb;pdb.set_trace()
     outputs = list()
     namer = get_file_namer(file_namer)()
 
     time_slices = get_time_slices(subset_ds, split_method)
 
     for tslice in time_slices:
-        result_ds = subset_ds.sel(time=slice(tslice[0], tslice[1]))
+        if tslice is None:
+            result_ds = subset_ds
+        else:
+            result_ds = subset_ds.sel(time=slice(tslice[0], tslice[1]))
+
         LOGGER.info(f"Processing subset for times: {tslice}")
 
         output = get_output(result_ds, output_type, output_dir, namer)

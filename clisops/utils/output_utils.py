@@ -122,8 +122,14 @@ def get_time_slices(
         file_size_limit = parse_size(CONFIG["clisops:write"]["file_size_limit"])
 
     da = get_da(ds)
+    slices = []
 
-    times = filter_times_within(da.time.values, start=start, end=end)
+    try:
+        times = filter_times_within(da.time.values, start=start, end=end)
+    except AttributeError:
+        slices.append(None)
+        return slices
+
     n_times = len(times)
 
     if n_times == 0:
@@ -135,7 +141,6 @@ def get_time_slices(
     if slice_length == 0:
         raise Exception("Unable to calculate slice length for splitting output files.")
 
-    slices = []
     indx = 0
     final_indx = n_times - 1
 
@@ -199,7 +204,11 @@ def get_output(ds, output_type, output_dir, namer):
         return ds
 
     file_name = namer.get_file_name(ds, fmt=output_type)
-    chunked_ds = _get_chunked_dataset(ds)
+
+    try:
+        chunked_ds = _get_chunked_dataset(ds)
+    except AttributeError:
+        chunked_ds = ds
 
     if not output_dir:
         output_dir = "."
