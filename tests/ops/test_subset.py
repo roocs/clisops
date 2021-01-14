@@ -16,10 +16,7 @@ from clisops.utils import map_params, output_utils
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import _format_time, get_output, get_time_slices
 
-from .._common import (
-    C3S_CMIP5_TOS,
-    C3S_CMIP5_TSICE,
-)
+from .._common import C3S_CMIP5_TOS, C3S_CMIP5_TSICE
 
 
 def _check_output_nc(result, fname="output_001.nc"):
@@ -368,7 +365,7 @@ def test_area_within_area_subset_chunked(cmip5_tas):
         assert area[1] <= ds.lat.data <= area[3]
 
 
-def test_subset_level(cmip6_o3, tmpdir):
+def test_subset_level(cmip6_o3):
     """ Tests clisops subset function with a level subset."""
     # Levels are: 100000, ..., 100
     ds = _load_ds(cmip6_o3)
@@ -406,9 +403,7 @@ def test_aux_variables():
     assert "do_i_get_written" in result[0].variables
 
 
-@pytest.mark.skipif(
-    os.path.isdir("/group_workspaces") is False, reason="data not available"
-)
+@pytest.mark.skipif(os.path.isdir("/gws") is False, reason="data not available")
 def test_coord_variables_exist():
     """
     check coord variables e.g. lat/lon when original data
@@ -430,9 +425,7 @@ def test_coord_variables_exist():
     assert "lon" in result[0].coords
 
 
-@pytest.mark.skipif(
-    os.path.isdir("/group_workspaces") is False, reason="data not available"
-)
+@pytest.mark.skipif(os.path.isdir("/gws") is False, reason="data not available")
 def test_coord_variables_subsetted_i_j():
     """
     check coord variables e.g. lat/lon when original data
@@ -465,9 +458,7 @@ def test_coord_variables_subsetted_i_j():
         # working for lat but not lon in this example
 
 
-@pytest.mark.skipif(
-    os.path.isdir("/group_workspaces") is False, reason="data not available"
-)
+@pytest.mark.skipif(os.path.isdir("/gws") is False, reason="data not available")
 def test_coord_variables_subsetted_rlat_rlon():
     """
     check coord variables e.g. lat/lon when original data
