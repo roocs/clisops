@@ -2,7 +2,6 @@ import os
 import tempfile
 from pathlib import Path
 import pytest
-import xarray as xr
 
 from jinja2 import Template
 
@@ -78,10 +77,6 @@ MINI_ESGF_KWARGS = dict(
     cache_dir = MINI_ESGF_CACHE_DIR
 )
 
-#CMIP5_ZOSTOGA = os.path.join(
-#    CMIP5_ARCHIVE_BASE,
-#    "cmip5/output1/INM/inmcm4/rcp45/mon/ocean/Omon/r1i1p1/latest/zostoga/*.nc",
-#)
 
 @pytest.fixture
 def cmip5_zostoga():
@@ -90,10 +85,6 @@ def cmip5_zostoga():
         **MINI_ESGF_KWARGS
     ))
 
-#CMIP5_TAS = os.path.join(
-#    CMIP5_ARCHIVE_BASE,
-#    "cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
-#)
 
 @pytest.fixture
 def cmip5_tas():
@@ -115,10 +106,6 @@ def cmip5_tas():
          'tas_Amon_HadGEM2-ES_rcp85_r1i1p1_227412-229911.nc']
     )
 
-#CMIP5_RH = os.path.join(
-#    CMIP5_ARCHIVE_BASE,
-#    "cmip5/output1/MOHC/HadGEM2-ES/historical/mon/land/Lmon/r1i1p1/latest/rh/*.nc",
-#)
 
 @pytest.fixture
 def cmip5_rh():
@@ -133,6 +120,7 @@ def cmip5_rh():
          'rh_Lmon_HadGEM2-ES_historical_r1i1p1_198412-200511.nc']
     )
 
+
 @pytest.fixture
 def cmip5_tas_file():
     return str(get_file(
@@ -142,17 +130,13 @@ def cmip5_tas_file():
 
 CMIP6_ARCHIVE_BASE = cmip6_archive_base()
 
+
 @pytest.fixture
 def cmip6_o3():
-    return = str(get_file(
+    return str(get_file(
         "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
     ))
 
-#CMIP6_RLDS = os.path.join(
-#    CMIP6_ARCHIVE_BASE,
-#    "CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803",
-#    "rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc",
-#)
 
 @pytest.fixture
 def cmip6_rlds():
@@ -161,12 +145,14 @@ def cmip6_rlds():
         **MINI_ESGF_KWARGS
     ))
 
+
 @pytest.fixture
 def cmip6_siconc():
     return str(get_file(
         'test_data/badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/SImon/siconc/gn/latest/siconc_SImon_CESM2_historical_r1i1p1f1_gn_185001-201412.nc',
         **MINI_ESGF_KWARGS
     ))
+
 
 @pytest.fixture
 def c3s_cordex_psl():
@@ -184,6 +170,7 @@ def c3s_cordex_psl():
          'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20410101-20501231.nc',
          'psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20910101-20991201.nc']
     )
+
 
 C3S_CMIP5_TSICE = os.path.join(
     REAL_C3S_CMIP5_ARCHIVE_BASE,
