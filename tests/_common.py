@@ -169,7 +169,8 @@ def cmip6_siconc():
 @pytest.fixture
 def c3s_cordex_psl():
     return resolve_files(
-        "test_data/gws/nopw/j04/cp4cds1_vol1/data/c3s-cordex/output/EUR-11/IPSL/MOHC-HadGEM2-ES/rcp85/r1i1p1/IPSL-WRF381P/v1/day/psl/v20190212",
+        "test_data/gws/nopw/j04/cp4cds1_vol1/data/c3s-cordex/output/EUR-11/IPSL/MOHC-HadGEM2-ES/rcp85/r1i1p1"
+        "/IPSL-WRF381P/v1/day/psl/v20190212",
         MINI_ESGF_KWARGS,
         [
             "psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20060101-20101231.nc",
@@ -183,6 +184,17 @@ def c3s_cordex_psl():
             "psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20410101-20501231.nc",
             "psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20910101-20991201.nc",
         ],
+    )
+
+
+@pytest.fixture
+def cmip6_mrsofc():
+    return str(
+        get_file(
+            "test_data/badc/cmip6/data/CMIP6/ScenarioMIP/IPSL/IPSL-CM6A-LR/ssp119/r1i1p1f1/fx/mrsofc/gr/v20190410"
+            "/mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc",
+            **MINI_ESGF_KWARGS,
+        )
     )
 
 

@@ -120,7 +120,7 @@ def subset(
     args = utils.map_params(ds, time, area, level)
 
     subset_ds = _subset(ds, args)
-    # import pdb;pdb.set_trace()
+
     outputs = list()
     namer = get_file_namer(file_namer)()
 

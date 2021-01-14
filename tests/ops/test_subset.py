@@ -488,13 +488,10 @@ def test_coord_variables_subsetted_rlat_rlon():
     assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
-def test_time_invariant_subset_standard_name(tmpdir):
-    dset = "/badc/cmip6/data/CMIP6/ScenarioMIP/IPSL/IPSL-CM6A-LR/ssp119/r1i1p1f1/fx/mrsofc/gr/v20190410/*.nc"
-    ds = xr.open_mfdataset(dset, use_cftime=True, combine="by_coords")
+def test_time_invariant_subset_standard_name(cmip6_mrsofc, tmpdir):
 
     result = subset(
-        ds=ds,
+        ds=cmip6_mrsofc,
         area=(5.0, 10.0, 20.0, 65.0),
         output_dir=tmpdir,
         output_type="nc",
@@ -504,13 +501,10 @@ def test_time_invariant_subset_standard_name(tmpdir):
     _check_output_nc(result, fname="mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc")
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
-def test_time_invariant_subset_simple_name(tmpdir):
-    dset = "/badc/cmip6/data/CMIP6/ScenarioMIP/IPSL/IPSL-CM6A-LR/ssp119/r1i1p1f1/fx/mrsofc/gr/v20190410/*.nc"
-    ds = xr.open_mfdataset(dset, use_cftime=True, combine="by_coords")
+def test_time_invariant_subset_simple_name(cmip6_mrsofc, tmpdir):
 
     result = subset(
-        ds=ds,
+        ds=cmip6_mrsofc,
         area=(5.0, 10.0, 20.0, 65.0),
         output_dir=tmpdir,
         output_type="nc",
