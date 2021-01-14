@@ -7,8 +7,6 @@ from clisops import CONFIG
 from clisops.ops.subset import subset
 from clisops.utils.file_namers import get_file_namer
 
-from ._common import CMIP5_TAS
-
 
 def test_SimpleFileNamer():
     s = get_file_namer("simple")()
@@ -33,7 +31,7 @@ def test_SimpleFileNamer_no_fmt():
             s.get_file_name(*args)
 
 
-def test_SimpleFileNamer_with_chunking(tmpdir):
+def test_SimpleFileNamer_with_chunking(cmip5_tas, tmpdir):
     start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
     area = (0.0, 10.0, 175.0, 90.0)
 
@@ -41,7 +39,7 @@ def test_SimpleFileNamer_with_chunking(tmpdir):
     temp_max_file_size = "10KB"
     CONFIG["clisops:write"]["file_size_limit"] = temp_max_file_size
     outputs = subset(
-        ds=CMIP5_TAS,
+        ds=cmip5_tas,
         time=(start_time, end_time),
         area=area,
         output_dir=tmpdir,
@@ -70,12 +68,11 @@ def test_StandardFileNamer_no_project_match():
         s.get_file_name(mock_ds)
 
 
-def test_StandardFileNamer_cmip5():
+def test_StandardFileNamer_cmip5(cmip5_tas):
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        "tests/mini-esgf-data/test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES"
-        "/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
+        cmip5_tas,
         use_cftime=True,
         combine="by_coords",
     )
@@ -87,12 +84,11 @@ def test_StandardFileNamer_cmip5():
         assert resp == expected
 
 
-def test_StandardFileNamer_cmip5_use_default_attr_names():
+def test_StandardFileNamer_cmip5_use_default_attr_names(cmip5_tas):
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        "tests/mini-esgf-data/test_data/badc/cmip5/data/cmip5/output1/MOHC"
-        "/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
+        cmip5_tas,
         use_cftime=True,
         combine="by_coords",
     )
@@ -105,12 +101,11 @@ def test_StandardFileNamer_cmip5_use_default_attr_names():
         assert resp == expected
 
 
-def test_StandardFileNamer_cmip6():
+def test_StandardFileNamer_cmip6(cmip6_siconc):
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        "tests/mini-esgf-data/test_data/badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/SImon"
-        "/siconc/gn/latest/*.nc",
+        cmip6_siconc,
         use_cftime=True,
         combine="by_coords",
     )
@@ -122,12 +117,11 @@ def test_StandardFileNamer_cmip6():
         assert resp == expected
 
 
-def test_StandardFileNamer_cmip6_use_default_attr_names():
+def test_StandardFileNamer_cmip6_use_default_attr_names(cmip6_siconc):
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        "tests/mini-esgf-data/test_data/badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/SImon"
-        "/siconc/gn/latest/*.nc",
+        cmip6_siconc,
         use_cftime=True,
         combine="by_coords",
     )
@@ -147,12 +141,11 @@ def test_StandardFileNamer_cmip6_use_default_attr_names():
     condition="platform.system() == 'Windows'",
     reason="Git modules not working on Windows",
 )
-def test_StandardFileNamer_c3s_cordex():
+def test_StandardFileNamer_c3s_cordex(c3s_cordex_psl):
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        "tests/mini-esgf-data/test_data/group_workspaces/jasmin2/cp4cds1/vol1/data/c3s-cordex/output/EUR-11"
-        "/IPSL/MOHC-HadGEM2-ES/rcp85/r1i1p1/IPSL-WRF381P/v1/day/psl/v20190212/*.nc",
+        c3s_cordex_psl,
         use_cftime=True,
         combine="by_coords",
     )
@@ -173,12 +166,11 @@ def test_StandardFileNamer_c3s_cordex():
     condition="platform.system() == 'Windows'",
     reason="Git modules not working on Windows",
 )
-def test_StandardFileNamer_c3s_cordex_use_default_attr_names():
+def test_StandardFileNamer_c3s_cordex_use_default_attr_names(c3s_cordex_psl):
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        "tests/mini-esgf-data/test_data/group_workspaces/jasmin2/cp4cds1/vol1/data/c3s-cordex/output/EUR-11"
-        "/IPSL/MOHC-HadGEM2-ES/rcp85/r1i1p1/IPSL-WRF381P/v1/day/psl/v20190212/*.nc",
+        c3s_cordex_psl,
         use_cftime=True,
         combine="by_coords",
     )
