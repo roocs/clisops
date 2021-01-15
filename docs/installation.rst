@@ -34,6 +34,7 @@ You can either clone the public repository:
 
     $ git clone git://github.com/roocs/clisops
 
+
 Create Conda environment named `clisops`:
 
 .. code-block:: console

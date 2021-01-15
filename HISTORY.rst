@@ -1,20 +1,18 @@
 Version History
 ===============
 
-v0.5.1 (2020-01-08)
+v0.5.1 (2020-01-11)
 ------------------
 
 Breaking Changes
 ^^^^^^^^^^^^^^^^
-* Reverting breaking changes made by the change to ``core.subset.create_mask``. This change introduces a
-second evaluation for shapes touching grid-points.
+* Reverting breaking changes made by the change to ``core.subset.create_mask``. This change introduces a second evaluation for shapes touching grid-points.
 
 
 Other Changes
 ^^^^^^^^^^^^^
 * Using file caching to gather ``xclim`` test data.
-* Change made to ``core.subset.subset_bbox._check_desc_coords`` to cope with subsetting when only one latitude or
-longitude exists in the input dataset
+* Change made to ``core.subset.subset_bbox._check_desc_coords`` to cope with subsetting when only one latitude or longitude exists in the input dataset
 
 
 v0.5.0 (2020-12-17)
