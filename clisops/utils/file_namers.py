@@ -100,5 +100,6 @@ class StandardFileNamer(SimpleFileNamer):
                 + "-"
                 + times.max().strftime("%Y%m%d")
             )
+        # catch where "time" attribute cannot be accessed in ds
         except AttributeError:
             return ""

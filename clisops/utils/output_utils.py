@@ -126,6 +126,7 @@ def get_time_slices(
 
     try:
         times = filter_times_within(da.time.values, start=start, end=end)
+    # catch where "time" attribute cannot be accessed in ds
     except AttributeError:
         slices.append(None)
         return slices
@@ -207,6 +208,7 @@ def get_output(ds, output_type, output_dir, namer):
 
     try:
         chunked_ds = _get_chunked_dataset(ds)
+    # catch where "time" attribute cannot be accessed in ds
     except AttributeError:
         chunked_ds = ds
 
