@@ -1,3 +1,0 @@
-[submodule "tests/xclim-testdata"]
-	path = tests/xclim-testdata
-	url = https://github.com/roocs/xclim-testdata.git
