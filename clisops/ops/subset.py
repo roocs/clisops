@@ -127,7 +127,11 @@ def subset(
     time_slices = get_time_slices(subset_ds, split_method)
 
     for tslice in time_slices:
-        result_ds = subset_ds.sel(time=slice(tslice[0], tslice[1]))
+        if tslice is None:
+            result_ds = subset_ds
+        else:
+            result_ds = subset_ds.sel(time=slice(tslice[0], tslice[1]))
+
         LOGGER.info(f"Processing subset for times: {tslice}")
 
         output = get_output(result_ds, output_type, output_dir, namer)
