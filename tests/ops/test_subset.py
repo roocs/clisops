@@ -17,6 +17,10 @@ from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import _format_time, get_output, get_time_slices
 
 from .._common import (
+    CMIP5_TAS,
+    CMIP5_ZOSTOGA,
+    CMIP5_RH,
+    CMIP6_RLDS,
     C3S_CMIP5_TOS,
     C3S_CMIP5_TSICE,
 )
@@ -166,10 +170,10 @@ def test_subset_with_time_and_area(cmip5_tas_file, tmpdir):
     _check_output_nc(result)
 
 
-def test_subset_with_multiple_files_tas(cmip5_tas, tmpdir):
+def test_subset_with_multiple_files_tas(load_esgf_test_data, tmpdir):
     """ Tests with multiple tas files"""
     result = subset(
-        ds=cmip5_tas,
+        ds=CMIP5_TAS,
         time=("2001-01-01T00:00:00", "2020-12-30T00:00:00"),
         area=(0.0, 0.0, 10.0, 65.0),
         output_dir=tmpdir,
@@ -179,10 +183,10 @@ def test_subset_with_multiple_files_tas(cmip5_tas, tmpdir):
     _check_output_nc(result)
 
 
-def test_subset_with_multiple_files_zostoga(cmip5_zostoga, tmpdir):
+def test_subset_with_multiple_files_zostoga(load_esgf_test_data, tmpdir):
     """ Tests with multiple zostoga files"""
     result = subset(
-        ds=cmip5_zostoga,
+        ds=CMIP5_ZOSTOGA,
         time=("2000-01-01T00:00:00", "2020-12-30T00:00:00"),
         output_dir=tmpdir,
         output_type="nc",
@@ -191,10 +195,10 @@ def test_subset_with_multiple_files_zostoga(cmip5_zostoga, tmpdir):
     _check_output_nc(result)
 
 
-def test_subset_with_multiple_files_rh(cmip5_rh, tmpdir):
+def test_subset_with_multiple_files_rh(load_esgf_test_data, tmpdir):
     """ Tests with multiple rh files"""
     result = subset(
-        ds=cmip5_rh,
+        ds=CMIP5_RH,
         time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
         area=(0, -90.0, 360.0, 90.0),
         output_dir=tmpdir,
@@ -216,7 +220,7 @@ def test_subset_with_tas_series(tmpdir, tas_series):
     _check_output_nc(result)
 
 
-def test_time_slices_in_subset_tas(cmip5_tas):
+def test_time_slices_in_subset_tas(load_esgf_test_data):
     start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
 
     time_slices = [
@@ -233,7 +237,7 @@ def test_time_slices_in_subset_tas(cmip5_tas):
     CONFIG["clisops:write"]["file_size_limit"] = temp_max_file_size
 
     outputs = subset(
-        ds=cmip5_tas,
+        ds=CMIP5_TAS,
         time=(start_time, end_time),
         area=(0.0, 5.0, 50.0, 90.0),
         output_type="xarray",
@@ -251,7 +255,7 @@ def test_time_slices_in_subset_tas(cmip5_tas):
         count += 1
 
 
-def test_time_slices_in_subset_rh(cmip5_rh):
+def test_time_slices_in_subset_rh(load_esgf_test_data):
     start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
 
     time_slices = [
@@ -264,7 +268,7 @@ def test_time_slices_in_subset_rh(cmip5_rh):
     temp_max_file_size = "10KB"
     CONFIG["clisops:write"]["file_size_limit"] = temp_max_file_size
     outputs = subset(
-        ds=cmip5_rh,
+        ds=CMIP5_RH,
         time=(start_time, end_time),
         area=(0.0, 5.0, 50.0, 90.0),
         output_type="xarray",
@@ -283,11 +287,11 @@ def test_time_slices_in_subset_rh(cmip5_rh):
 
 
 # area can be a few degrees out
-def test_area_within_area_subset(cmip5_tas):
+def test_area_within_area_subset(load_esgf_test_data):
     area = (0.0, 10.0, 175.0, 90.0)
 
     outputs = subset(
-        ds=cmip5_tas,
+        ds=CMIP5_TAS,
         time=("2001-01-01T00:00:00", "2200-12-30T00:00:00"),
         area=area,
         output_type="xarray",
@@ -299,11 +303,11 @@ def test_area_within_area_subset(cmip5_tas):
     assert area[1] <= ds.lat.data <= area[3]
 
 
-def test_area_within_area_subset_cmip6(cmip6_rlds):
+def test_area_within_area_subset_cmip6(load_esgf_test_data):
     area = (100.0, 10.0, 300.0, 90.0)
 
     outputs = subset(
-        ds=cmip6_rlds,
+        ds=CMIP6_RLDS,
         time=("2001-01-01T00:00:00", "2002-12-30T00:00:00"),
         area=area,
         output_type="xarray",
@@ -317,7 +321,7 @@ def test_area_within_area_subset_cmip6(cmip6_rlds):
     assert np.isclose(ds.lat.data[0], 36.76056)
 
 
-def test_subset_with_lat_lon_single_values(cmip6_rlds):
+def test_subset_with_lat_lon_single_values(load_esgf_test_data):
     """Creates subset where lat and lon only have one value. Then
     subsets that. This tests that the `lat_bnds` and `lon_bnds`
     are not being reversed by the `_check_desc_coords` function in
@@ -326,7 +330,7 @@ def test_subset_with_lat_lon_single_values(cmip6_rlds):
     area = (100.0, 10.0, 300.0, 90.0)
 
     outputs = subset(
-        ds=cmip6_rlds,
+        ds=CMIP6_RLDS,
         time=("2001-01-01T00:00:00", "2002-12-30T00:00:00"),
         area=area,
         output_type="xarray",
@@ -346,7 +350,7 @@ def test_subset_with_lat_lon_single_values(cmip6_rlds):
     assert len(ds2.lon) == 1
 
 
-def test_area_within_area_subset_chunked(cmip5_tas):
+def test_area_within_area_subset_chunked(load_esgf_test_data):
 
     start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
     area = (0.0, 10.0, 175.0, 90.0)
@@ -355,7 +359,7 @@ def test_area_within_area_subset_chunked(cmip5_tas):
     temp_max_file_size = "10KB"
     CONFIG["clisops:write"]["file_size_limit"] = temp_max_file_size
     outputs = subset(
-        ds=cmip5_tas,
+        ds=CMIP5_TAS,
         time=(start_time, end_time),
         area=area,
         output_type="xarray",

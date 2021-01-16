@@ -6,6 +6,7 @@ import xarray as xr
 from clisops import CONFIG
 from clisops.ops.subset import subset
 from clisops.utils.file_namers import get_file_namer
+from tests._common import CMIP5_TAS, CMIP6_SICONC, C3S_CORDEX_PSL
 
 
 def test_SimpleFileNamer():
@@ -31,7 +32,7 @@ def test_SimpleFileNamer_no_fmt():
             s.get_file_name(*args)
 
 
-def test_SimpleFileNamer_with_chunking(cmip5_tas, tmpdir):
+def test_SimpleFileNamer_with_chunking(load_esgf_test_data, tmpdir):
     start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
     area = (0.0, 10.0, 175.0, 90.0)
 
@@ -39,7 +40,7 @@ def test_SimpleFileNamer_with_chunking(cmip5_tas, tmpdir):
     temp_max_file_size = "10KB"
     CONFIG["clisops:write"]["file_size_limit"] = temp_max_file_size
     outputs = subset(
-        ds=cmip5_tas,
+        ds=CMIP5_TAS,
         time=(start_time, end_time),
         area=area,
         output_dir=tmpdir,
@@ -68,11 +69,11 @@ def test_StandardFileNamer_no_project_match():
         s.get_file_name(mock_ds)
 
 
-def test_StandardFileNamer_cmip5(cmip5_tas):
+def test_StandardFileNamer_cmip5(load_esgf_test_data):
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        cmip5_tas,
+        CMIP5_TAS,
         use_cftime=True,
         combine="by_coords",
     )
@@ -84,11 +85,11 @@ def test_StandardFileNamer_cmip5(cmip5_tas):
         assert resp == expected
 
 
-def test_StandardFileNamer_cmip5_use_default_attr_names(cmip5_tas):
+def test_StandardFileNamer_cmip5_use_default_attr_names(load_esgf_test_data):
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        cmip5_tas,
+        CMIP5_TAS,
         use_cftime=True,
         combine="by_coords",
     )
@@ -101,11 +102,11 @@ def test_StandardFileNamer_cmip5_use_default_attr_names(cmip5_tas):
         assert resp == expected
 
 
-def test_StandardFileNamer_cmip6(cmip6_siconc):
+def test_StandardFileNamer_cmip6(load_esgf_test_data):
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        cmip6_siconc,
+        CMIP6_SICONC,
         use_cftime=True,
         combine="by_coords",
     )
@@ -117,11 +118,11 @@ def test_StandardFileNamer_cmip6(cmip6_siconc):
         assert resp == expected
 
 
-def test_StandardFileNamer_cmip6_use_default_attr_names(cmip6_siconc):
+def test_StandardFileNamer_cmip6_use_default_attr_names(load_esgf_test_data):
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        cmip6_siconc,
+        CMIP6_SICONC,
         use_cftime=True,
         combine="by_coords",
     )
@@ -141,11 +142,11 @@ def test_StandardFileNamer_cmip6_use_default_attr_names(cmip6_siconc):
     condition="platform.system() == 'Windows'",
     reason="Git modules not working on Windows",
 )
-def test_StandardFileNamer_c3s_cordex(c3s_cordex_psl):
+def test_StandardFileNamer_c3s_cordex(load_esgf_test_data):
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        c3s_cordex_psl,
+        C3S_CORDEX_PSL,
         use_cftime=True,
         combine="by_coords",
     )
@@ -166,11 +167,11 @@ def test_StandardFileNamer_c3s_cordex(c3s_cordex_psl):
     condition="platform.system() == 'Windows'",
     reason="Git modules not working on Windows",
 )
-def test_StandardFileNamer_c3s_cordex_use_default_attr_names(c3s_cordex_psl):
+def test_StandardFileNamer_c3s_cordex_use_default_attr_names(load_esgf_test_data):
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        c3s_cordex_psl,
+        C3S_CORDEX_PSL,
         use_cftime=True,
         combine="by_coords",
     )
