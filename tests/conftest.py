@@ -2,6 +2,7 @@ import numpy as np
 import os
 import pandas as pd
 import pytest
+import shutil
 import xarray as xr
 
 from tests._common import (
@@ -283,4 +284,4 @@ def load_esgf_test_data():
         os.system(f'git clone {ESGF_TEST_DATA_REPO_URL} {tmp_repo}')
 
         shutil.move(test_data_dir, target)
-        shutil.rmtree(tmp_repo) 
+        shutil.rmtree(tmp_repo)
