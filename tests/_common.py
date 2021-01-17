@@ -5,19 +5,33 @@ from pathlib import Path
 import pytest
 from jinja2 import Template
 
-ROOCS_CFG = os.path.join(tempfile.gettempdir(), "roocs.ini")
-TESTS_HOME = os.path.abspath(os.path.dirname(__file__))
-DEFAULT_CMIP5_ARCHIVE_BASE = os.path.join(
+from clisops.utils import get_file
+
+""" __all__ = [
+    "cmip5_rh",
+    "cmip5_tas",
+    "cmip5_tas_file",
+    "c3s_cordex_psl",
+    "cmip6_mrsofc",
+    "cmip6_o3",
+    "cmip6_rlds",
+    "cmip6_siconc",
+    "cmip5_zostoga",
+    "write_roocs_cfg",
+] """
+
+ROOCS_CFG = Path(tempfile.gettempdir(), "roocs.ini").as_posix()
+TESTS_HOME = Path(__file__).parent.absolute().as_posix()
+DEFAULT_CMIP5_ARCHIVE_BASE = Path(
     TESTS_HOME, "mini-esgf-data/test_data/badc/cmip5/data"
-)
+).as_posix()
 REAL_C3S_CMIP5_ARCHIVE_BASE = "/gws/nopw/j04/cp4cds1_vol1/data/"
-DEFAULT_CMIP6_ARCHIVE_BASE = os.path.join(
+DEFAULT_CMIP6_ARCHIVE_BASE = Path(
     TESTS_HOME, "mini-esgf-data/test_data/badc/cmip6/data"
-)
+).as_posix()
 
 # This is now only required for json files
-XCLIM_TESTS_DATA = os.path.join(TESTS_HOME, "xclim-testdata/testdata")
-# Set location for git clone of mini-esgf-data
+XCLIM_TESTS_DATA = Path(TESTS_HOME, "xclim-testdata/testdata").as_posix()
 MINI_ESGF_CACHE_DIR = Path.home() / ".mini-esgf-data"
 
 
@@ -102,12 +116,12 @@ C3S_CORDEX_PSL = os.path.join(
     'master/test_data/group_workspaces/jasmin2/cp4cds1/vol1/data/c3s-cordex/output/EUR-11/IPSL/MOHC-HadGEM2-ES/rcp85/r1i1p1/IPSL-WRF381P/v1/day/psl/v20190212/*.nc'
 )
 
-C3S_CMIP5_TSICE = os.path.join(
+C3S_CMIP5_TSICE = Path(
     REAL_C3S_CMIP5_ARCHIVE_BASE,
     "c3s-cmip5/output1/NCC/NorESM1-ME/rcp60/mon/seaIce/OImon/r1i1p1/tsice/v20120614/*.nc",
-)
+).as_posix()
 
-C3S_CMIP5_TOS = os.path.join(
+C3S_CMIP5_TOS = Path(
     REAL_C3S_CMIP5_ARCHIVE_BASE,
     "c3s-cmip5/output1/BCC/bcc-csm1-1-m/historical/mon/ocean/Omon/r1i1p1/tos/v20120709/*.nc",
-)
+).as_posix()
