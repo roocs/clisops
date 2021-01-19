@@ -223,7 +223,7 @@ def get_output(ds, output_type, output_dir, namer):
 
         writer = getattr(chunked_ds, fmt_method)
         delayed_obj = writer(output_path, compute=False)
-        delayed_obj.compute()
+        delayed_obj.compute()  # TypeError: float() argument must be a string or a number, not 'cftime._cftime.Datetime360Day'
 
     LOGGER.info(f"Wrote output file: {output_path}")
     return output_path
