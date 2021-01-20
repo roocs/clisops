@@ -7,18 +7,31 @@ from jinja2 import Template
 
 from clisops.utils import get_file
 
-ROOCS_CFG = os.path.join(tempfile.gettempdir(), "roocs.ini")
-TESTS_HOME = os.path.abspath(os.path.dirname(__file__))
-DEFAULT_CMIP5_ARCHIVE_BASE = os.path.join(
+__all__ = [
+    "cmip5_rh",
+    "cmip5_tas",
+    "cmip5_tas_file",
+    "c3s_cordex_psl",
+    "cmip6_mrsofc",
+    "cmip6_o3",
+    "cmip6_rlds",
+    "cmip6_siconc",
+    "cmip5_zostoga",
+    "write_roocs_cfg",
+]
+
+ROOCS_CFG = Path(tempfile.gettempdir(), "roocs.ini").as_posix()
+TESTS_HOME = Path(__file__).parent.absolute().as_posix()
+DEFAULT_CMIP5_ARCHIVE_BASE = Path(
     TESTS_HOME, "mini-esgf-data/test_data/badc/cmip5/data"
-)
+).as_posix()
 REAL_C3S_CMIP5_ARCHIVE_BASE = "/gws/nopw/j04/cp4cds1_vol1/data/"
-DEFAULT_CMIP6_ARCHIVE_BASE = os.path.join(
+DEFAULT_CMIP6_ARCHIVE_BASE = Path(
     TESTS_HOME, "mini-esgf-data/test_data/badc/cmip6/data"
-)
+).as_posix()
 
 # This is now only required for json files
-XCLIM_TESTS_DATA = os.path.join(TESTS_HOME, "xclim-testdata/testdata")
+XCLIM_TESTS_DATA = Path(TESTS_HOME, "xclim-testdata/testdata").as_posix()
 MINI_ESGF_CACHE_DIR = Path.home() / ".mini-esgf-data"
 
 
@@ -62,8 +75,8 @@ def cmip6_archive_base():
 
 
 def resolve_files(base_dir, kwargs, file_list):
-    get_file([os.path.join(base_dir, nc_file) for nc_file in file_list], **kwargs)
-    return os.path.join(kwargs["cache_dir"], kwargs["branch"], base_dir, "*.nc")
+    get_file([Path(base_dir, nc_file) for nc_file in file_list], **kwargs)
+    return Path(kwargs["cache_dir"], kwargs["branch"], base_dir, "*.nc").as_posix()
 
 
 CMIP5_ARCHIVE_BASE = cmip5_archive_base()
@@ -77,12 +90,10 @@ MINI_ESGF_KWARGS = dict(
 
 @pytest.fixture
 def cmip5_zostoga():
-    return str(
-        get_file(
-            "test_data/badc/cmip5/data/cmip5/output1/INM/inmcm4/rcp45/mon/ocean/Omon/r1i1p1/latest/zostoga/zostoga_Omon_inmcm4_rcp45_r1i1p1_200601-210012.nc",
-            **MINI_ESGF_KWARGS,
-        )
-    )
+    return get_file(
+        "test_data/badc/cmip5/data/cmip5/output1/INM/inmcm4/rcp45/mon/ocean/Omon/r1i1p1/latest/zostoga/zostoga_Omon_inmcm4_rcp45_r1i1p1_200601-210012.nc",
+        **MINI_ESGF_KWARGS,
+    ).as_posix()
 
 
 @pytest.fixture
@@ -126,12 +137,10 @@ def cmip5_rh():
 
 @pytest.fixture
 def cmip5_tas_file():
-    return str(
-        get_file(
-            "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc",
-            branch="add_cmip5_hadgem",  # This will be removed once the branch is merged into "main"
-        )
-    )
+    return get_file(
+        "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc",
+        branch="add_cmip5_hadgem",  # This will be removed once the branch is merged into "main"
+    ).as_posix()
 
 
 CMIP6_ARCHIVE_BASE = cmip6_archive_base()
@@ -139,31 +148,25 @@ CMIP6_ARCHIVE_BASE = cmip6_archive_base()
 
 @pytest.fixture
 def cmip6_o3():
-    return str(
-        get_file(
-            "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
-        )
-    )
+    return get_file(
+        "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
+    ).as_posix()
 
 
 @pytest.fixture
 def cmip6_rlds():
-    return str(
-        get_file(
-            "test_data/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc",
-            **MINI_ESGF_KWARGS,
-        )
-    )
+    return get_file(
+        "test_data/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc",
+        **MINI_ESGF_KWARGS,
+    ).as_posix()
 
 
 @pytest.fixture
 def cmip6_siconc():
-    return str(
-        get_file(
-            "test_data/badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/SImon/siconc/gn/latest/siconc_SImon_CESM2_historical_r1i1p1f1_gn_185001-201412.nc",
-            **MINI_ESGF_KWARGS,
-        )
-    )
+    return get_file(
+        "test_data/badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/SImon/siconc/gn/latest/siconc_SImon_CESM2_historical_r1i1p1f1_gn_185001-201412.nc",
+        **MINI_ESGF_KWARGS,
+    ).as_posix()
 
 
 @pytest.fixture
@@ -189,21 +192,19 @@ def c3s_cordex_psl():
 
 @pytest.fixture
 def cmip6_mrsofc():
-    return str(
-        get_file(
-            "test_data/badc/cmip6/data/CMIP6/ScenarioMIP/IPSL/IPSL-CM6A-LR/ssp119/r1i1p1f1/fx/mrsofc/gr/v20190410"
-            "/mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc",
-            **MINI_ESGF_KWARGS,
-        )
-    )
+    return get_file(
+        "test_data/badc/cmip6/data/CMIP6/ScenarioMIP/IPSL/IPSL-CM6A-LR/ssp119/r1i1p1f1/fx/mrsofc/gr/v20190410"
+        "/mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc",
+        **MINI_ESGF_KWARGS,
+    ).as_posix()
 
 
-C3S_CMIP5_TSICE = os.path.join(
+C3S_CMIP5_TSICE = Path(
     REAL_C3S_CMIP5_ARCHIVE_BASE,
     "c3s-cmip5/output1/NCC/NorESM1-ME/rcp60/mon/seaIce/OImon/r1i1p1/tsice/v20120614/*.nc",
-)
+).as_posix()
 
-C3S_CMIP5_TOS = os.path.join(
+C3S_CMIP5_TOS = Path(
     REAL_C3S_CMIP5_ARCHIVE_BASE,
     "c3s-cmip5/output1/BCC/bcc-csm1-1-m/historical/mon/ocean/Omon/r1i1p1/tos/v20120709/*.nc",
-)
+).as_posix()
