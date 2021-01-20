@@ -111,7 +111,7 @@ def test_StandardFileNamer_cmip6(load_esgf_test_data):
         combine="by_coords",
     )
 
-    checks = [(_ds, "siconc_SImon_CESM2_historical_r1i1p1f1_gn_18500115-20141215.nc")]
+    checks = [(_ds, "siconc_SImon_CanESM5_historical_r1i1p1f1_gn_18500116-20141216.nc")]
 
     for ds, expected in checks:
         resp = s.get_file_name(ds)
@@ -128,7 +128,7 @@ def test_StandardFileNamer_cmip6_use_default_attr_names(load_esgf_test_data):
     )
 
     checks = [
-        (_ds, "siconc_SImon_no-model_historical_r1i1p1f1_no-grid_18500115-20141215.nc")
+        (_ds, "siconc_SImon_no-model_historical_r1i1p1f1_no-grid_18500116-20141216.nc")
     ]
     del _ds.attrs["source_id"]
     del _ds.attrs["grid_label"]
