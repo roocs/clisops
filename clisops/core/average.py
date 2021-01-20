@@ -17,7 +17,7 @@ def average_shape(
     ds: Union[xarray.DataArray, xarray.Dataset],
     shape: Union[str, Path, gpd.GeoDataFrame],
 ) -> Union[xarray.DataArray, xarray.Dataset]:
-    """Average a DataArray or Dataset spatially (and temporally) using vector shapes and date selection.
+    """Average a DataArray or Dataset spatially (and temporally) using vector shapes.
 
     Return a DataArray or Dataset averaged over each Polygon given.
 
