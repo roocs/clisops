@@ -1,4 +1,5 @@
 import os
+import pytest
 
 import geopandas as gpd
 import numpy as np
@@ -9,7 +10,13 @@ from clisops.utils import get_file
 
 from .._common import XCLIM_TESTS_DATA as TESTS_DATA
 
+try:
+    import xesmf
+except ImportError:
+    xesmf = None
 
+
+@pytest.mark.skipif(xesmf is None, reason="xESMF >= 0.5.0 is needed for average_shape.")
 class TestAverageShape:
     nc_file = get_file("cmip5/tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc")
     lons_2d_nc_file = get_file("CRCM5/tasmax_bby_198406_se.nc")

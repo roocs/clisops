@@ -5,7 +5,7 @@ from typing import Union
 
 import geopandas as gpd
 import xarray as xarray
-from xesmf import SpatialAverager
+
 
 
 __all__ = [
@@ -17,7 +17,7 @@ def average_shape(
     ds: Union[xarray.DataArray, xarray.Dataset],
     shape: Union[str, Path, gpd.GeoDataFrame],
 ) -> Union[xarray.DataArray, xarray.Dataset]:
-    """Average a DataArray or Dataset spatially (and temporally) using vector shapes.
+    """Average a DataArray or Dataset spatially using vector shapes.
 
     Return a DataArray or Dataset averaged over each Polygon given.
 
@@ -55,6 +55,11 @@ def average_shape(
     >>> ds = xr.open_mfdataset([path_to_tasmin_file, path_to_tasmax_file])  # doctest: +SKIP
     >>> dsAvg = average_shape(ds, shape=path_to_shape_file)  # doctest: +SKIP
     """
+    try:
+        from xesmf import SpatialAverager
+    except ImportError:
+        raise ValueError('Package xesmf >= 0.5.0 is required to use average_shape')
+
     if isinstance(ds, xarray.DataArray):
         ds_copy = ds._to_temp_dataset()
     else:
