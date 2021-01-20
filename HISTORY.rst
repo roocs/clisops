@@ -1,8 +1,8 @@
 Version History
 ===============
 
-Unreleased
------------
+v0.5.2
+------
 Other Changes
 ^^^^^^^^^^^^^
 * Changes to allow datasets without a time dimension to be processed without issues
