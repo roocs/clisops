@@ -1,20 +1,18 @@
-import numpy as np
 import os
+import shutil
+
+import numpy as np
 import pandas as pd
 import pytest
-import shutil
 import xarray as xr
 
 from clisops.utils import get_file
-
-from tests._common import (
-    write_roocs_cfg,
-    MINI_ESGF_CACHE_DIR
-)
+from tests._common import MINI_ESGF_CACHE_DIR, write_roocs_cfg
 
 write_roocs_cfg()
 
-ESGF_TEST_DATA_REPO_URL = 'https://github.com/roocs/mini-esgf-data'
+ESGF_TEST_DATA_REPO_URL = "https://github.com/roocs/mini-esgf-data"
+
 
 @pytest.fixture
 def tmp_netcdf_filename(tmp_path):
@@ -295,14 +293,14 @@ def load_esgf_test_data():
     This fixture ensures that the required test data repository
     has been cloned to the cache directory within the home directory.
     """
-    tmp_repo = '/tmp/.mini-esgf-data'
-    test_data_dir = os.path.join(tmp_repo, 'test_data')
-    target = os.path.join(MINI_ESGF_CACHE_DIR, 'master')
+    tmp_repo = "/tmp/.mini-esgf-data"
+    test_data_dir = os.path.join(tmp_repo, "test_data")
+    target = os.path.join(MINI_ESGF_CACHE_DIR, "master")
 
     if not os.path.isdir(target):
 
-        os.makedirs(target) 
-        os.system(f'git clone {ESGF_TEST_DATA_REPO_URL} {tmp_repo}')
+        os.makedirs(target)
+        os.system(f"git clone {ESGF_TEST_DATA_REPO_URL} {tmp_repo}")
 
         shutil.move(test_data_dir, target)
         shutil.rmtree(tmp_repo)

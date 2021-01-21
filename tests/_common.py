@@ -7,7 +7,6 @@ from jinja2 import Template
 
 from clisops.utils import get_file
 
-
 ROOCS_CFG = Path(tempfile.gettempdir(), "roocs.ini").as_posix()
 TESTS_HOME = Path(__file__).parent.absolute().as_posix()
 DEFAULT_CMIP5_ARCHIVE_BASE = Path(
@@ -66,40 +65,40 @@ CMIP5_ARCHIVE_BASE = cmip5_archive_base()
 
 CMIP5_ZOSTOGA = Path(
     MINI_ESGF_CACHE_DIR,
-    'master/test_data/badc/cmip5/data/cmip5/output1/INM/inmcm4/rcp45/mon/ocean/Omon/r1i1p1/latest/zostoga/zostoga_Omon_inmcm4_rcp45_r1i1p1_200601-210012.nc'
+    "master/test_data/badc/cmip5/data/cmip5/output1/INM/inmcm4/rcp45/mon/ocean/Omon/r1i1p1/latest/zostoga/zostoga_Omon_inmcm4_rcp45_r1i1p1_200601-210012.nc",
 ).as_posix()
 
 CMIP5_TAS = Path(
     MINI_ESGF_CACHE_DIR,
-    'master/test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc'
+    "master/test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
 ).as_posix()
 
 CMIP5_RH = Path(
     MINI_ESGF_CACHE_DIR,
-    'master/test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/historical/mon/land/Lmon/r1i1p1/latest/rh/*.nc'
+    "master/test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/historical/mon/land/Lmon/r1i1p1/latest/rh/*.nc",
 ).as_posix()
 
 CMIP6_ARCHIVE_BASE = cmip6_archive_base()
 
 CMIP6_RLDS = Path(
     MINI_ESGF_CACHE_DIR,
-    'master/test_data/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc'
+    "master/test_data/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc",
 ).as_posix()
 
 CMIP6_MRSOFC = Path(
     MINI_ESGF_CACHE_DIR,
-        "master/test_data/badc/cmip6/data/CMIP6/ScenarioMIP/IPSL/IPSL-CM6A-LR/ssp119/r1i1p1f1/fx/mrsofc/gr/v20190410"
-        "/mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc"
+    "master/test_data/badc/cmip6/data/CMIP6/ScenarioMIP/IPSL/IPSL-CM6A-LR/ssp119/r1i1p1f1/fx/mrsofc/gr/v20190410"
+    "/mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc",
 ).as_posix()
 
 CMIP6_SICONC = Path(
     MINI_ESGF_CACHE_DIR,
-    'master/test_data/badc/cmip6/data/CMIP6/CMIP/CCCma/CanESM5/historical/r1i1p1f1/SImon/siconc/gn/latest/siconc_SImon_CanESM5_historical_r1i1p1f1_gn_185001-201412.nc'
+    "master/test_data/badc/cmip6/data/CMIP6/CMIP/CCCma/CanESM5/historical/r1i1p1f1/SImon/siconc/gn/latest/siconc_SImon_CanESM5_historical_r1i1p1f1_gn_185001-201412.nc",
 ).as_posix()
 
 C3S_CORDEX_PSL = Path(
     MINI_ESGF_CACHE_DIR,
-    'master/test_data/group_workspaces/jasmin2/cp4cds1/vol1/data/c3s-cordex/output/EUR-11/IPSL/MOHC-HadGEM2-ES/rcp85/r1i1p1/IPSL-WRF381P/v1/day/psl/v20190212/*.nc'
+    "master/test_data/group_workspaces/jasmin2/cp4cds1/vol1/data/c3s-cordex/output/EUR-11/IPSL/MOHC-HadGEM2-ES/rcp85/r1i1p1/IPSL-WRF381P/v1/day/psl/v20190212/*.nc",
 ).as_posix()
 
 C3S_CMIP5_TSICE = Path(
