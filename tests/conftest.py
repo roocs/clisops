@@ -5,14 +5,16 @@ import pytest
 import shutil
 import xarray as xr
 
+from clisops.utils import get_file
+
 from tests._common import (
     write_roocs_cfg,
-    MINI_ESGF_CACHE_DIR,
-    ESGF_TEST_DATA_REPO_URL
+    MINI_ESGF_CACHE_DIR
 )
 
 write_roocs_cfg()
 
+ESGF_TEST_DATA_REPO_URL = 'https://github.com/roocs/mini-esgf-data'
 
 @pytest.fixture
 def tmp_netcdf_filename(tmp_path):

@@ -5,8 +5,6 @@ from pathlib import Path
 import pytest
 from jinja2 import Template
 
-from clisops.utils import get_file
-
 ROOCS_CFG = os.path.join(tempfile.gettempdir(), "roocs.ini")
 TESTS_HOME = os.path.abspath(os.path.dirname(__file__))
 DEFAULT_CMIP5_ARCHIVE_BASE = os.path.join(
@@ -19,8 +17,8 @@ DEFAULT_CMIP6_ARCHIVE_BASE = os.path.join(
 
 # This is now only required for json files
 XCLIM_TESTS_DATA = os.path.join(TESTS_HOME, "xclim-testdata/testdata")
+# Set location for git clone of mini-esgf-data
 MINI_ESGF_CACHE_DIR = Path.home() / ".mini-esgf-data"
-ESGF_TEST_DATA_REPO_URL = 'https://github.com/roocs/mini-esgf-data'
 
 
 def write_roocs_cfg():
@@ -86,6 +84,12 @@ CMIP6_ARCHIVE_BASE = cmip6_archive_base()
 CMIP6_RLDS = os.path.join(
     MINI_ESGF_CACHE_DIR,
     'master/test_data/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc'
+)
+
+CMIP6_MRSOFC = os.path.join(
+    MINI_ESGF_CACHE_DIR,
+        "master/test_data/badc/cmip6/data/CMIP6/ScenarioMIP/IPSL/IPSL-CM6A-LR/ssp119/r1i1p1f1/fx/mrsofc/gr/v20190410"
+        "/mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc"
 )
 
 CMIP6_SICONC = os.path.join(

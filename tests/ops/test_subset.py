@@ -21,6 +21,7 @@ from .._common import (
     CMIP5_ZOSTOGA,
     CMIP5_RH,
     CMIP6_RLDS,
+    CMIP6_MRSOFC,
     C3S_CMIP5_TOS,
     C3S_CMIP5_TSICE,
 )
@@ -495,10 +496,10 @@ def test_coord_variables_subsetted_rlat_rlon():
     assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
 
 
-def test_time_invariant_subset_standard_name(cmip6_mrsofc, tmpdir):
+def test_time_invariant_subset_standard_name(load_esgf_test_data, tmpdir):
 
     result = subset(
-        ds=cmip6_mrsofc,
+        ds=CMIP6_MRSOFC,
         area=(5.0, 10.0, 20.0, 65.0),
         output_dir=tmpdir,
         output_type="nc",
@@ -508,10 +509,10 @@ def test_time_invariant_subset_standard_name(cmip6_mrsofc, tmpdir):
     _check_output_nc(result, fname="mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc")
 
 
-def test_time_invariant_subset_simple_name(cmip6_mrsofc, tmpdir):
+def test_time_invariant_subset_simple_name(load_esgf_test_data, tmpdir):
 
     result = subset(
-        ds=cmip6_mrsofc,
+        ds=CMIP6_MRSOFC,
         area=(5.0, 10.0, 20.0, 65.0),
         output_dir=tmpdir,
         output_type="nc",
