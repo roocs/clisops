@@ -1,11 +1,17 @@
+import os
+import shutil
+
 import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
 
-from tests._common import *
+from clisops.utils import get_file
+from tests._common import MINI_ESGF_CACHE_DIR, write_roocs_cfg
 
 write_roocs_cfg()
+
+ESGF_TEST_DATA_REPO_URL = "https://github.com/roocs/mini-esgf-data"
 
 
 @pytest.fixture
@@ -259,3 +265,42 @@ def ps_series():
         )
 
     return _ps_series
+
+
+@pytest.fixture
+def cmip5_tas_file():
+    return str(
+        get_file(
+            "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc",
+            branch="add_cmip5_hadgem",  # This will be removed once the branch is merged into "main"
+        )
+    )
+
+
+@pytest.fixture
+def cmip6_o3():
+    return str(
+        get_file(
+            "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
+        )
+    )
+
+
+# Fixture to load mini-esgf-data repository used by roocs tests
+@pytest.fixture
+def load_esgf_test_data():
+    """
+    This fixture ensures that the required test data repository
+    has been cloned to the cache directory within the home directory.
+    """
+    tmp_repo = "/tmp/.mini-esgf-data"
+    test_data_dir = os.path.join(tmp_repo, "test_data")
+    target = os.path.join(MINI_ESGF_CACHE_DIR, "master")
+
+    if not os.path.isdir(target):
+
+        os.makedirs(target)
+        os.system(f"git clone {ESGF_TEST_DATA_REPO_URL} {tmp_repo}")
+
+        shutil.move(test_data_dir, target)
+        shutil.rmtree(tmp_repo)
