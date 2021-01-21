@@ -26,10 +26,9 @@ def test_xarray_da_mean_skipna_none():
     assert mean == 10
 
 
-def test_xarray_da_mean_keep_attrs_true():
+def test_xarray_da_mean_keep_attrs_true(cmip5_tas):
     ds = xr.open_mfdataset(
-        "tests/mini-esgf-data/test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/"
-        "atmos/Amon/r1i1p1/latest/tas/*.nc",
+        cmip5_tas,
         combine="by_coords",
         use_cftime=True,
     )
@@ -40,10 +39,9 @@ def test_xarray_da_mean_keep_attrs_true():
     assert ds.attrs == ds_mean.attrs
 
 
-def test_xarray_da_mean_keep_attrs_false():
+def test_xarray_da_mean_keep_attrs_false(cmip5_tas):
     ds = xr.open_mfdataset(
-        "tests/mini-esgf-data/test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/"
-        "atmos/Amon/r1i1p1/latest/tas/*.nc",
+        cmip5_tas,
         combine="by_coords",
         use_cftime=True,
     )

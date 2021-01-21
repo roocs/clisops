@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import xarray as xr
+from roocs_utils.xarray_utils.xarray_utils import open_xr_dataset
 
 from clisops import logging, utils
 from clisops.core import subset_bbox, subset_level, subset_time
@@ -110,12 +111,10 @@ def subset(
     | file_namer: "standard"
 
     """
+
     if isinstance(ds, (str, Path)):
         ds = expand_wildcards(ds)
-        if len(ds) > 1:
-            ds = xr.open_mfdataset(ds, use_cftime=True, combine="by_coords")
-        else:
-            ds = xr.open_dataset(ds[0], use_cftime=True)
+        ds = open_xr_dataset(ds)
 
     LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
     args = utils.map_params(ds, time, area, level)
@@ -128,7 +127,11 @@ def subset(
     time_slices = get_time_slices(subset_ds, split_method)
 
     for tslice in time_slices:
-        result_ds = subset_ds.sel(time=slice(tslice[0], tslice[1]))
+        if tslice is None:
+            result_ds = subset_ds
+        else:
+            result_ds = subset_ds.sel(time=slice(tslice[0], tslice[1]))
+
         LOGGER.info(f"Processing subset for times: {tslice}")
 
         output = get_output(result_ds, output_type, output_dir, namer)

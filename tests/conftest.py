@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from tests._common import write_roocs_cfg
+from tests._common import *
 
 write_roocs_cfg()
 
