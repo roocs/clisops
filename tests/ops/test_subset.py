@@ -372,7 +372,7 @@ def test_area_within_area_subset_chunked(load_esgf_test_data):
         assert area[1] <= ds.lat.data <= area[3]
 
 
-def test_subset_level(cmip6_o3, tmpdir):
+def test_subset_level(cmip6_o3):
     """ Tests clisops subset function with a level subset."""
     # Levels are: 100000, ..., 100
     ds = _load_ds(cmip6_o3)
@@ -410,9 +410,7 @@ def test_aux_variables():
     assert "do_i_get_written" in result[0].variables
 
 
-@pytest.mark.skipif(
-    os.path.isdir("/group_workspaces") is False, reason="data not available"
-)
+@pytest.mark.skipif(os.path.isdir("/gws") is False, reason="data not available")
 def test_coord_variables_exist():
     """
     check coord variables e.g. lat/lon when original data
@@ -434,9 +432,7 @@ def test_coord_variables_exist():
     assert "lon" in result[0].coords
 
 
-@pytest.mark.skipif(
-    os.path.isdir("/group_workspaces") is False, reason="data not available"
-)
+@pytest.mark.skipif(os.path.isdir("/gws") is False, reason="data not available")
 def test_coord_variables_subsetted_i_j():
     """
     check coord variables e.g. lat/lon when original data
@@ -469,9 +465,7 @@ def test_coord_variables_subsetted_i_j():
         # working for lat but not lon in this example
 
 
-@pytest.mark.skipif(
-    os.path.isdir("/group_workspaces") is False, reason="data not available"
-)
+@pytest.mark.skipif(os.path.isdir("/gws") is False, reason="data not available")
 def test_coord_variables_subsetted_rlat_rlon():
     """
     check coord variables e.g. lat/lon when original data
@@ -499,3 +493,29 @@ def test_coord_variables_subsetted_rlat_rlon():
     assert abs(float(result[0].lat.max()) - area[3]) / area[3] <= 0.1
     assert abs(area[0] - float(result[0].lon.min())) / area[0] <= 0.1
     assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
+
+
+def test_time_invariant_subset_standard_name(cmip6_mrsofc, tmpdir):
+
+    result = subset(
+        ds=cmip6_mrsofc,
+        area=(5.0, 10.0, 20.0, 65.0),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="standard",
+    )
+
+    _check_output_nc(result, fname="mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc")
+
+
+def test_time_invariant_subset_simple_name(cmip6_mrsofc, tmpdir):
+
+    result = subset(
+        ds=cmip6_mrsofc,
+        area=(5.0, 10.0, 20.0, 65.0),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+
+    _check_output_nc(result)

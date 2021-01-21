@@ -1,8 +1,8 @@
 import os
 import tempfile
 from pathlib import Path
-import pytest
 
+import pytest
 from jinja2 import Template
 
 from clisops.utils import get_file
@@ -12,7 +12,7 @@ TESTS_HOME = os.path.abspath(os.path.dirname(__file__))
 DEFAULT_CMIP5_ARCHIVE_BASE = os.path.join(
     TESTS_HOME, "mini-esgf-data/test_data/badc/cmip5/data"
 )
-REAL_C3S_CMIP5_ARCHIVE_BASE = "/group_workspaces/jasmin2/cp4cds1/vol1/data/"
+REAL_C3S_CMIP5_ARCHIVE_BASE = "/gws/nopw/j04/cp4cds1_vol1/data/"
 DEFAULT_CMIP6_ARCHIVE_BASE = os.path.join(
     TESTS_HOME, "mini-esgf-data/test_data/badc/cmip6/data"
 )
@@ -26,22 +26,22 @@ ESGF_TEST_DATA_REPO_URL = 'https://github.com/roocs/mini-esgf-data'
 def write_roocs_cfg():
     cfg_templ = """
     [project:cmip5]
-    base_dir = {{ base_dir }}/mini-esgf-data/test_data/badc/cmip5/data
+    base_dir = {{ base_dir }}/mini-esgf-data/test_data/badc/cmip5/data/cmip5
 
     [project:cmip6]
-    base_dir = {{ base_dir }}/mini-esgf-data/test_data/badc/cmip6/data
+    base_dir = {{ base_dir }}/mini-esgf-data/test_data/badc/cmip6/data/CMIP6
 
     [project:cordex]
-    base_dir = {{ base_dir }}/mini-esgf-data/test_data/badc/cordex/data
+    base_dir = {{ base_dir }}/mini-esgf-data/test_data/badc/cordex/data/cordex
 
     [project:c3s-cmip5]
-    base_dir = {{ base_dir }}/mini-esgf-data/test_data/group_workspaces/jasmin2/cp4cds1/vol1/data
+    base_dir = {{ base_dir }}/mini-esgf-data/test_data/gws/nopw/j04/cp4cds1_vol1/data/c3s-cmip5
 
     [project:c3s-cmip6]
-    base_dir = NOT DEFINED YET
+    base_dir = {{ base_dir }}/mini-esgf-data/test_data/badc/cmip6/data/CMIP6
 
     [project:c3s-cordex]
-    base_dir = {{ base_dir }}/mini-esgf-data/test_data/group_workspaces/jasmin2/cp4cds1/vol1/data
+    base_dir = {{ base_dir }}/mini-esgf-data/test_data/gws/nopw/j04/cp4cds1_vol1/data/c3s-cordex
     """
     cfg = Template(cfg_templ).render(base_dir=TESTS_HOME)
     with open(ROOCS_CFG, "w") as fp:
@@ -80,21 +80,7 @@ CMIP5_RH = os.path.join(
 )
 
 
-@pytest.fixture
-def cmip5_tas_file():
-    return str(get_file(
-        "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc",
-        branch="add_cmip5_hadgem",  # This will be removed once the branch is merged into "main"
-    ))
-
 CMIP6_ARCHIVE_BASE = cmip6_archive_base()
-
-
-@pytest.fixture
-def cmip6_o3():
-    return str(get_file(
-        "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
-    ))
 
 
 CMIP6_RLDS = os.path.join(

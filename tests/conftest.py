@@ -8,9 +8,7 @@ import xarray as xr
 from tests._common import (
     write_roocs_cfg,
     MINI_ESGF_CACHE_DIR,
-    ESGF_TEST_DATA_REPO_URL,
-    cmip5_tas_file,
-    cmip6_o3
+    ESGF_TEST_DATA_REPO_URL
 )
 
 write_roocs_cfg()
@@ -268,6 +266,27 @@ def ps_series():
 
     return _ps_series
 
+
+@pytest.fixture
+def cmip5_tas_file():
+    return str(
+        get_file(
+            "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc",
+            branch="add_cmip5_hadgem",  # This will be removed once the branch is merged into "main"
+        )
+    )
+
+
+@pytest.fixture
+def cmip6_o3():
+    return str(
+        get_file(
+            "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
+        )
+    )
+
+
+# Fixture to load mini-esgf-data repository used by roocs tests
 @pytest.fixture
 def load_esgf_test_data():
     """
