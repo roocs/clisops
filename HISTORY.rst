@@ -1,6 +1,14 @@
 Version History
 ===============
 
+v0.5.2 (unreleased)
+-------------------
+
+Other Changes
+^^^^^^^^^^^^^
+* New ``core.average`` submodule with ``average_shape``. Depends on xESMF >= 0.5.0, which is an optional dependence.
+* Fix in ``core.subset.create_mask`` so it can accept ``GeoDataFrames`` with non-integer indexes.
+
 v0.5.1 (2020-01-08)
 ------------------
 
