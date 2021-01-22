@@ -9,6 +9,7 @@ from typing import Optional, Sequence, Tuple, Union
 import geopandas as gpd
 import numpy as np
 import xarray
+from pandas.api.types import is_integer_dtype
 from pyproj import Geod
 from pyproj.crs import CRS
 from pyproj.exceptions import CRSError
@@ -425,7 +426,8 @@ def create_mask(
     y_dim : xarray.DataArray
       Y or latitudinal dimension of xarray object.
     poly : gpd.GeoDataFrame
-      GeoDataFrame used to create the xarray.DataArray mask.
+      GeoDataFrame used to create the xarray.DataArray mask. If its index doesn't have a
+      integer dtype, it will be reset to integers, which will be used in the mask.
     wrap_lons : bool
       Shift vector longitudes by -180,180 degrees to 0,360 degrees; Default = False
     check_overlap: bool
@@ -473,6 +475,9 @@ def create_mask(
         lat1 = y_dim.values
         dims_out = x_dim.dims
         coords_out = x_dim.coords
+
+    if not is_integer_dtype(poly.index.dtype):
+        poly = poly.reset_index()
 
     # vectorize
     mask = np.zeros(lat1.shape) + np.nan

@@ -22,6 +22,7 @@ you through the process.
 .. _pip: https://pip.pypa.io
 .. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
 
+Some average operations (`clisops.core.average_shape`) require at least version 0.5.0 of the `xESMF` package. Unfortunately, this package is not available on pypi at the time these lines were written. It can still be installed through `conda` or directly [from source](https://github.com/pangeo-data/xESMF/).
 
 From sources
 ------------

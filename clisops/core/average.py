@@ -1,11 +1,9 @@
-"""Average module."""
 import logging
 from pathlib import Path
 from typing import Union
 
 import geopandas as gpd
 import xarray as xarray
-
 
 
 __all__ = [
@@ -20,6 +18,7 @@ def average_shape(
     """Average a DataArray or Dataset spatially using vector shapes.
 
     Return a DataArray or Dataset averaged over each Polygon given.
+    Requires xESMF >= 0.5.0.
 
     Parameters
     ----------
