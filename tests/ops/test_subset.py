@@ -17,14 +17,13 @@ from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import _format_time, get_output, get_time_slices
 
 from .._common import (
+    CMIP5_TAS,
+    CMIP5_ZOSTOGA,
+    CMIP5_RH,
+    CMIP6_RLDS,
+    CMIP6_MRSOFC,
     C3S_CMIP5_TOS,
     C3S_CMIP5_TSICE,
-    CMIP5_RH,
-    CMIP5_TAS,
-    CMIP5_TAS_FILE,
-    CMIP5_ZOSTOGA,
-    CMIP6_O3,
-    CMIP6_RLDS,
 )
 
 
@@ -36,10 +35,10 @@ def _load_ds(fpath):
     return xr.open_mfdataset(fpath)
 
 
-def test_subset_no_params(tmpdir):
+def test_subset_no_params(cmip5_tas_file, tmpdir):
     """ Test subset without area param."""
     result = subset(
-        ds=CMIP5_TAS_FILE,
+        ds=cmip5_tas_file,
         output_dir=tmpdir,
         output_type="nc",
         file_namer="simple",
@@ -47,10 +46,10 @@ def test_subset_no_params(tmpdir):
     _check_output_nc(result)
 
 
-def test_subset_time(tmpdir):
+def test_subset_time(cmip5_tas_file, tmpdir):
     """ Tests clisops subset function with a time subset."""
     result = subset(
-        ds=CMIP5_TAS_FILE,
+        ds=cmip5_tas_file,
         time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
         area=(0, -90.0, 360.0, 90.0),
         output_dir=tmpdir,
@@ -60,7 +59,7 @@ def test_subset_time(tmpdir):
     _check_output_nc(result)
 
 
-def test_subset_args_as_parameter_classes(tmpdir):
+def test_subset_args_as_parameter_classes(cmip5_tas_file, tmpdir):
     """Tests clisops subset function with a time subset
     with the arguments as parameter classes from roocs-utils."""
 
@@ -68,7 +67,7 @@ def test_subset_args_as_parameter_classes(tmpdir):
     area = area_parameter.AreaParameter((0, -90.0, 360.0, 90.0))
 
     result = subset(
-        ds=CMIP5_TAS_FILE,
+        ds=cmip5_tas_file,
         time=time,
         area=area,
         output_dir=tmpdir,
@@ -78,11 +77,11 @@ def test_subset_args_as_parameter_classes(tmpdir):
     _check_output_nc(result)
 
 
-def test_subset_invalid_time(tmpdir):
+def test_subset_invalid_time(cmip5_tas_file, tmpdir):
     """ Tests subset with invalid time param."""
     with pytest.raises(InvalidParameterValue):
         subset(
-            ds=CMIP5_TAS_FILE,
+            ds=cmip5_tas_file,
             time=("yesterday", "2020-12-30T00:00:00"),
             area=(0, -90.0, 360.0, 90.0),
             output_dir=tmpdir,
@@ -112,10 +111,10 @@ def test_subset_no_ds(tmpdir):
         )
 
 
-def test_subset_area_simple_file_name(tmpdir):
+def test_subset_area_simple_file_name(cmip5_tas_file, tmpdir):
     """ Tests clisops subset function with a area subset (simple file name)."""
     result = subset(
-        ds=CMIP5_TAS_FILE,
+        ds=cmip5_tas_file,
         area=(0.0, 10.0, 10.0, 65.0),
         output_dir=tmpdir,
         output_type="nc",
@@ -124,10 +123,10 @@ def test_subset_area_simple_file_name(tmpdir):
     _check_output_nc(result)
 
 
-def test_subset_area_project_file_name(tmpdir):
+def test_subset_area_project_file_name(cmip5_tas_file, tmpdir):
     """ Tests clisops subset function with a area subset (derived file name)."""
     result = subset(
-        ds=CMIP5_TAS_FILE,
+        ds=cmip5_tas_file,
         area=(0.0, 10.0, 10.0, 65.0),
         output_dir=tmpdir,
         output_type="nc",
@@ -136,21 +135,21 @@ def test_subset_area_project_file_name(tmpdir):
     _check_output_nc(result, "tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-20301116.nc")
 
 
-def test_subset_invalid_area(tmpdir):
+def test_subset_invalid_area(cmip5_tas_file, tmpdir):
     """ Tests subset with invalid area param."""
     with pytest.raises(InvalidParameterValue):
         subset(
-            ds=CMIP5_TAS_FILE,
+            ds=cmip5_tas_file,
             area=("zero", 49.0, 10.0, 65.0),
             output_dir=tmpdir,
         )
 
 
 @pytest.mark.xfail(reason="cross the 0 degree meridian not implemented.")
-def test_subset_area_with_meridian(tmpdir):
+def test_subset_area_with_meridian(cmip5_tas_file, tmpdir):
     """ Tests clisops subset function with a area subset."""
     result = subset(
-        ds=CMIP5_TAS_FILE,
+        ds=cmip5_tas_file,
         area=(-10.0, 49.0, 10.0, 65.0),
         output_dir=tmpdir,
         output_type="nc",
@@ -159,10 +158,10 @@ def test_subset_area_with_meridian(tmpdir):
     _check_output_nc(result)
 
 
-def test_subset_with_time_and_area(tmpdir):
+def test_subset_with_time_and_area(cmip5_tas_file, tmpdir):
     """ Tests clisops subset function with time, area, level subsets."""
     result = subset(
-        ds=CMIP5_TAS_FILE,
+        ds=cmip5_tas_file,
         time=("2019-01-01T00:00:00", "2020-12-30T00:00:00"),
         area=(0.0, 0.0, 10.0, 65.0),
         output_dir=tmpdir,
@@ -172,7 +171,7 @@ def test_subset_with_time_and_area(tmpdir):
     _check_output_nc(result)
 
 
-def test_subset_with_multiple_files_tas(tmpdir):
+def test_subset_with_multiple_files_tas(load_esgf_test_data, tmpdir):
     """ Tests with multiple tas files"""
     result = subset(
         ds=CMIP5_TAS,
@@ -185,7 +184,7 @@ def test_subset_with_multiple_files_tas(tmpdir):
     _check_output_nc(result)
 
 
-def test_subset_with_multiple_files_zostoga(tmpdir):
+def test_subset_with_multiple_files_zostoga(load_esgf_test_data, tmpdir):
     """ Tests with multiple zostoga files"""
     result = subset(
         ds=CMIP5_ZOSTOGA,
@@ -197,7 +196,7 @@ def test_subset_with_multiple_files_zostoga(tmpdir):
     _check_output_nc(result)
 
 
-def test_subset_with_multiple_files_rh(tmpdir):
+def test_subset_with_multiple_files_rh(load_esgf_test_data, tmpdir):
     """ Tests with multiple rh files"""
     result = subset(
         ds=CMIP5_RH,
@@ -222,7 +221,7 @@ def test_subset_with_tas_series(tmpdir, tas_series):
     _check_output_nc(result)
 
 
-def test_time_slices_in_subset_tas():
+def test_time_slices_in_subset_tas(load_esgf_test_data):
     start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
 
     time_slices = [
@@ -257,7 +256,7 @@ def test_time_slices_in_subset_tas():
         count += 1
 
 
-def test_time_slices_in_subset_rh():
+def test_time_slices_in_subset_rh(load_esgf_test_data):
     start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
 
     time_slices = [
@@ -289,7 +288,7 @@ def test_time_slices_in_subset_rh():
 
 
 # area can be a few degrees out
-def test_area_within_area_subset():
+def test_area_within_area_subset(load_esgf_test_data):
     area = (0.0, 10.0, 175.0, 90.0)
 
     outputs = subset(
@@ -305,7 +304,7 @@ def test_area_within_area_subset():
     assert area[1] <= ds.lat.data <= area[3]
 
 
-def test_area_within_area_subset_cmip6():
+def test_area_within_area_subset_cmip6(load_esgf_test_data):
     area = (100.0, 10.0, 300.0, 90.0)
 
     outputs = subset(
@@ -323,7 +322,7 @@ def test_area_within_area_subset_cmip6():
     assert np.isclose(ds.lat.data[0], 36.76056)
 
 
-def test_subset_with_lat_lon_single_values():
+def test_subset_with_lat_lon_single_values(load_esgf_test_data):
     """Creates subset where lat and lon only have one value. Then
     subsets that. This tests that the `lat_bnds` and `lon_bnds`
     are not being reversed by the `_check_desc_coords` function in
@@ -352,7 +351,7 @@ def test_subset_with_lat_lon_single_values():
     assert len(ds2.lon) == 1
 
 
-def test_area_within_area_subset_chunked():
+def test_area_within_area_subset_chunked(load_esgf_test_data):
 
     start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
     area = (0.0, 10.0, 175.0, 90.0)
@@ -374,20 +373,20 @@ def test_area_within_area_subset_chunked():
         assert area[1] <= ds.lat.data <= area[3]
 
 
-def test_subset_level(tmpdir):
+def test_subset_level(cmip6_o3):
     """ Tests clisops subset function with a level subset."""
     # Levels are: 100000, ..., 100
-    ds = _load_ds(CMIP6_O3)
+    ds = _load_ds(cmip6_o3)
 
-    result1 = subset(ds=CMIP6_O3, level="100000/100", output_type="xarray")
+    result1 = subset(ds=cmip6_o3, level="100000/100", output_type="xarray")
 
     np.testing.assert_array_equal(result1[0].o3.values, ds.o3.values)
 
-    result2 = subset(ds=CMIP6_O3, level="100/100", output_type="xarray")
+    result2 = subset(ds=cmip6_o3, level="100/100", output_type="xarray")
 
     np.testing.assert_array_equal(result2[0].o3.shape, (1200, 1, 2, 3))
 
-    result3 = subset(ds=CMIP6_O3, level="101/-23.234", output_type="xarray")
+    result3 = subset(ds=cmip6_o3, level="101/-23.234", output_type="xarray")
 
     np.testing.assert_array_equal(result3[0].o3.values, result2[0].o3.values)
 
@@ -412,9 +411,7 @@ def test_aux_variables():
     assert "do_i_get_written" in result[0].variables
 
 
-@pytest.mark.skipif(
-    os.path.isdir("/group_workspaces") is False, reason="data not available"
-)
+@pytest.mark.skipif(os.path.isdir("/gws") is False, reason="data not available")
 def test_coord_variables_exist():
     """
     check coord variables e.g. lat/lon when original data
@@ -436,9 +433,7 @@ def test_coord_variables_exist():
     assert "lon" in result[0].coords
 
 
-@pytest.mark.skipif(
-    os.path.isdir("/group_workspaces") is False, reason="data not available"
-)
+@pytest.mark.skipif(os.path.isdir("/gws") is False, reason="data not available")
 def test_coord_variables_subsetted_i_j():
     """
     check coord variables e.g. lat/lon when original data
@@ -471,9 +466,7 @@ def test_coord_variables_subsetted_i_j():
         # working for lat but not lon in this example
 
 
-@pytest.mark.skipif(
-    os.path.isdir("/group_workspaces") is False, reason="data not available"
-)
+@pytest.mark.skipif(os.path.isdir("/gws") is False, reason="data not available")
 def test_coord_variables_subsetted_rlat_rlon():
     """
     check coord variables e.g. lat/lon when original data
@@ -501,3 +494,29 @@ def test_coord_variables_subsetted_rlat_rlon():
     assert abs(float(result[0].lat.max()) - area[3]) / area[3] <= 0.1
     assert abs(area[0] - float(result[0].lon.min())) / area[0] <= 0.1
     assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
+
+
+def test_time_invariant_subset_standard_name(load_esgf_test_data, tmpdir):
+
+    result = subset(
+        ds=CMIP6_MRSOFC,
+        area=(5.0, 10.0, 20.0, 65.0),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="standard",
+    )
+
+    _check_output_nc(result, fname="mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc")
+
+
+def test_time_invariant_subset_simple_name(load_esgf_test_data, tmpdir):
+
+    result = subset(
+        ds=CMIP6_MRSOFC,
+        area=(5.0, 10.0, 20.0, 65.0),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+
+    _check_output_nc(result)

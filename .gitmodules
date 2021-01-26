@@ -1,6 +1,0 @@
-[submodule "tests/mini-esgf-data"]
-	path = tests/mini-esgf-data
-	url = https://github.com/roocs/mini-esgf-data.git
-[submodule "tests/xclim-testdata"]
-	path = tests/xclim-testdata
-	url = https://github.com/roocs/xclim-testdata.git

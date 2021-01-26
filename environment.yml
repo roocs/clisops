@@ -20,4 +20,4 @@ dependencies:
  - pyproj>=2.5
  - python-dateutil>=2.8.1
  - requests>=2.0
- - roocs-utils>=0.1.5
+ #- roocs-utils>=0.1.5
