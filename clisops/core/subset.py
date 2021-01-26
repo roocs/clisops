@@ -6,6 +6,7 @@ from functools import wraps
 from pathlib import Path
 from typing import Optional, Sequence, Tuple, Union
 
+import cf_xarray  # noqa
 import geopandas as gpd
 import numpy as np
 import xarray
@@ -409,9 +410,9 @@ def wrap_lons_and_split_at_greenwich(func):
 @wrap_lons_and_split_at_greenwich
 def create_mask(
     *,
-    x_dim: xarray.DataArray = None,
-    y_dim: xarray.DataArray = None,
-    poly: gpd.GeoDataFrame = None,
+    x_dim: xarray.DataArray,
+    y_dim: xarray.DataArray,
+    poly: gpd.GeoDataFrame,
     wrap_lons: bool = False,
     check_overlap: bool = False,
 ):
@@ -422,9 +423,9 @@ def create_mask(
     Parameters
     ----------
     x_dim : xarray.DataArray
-      X or longitudinal dimension of xarray object.
+      X or longitudinal dimension of xarray object. Can also be given through `ds_in`.
     y_dim : xarray.DataArray
-      Y or latitudinal dimension of xarray object.
+      Y or latitudinal dimension of xarray object. Can also be given through `ds_in`.
     poly : gpd.GeoDataFrame
       GeoDataFrame used to create the xarray.DataArray mask. If its index doesn't have a
       integer dtype, it will be reset to integers, which will be used in the mask.
@@ -495,6 +496,75 @@ def create_mask(
     mask = xarray.DataArray(mask, dims=dims_out, coords=coords_out)
 
     return mask
+
+
+def create_weight_masks(
+    ds_in: Union[xarray.DataArray, xarray.Dataset],
+    poly: gpd.GeoDataFrame,
+):
+    """Create weight masks corresponding to the features in a GeoDataFrame using xESMF.
+
+    The returned masks values are the fraction of the corresponding polygon's area
+    that is covered by the grid cell. Summing along the spatial dimension will give 1
+    for each geometry. Requires xESMF >= 0.5.0.
+
+    Parameters
+    ----------
+    ds_in : Union[xarray.DataArray, xarray.Dataset]
+      xarray object containing the grid information, as understood by xESMF.
+      For 2D lat/lon coordinates, the bounds arrays are required,
+    poly : gpd.GeoDataFrame
+      GeoDataFrame used to create the xarray.DataArray mask.
+      One mask will be created for each row in the dataframe.
+      Will be converted to EPSG:4326 if needed.
+
+    Returns
+    -------
+    xarray.DataArray
+      Has a new `geom` dimension corresponding to the index of the input GeoDataframe.
+      Non-geometry columns of `poly` are copied as auxiliary coordinates.
+
+    Examples
+    --------
+    >>> import geopandas as gpd  # doctest: +SKIP
+    >>> import xarray as xr  # doctest: +SKIP
+    >>> from clisops.core.subset import create_weight_mask  # doctest: +SKIP
+    >>> ds = xr.open_dataset(path_to_tasmin_file)  # doctest: +SKIP
+    >>> polys = gpd.read_file(path_to_multi_shape_file)  # doctest: +SKIP
+    ...
+    # Get a weight mask for each polygon in the shape file
+    >>> mask = create_weight_mask(x_dim=ds.lon, y_dim=ds.lat, poly=polys)  # doctest: +SKIP
+    """
+    try:
+        from xesmf import SpatialAverager
+    except ImportError:
+        raise ValueError('Package xesmf >= 0.5.0 is required to use create_weight_masks')
+
+    if poly.crs is not None:
+        poly = poly.to_crs(4326)
+
+    poly = poly.copy()
+    poly.index.name = 'geom'
+    poly_coords = poly.drop('geometry', axis='columns').to_xarray()
+
+    savg = SpatialAverager(ds_in, poly.geometry)
+    # Unpack weights to full size array, this increases memory use a lot.
+    # polygons are along the "geom" dim
+    # assign all other columns of poly as auxiliary coords.
+    masks = xarray.DataArray(
+        savg.weights.toarray().reshape(poly.geometry.size, *savg.shape_in),
+        dims=("geom", *savg.in_horiz_dims),
+        coords=dict(**poly_coords, **poly_coords.coords)
+    )
+
+    # Assign coords from ds_in, but only those with no unknown dims.
+    # Otherwise xarray rises an error.
+    masks = masks.assign_coords(
+        **{k: crd
+           for k, crd in ds_in.coords.items()
+           if not (set(crd.dims) - set(masks.dims))}
+    )
+    return masks
 
 
 @check_latlon_dimnames

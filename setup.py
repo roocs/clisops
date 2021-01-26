@@ -36,7 +36,7 @@ docs_requirements = [
 ]
 
 extra_requirements = [
-    "xesmf>=0.50",
+    "xesmf>=0.5.2",
 ]
 
 setup(
