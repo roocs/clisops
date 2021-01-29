@@ -17,13 +17,13 @@ from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import _format_time, get_output, get_time_slices
 
 from .._common import (
-    CMIP5_TAS,
-    CMIP5_ZOSTOGA,
-    CMIP5_RH,
-    CMIP6_RLDS,
-    CMIP6_MRSOFC,
     C3S_CMIP5_TOS,
     C3S_CMIP5_TSICE,
+    CMIP5_RH,
+    CMIP5_TAS,
+    CMIP5_ZOSTOGA,
+    CMIP6_MRSOFC,
+    CMIP6_RLDS,
 )
 
 
@@ -514,6 +514,119 @@ def test_time_invariant_subset_simple_name(load_esgf_test_data, tmpdir):
     result = subset(
         ds=CMIP6_MRSOFC,
         area=(5.0, 10.0, 20.0, 65.0),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+
+    _check_output_nc(result)
+
+
+# test known bug
+@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+def test_cross_prime_meridian(tmpdir):
+    ds = _load_ds(
+        "/badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/day/tas/gn/v20191016"
+        "/tas_day_MIROC6_ssp119_r1i1p1f1_gn_20150101-20241231.nc"
+    )
+
+    with pytest.raises(NotImplementedError) as exc:
+        subset(
+            ds=ds,
+            area=(-5, 50, 30, 65),
+            output_dir=tmpdir,
+            output_type="nc",
+            file_namer="simple",
+        )
+        assert (
+            str(exc.value)
+            == "Input longitude bounds ([-5. 30.]) cross the 0 degree meridian "
+            "but dataset longitudes are all positive."
+        )
+
+
+# test it works when not crossing 0 meridian
+@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+def test_do_not_cross_prime_meridian(tmpdir):
+    ds = _load_ds(
+        "/badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/day/tas/gn/v20191016"
+        "/tas_day_MIROC6_ssp119_r1i1p1f1_gn_20150101-20241231.nc"
+    )
+
+    result = subset(
+        ds=ds,
+        area=(10, 50, 30, 65),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+
+    _check_output_nc(result)
+
+
+@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+def test_0_360_no_cross(tmpdir):
+
+    ds = _load_ds(
+        "/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803"
+        "/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc"
+    )
+    result = subset(
+        ds=ds,
+        area=(10.0, -90.0, 200.0, 90.0),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+
+    _check_output_nc(result)
+
+
+@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+def test_0_360_cross(tmpdir):
+    ds = _load_ds(
+        "/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/"
+        "rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc"
+    )
+
+    with pytest.raises(NotImplementedError):
+        subset(
+            ds=ds,
+            area=(-50.0, -90.0, 100.0, 90.0),
+            output_dir=tmpdir,
+            output_type="nc",
+            file_namer="simple",
+        )
+
+
+@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+def test_300_60_no_cross(tmpdir):
+    # longitude is -300 to 60
+    ds = _load_ds(
+        "/badc/cmip6/data/CMIP6/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/Ofx/areacello/gn/v20190726/*.nc"
+    )
+
+    result = subset(
+        ds=ds,
+        area=(10.0, -90.0, 50.0, 90.0),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+
+    _check_output_nc(result)
+
+
+@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+def test_300_60_cross(tmpdir):
+    # longitude is -300 to 60
+    ds = _load_ds(
+        "/badc/cmip6/data/CMIP6/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/Ofx/areacello/gn/v20190726/*.nc"
+    )
+
+    result = subset(
+        ds=ds,
+        area=(-100.0, -90.0, 50.0, 90.0),
         output_dir=tmpdir,
         output_type="nc",
         file_namer="simple",
