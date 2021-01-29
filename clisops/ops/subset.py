@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import xarray as xr
-from roocs_utils.xarray_utils.xarray_utils import open_xr_dataset
+from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type, open_xr_dataset
 
 from clisops import logging, utils
 from clisops.core import subset_bbox, subset_level, subset_time
@@ -17,11 +17,63 @@ __all__ = [
 LOGGER = logging.getLogger(__file__)
 
 
+def calculate_offset(lon):
+    # get resolution of data
+    res = lon.values[1] - lon.values[0]
+
+    # calculate how much to move by to have lon -180 to 180
+    # might need to change this?? - we might need to roll it to something other than -180 to 180
+    diff = -180 - lon.values[0]
+
+    # work out how many to roll by to roll data by 1
+    index = 1 / res
+
+    # calculate the corresponding offset needed to change data by x
+    offset = int(diff * index)
+
+    return diff, offset
+
+
+def check_lon_alignment(ds, lon_bnds):
+    low, high = lon_bnds
+    lon = get_coord_by_type(ds, "longitude")
+    lon = ds.coords[lon.name]
+    lon_min, lon_max = lon.values.min(), lon.values.max()
+
+    # check if the request is in bounds - return ds if it is
+    if lon_min <= low and lon_max >= high:
+        return ds
+
+    else:
+        # check if lon is a dimension
+        if lon.name not in ds.dims:
+            raise Exception(
+                f"The longitude of this dataset runs from {lon_min} to {lon_max}, "
+                f"and rolling could not be completed successfully. "
+                f"Please re-run your request with longitudes between these bounds."
+            )
+        # roll the dataset and reassign the longitude values
+        else:
+            diff, offset = calculate_offset(lon)
+            ds_roll = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=False)
+            ds_roll.coords[lon.name] = ds_roll.coords[lon.name] + diff
+            return ds_roll
+
+
 def _subset(ds, args):
     if "lon_bnds" and "lat_bnds" in args:
         # subset with space and optionally time and level
         LOGGER.debug(f"subset_bbox with parameters: {args}")
-        result = subset_bbox(ds, **args)
+        ds = check_lon_alignment(ds, args.get("lon_bnds"))
+        try:
+            result = subset_bbox(ds, **args)
+        except NotImplementedError:
+            raise Exception(
+                "The longitude of this dataset runs from lon_min to lon_max, "  # will have to change this or define lon max and lon min
+                "and rolling could not be completed successfully. "
+                "Please re-run your request with longitudes between these bounds."
+            )
+        # result = subset_bbox(ds, **args)
     else:
         kwargs = {}
         valid_args = ["start_date", "end_date"]
