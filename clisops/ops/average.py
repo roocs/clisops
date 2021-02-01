@@ -92,14 +92,3 @@ def average_over_dims(
         outputs.append(output)
 
     return outputs
-
-    # outputs = list()
-    #
-    # avg_result = average.average_over_dims(ds, dims, ignore_unfound_dims)
-    #
-    # namer = get_file_namer(file_namer)()
-    #
-    # output = get_output(avg_result, output_type, output_dir, namer)
-    # outputs.append(output)
-    #
-    # return output

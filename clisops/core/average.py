@@ -13,7 +13,6 @@ __all__ = [
 ]
 
 
-# put in static typing
 def average_over_dims(
     ds: Union[xr.DataArray, xr.Dataset],
     dims: List[str] = None,
@@ -76,8 +75,6 @@ def average_over_dims(
         dims_to_average.append(found_dims[dim])
 
     # mean can be carried out on a Dataset or DataArray
-    ds_averaged_over_dims = ds.mean(
-        dim=dims_to_average, skipna=True, keep_attrs=True
-    )  # TypeError: float() argument must be a string or a number, not 'cftime._cftime.DatetimeNoLeap'
+    ds_averaged_over_dims = ds.mean(dim=dims_to_average, skipna=True, keep_attrs=True)
 
     return ds_averaged_over_dims

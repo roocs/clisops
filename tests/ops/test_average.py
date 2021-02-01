@@ -141,7 +141,7 @@ def test_average_multiple_dims_filename(cmip5_tas, tmpdir):
     )
 
 
-def test_average_multiple_dims_xarray(cmip5_tas, tmpdir):
+def test_average_multiple_dims_xarray(cmip5_tas):
     result = average_over_dims(
         cmip5_tas,
         dims=["time", "longitude"],
