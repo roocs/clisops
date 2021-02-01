@@ -3,7 +3,7 @@ from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
 def calculate_offset(lon):
     # get resolution of data
-    res = lon.values[1] - lon.values[0]
+    res = lon.values[1] - lon.values[0]  # this doesn't work for test data
 
     # calculate how much to move by to have lon from -180 to 180
     # might need to change this?? - we might need to roll it to something other than -180 to 180

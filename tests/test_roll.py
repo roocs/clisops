@@ -140,6 +140,7 @@ def test_plus_minus_180_equal():
 
 
 @pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+@pytest.mark.skip(reason="rolling now done within subset")
 def test_xarray_roll_lon(tmpdir):
     ds, lon = setup_test()
 
@@ -161,6 +162,7 @@ def test_xarray_roll_lon(tmpdir):
 
 # seems to take a while..
 @pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+@pytest.mark.skip(reason="rolling now done within subset")
 def test_convert_lon_coords(tmpdir):
     # test reassigning coords to convert to -180 to 180 for comparison
     ds, lon = setup_test()
@@ -183,6 +185,7 @@ def test_convert_lon_coords(tmpdir):
 
 
 @pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+@pytest.mark.skip(reason="rolling now done within subset")
 def test_roll_convert_lon_coords():
     ds, lon = setup_test()
     # work out how much to roll by
@@ -249,6 +252,7 @@ def test_roll_compare_roll_coords():
 
 
 @pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+@pytest.mark.skip(reason="rolling now done within subset")
 def test_compare_methods():
 
     # run subset with rolling then assigning
@@ -307,7 +311,7 @@ def test_irregular_grid_dataset():
 
     with pytest.raises(ValueError) as exc:
         ds.roll(shifts={f"{lon.name}": 180}, roll_coords=False)
-    assert str(exc.value) == "ValueError: dimensions ['longitude'] do not exist"
+    assert str(exc.value) == "dimensions ['longitude'] do not exist"
 
 
 @pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")

@@ -305,7 +305,7 @@ def test_area_within_area_subset(load_esgf_test_data):
 
 
 def test_area_within_area_subset_cmip6(load_esgf_test_data):
-    area = (100.0, 10.0, 300.0, 90.0)
+    area = (20.0, 10.0, 250.0, 90.0)
 
     outputs = subset(
         ds=CMIP6_RLDS,
@@ -328,7 +328,7 @@ def test_subset_with_lat_lon_single_values(load_esgf_test_data):
     are not being reversed by the `_check_desc_coords` function in
     `clisops.core.subset`.
     """
-    area = (100.0, 10.0, 300.0, 90.0)
+    area = (20.0, 10.0, 250.0, 90.0)
 
     outputs = subset(
         ds=CMIP6_RLDS,
@@ -425,7 +425,7 @@ def test_coord_variables_exist():
     result = subset(
         ds=C3S_CMIP5_TSICE,
         time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
-        area=(0.0, 10.0, 10.0, 65.0),
+        area=(0.1, 10.0, 10.0, 65.0),
         output_type="xarray",
     )
 
@@ -584,6 +584,7 @@ def test_0_360_no_cross(tmpdir):
 
 
 @pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+@pytest.mark.skip(reason="bug no longer exists")
 def test_0_360_cross(tmpdir):
     ds = _load_ds(
         "/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/"
