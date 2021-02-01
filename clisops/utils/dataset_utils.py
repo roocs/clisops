@@ -2,10 +2,14 @@ from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
 
 def calculate_offset(lon):
+    """
+    Calculate the number of elements to roll the dataset by in order to have
+    longitude from -180 to 180 degrees.
+    """
     # get resolution of data
     res = lon.values[1] - lon.values[0]  # this doesn't work for test data
 
-    # calculate how much to move by to have lon from -180 to 180
+    # calculate how many elements to move by to have lon from -180 to 180
     # might need to change this?? - we might need to roll it to something other than -180 to 180
     diff = -180 - lon.values[0]
 
@@ -19,6 +23,10 @@ def calculate_offset(lon):
 
 
 def check_lon_alignment(ds, lon_bnds):
+    """
+    Check whether the longitude subset requested is within the bounds of the dataset. If not try to roll the dataset so
+    that the request is. Raise an exception if rolling is not possible.
+    """
     low, high = lon_bnds
     lon = get_coord_by_type(ds, "longitude", ignore_aux_coords=False)
     lon = ds.coords[lon.name]
