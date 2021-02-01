@@ -40,6 +40,15 @@ def check_lon_alignment(ds, lon_bnds):
     lon = ds.coords[lon.name]
     lon_min, lon_max = lon.values.min(), lon.values.max()
 
+    # handle the case where there is only one longitude
+    if len(lon.values) == 1:
+        lon_value = ds.lon.values[0]
+        if low > lon_value:
+            ds.coords[lon.name] = ds.coords[lon.name] + 360
+        elif high < lon_value:
+            ds.coords[lon.name] = ds.coords[lon.name] - 360
+        return ds
+
     # check if the request is in bounds - return ds if it is
     if (lon_min <= low or np.isclose(low, lon_min, atol=0.5)) and (
         lon_max >= high or np.isclose(high, lon_max, atol=0.5)
@@ -56,15 +65,8 @@ def check_lon_alignment(ds, lon_bnds):
             )
         # roll the dataset and reassign the longitude values
         else:
-            if len(ds.lon.values) <= 1:
-                LOGGER.info(
-                    f"Longitude has length {len(ds.lon.values)} so could not be"
-                    f"rolled. Using dataset without rolling."
-                )
-                return ds
-            else:
-                first_element_value = low
-                diff, offset = calculate_offset(lon, first_element_value)
-                ds_roll = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=False)
-                ds_roll.coords[lon.name] = ds_roll.coords[lon.name] + diff
-                return ds_roll
+            first_element_value = low
+            diff, offset = calculate_offset(lon, first_element_value)
+            ds_roll = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=False)
+            ds_roll.coords[lon.name] = ds_roll.coords[lon.name] + diff
+            return ds_roll
