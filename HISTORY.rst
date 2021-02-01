@@ -3,14 +3,20 @@ Version History
 
 Unreleased
 -----------
+
+New Features
+^^^^^^^^^^^^
+* ``average_over_dims`` added into ``average.core`` and ``average.ops``
+
 Other Changes
 ^^^^^^^^^^^^^
 * Changes to allow datasets without a time dimension to be processed without issues
 * Use ``DatasetMapper`` from ``roocs-utils`` to ensure all datasets are mapped to file paths correctly.
 * Using file caching to gather ``mini-esgf-data`` test data.
+* ``clisops.utils.file_namers`` adjusted to allow ``__derive__time_range`` to be overwritten in the case of ``average_over_dims``
 
 
-v0.5.1 (2020-01-11)
+v0.5.1 (2021-01-11)
 ------------------
 
 Breaking Changes

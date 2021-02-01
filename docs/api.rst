@@ -11,10 +11,29 @@ Core subset functionality
    :show-inheritance:
 
 
+Core average functionality
+=========================
+
+.. automodule:: clisops.core.average
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
 Subset operation
 ================
 
 .. automodule:: clisops.ops.subset
+   :noindex:
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Average operation
+=================
+
+.. automodule:: clisops.ops.average
    :noindex:
    :members:
    :undoc-members:
