@@ -2,6 +2,8 @@ import numpy as np
 import pytest
 import xarray as xr
 
+from tests._common import CMIP5_TAS
+
 nan = np.nan
 nat = np.datetime64("NaT")
 
@@ -99,9 +101,9 @@ def test_xarray_da_mean_skipna_false_datetime():
     # result is nat
 
 
-def test_xarray_da_mean_keep_attrs_true(cmip5_tas):
+def test_xarray_da_mean_keep_attrs_true(load_esgf_test_data):
     ds = xr.open_mfdataset(
-        cmip5_tas,
+        CMIP5_TAS,
         combine="by_coords",
         use_cftime=True,
     )
@@ -112,9 +114,9 @@ def test_xarray_da_mean_keep_attrs_true(cmip5_tas):
     assert ds.attrs == ds_mean.attrs
 
 
-def test_xarray_da_mean_keep_attrs_false(cmip5_tas):
+def test_xarray_da_mean_keep_attrs_false(load_esgf_test_data):
     ds = xr.open_mfdataset(
-        cmip5_tas,
+        CMIP5_TAS,
         combine="by_coords",
         use_cftime=True,
     )

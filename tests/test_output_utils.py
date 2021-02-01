@@ -4,6 +4,7 @@ import xarray as xr
 
 from clisops.utils.common import expand_wildcards
 from clisops.utils.output_utils import get_time_slices
+from tests._common import CMIP5_TAS
 
 
 def _open(coll):
@@ -16,9 +17,9 @@ def _open(coll):
     return ds
 
 
-def test_get_time_slices_single_slice(cmip5_tas):
+def test_get_time_slices_single_slice(load_esgf_test_data):
 
-    tas = _open(cmip5_tas)
+    tas = _open(CMIP5_TAS)
 
     test_data = [
         (
@@ -42,9 +43,9 @@ def test_get_time_slices_single_slice(cmip5_tas):
         assert resp[0] == slices
 
 
-def test_get_time_slices_multiple_slices(cmip5_tas):
+def test_get_time_slices_multiple_slices(load_esgf_test_data):
 
-    tas = _open(cmip5_tas)
+    tas = _open(CMIP5_TAS)
 
     test_data = [
         (
