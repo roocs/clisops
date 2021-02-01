@@ -1,19 +1,27 @@
+import numpy as np
 from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
+from clisops import logging
 
-def calculate_offset(lon):
+LOGGER = logging.getLogger(__file__)
+
+
+def calculate_offset(lon, first_element_value):
     """
     Calculate the number of elements to roll the dataset by in order to have
     longitude from -180 to 180 degrees.
+
+    :param lon: longitude coordinate of xarray dataset.
+    :param first_element_value: the value of the first element of the longitude array to roll to.
     """
     # get resolution of data
     res = lon.values[1] - lon.values[0]  # this doesn't work for test data
 
-    # calculate how many elements to move by to have lon from -180 to 180
+    # calculate how many degrees to move by to have lon from -180 to 180
     # might need to change this?? - we might need to roll it to something other than -180 to 180
-    diff = -180 - lon.values[0]
+    diff = first_element_value - lon.values[0]
 
-    # work out how many spaces to roll by to roll data by 1 degree
+    # work out how many elements to roll by to roll data by 1 degree
     index = 1 / res
 
     # calculate the corresponding offset needed to change data by diff
@@ -33,7 +41,9 @@ def check_lon_alignment(ds, lon_bnds):
     lon_min, lon_max = lon.values.min(), lon.values.max()
 
     # check if the request is in bounds - return ds if it is
-    if lon_min <= low and lon_max >= high:
+    if (lon_min <= low or np.isclose(low, lon_min, atol=0.5)) and (
+        lon_max >= high or np.isclose(high, lon_max, atol=0.5)
+    ):
         return ds
 
     else:
@@ -46,7 +56,15 @@ def check_lon_alignment(ds, lon_bnds):
             )
         # roll the dataset and reassign the longitude values
         else:
-            diff, offset = calculate_offset(lon)
-            ds_roll = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=False)
-            ds_roll.coords[lon.name] = ds_roll.coords[lon.name] + diff
-            return ds_roll
+            if len(ds.lon.values) <= 1:
+                LOGGER.info(
+                    f"Longitude has length {len(ds.lon.values)} so could not be"
+                    f"rolled. Using dataset without rolling."
+                )
+                return ds
+            else:
+                first_element_value = low
+                diff, offset = calculate_offset(lon, first_element_value)
+                ds_roll = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=False)
+                ds_roll.coords[lon.name] = ds_roll.coords[lon.name] + diff
+                return ds_roll

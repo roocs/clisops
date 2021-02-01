@@ -425,7 +425,7 @@ def test_coord_variables_exist():
     result = subset(
         ds=C3S_CMIP5_TSICE,
         time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
-        area=(0.1, 10.0, 10.0, 65.0),
+        area=(0.0, 10.0, 10.0, 65.0),
         output_type="xarray",
     )
 
