@@ -8,6 +8,8 @@ from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
 from clisops.ops.subset import subset
 
+from ._common import C3S_CMIP5_TOS
+
 
 def open_dataset():
     # use real dataset to get full longitude data
@@ -211,6 +213,42 @@ def test_roll_convert_lon_coords():
 
 
 @pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+def test_roll_compare_roll_coords():
+    ds, lon = setup_test()
+    # work out how much to roll by
+    offset = calculate_offset(180)
+
+    ds_roll_coords = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=True)
+    ds_not_roll_coords = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=False)
+
+    # check rlds values the same with/without rolling coords
+    np.testing.assert_array_equal(
+        ds_roll_coords.rlds.values,
+        ds_not_roll_coords.rlds.values,
+    )
+
+    # check lat doesn't change with/without rolling coords
+    np.testing.assert_array_equal(
+        ds_roll_coords.lat.values,
+        ds_not_roll_coords.lat.values,
+    )
+
+    # check time doesn't change with/without rolling coords
+    np.testing.assert_array_equal(
+        ds_roll_coords.time.values,
+        ds_not_roll_coords.time.values,
+    )
+
+    # check lon changes with/without rolling coords
+    np.testing.assert_raises(
+        AssertionError,
+        np.testing.assert_array_equal,
+        ds_roll_coords.lon.values,
+        ds_not_roll_coords.lon.values,
+    )
+
+
+@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
 def test_compare_methods():
 
     # run subset with rolling then assigning
@@ -221,7 +259,7 @@ def test_compare_methods():
 
     ds_roll = ds.roll(
         shifts={f"{lon.name}": offset}, roll_coords=False
-    )  # roll datasets set to false
+    )  # roll coords set to false
 
     ds_roll.coords[lon.name] = ds_roll.coords[lon.name] - 180
 
@@ -255,3 +293,39 @@ def test_compare_methods():
 
     # data of main variable is the same
     np.testing.assert_allclose(result1[0].rlds.values, result2[0].rlds.values)
+
+
+@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+def test_irregular_grid_dataset():
+    ds = xr.open_mfdataset(
+        "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/"
+        "ssp370/r1i1p1f1/Ofx/sftof/gn/v20191108/*.nc"
+    )
+    lon = get_coord_by_type(ds, "longitude", ignore_aux_coords=False)
+
+    assert "lon" not in ds.dims
+
+    with pytest.raises(ValueError) as exc:
+        ds.roll(shifts={f"{lon.name}": 180}, roll_coords=False)
+    assert str(exc.value) == "ValueError: dimensions ['longitude'] do not exist"
+
+
+@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+def test_3d_grid_dataset():
+    ds = xr.open_mfdataset(
+        "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp370/r1i1p1f1/Amon/ta/gn/v20191108/*.nc"
+    )
+    lon = get_coord_by_type(ds, "longitude", ignore_aux_coords=False)
+
+    assert "lon" in ds.dims
+
+    offset = 180
+
+    ds_roll_coords = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=True)
+    ds_not_roll_coords = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=False)
+
+    # check plev doesn't change with/without rolling coords
+    np.testing.assert_array_equal(
+        ds_roll_coords.plev.values,
+        ds_not_roll_coords.plev.values,
+    )

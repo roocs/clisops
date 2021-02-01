@@ -524,6 +524,7 @@ def test_time_invariant_subset_simple_name(load_esgf_test_data, tmpdir):
 
 # test known bug
 @pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+@pytest.mark.skip(reason="bug no longer exists")
 def test_cross_prime_meridian(tmpdir):
     ds = _load_ds(
         "/badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/day/tas/gn/v20191016"
@@ -538,11 +539,11 @@ def test_cross_prime_meridian(tmpdir):
             output_type="nc",
             file_namer="simple",
         )
-        assert (
-            str(exc.value)
-            == "Input longitude bounds ([-5. 30.]) cross the 0 degree meridian "
-            "but dataset longitudes are all positive."
-        )
+    assert (
+        str(exc.value)
+        == "Input longitude bounds ([-5. 30.]) cross the 0 degree meridian "
+        "but dataset longitudes are all positive."
+    )
 
 
 # test it works when not crossing 0 meridian
@@ -633,3 +634,43 @@ def test_300_60_cross(tmpdir):
     )
 
     _check_output_nc(result)
+
+
+@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+def test_check_lon_alignment_rolled():
+    ds = _load_ds(
+        "/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/"
+        "rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc"
+    )
+
+    area = (-50.0, -90.0, 100.0, 90.0)
+
+    result = subset(
+        ds=ds,
+        area=area,
+        output_type="xarray",
+    )
+
+    assert area[0] <= all(result[0].lon.data) <= area[2]
+    assert area[1] <= all(result[0].lat.data) <= area[3]
+
+
+@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+def test_check_lon_alignment_irregular_grid():
+    ds = _load_ds(
+        "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp370/r1i1p1f1/Ofx/sftof/gn/v20191108/*.nc"
+    )
+
+    area = (-50.0, -90.0, 100.0, 90.0)
+
+    with pytest.raises(Exception) as exc:
+        subset(
+            ds=ds,
+            area=area,
+            output_type="xarray",
+        )
+    assert (
+        str(exc.value) == "The longitude of this dataset runs from 0.00 to 359.99, "
+        "and rolling could not be completed successfully. "
+        "Please re-run your request with longitudes between these bounds."
+    )
