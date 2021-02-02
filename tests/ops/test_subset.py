@@ -24,6 +24,7 @@ from .._common import (
     CMIP5_ZOSTOGA,
     CMIP6_MRSOFC,
     CMIP6_RLDS,
+    CMIP6_TA,
 )
 
 
@@ -159,16 +160,98 @@ def test_subset_area_with_meridian(cmip5_tas_file, tmpdir):
 
 
 def test_subset_with_time_and_area(cmip5_tas_file, tmpdir):
-    """ Tests clisops subset function with time, area, level subsets."""
-    result = subset(
+    """Tests clisops subset function with time and area subsets.
+
+    On completion:
+    - assert all dimensions have been reduced.
+
+    """
+    start_time, end_time = ("2019-01-16", "2020-12-16")
+    bbox = (0.0, -80, 170.0, 65.0)
+
+    outputs = subset(
         ds=cmip5_tas_file,
-        time=("2019-01-01T00:00:00", "2020-12-30T00:00:00"),
-        area=(0.0, 0.0, 10.0, 65.0),
+        time=(start_time, end_time),
+        area=bbox,
         output_dir=tmpdir,
-        output_type="nc",
-        file_namer="simple",
+        output_type="xarray",
     )
-    _check_output_nc(result)
+
+    ds = outputs[0]
+
+    assert _format_time(ds.time.values.min()) == start_time
+    assert _format_time(ds.time.values.max()) == end_time
+
+    assert ds.lon.values.tolist() == [0]
+    assert ds.lat.values.tolist() == [35]
+
+
+def test_subset_4D_data_all_argument_permutations(load_esgf_test_data, tmpdir):
+    """Tests clisops subset function with:
+    - no args (collection only)
+    - time only
+    - level only
+    - bbox only
+    - time + level
+    - time + bbox
+    - level + bbox
+    - time + level + bbox
+
+    On completion:
+    - Check the shape of the response
+
+    """
+    # Found in file:
+    # times = ("2015-01-16 12", "MANY MORE", "2024-12-16 12") [120]
+    # plevs = (100000, 92500, 85000, 70000, 60000, 50000, 40000, 30000, 25000,
+    #          20000, 15000, 10000, 7000, 5000, 3000, 2000, 1000, 500, 100) [19]
+    # lats = (-88.9277353522959, -25.9141861518467, 37.1202943109788) [3]
+    # lons = (0, 63.28125, 126.5625, 189.84375, 253.125, 316.40625) [6]
+
+    # Requested subset
+    time_input = ("2022-01-01", "2022-06-01")
+    level_input = (1000, 1000)
+    bbox_input = (0.0, -80, 170.0, 65.0)
+
+    # Define a set of inputs and the resulting shape expected
+    test_inputs = [
+        ["coll only", (None, None, None)],
+        ["time only", (time_input, None, None)],
+        ["level only", (None, level_input, None)],
+        ["bbox only", (None, None, bbox_input)],
+        ["time & level", (time_input, level_input, None)],
+        ["time & bbox", (time_input, None, bbox_input)],
+        ["level & bbox", (None, level_input, bbox_input)],
+        ["time, level & bbox", (time_input, level_input, bbox_input)],
+    ]
+
+    # Full data shape
+    initial_shape = [120, 19, 3, 6]
+
+    # Test each set of inputs, check the output shape (slice) is correct
+    for _, inputs in test_inputs:
+
+        expected_shape = initial_shape[:]
+        tm, level, bbox = inputs
+
+        if tm:
+            expected_shape[0] = 5
+        if level:
+            expected_shape[1] = 1
+        if bbox:
+            expected_shape[2:4] = 2, 3
+
+        outputs = subset(
+            ds=CMIP6_TA,
+            time=tm,
+            area=bbox,
+            level=level,
+            output_dir=tmpdir,
+            output_type="xarray",
+        )
+
+        ds = outputs[0]
+        assert ds.ta.shape == tuple(expected_shape)
 
 
 def test_subset_with_multiple_files_tas(load_esgf_test_data, tmpdir):

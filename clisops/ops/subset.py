@@ -41,7 +41,6 @@ def _subset(ds, args):
         if any(kwargs.values()):
             LOGGER.debug(f"subset_time with parameters: {kwargs}")
             result = subset_time(ds, **kwargs)
-
         else:
             result = ds
 
@@ -53,7 +52,7 @@ def _subset(ds, args):
         # subset with level only
         if any(kwargs.values()):
             LOGGER.debug(f"subset_level with parameters: {kwargs}")
-            result = subset_level(ds, **kwargs)
+            result = subset_level(result, **kwargs)
 
     return result
 
