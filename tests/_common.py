@@ -98,7 +98,7 @@ CMIP6_SICONC = Path(
 
 CMIP6_TA = Path(
     MINI_ESGF_CACHE_DIR,
-    "master/test_data/badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/Amon/ta/gn/files/d20190807/ta_Amon_MIROC6_ssp119_r1i1p1f1_gn_201501-202412.nc"
+    "master/test_data/badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/Amon/ta/gn/files/d20190807/ta_Amon_MIROC6_ssp119_r1i1p1f1_gn_201501-202412.nc",
 ).as_posix()
 
 C3S_CORDEX_PSL = Path(

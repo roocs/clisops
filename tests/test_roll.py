@@ -124,6 +124,7 @@ def test_roll_lon_plus_180_use_res():
     assert ds.lon.values.max() == 357.5
 
 
+@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
 def test_plus_minus_180_equal():
     # check that rolling +180 and -180 gives the same result - when taking the resolution into account
     ds, lon = setup_test()
