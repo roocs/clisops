@@ -2,6 +2,7 @@
 from typing import List, Union
 
 import xarray as xr
+from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils.xarray_utils import (
     get_coord_type,
     get_main_variable,
@@ -51,7 +52,7 @@ def average_over_dims(
         return ds
 
     if not set(dims).issubset(set(known_coord_types)):
-        raise Exception(
+        raise InvalidParameterValue(
             f"Unknown dimension requested for averaging, must be within: {known_coord_types}."
         )
 
@@ -62,12 +63,18 @@ def average_over_dims(
         coord = ds.coords[coord]
         coord_type = get_coord_type(coord)
         if coord_type:
-            found_dims[coord_type] = coord.name
+            # check if the coordinate is a dimension
+            if coord.name in ds.dims:
+                found_dims[coord_type] = coord.name
 
+    unfound_dims = set(dims) - set(found_dims.keys())
     if ignore_unfound_dims is False and not set(dims).issubset(set(found_dims.keys())):
-        raise Exception(
-            f"Requested dimensions were not found in input dataset: {set(dims) - set(found_dims.keys())}."
+        raise InvalidParameterValue(
+            f"Requested dimensions were not found in input dataset: {unfound_dims}."
         )
+    else:
+        for dim in unfound_dims:
+            dims.remove(dim)
 
     # get dims by the name used in dataset
     dims_to_average = []

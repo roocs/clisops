@@ -2,7 +2,9 @@ import os
 import sys
 from unittest.mock import Mock
 
+import pytest
 import xarray as xr
+from roocs_utils.exceptions import InvalidParameterValue
 
 import clisops
 from clisops import CONFIG
@@ -153,3 +155,44 @@ def test_average_multiple_dims_xarray():
 
     assert "time" not in result[0]
     assert "lon" not in result[0]
+
+
+def test_unknown_dim():
+    with pytest.raises(InvalidParameterValue) as exc:
+        average_over_dims(
+            CMIP5_TAS,
+            dims=["wrong"],
+            ignore_unfound_dims=False,
+            output_type="xarray",
+        )
+    assert (
+        str(exc.value) == "Unknown dimension requested for averaging, must be within: "
+        "['time', 'level', 'latitude', 'longitude']."
+    )
+
+
+def test_dim_not_found():
+    with pytest.raises(InvalidParameterValue) as exc:
+        average_over_dims(
+            CMIP5_TAS,
+            dims=["level", "time"],
+            ignore_unfound_dims=False,
+            output_type="xarray",
+        )
+    assert (
+        str(exc.value)
+        == "Requested dimensions were not found in input dataset: {'level'}."
+    )
+
+
+def test_dim_not_found_ignore():
+    # cannot average over level, but have ignored it and done average over time anyway
+    result = average_over_dims(
+        CMIP5_TAS,
+        dims=["level", "time"],
+        ignore_unfound_dims=True,
+        output_type="xarray",
+    )
+
+    assert "time" not in result[0]
+    assert "height" in result[0]
