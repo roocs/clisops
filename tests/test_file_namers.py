@@ -6,7 +6,7 @@ import xarray as xr
 from clisops import CONFIG
 from clisops.ops.subset import subset
 from clisops.utils.file_namers import get_file_namer
-from tests._common import CMIP5_TAS, CMIP6_SICONC, C3S_CORDEX_PSL
+from tests._common import C3S_CORDEX_PSL, CMIP5_TAS, CMIP6_SICONC
 
 
 def test_SimpleFileNamer():
