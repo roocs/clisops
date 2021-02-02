@@ -27,8 +27,8 @@ def _subset(ds, args):
             result = subset_bbox(ds, **args)
         except NotImplementedError:
             raise Exception(
-                f"The input longitude bounds {args.get('lon_bnds')} are not within the longitude bounds of this dataset "
-                f"and rolling could not be completed successfully. "
+                f"The input longitude bounds {args.get('lon_bnds')} are not within the longitude bounds of this dataset"
+                f" and rolling could not be completed successfully. "
                 f"Please re-run your request with longitudes within the bounds of the dataset."
             )
     else:

@@ -15,10 +15,9 @@ def calculate_offset(lon, first_element_value):
     :param first_element_value: the value of the first element of the longitude array to roll to.
     """
     # get resolution of data
-    res = lon.values[1] - lon.values[0]  # this doesn't work for test data
+    res = lon.values[1] - lon.values[0]
 
-    # calculate how many degrees to move by to have lon from -180 to 180
-    # might need to change this?? - we might need to roll it to something other than -180 to 180
+    # calculate how many degrees to move by to have lon[0] of rolled subset as lower bound of request
     diff = first_element_value - lon.values[0]
 
     # work out how many elements to roll by to roll data by 1 degree
