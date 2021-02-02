@@ -17,14 +17,14 @@ from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import _format_time, get_output, get_time_slices
 
 from .._common import (
-    CMIP5_TAS,
-    CMIP5_ZOSTOGA,
-    CMIP5_RH,
-    CMIP6_RLDS,
-    CMIP6_MRSOFC,
-    CMIP6_TA,
     C3S_CMIP5_TOS,
     C3S_CMIP5_TSICE,
+    CMIP5_RH,
+    CMIP5_TAS,
+    CMIP5_ZOSTOGA,
+    CMIP6_MRSOFC,
+    CMIP6_RLDS,
+    CMIP6_TA,
 )
 
 
@@ -161,10 +161,10 @@ def test_subset_area_with_meridian(cmip5_tas_file, tmpdir):
 
 def test_subset_with_time_and_area(cmip5_tas_file, tmpdir):
     """Tests clisops subset function with time and area subsets.
-    
+
     On completion:
     - assert all dimensions have been reduced.
-    
+
     """
     start_time, end_time = ("2019-01-16", "2020-12-16")
     bbox = (0.0, -80, 170.0, 65.0)
@@ -174,7 +174,7 @@ def test_subset_with_time_and_area(cmip5_tas_file, tmpdir):
         time=(start_time, end_time),
         area=bbox,
         output_dir=tmpdir,
-        output_type="xarray"
+        output_type="xarray",
     )
 
     ds = outputs[0]
@@ -196,10 +196,10 @@ def test_subset_4D_data_all_argument_permutations(load_esgf_test_data, tmpdir):
     - time + bbox
     - level + bbox
     - time + level + bbox
-    
+
     On completion:
     - Check the shape of the response
-    
+
     """
     # Found in file:
     # times = ("2015-01-16 12", "MANY MORE", "2024-12-16 12") [120]
@@ -215,17 +215,17 @@ def test_subset_4D_data_all_argument_permutations(load_esgf_test_data, tmpdir):
 
     # Define a set of inputs and the resulting shape expected
     test_inputs = [
-        ['coll only', (None, None, None)],
-        ['time only', (time_input, None, None)],
-        ['level only', (None, level_input, None)],
-        ['bbox only', (None, None, bbox_input)],
-        ['time & level', (time_input, level_input, None)],
-        ['time & bbox', (time_input, None, bbox_input)],
-        ['level & bbox', (None, level_input, bbox_input)],
-        ['time, level & bbox', (time_input, level_input, bbox_input)]
+        ["coll only", (None, None, None)],
+        ["time only", (time_input, None, None)],
+        ["level only", (None, level_input, None)],
+        ["bbox only", (None, None, bbox_input)],
+        ["time & level", (time_input, level_input, None)],
+        ["time & bbox", (time_input, None, bbox_input)],
+        ["level & bbox", (None, level_input, bbox_input)],
+        ["time, level & bbox", (time_input, level_input, bbox_input)],
     ]
 
-    # Full data shape 
+    # Full data shape
     initial_shape = [120, 19, 3, 6]
 
     # Test each set of inputs, check the output shape (slice) is correct
@@ -234,20 +234,20 @@ def test_subset_4D_data_all_argument_permutations(load_esgf_test_data, tmpdir):
         expected_shape = initial_shape[:]
         tm, level, bbox = inputs
 
-        if tm: 
+        if tm:
             expected_shape[0] = 5
         if level:
             expected_shape[1] = 1
         if bbox:
             expected_shape[2:4] = 2, 3
-        
+
         outputs = subset(
             ds=CMIP6_TA,
             time=tm,
             area=bbox,
             level=level,
             output_dir=tmpdir,
-            output_type="xarray"
+            output_type="xarray",
         )
 
         ds = outputs[0]
