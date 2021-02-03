@@ -3,6 +3,12 @@ Version History
 
 Unreleased
 -----------
+
+Bug Fixes
+^^^^^^^^^
+* Fixed issue where the temporal subset was ignored if level subset selected.
+* Roll dataset used in subsetting when the requested longitude bounds are not within those of the dataset.
+
 Other Changes
 ^^^^^^^^^^^^^
 * Changes to allow datasets without a time dimension to be processed without issues
@@ -10,7 +16,7 @@ Other Changes
 * Using file caching to gather ``mini-esgf-data`` test data.
 
 
-v0.5.1 (2020-01-11)
+v0.5.1 (2021-01-11)
 ------------------
 
 Breaking Changes
