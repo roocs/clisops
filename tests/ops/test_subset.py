@@ -603,3 +603,15 @@ def test_time_invariant_subset_simple_name(load_esgf_test_data, tmpdir):
     )
 
     _check_output_nc(result)
+
+
+def test_time_invariant_subset_with_time(load_esgf_test_data):
+
+    with pytest.raises(AttributeError) as exc:
+        subset(
+            ds=CMIP6_MRSOFC,
+            time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
+            area=(5.0, 10.0, 20.0, 65.0),
+            output_type="xarray",
+        )
+    assert str(exc.value) == "'Dataset' object has no attribute 'time'"
