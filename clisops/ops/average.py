@@ -86,7 +86,7 @@ def average_over_dims(
         else:
             result_ds = avg_ds.sel(time=slice(tslice[0], tslice[1]))
 
-        LOGGER.info(f"Processing subset for times: {tslice}")
+        LOGGER.info(f"Processing average for times: {tslice}")
 
         output = get_output(result_ds, output_type, output_dir, namer)
         outputs.append(output)
