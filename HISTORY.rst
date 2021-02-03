@@ -16,7 +16,7 @@ Other Changes
 * Using file caching to gather ``mini-esgf-data`` test data.
 
 
-v0.5.1 (2021 -01-11)
+v0.5.1 (2021-01-11)
 ------------------
 
 Breaking Changes
