@@ -8,6 +8,11 @@ New Features
 ^^^^^^^^^^^^
 * ``average_over_dims`` added into ``average.core`` and ``average.ops``
 
+Bug Fixes
+^^^^^^^^^
+* Fixed issue where the temporal subset was ignored if level subset selected.
+* Roll dataset used in subsetting when the requested longitude bounds are not within those of the dataset.
+
 Other Changes
 ^^^^^^^^^^^^^
 * Changes to allow datasets without a time dimension to be processed without issues
