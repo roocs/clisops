@@ -1,15 +1,20 @@
 Version History
 ===============
 
-v0.5.2 (unreleased)
--------------------
+Unreleased
+----------
+
+Bug Fixes
+^^^^^^^^^
+* Fixed issue where the temporal subset was ignored if level subset selected.
+* Roll dataset used in subsetting when the requested longitude bounds are not within those of the dataset.
 
 Other Changes
 ^^^^^^^^^^^^^
 * Changes to allow datasets without a time dimension to be processed without issues
 * Use ``DatasetMapper`` from ``roocs-utils`` to ensure all datasets are mapped to file paths correctly.
 * Using file caching to gather ``mini-esgf-data`` test data.
-* New ``core.average`` submodule with ``average_shape``. Depends on xESMF >= 0.5.2, which is an optional dependence.
+* New ``core.average`` submodule with ``average_shape`` + ``core.subset_create_weight_masks``. Depend on xESMF >= 0.5.2, which is a new optional dependence.
 * Fix in ``core.subset.create_mask`` so it can accept ``GeoDataFrames`` with non-integer indexes.
 
 
