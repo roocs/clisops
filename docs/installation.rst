@@ -22,10 +22,12 @@ you through the process.
 .. _pip: https://pip.pypa.io
 .. _Python installation guide: http://docs.python-guide.org/en/latest/starting/installation/
 
-Some average operations (`clisops.core.average_shape`) require at least version 0.5.2 of the `xESMF` package.
-Unfortunately, this package is not available on pypi at the time these lines were written and it also depends
-on packages (ESMF, ESMpy) unavailable on windows.  It can still be installed on osx/linux through `conda` or
-directly [from source](https://github.com/pangeo-data/xESMF/).
+.. warning::
+
+   Some average operations (`clisops.core.average_shape`) require at least version 0.5.2 of the `xESMF` package.
+   Unfortunately, this package is not available on pypi at the time these lines were written and it also depends
+   on packages (ESMF, ESMpy) unavailable on windows.  It can still be installed on osx/linux through `conda` or
+   directly [from source](https://github.com/pangeo-data/xESMF/).
 
 From sources
 ------------
@@ -38,8 +40,12 @@ You can either clone the public repository:
 
     $ git clone git://github.com/roocs/clisops
 
-Create Conda environment named `clisops`. For windows users, you might need to edit the `environment` file
-and remove the `xESMF` package.
+Create Conda environment named `clisops`.
+
+.. warning::
+
+    For windows users, you might need to edit the ``environment.yml`` file
+    and remove the `xESMF` package.
 
 .. code-block:: console
 
