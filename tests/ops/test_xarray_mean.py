@@ -1,6 +1,8 @@
 import xarray as xr
 from numpy import array, nan
 
+from tests._common import CMIP5_TAS
+
 
 def test_xarray_da_mean_skipna_true():
     da = xr.DataArray(array([10.0, 10.0, 10.0, 10.0, 10.0, nan, nan, nan, nan, nan]))
@@ -24,10 +26,9 @@ def test_xarray_da_mean_skipna_none():
     assert mean == 10
 
 
-def test_xarray_da_mean_keep_attrs_true():
+def test_xarray_da_mean_keep_attrs_true(load_esgf_test_data):
     ds = xr.open_mfdataset(
-        "tests/mini-esgf-data/test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/"
-        "atmos/Amon/r1i1p1/latest/tas/*.nc",
+        CMIP5_TAS,
         combine="by_coords",
         use_cftime=True,
     )
@@ -38,10 +39,9 @@ def test_xarray_da_mean_keep_attrs_true():
     assert ds.attrs == ds_mean.attrs
 
 
-def test_xarray_da_mean_keep_attrs_false():
+def test_xarray_da_mean_keep_attrs_false(load_esgf_test_data):
     ds = xr.open_mfdataset(
-        "tests/mini-esgf-data/test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/"
-        "atmos/Amon/r1i1p1/latest/tas/*.nc",
+        CMIP5_TAS,
         combine="by_coords",
         use_cftime=True,
     )
