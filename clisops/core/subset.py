@@ -538,14 +538,16 @@ def create_weight_masks(
     try:
         from xesmf import SpatialAverager
     except ImportError:
-        raise ValueError('Package xesmf >= 0.5.2 is required to use create_weight_masks')
+        raise ValueError(
+            "Package xesmf >= 0.5.2 is required to use create_weight_masks"
+        )
 
     if poly.crs is not None:
         poly = poly.to_crs(4326)
 
     poly = poly.copy()
-    poly.index.name = 'geom'
-    poly_coords = poly.drop('geometry', axis='columns').to_xarray()
+    poly.index.name = "geom"
+    poly_coords = poly.drop("geometry", axis="columns").to_xarray()
 
     savg = SpatialAverager(ds_in, poly.geometry)
     # Unpack weights to full size array, this increases memory use a lot.
@@ -554,15 +556,17 @@ def create_weight_masks(
     masks = xarray.DataArray(
         savg.weights.toarray().reshape(poly.geometry.size, *savg.shape_in),
         dims=("geom", *savg.in_horiz_dims),
-        coords=dict(**poly_coords, **poly_coords.coords)
+        coords=dict(**poly_coords, **poly_coords.coords),
     )
 
     # Assign coords from ds_in, but only those with no unknown dims.
     # Otherwise xarray rises an error.
     masks = masks.assign_coords(
-        **{k: crd
-           for k, crd in ds_in.coords.items()
-           if not (set(crd.dims) - set(masks.dims))}
+        **{
+            k: crd
+            for k, crd in ds_in.coords.items()
+            if not (set(crd.dims) - set(masks.dims))
+        }
     )
     return masks
 

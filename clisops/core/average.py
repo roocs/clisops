@@ -6,9 +6,7 @@ import geopandas as gpd
 import xarray as xarray
 
 
-__all__ = [
-    "average_shape"
-]
+__all__ = ["average_shape"]
 
 
 def average_shape(
@@ -57,7 +55,7 @@ def average_shape(
     try:
         from xesmf import SpatialAverager
     except ImportError:
-        raise ValueError('Package xesmf >= 0.5.0 is required to use average_shape')
+        raise ValueError("Package xesmf >= 0.5.0 is required to use average_shape")
 
     if isinstance(ds, xarray.DataArray):
         ds_copy = ds._to_temp_dataset()
@@ -76,10 +74,14 @@ def average_shape(
     ds_out = savger(ds_copy)
 
     # Set geom coords to poly's index
-    ds_out['geom'] = poly.index
+    ds_out["geom"] = poly.index
 
     # other info in poly
-    ds_meta = poly.drop('geometry', axis=1).to_xarray().rename(**{poly.index.name or 'index': 'geom'})
+    ds_meta = (
+        poly.drop("geometry", axis=1)
+        .to_xarray()
+        .rename(**{poly.index.name or "index": "geom"})
+    )
     ds_meta = ds_meta.set_coords(ds_meta.data_vars)
 
     ds_out = xarray.merge([ds_out, ds_meta])

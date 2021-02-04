@@ -39,15 +39,11 @@ class TestAverageShape:
         assert len(avg.time) == 12
 
         # Average temperature at surface for region in January (time=0)
-        np.testing.assert_array_almost_equal(
-            avg.isel(time=0), 284.98243933
-        )
+        np.testing.assert_array_almost_equal(avg.isel(time=0), 284.98243933)
 
         poly = gpd.read_file(self.meridian_multi_geojson)
         avg = average.average_shape(ds.tas, poly)
-        np.testing.assert_array_almost_equal(
-            avg.isel(time=0), 280.67990737
-        )
+        np.testing.assert_array_almost_equal(avg.isel(time=0), 280.67990737)
 
     def test_no_wraps(self, tmp_netcdf_filename):
         ds = xr.open_dataset(self.nc_file)
@@ -58,9 +54,7 @@ class TestAverageShape:
         assert len(avg.time) == 12
 
         # Average temperature at surface for region in January (time=0)
-        np.testing.assert_array_almost_equal(
-            avg.isel(time=0), 276.17126511
-        )
+        np.testing.assert_array_almost_equal(avg.isel(time=0), 276.17126511)
 
     def test_all_neglons(self):
         ds = xr.open_dataset(self.nc_file_neglons)
@@ -68,9 +62,7 @@ class TestAverageShape:
         avg = average.average_shape(ds.tasmax, self.southern_qc_geojson)
 
         # Average temperature at surface for region in January (time=0)
-        np.testing.assert_array_almost_equal(
-            avg.isel(time=0), 269.25454934
-        )
+        np.testing.assert_array_almost_equal(avg.isel(time=0), 269.25454934)
 
     # Test not working with cf_xarray 0.3.1 (issue xESMF#55)
     # Also, we need lon_bnds and lat_bnds, which are unavailable and uninferable.
@@ -92,5 +84,7 @@ class TestAverageShape:
         ds = xr.open_dataset(self.nc_file)
         regions = gpd.read_file(self.multi_regions_geojson).set_index("id")
         avg = average.average_shape(ds.tas, shape=regions)
-        np.testing.assert_array_almost_equal(avg.isel(time=0), [268.30972367, 277.23981999, 277.58614891])
-        np.testing.assert_array_equal(avg.geom, ['Québec', 'Europe', 'Newfoundland'])
+        np.testing.assert_array_almost_equal(
+            avg.isel(time=0), [268.30972367, 277.23981999, 277.58614891]
+        )
+        np.testing.assert_array_equal(avg.geom, ["Québec", "Europe", "Newfoundland"])
