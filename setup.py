@@ -70,10 +70,7 @@ setup(
     description="clisops - climate simulation operations.",
     license=__license__,
     python_requires=">=3.6.0",
-    install_requires=[
-        requirements,
-        "roocs-utils @ git+https://github.com/roocs/roocs-utils.git",
-    ],
+    install_requires=[requirements],
     long_description=_long_description,
     long_description_content_type="text/x-rst",
     include_package_data=True,
