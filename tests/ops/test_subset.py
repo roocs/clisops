@@ -11,8 +11,7 @@ from roocs_utils.utils.common import parse_size
 
 import clisops
 from clisops import CONFIG
-from clisops.ops.subset import subset
-from clisops.utils import map_params, output_utils
+from clisops.ops.subset import Subset, subset
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import _format_time, get_output, get_time_slices
 
@@ -758,3 +757,63 @@ def test_check_lon_alignment_irregular_grid():
         "and rolling could not be completed successfully. "
         "Please re-run your request with longitudes between these bounds."
     )
+
+
+class TestSubset:
+    def test_resolve_params(self, cmip5_tas_file):
+        s = Subset(
+            ds=cmip5_tas_file,
+            time=("1999-01-01T00:00:00", "2100-12-30T00:00:00"),
+            area=(-5.0, 49.0, 10.0, 65),
+            level=(1000.0, 1000.0),
+        )
+
+        # have a look at what date was used in clisops master
+        assert s.params["start_date"] == "1999-01-01T00:00:00"
+        assert s.params["end_date"] == "2100-12-30T00:00:00"
+        assert s.params["lon_bnds"] == (-5, 10)
+        assert s.params["lat_bnds"] == (49, 65)
+
+    def test_resolve_params_time(self, cmip5_tas_file):
+        s = Subset(
+            ds=cmip5_tas_file, time=("1999-01-01", "2100-12"), area=(0, -90, 360, 90)
+        )
+        assert s.params["start_date"] == "1999-01-01T00:00:00"
+        assert s.params["end_date"] == "2100-12-30T00:00:00"
+
+    def test_resolve_params_invalid_time(self, cmip5_tas_file):
+        with pytest.raises(InvalidParameterValue):
+            Subset(
+                ds=cmip5_tas_file,
+                time=("1999-01-01T00:00:00", "maybe tomorrow"),
+                area=(0, -90, 360, 90),
+            )
+        with pytest.raises(InvalidParameterValue):
+            Subset(ds=cmip5_tas_file, time=("", "2100"), area=(0, -90, 360, 90))
+
+    def test_resolve_params_area(self, cmip5_tas_file):
+        s = Subset(
+            ds=cmip5_tas_file,
+            area=(0, 10, 50, 60),
+        )
+        assert s.params["lon_bnds"] == (0, 50)
+        assert s.params["lat_bnds"] == (10, 60)
+        # allow also strings
+        s = Subset(
+            ds=cmip5_tas_file,
+            area=("0", "10", "50", "60"),
+        )
+        assert s.params["lon_bnds"] == (0, 50)
+        assert s.params["lat_bnds"] == (10, 60)
+
+    def test_map_params_invalid_area(self, cmip5_tas_file):
+        with pytest.raises(InvalidParameterValue):
+            Subset(
+                ds=cmip5_tas_file,
+                area=(0, 10, 50),
+            )
+        with pytest.raises(InvalidParameterValue):
+            Subset(
+                ds=cmip5_tas_file,
+                area=("zero", 10, 50, 60),
+            )
