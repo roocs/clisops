@@ -8,6 +8,7 @@ Bug Fixes
 ^^^^^^^^^
 * Fixed issue where the temporal subset was ignored if level subset selected.
 * Roll dataset used in subsetting when the requested longitude bounds are not within those of the dataset.
+* Fixed issue with subsetting grid lon and lat coordinates that are in descending order for ``core.subset.subset_bbox``.
 
 Other Changes
 ^^^^^^^^^^^^^
