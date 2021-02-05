@@ -17,7 +17,7 @@ __all__ = [
 def average_over_dims(
     ds: Union[xr.DataArray, xr.Dataset],
     dims: List[str] = None,
-    ignore_unfound_dims: bool = False,
+    ignore_undetected_dims: bool = False,
 ) -> Union[xr.DataArray, xr.Dataset]:
     """
     Average a DataArray or Dataset over the dimensions specified.
@@ -28,7 +28,7 @@ def average_over_dims(
       Input values.
     dims : List[str] = None
       The dimensions over which to apply the average. If None, non eof the dimensions are averaged over.
-    ignore_unfound_dims: bool
+    ignore_undetected_dims: bool
       If the dimensions specified are not found in the dataset, an Exception will be raised if set to True.
       If False, an exception will not be raised and the other dimensions will be averaged over. Default = False
 
@@ -45,16 +45,16 @@ def average_over_dims(
     >>> pr = xr.open_dataset(path_to_pr_file).pr  # doctest: +SKIP
     ...
     # Average data array over latitude and longitude
-    >>> prAvg = average_over_dims(pr, dims=['lat', 'lon'], ignore_unfound_dims=True)  # doctest: +SKIP
+    >>> prAvg = average_over_dims(pr, dims=['lat', 'lon'], ignore_undetected_dims=True)  # doctest: +SKIP
     """
 
     if not dims:
         return ds
 
-    if not set(dims).issubset(set(known_coord_types)):
-        raise InvalidParameterValue(
-            f"Unknown dimension requested for averaging, must be within: {known_coord_types}."
-        )
+    # if not set(dims).issubset(set(known_coord_types)):
+    #     raise InvalidParameterValue(
+    #         f"Unknown dimension requested for averaging, must be within: {known_coord_types}."
+    #     )
 
     found_dims = dict()
 
@@ -67,14 +67,16 @@ def average_over_dims(
             if coord.name in ds.dims:
                 found_dims[coord_type] = coord.name
 
-    unfound_dims = set(dims) - set(found_dims.keys())
-    if ignore_unfound_dims is False and not set(dims).issubset(set(found_dims.keys())):
+    undetected_dims = set(dims) - set(found_dims.keys())
+    if ignore_undetected_dims is False and not set(dims).issubset(
+        set(found_dims.keys())
+    ):
         raise InvalidParameterValue(
-            f"Requested dimensions were not found in input dataset: {unfound_dims}."
+            f"Requested dimensions were not found in input dataset: {undetected_dims}."
         )
     else:
-        for dim in unfound_dims:
-            dims.remove(dim)
+        # remove undetected dim so that it can be ignored
+        dims = [dim for dim in dims if dim not in undetected_dims]
 
     # get dims by the name used in dataset
     dims_to_average = []

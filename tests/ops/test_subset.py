@@ -11,7 +11,7 @@ from roocs_utils.utils.common import parse_size
 
 import clisops
 from clisops import CONFIG
-from clisops.ops.subset import _subset, subset
+from clisops.ops.subset import subset
 from clisops.utils import map_params, output_utils
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import _format_time, get_output, get_time_slices

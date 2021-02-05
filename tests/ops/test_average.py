@@ -25,7 +25,7 @@ def test_average_basic(tmpdir):
     result = average_over_dims(
         CMIP5_TAS,
         dims=None,
-        ignore_unfound_dims=False,
+        ignore_undetected_dims=False,
         output_dir=tmpdir,
         output_type="netcdf",
         file_namer="standard",
@@ -39,14 +39,14 @@ def test_average_basic(tmpdir):
 def test_average_basic_data_array(cmip5_tas_file):
     ds = xr.open_dataset(cmip5_tas_file)
     result = average_over_dims(
-        ds["tas"], dims=["time"], ignore_unfound_dims=False, output_type="xarray"
+        ds["tas"], dims=["time"], ignore_undetected_dims=False, output_type="xarray"
     )
     assert "time" not in result[0]
 
 
 def test_average_time_xarray():
     result = average_over_dims(
-        CMIP5_TAS, dims=["time"], ignore_unfound_dims=False, output_type="xarray"
+        CMIP5_TAS, dims=["time"], ignore_undetected_dims=False, output_type="xarray"
     )
 
     assert "time" not in result[0]
@@ -54,7 +54,7 @@ def test_average_time_xarray():
 
 def test_average_lat_xarray():
     result = average_over_dims(
-        CMIP5_TAS, dims=["latitude"], ignore_unfound_dims=False, output_type="xarray"
+        CMIP5_TAS, dims=["latitude"], ignore_undetected_dims=False, output_type="xarray"
     )
 
     assert "lat" not in result[0]
@@ -62,7 +62,10 @@ def test_average_lat_xarray():
 
 def test_average_lon_xarray():
     result = average_over_dims(
-        CMIP5_TAS, dims=["longitude"], ignore_unfound_dims=False, output_type="xarray"
+        CMIP5_TAS,
+        dims=["longitude"],
+        ignore_undetected_dims=False,
+        output_type="xarray",
     )
 
     assert "lon" not in result[0]
@@ -70,7 +73,7 @@ def test_average_lon_xarray():
 
 def test_average_level_xarray(cmip6_o3):
     result = average_over_dims(
-        cmip6_o3, dims=["level"], ignore_unfound_dims=False, output_type="xarray"
+        cmip6_o3, dims=["level"], ignore_undetected_dims=False, output_type="xarray"
     )
 
     assert "plev" not in result[0]
@@ -80,53 +83,57 @@ def test_average_time_nc(tmpdir):
     result = average_over_dims(
         CMIP5_TAS,
         dims=["time"],
-        ignore_unfound_dims=False,
+        ignore_undetected_dims=False,
         output_dir=tmpdir,
         output_type="netcdf",
         file_namer="standard",
     )
-
-    _check_output_nc(result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_avg_time.nc")
+    _check_output_nc(result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_avg_t.nc")
 
 
 def test_average_lat_nc(tmpdir):
     result = average_over_dims(
         CMIP5_TAS,
         dims=["latitude"],
-        ignore_unfound_dims=False,
-        output_dir=tmpdir,
-        output_type="netcdf",
-        file_namer="standard",
-    )
-
-    _check_output_nc(result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_avg_latitude.nc")
-
-
-def test_average_lon_nc(tmpdir):
-    result = average_over_dims(
-        CMIP5_TAS,
-        dims=["longitude"],
-        ignore_unfound_dims=False,
-        output_dir=tmpdir,
-        output_type="netcdf",
-        file_namer="standard",
-    )
-
-    _check_output_nc(result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_avg_longitude.nc")
-
-
-def test_average_level_nc(cmip6_o3, tmpdir):
-    result = average_over_dims(
-        cmip6_o3,
-        dims=["level"],
-        ignore_unfound_dims=False,
+        ignore_undetected_dims=False,
         output_dir=tmpdir,
         output_type="netcdf",
         file_namer="standard",
     )
 
     _check_output_nc(
-        result, fname="o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_avg_level.nc"
+        result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-22991216_avg_y.nc"
+    )
+
+
+def test_average_lon_nc(tmpdir):
+    result = average_over_dims(
+        CMIP5_TAS,
+        dims=["longitude"],
+        ignore_undetected_dims=False,
+        output_dir=tmpdir,
+        output_type="netcdf",
+        file_namer="standard",
+    )
+
+    _check_output_nc(
+        result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-22991216_avg_x.nc"
+    )
+
+
+def test_average_level_nc(cmip6_o3, tmpdir):
+    result = average_over_dims(
+        cmip6_o3,
+        dims=["level"],
+        ignore_undetected_dims=False,
+        output_dir=tmpdir,
+        output_type="netcdf",
+        file_namer="standard",
+    )
+
+    _check_output_nc(
+        result,
+        fname="o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_18500116-19491216_avg_z.nc",
     )
 
 
@@ -134,22 +141,20 @@ def test_average_multiple_dims_filename(tmpdir):
     result = average_over_dims(
         CMIP5_TAS,
         dims=["time", "longitude"],
-        ignore_unfound_dims=False,
+        ignore_undetected_dims=False,
         output_dir=tmpdir,
         output_type="netcdf",
         file_namer="standard",
     )
 
-    _check_output_nc(
-        result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_avg_longitude-time.nc"
-    )
+    _check_output_nc(result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_avg_tx.nc")
 
 
 def test_average_multiple_dims_xarray():
     result = average_over_dims(
         CMIP5_TAS,
         dims=["time", "longitude"],
-        ignore_unfound_dims=False,
+        ignore_undetected_dims=False,
         output_type="xarray",
     )
 
@@ -162,12 +167,12 @@ def test_unknown_dim():
         average_over_dims(
             CMIP5_TAS,
             dims=["wrong"],
-            ignore_unfound_dims=False,
+            ignore_undetected_dims=False,
             output_type="xarray",
         )
     assert (
-        str(exc.value) == "Unknown dimension requested for averaging, must be within: "
-        "['time', 'level', 'latitude', 'longitude']."
+        str(exc.value)
+        == "Dimensions for averaging must be one of ['time', 'level', 'latitude', 'longitude']"
     )
 
 
@@ -176,7 +181,7 @@ def test_dim_not_found():
         average_over_dims(
             CMIP5_TAS,
             dims=["level", "time"],
-            ignore_unfound_dims=False,
+            ignore_undetected_dims=False,
             output_type="xarray",
         )
     assert (
@@ -190,7 +195,7 @@ def test_dim_not_found_ignore():
     result = average_over_dims(
         CMIP5_TAS,
         dims=["level", "time"],
-        ignore_unfound_dims=True,
+        ignore_undetected_dims=True,
         output_type="xarray",
     )
 
