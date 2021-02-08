@@ -23,7 +23,7 @@ from .._common import (
 
 
 def _check_output_nc(result, fname="output_001.nc"):
-    assert fname in [Path(_).basename().as_posix() for _ in result]
+    assert fname in [Path(_).name for _ in result]
 
 
 def _load_ds(fpath):
