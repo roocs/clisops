@@ -12,9 +12,11 @@ Bug Fixes
 
 Other Changes
 ^^^^^^^^^^^^^
-* Changes to allow datasets without a time dimension to be processed without issues
+* Changes to allow datasets without a time dimension to be processed without issues.
 * Use ``DatasetMapper`` from ``roocs-utils`` to ensure all datasets are mapped to file paths correctly.
 * Using file caching to gather ``mini-esgf-data`` test data.
+* Added a ``dev`` recipe for pip installations (`pip install clisops[dev]`).
+* Updated pre-commit and pre-commit hooks to newest versions.
 
 
 v0.5.1 (2021-01-11)
