@@ -614,7 +614,7 @@ def test_time_invariant_subset_with_time(load_esgf_test_data):
 
 
 # test known bug
-@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 @pytest.mark.skip(reason="bug no longer exists")
 def test_cross_prime_meridian(tmpdir):
     ds = _load_ds(
@@ -638,7 +638,7 @@ def test_cross_prime_meridian(tmpdir):
 
 
 # test it works when not crossing 0 meridian
-@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_do_not_cross_prime_meridian(tmpdir):
     ds = _load_ds(
         "/badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/day/tas/gn/v20191016"
@@ -656,7 +656,7 @@ def test_do_not_cross_prime_meridian(tmpdir):
     _check_output_nc(result)
 
 
-@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_0_360_no_cross(tmpdir):
 
     ds = _load_ds(
@@ -674,7 +674,7 @@ def test_0_360_no_cross(tmpdir):
     _check_output_nc(result)
 
 
-@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 @pytest.mark.skip(reason="bug no longer exists")
 def test_0_360_cross(tmpdir):
     ds = _load_ds(
@@ -692,7 +692,7 @@ def test_0_360_cross(tmpdir):
         )
 
 
-@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_300_60_no_cross(tmpdir):
     # longitude is -300 to 60
     ds = _load_ds(
@@ -710,7 +710,7 @@ def test_300_60_no_cross(tmpdir):
     _check_output_nc(result)
 
 
-@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_300_60_cross(tmpdir):
     # longitude is -300 to 60
     ds = _load_ds(
@@ -728,7 +728,7 @@ def test_300_60_cross(tmpdir):
     _check_output_nc(result)
 
 
-@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_check_lon_alignment_rolled():
     ds = _load_ds(
         "/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/"
@@ -747,7 +747,7 @@ def test_check_lon_alignment_rolled():
     assert area[1] <= all(result[0].lat.data) <= area[3]
 
 
-@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_check_lon_alignment_irregular_grid():
     ds = _load_ds(
         "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp370/r1i1p1f1/Ofx/sftof/gn/v20191108/*.nc"
