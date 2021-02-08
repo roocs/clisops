@@ -216,17 +216,23 @@ def check_lons(func):
                 kwargs[lon] = np.asarray(args[0].lon.min(), args[0].lon.max())
             else:
                 kwargs[lon] = np.asarray(kwargs[lon])
-            if np.all(args[0].lon >= 0) and np.all(kwargs[lon] < 0):
+            if np.all((args[0].lon >= 0) | (np.isnan(args[0].lon))) and np.all(
+                kwargs[lon] < 0
+            ):
                 if isinstance(kwargs[lon], float):
                     kwargs[lon] += 360
                 else:
                     kwargs[lon][kwargs[lon] < 0] += 360
-            elif np.all(args[0].lon >= 0) and np.any(kwargs[lon] < 0):
+            elif np.all((args[0].lon >= 0) | (np.isnan(args[0].lon))) and np.any(
+                kwargs[lon] < 0
+            ):
                 raise NotImplementedError(
                     f"Input longitude bounds ({kwargs[lon]}) cross the 0 degree meridian but"
                     " dataset longitudes are all positive."
                 )
-            if np.all(args[0].lon <= 0) and np.any(kwargs[lon] > 0):
+            if np.all((args[0].lon <= 0) | (np.isnan(args[0].lon))) and np.any(
+                kwargs[lon] > 0
+            ):
                 if isinstance(kwargs[lon], float):
                     kwargs[lon] -= 360
                 else:
@@ -859,7 +865,10 @@ def subset_bbox(
         args = dict()
         for i, d in enumerate(da.lat.dims):
             coords = da[d][ind[i]]
-            args[d] = slice(coords.min().values, coords.max().values)
+            bnds = _check_desc_coords(
+                coord=da[d], bounds=[coords.min().values, coords.max().values], dim=d
+            )
+            args[d] = slice(*bnds)
         # If the dims of lat and lon do not have coords, sel defaults to isel,
         # and then the last element is not returned.
         da = da.sel(**args)

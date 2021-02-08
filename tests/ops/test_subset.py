@@ -1,20 +1,14 @@
-import os
-import sys
-from unittest.mock import Mock
+from pathlib import Path
 
 import numpy as np
 import pytest
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue, MissingParameterValue
 from roocs_utils.parameter import area_parameter, time_parameter
-from roocs_utils.utils.common import parse_size
 
-import clisops
 from clisops import CONFIG
-from clisops.ops.subset import _subset, subset
-from clisops.utils import map_params, output_utils
-from clisops.utils.file_namers import get_file_namer
-from clisops.utils.output_utils import _format_time, get_output, get_time_slices
+from clisops.ops.subset import subset
+from clisops.utils.output_utils import _format_time
 
 from .._common import (
     C3S_CMIP5_TOS,
@@ -29,10 +23,12 @@ from .._common import (
 
 
 def _check_output_nc(result, fname="output_001.nc"):
-    assert fname in [os.path.basename(_) for _ in result]
+    assert fname in [Path(_).name for _ in result]
 
 
 def _load_ds(fpath):
+    if isinstance(fpath, (str, Path)):
+        return xr.open_dataset(fpath)
     return xr.open_mfdataset(fpath)
 
 
@@ -494,7 +490,7 @@ def test_aux_variables():
     assert "do_i_get_written" in result[0].variables
 
 
-@pytest.mark.skipif(os.path.isdir("/gws") is False, reason="data not available")
+@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
 def test_coord_variables_exist():
     """
     check coord variables e.g. lat/lon when original data
@@ -516,7 +512,7 @@ def test_coord_variables_exist():
     assert "lon" in result[0].coords
 
 
-@pytest.mark.skipif(os.path.isdir("/gws") is False, reason="data not available")
+@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
 def test_coord_variables_subsetted_i_j():
     """
     check coord variables e.g. lat/lon when original data
@@ -549,7 +545,7 @@ def test_coord_variables_subsetted_i_j():
         # working for lat but not lon in this example
 
 
-@pytest.mark.skipif(os.path.isdir("/gws") is False, reason="data not available")
+@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
 def test_coord_variables_subsetted_rlat_rlon():
     """
     check coord variables e.g. lat/lon when original data
@@ -618,7 +614,7 @@ def test_time_invariant_subset_with_time(load_esgf_test_data):
 
 
 # test known bug
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 @pytest.mark.skip(reason="bug no longer exists")
 def test_cross_prime_meridian(tmpdir):
     ds = _load_ds(
@@ -642,7 +638,7 @@ def test_cross_prime_meridian(tmpdir):
 
 
 # test it works when not crossing 0 meridian
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_do_not_cross_prime_meridian(tmpdir):
     ds = _load_ds(
         "/badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/day/tas/gn/v20191016"
@@ -660,7 +656,7 @@ def test_do_not_cross_prime_meridian(tmpdir):
     _check_output_nc(result)
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_0_360_no_cross(tmpdir):
 
     ds = _load_ds(
@@ -678,7 +674,7 @@ def test_0_360_no_cross(tmpdir):
     _check_output_nc(result)
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 @pytest.mark.skip(reason="bug no longer exists")
 def test_0_360_cross(tmpdir):
     ds = _load_ds(
@@ -696,7 +692,7 @@ def test_0_360_cross(tmpdir):
         )
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_300_60_no_cross(tmpdir):
     # longitude is -300 to 60
     ds = _load_ds(
@@ -714,7 +710,7 @@ def test_300_60_no_cross(tmpdir):
     _check_output_nc(result)
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_300_60_cross(tmpdir):
     # longitude is -300 to 60
     ds = _load_ds(
@@ -732,7 +728,7 @@ def test_300_60_cross(tmpdir):
     _check_output_nc(result)
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_check_lon_alignment_rolled():
     ds = _load_ds(
         "/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/"
@@ -751,7 +747,7 @@ def test_check_lon_alignment_rolled():
     assert area[1] <= all(result[0].lat.data) <= area[3]
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_check_lon_alignment_irregular_grid():
     ds = _load_ds(
         "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp370/r1i1p1f1/Ofx/sftof/gn/v20191108/*.nc"

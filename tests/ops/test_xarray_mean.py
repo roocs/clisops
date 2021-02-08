@@ -1,13 +1,11 @@
-import numpy as np
 import xarray as xr
+from numpy import array, nan
 
 from tests._common import CMIP5_TAS
 
-nan = np.nan
-
 
 def test_xarray_da_mean_skipna_true():
-    da = xr.DataArray(np.array([10.0, 10.0, 10.0, 10.0, 10.0, nan, nan, nan, nan, nan]))
+    da = xr.DataArray(array([10.0, 10.0, 10.0, 10.0, 10.0, nan, nan, nan, nan, nan]))
     mean = da.mean(skipna=True)
     assert mean != 2
     assert mean == 10
@@ -15,14 +13,14 @@ def test_xarray_da_mean_skipna_true():
 
 
 def test_xarray_da_mean_skipna_false():
-    da = xr.DataArray(np.array([10.0, 10.0, 10.0, 10.0, 10.0, nan, nan, nan, nan, nan]))
+    da = xr.DataArray(array([10.0, 10.0, 10.0, 10.0, 10.0, nan, nan, nan, nan, nan]))
     mean = da.mean(skipna=False)
     assert mean != 1
     # result is nan
 
 
 def test_xarray_da_mean_skipna_none():
-    da = xr.DataArray(np.array([10.0, 10.0, 10.0, 10.0, 10.0, nan, nan, nan, nan, nan]))
+    da = xr.DataArray(array([10.0, 10.0, 10.0, 10.0, 10.0, nan, nan, nan, nan, nan]))
     mean = da.mean(skipna=None)
     print(mean)
     assert mean == 10

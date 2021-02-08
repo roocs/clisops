@@ -8,8 +8,6 @@ from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
 from clisops.ops.subset import subset
 
-from ._common import C3S_CMIP5_TOS
-
 
 def open_dataset():
     # use real dataset to get full longitude data

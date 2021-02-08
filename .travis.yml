@@ -27,9 +27,8 @@ jobs:
     - env: TOXENV=py38
       name: "Python3.8 (Linux)"
       python: 3.8
-    - env:
-        - TOXENV=py38-anaconda
-        # - ROOCS_UTILS_ENV="https://github.com/roocs/roocs-utils/raw/master/environment.yml"
+    - if: type=push
+      env: TOXENV=py38-anaconda
       name: "Python3.8 (Linux + Anaconda)"
       python: 3.8
       before_install:
