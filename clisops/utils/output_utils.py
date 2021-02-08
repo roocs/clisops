@@ -213,7 +213,10 @@ def get_output(ds, output_type, output_dir, namer):
         chunked_ds = ds
 
     if not output_dir:
-        output_dir = Path().cwd()
+        output_dir = Path().cwd().expanduser()
+    else:
+        output_dir = Path(output_dir)
+
     output_path = output_dir.joinpath(file_name).as_posix()
 
     # TODO: writing output works currently only in sync mode, see:
