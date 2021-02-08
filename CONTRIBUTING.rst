@@ -86,10 +86,15 @@ Ready to contribute? Here's how to set up ``clisops`` for local development.
 
     $ flake8 clisops tests
     $ black --target-version py36 clisops tests
-    $ python setup.py test  # (or py.test)
+    $ python setup.py test  # (or pytest)
     $ tox
 
     To get flake8, black, and tox, just pip install them into your virtualenv.
+    Alternatively, you can use `pre-commit` to perform these checks at the git commit stage:
+
+    $ pip install pre-commit
+    $ pre-commit install
+    $ pre-commit run --all-files
 
 #.
     Commit your changes and push your branch to GitHub:
