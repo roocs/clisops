@@ -1,13 +1,9 @@
 """Average module."""
-from typing import List, Union
+from typing import Tuple, Union
 
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
-from roocs_utils.xarray_utils.xarray_utils import (
-    get_coord_type,
-    get_main_variable,
-    known_coord_types,
-)
+from roocs_utils.xarray_utils.xarray_utils import get_coord_type, known_coord_types
 
 __all__ = [
     "average_over_dims",
@@ -16,7 +12,7 @@ __all__ = [
 
 def average_over_dims(
     ds: Union[xr.DataArray, xr.Dataset],
-    dims: List[str] = None,
+    dims: Tuple[str] = None,
     ignore_undetected_dims: bool = False,
 ) -> Union[xr.DataArray, xr.Dataset]:
     """
@@ -26,8 +22,9 @@ def average_over_dims(
     ----------
     ds : Union[xr.DataArray, xr.Dataset]
       Input values.
-    dims : List[str] = None
-      The dimensions over which to apply the average. If None, non eof the dimensions are averaged over.
+    dims : Tuple[str] = None
+      The dimensions over which to apply the average. If None, none of the dimensions are averaged over. Dimensions
+      must be one of ["time", "level", "latitude", "longitude"].
     ignore_undetected_dims: bool
       If the dimensions specified are not found in the dataset, an Exception will be raised if set to True.
       If False, an exception will not be raised and the other dimensions will be averaged over. Default = False
@@ -45,16 +42,16 @@ def average_over_dims(
     >>> pr = xr.open_dataset(path_to_pr_file).pr  # doctest: +SKIP
     ...
     # Average data array over latitude and longitude
-    >>> prAvg = average_over_dims(pr, dims=['lat', 'lon'], ignore_undetected_dims=True)  # doctest: +SKIP
+    >>> prAvg = average_over_dims(pr, dims=['latitude', 'longitude'], ignore_undetected_dims=True)  # doctest: +SKIP
     """
 
     if not dims:
         return ds
 
-    # if not set(dims).issubset(set(known_coord_types)):
-    #     raise InvalidParameterValue(
-    #         f"Unknown dimension requested for averaging, must be within: {known_coord_types}."
-    #     )
+    if not set(dims).issubset(set(known_coord_types)):
+        raise InvalidParameterValue(
+            f"Dimensions for averaging must be one of {known_coord_types}"
+        )
 
     found_dims = dict()
 
