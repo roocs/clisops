@@ -59,7 +59,7 @@ class Operation(object):
             else:
                 result_ds = processed_ds.sel(time=slice(tslice[0], tslice[1]))
 
-            LOGGER.info(f"Processing subset for times: {tslice}")
+            LOGGER.info(f"Processing {self.__class__.__name__} for times: {tslice}")
 
             output = get_output(result_ds, self._output_type, self._output_dir, namer)
             outputs.append(output)

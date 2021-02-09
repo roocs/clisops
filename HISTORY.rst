@@ -1,8 +1,8 @@
 Version History
 ===============
 
-Unreleased
------------
+v0.5.2
+------
 
 New Features
 ^^^^^^^^^^^^
@@ -18,7 +18,7 @@ Other Changes
 * Changes to allow datasets without a time dimension to be processed without issues
 * Use ``DatasetMapper`` from ``roocs-utils`` to ensure all datasets are mapped to file paths correctly.
 * Using file caching to gather ``mini-esgf-data`` test data.
-* ``clisops.utils.file_namers`` adjusted to allow values to be overwritten and extras added to be added to the end.
+* ``clisops.utils.file_namers`` adjusted to allow values to be overwritten and extras to be added to the end before the file extension.
 
 
 v0.5.1 (2021-01-11)
