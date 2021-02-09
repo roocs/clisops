@@ -49,3 +49,13 @@ File Namers
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+Dataset Utilities
+================
+
+.. automodule:: clisops.utils.dataset_utils
+   :noindex:
+   :members:
+   :undoc-members:
+   :show-inheritance:

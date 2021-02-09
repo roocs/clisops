@@ -1,16 +1,25 @@
 Version History
 ===============
 
-v0.5.2
-------
+v0.5.2 (2021-02-12)
+-------------------
+
+Bug Fixes
+^^^^^^^^^
+* Fixed issue where the temporal subset was ignored if level subset selected.
+* Roll dataset used in subsetting when the requested longitude bounds are not within those of the dataset.
+* Fixed issue with subsetting grid lon and lat coordinates that are in descending order for ``core.subset.subset_bbox``.
+
 Other Changes
 ^^^^^^^^^^^^^
-* Changes to allow datasets without a time dimension to be processed without issues
+* Changes to allow datasets without a time dimension to be processed without issues.
 * Use ``DatasetMapper`` from ``roocs-utils`` to ensure all datasets are mapped to file paths correctly.
 * Using file caching to gather ``mini-esgf-data`` test data.
+* Added a ``dev`` recipe for pip installations (`pip install clisops[dev]`).
+* Updated pre-commit and pre-commit hooks to newest versions.
 
 
-v0.5.1 (2020-01-11)
+v0.5.1 (2021-01-11)
 ------------------
 
 Breaking Changes

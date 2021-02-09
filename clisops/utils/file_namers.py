@@ -94,12 +94,7 @@ class StandardFileNamer(SimpleFileNamer):
         """ Finds the time range of the data in the output. """
         try:
             times = da.time.values
-            return (
-                "_"
-                + times.min().strftime("%Y%m%d")
-                + "-"
-                + times.max().strftime("%Y%m%d")
-            )
+            return f"_{times.min().strftime('%Y%m%d')}-{times.max().strftime('%Y%m%d')}"
         # catch where "time" attribute cannot be accessed in ds
         except AttributeError:
             return ""

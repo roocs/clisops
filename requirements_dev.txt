@@ -9,7 +9,7 @@ Sphinx
 twine
 pytest
 pytest-runner
-pre-commit
+pre-commit>=2.9.0
 black>=20.8b1
 nbsphinx
 ipython

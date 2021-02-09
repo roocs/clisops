@@ -7,6 +7,7 @@ from roocs_utils.xarray_utils.xarray_utils import open_xr_dataset
 from clisops import logging, utils
 from clisops.core import subset_bbox, subset_level, subset_time
 from clisops.utils.common import expand_wildcards
+from clisops.utils.dataset_utils import check_lon_alignment
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import get_output, get_time_slices
 
@@ -21,7 +22,15 @@ def _subset(ds, args):
     if "lon_bnds" and "lat_bnds" in args:
         # subset with space and optionally time and level
         LOGGER.debug(f"subset_bbox with parameters: {args}")
-        result = subset_bbox(ds, **args)
+        ds = check_lon_alignment(ds, args.get("lon_bnds"))
+        try:
+            result = subset_bbox(ds, **args)
+        except NotImplementedError:
+            raise Exception(
+                f"The input longitude bounds {args.get('lon_bnds')} are not within the longitude bounds of this dataset"
+                f" and rolling could not be completed successfully. "
+                f"Please re-run your request with longitudes within the bounds of the dataset."
+            )
     else:
         kwargs = {}
         valid_args = ["start_date", "end_date"]
@@ -32,7 +41,6 @@ def _subset(ds, args):
         if any(kwargs.values()):
             LOGGER.debug(f"subset_time with parameters: {kwargs}")
             result = subset_time(ds, **kwargs)
-
         else:
             result = ds
 
@@ -44,7 +52,7 @@ def _subset(ds, args):
         # subset with level only
         if any(kwargs.values()):
             LOGGER.debug(f"subset_level with parameters: {kwargs}")
-            result = subset_level(ds, **kwargs)
+            result = subset_level(result, **kwargs)
 
     return result
 
