@@ -17,10 +17,9 @@ with open(os.path.join(here, "clisops", "__version__.py"), "r") as f:
     exec(f.read(), about)
 
 requirements = [line.strip() for line in open("requirements.txt")]
+dev_requirements = [line.strip() for line in open("requirements_dev.txt")]
 
-setup_requirements = [
-    "pytest-runner",
-]
+setup_requirements = ["pytest-runner"]
 
 test_requirements = ["pytest", "tox"]
 
@@ -59,6 +58,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Topic :: Security",
         "Topic :: Internet",
         "Topic :: Scientific/Engineering",
@@ -69,10 +69,7 @@ setup(
     description="clisops - climate simulation operations.",
     license=__license__,
     python_requires=">=3.6.0",
-    install_requires=[
-        requirements,
-        "roocs-utils @ git+https://github.com/roocs/roocs-utils.git",
-    ],
+    install_requires=requirements,
     long_description=_long_description,
     long_description_content_type="text/x-rst",
     include_package_data=True,
@@ -83,6 +80,9 @@ setup(
     setup_requires=setup_requirements,
     test_suite="tests",
     tests_require=test_requirements,
-    extras_require={"docs": docs_requirements},
+    extras_require=dict(
+        docs=docs_requirements,
+        dev=dev_requirements,
+    ),
     url="https://github.com/roocs/clisops",
 )

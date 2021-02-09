@@ -3,7 +3,7 @@ default_language_version:
 
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.3.0
+    rev: v3.4.0
     hooks:
     -   id: trailing-whitespace
         language_version: python3
@@ -33,7 +33,7 @@ repos:
 #    -   id: autopep8
 #        args: ['--global-config=setup.cfg','--in-place']
 -   repo: https://github.com/timothycrosley/isort
-    rev: 5.6.4
+    rev: 5.7.0
     hooks:
     -   id: isort
         language_version: python3
@@ -44,7 +44,7 @@ repos:
 #    -   id: pydocstyle
 #        args: ["--conventions=numpy"]
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v2.7.3
+    rev: v2.9.0
     hooks:
     -   id: pyupgrade
         language_version: python3

@@ -51,13 +51,13 @@ def write_roocs_cfg():
 
 def cmip5_archive_base():
     if "CMIP5_ARCHIVE_BASE" in os.environ:
-        return os.environ["CMIP5_ARCHIVE_BASE"]
+        return Path(os.environ["CMIP5_ARCHIVE_BASE"]).as_posix()
     return DEFAULT_CMIP5_ARCHIVE_BASE
 
 
 def cmip6_archive_base():
     if "CMIP6_ARCHIVE_BASE" in os.environ:
-        return os.environ["CMIP6_ARCHIVE_BASE"]
+        return Path(os.environ["CMIP6_ARCHIVE_BASE"]).as_posix()
     return DEFAULT_CMIP6_ARCHIVE_BASE
 
 

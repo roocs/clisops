@@ -3,6 +3,9 @@ from typing import List, Optional, Tuple, Union
 
 import xarray as xr
 from roocs_utils.parameter import parameterise
+from roocs_utils.parameter.area_parameter import AreaParameter
+from roocs_utils.parameter.level_parameter import LevelParameter
+from roocs_utils.parameter.time_parameter import TimeParameter
 from roocs_utils.xarray_utils.xarray_utils import open_xr_dataset
 
 from clisops import logging
@@ -90,7 +93,7 @@ class Subset(Operation):
 def subset(
     ds: Union[xr.Dataset, str, Path],
     *,
-    time: Optional[Union[str, Tuple[str, str]]] = None,
+    time: Optional[Union[str, Tuple[str, str], TimeParameter]] = None,
     area: Optional[
         Union[
             str,
@@ -100,10 +103,13 @@ def subset(
                 Union[int, float, str],
                 Union[int, float, str],
             ],
+            AreaParameter,
         ]
     ] = None,
     level: Optional[
-        Union[str, Tuple[Union[int, float, str], Union[int, float, str]]]
+        Union[
+            str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter
+        ]
     ] = None,
     output_dir: Optional[Union[str, Path]] = None,
     output_type="netcdf",
@@ -115,7 +121,7 @@ def subset(
     Parameters
     ----------
     ds: Union[xr.Dataset, str]
-    time: Optional[Union[str, Tuple[str, str]]] = None,
+    time: Optional[Union[str, Tuple[str, str], TimeParameter]] = None,
     area: Optional[
         Union[
             str,
@@ -125,9 +131,11 @@ def subset(
                 Union[int, float, str],
                 Union[int, float, str],
             ],
+            AreaParameter
         ]
     ] = None,
-    level: Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]]]] = None
+    level: Optional[
+        Union[str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter]
     output_dir: Optional[Union[str, Path]] = None
     output_type: {"netcdf", "nc", "zarr", "xarray"}
     split_method: {"time:auto"}

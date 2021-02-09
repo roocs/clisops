@@ -55,7 +55,7 @@ class Average(Operation):
 
 def average_over_dims(
     ds,
-    dims: Tuple[str] = None,
+    dims: Optional[Union[Tuple[str], DimensionParameter]] = None,
     ignore_undetected_dims: bool = False,
     output_dir: Optional[Union[str, Path]] = None,
     output_type="netcdf",
@@ -67,7 +67,7 @@ def average_over_dims(
     Parameters
     ----------
     ds: Union[xr.Dataset, str]
-    dims : Tuple[str] = None
+    dims : Optional[Union[Tuple[str], DimensionParameter]]
       The dimensions over which to apply the average. If None, none of the dimensions are averaged over. Dimensions
       must be one of ["time", "level", "latitude", "longitude"].
     ignore_undetected_dims: bool

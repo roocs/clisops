@@ -1,15 +1,15 @@
 import numpy as np
 import pytest
 import xarray as xr
+from numpy import array, nan
 
 from tests._common import CMIP5_TAS
 
-nan = np.nan
 nat = np.datetime64("NaT")
 
 
-def test_xarray_da_mean_skipna_true_float():
-    da = xr.DataArray(np.array([10.0, 10.0, 10.0, 10.0, 10.0, nan, nan, nan, nan, nan]))
+def test_xarray_da_mean_skipna_true():
+    da = xr.DataArray(array([10.0, 10.0, 10.0, 10.0, 10.0, nan, nan, nan, nan, nan]))
     mean = da.mean(skipna=True)
     assert mean != 2
     assert mean == 10
@@ -20,34 +20,34 @@ def test_xarray_da_mean_skipna_true_float():
 # other dtypes either do not have a sentinel missing value (int) or skipna=True
 # has not been implemented (object, datetime64 or timedelta64)
 def test_xarray_da_mean_skipna_none_float():
-    da = xr.DataArray(np.array([10.0, 10.0, 10.0, 10.0, 10.0, nan, nan, nan, nan, nan]))
+    da = xr.DataArray(array([10.0, 10.0, 10.0, 10.0, 10.0, nan, nan, nan, nan, nan]))
     mean = da.mean(skipna=None)
     assert mean == 10
 
 
 def test_xarray_da_mean_skipna_false():
-    da = xr.DataArray(np.array([10.0, 10.0, 10.0, 10.0, 10.0, nan, nan, nan, nan, nan]))
+    da = xr.DataArray(array([10.0, 10.0, 10.0, 10.0, 10.0, nan, nan, nan, nan, nan]))
     mean = da.mean(skipna=False)
     assert mean != 1
     # result is nan
 
 
 def test_xarray_da_mean_skipna_true_int():
-    da = xr.DataArray(np.array([10, 10, 10, 10, 10, None, None, None, None, None]))
+    da = xr.DataArray(array([10, 10, 10, 10, 10, None, None, None, None, None]))
     mean = da.mean(skipna=True)
     assert mean != 2
     assert mean == 10
 
 
 def test_xarray_da_mean_skipna_false_int():
-    da = xr.DataArray(np.array([10, 10, 10, 10, 10, None, None, None, None, None]))
+    da = xr.DataArray(array([10, 10, 10, 10, 10, None, None, None, None, None]))
     with pytest.raises(TypeError):
         da.mean(skipna=False)
 
 
 # would expect this to give the same result  as false, but it gives the same result as true
 def test_xarray_da_mean_skipna_none_int():
-    da = xr.DataArray(np.array([10, 10, 10, 10, 10, None, None, None, None, None]))
+    da = xr.DataArray(array([10, 10, 10, 10, 10, None, None, None, None, None]))
     mean = da.mean(skipna=None)
     assert mean == 10
 
@@ -62,9 +62,8 @@ def test_xarray_da_mean_skipna_true_int_masked():
     assert mean == 10
 
 
-def test_xarray_da_mean_skipna_int_none_masked():
-    x = np.array([10, 10, 10, 10, 10, -1, -1, -1, -1, -1])
-    da = xr.DataArray(np.ma.masked_array(x, mask=[0, 0, 0, 0, 0, 1, 1, 1, 1, 1]))
+def test_xarray_da_mean_skipna_none():
+    da = xr.DataArray(array([10.0, 10.0, 10.0, 10.0, 10.0, nan, nan, nan, nan, nan]))
     mean = da.mean(skipna=None)
     assert mean != 2
     assert mean == 10
@@ -80,7 +79,7 @@ def test_xarray_da_mean_skipna_int_false_masked():
 
 def test_xarray_da_mean_skipna_true_datetime():
     date = np.datetime64("2010-04-09")
-    da = xr.DataArray(np.array([date, date, date, date, date, nat, nat, nat, nat, nat]))
+    da = xr.DataArray(array([date, date, date, date, date, nat, nat, nat, nat, nat]))
     mean = da.mean(skipna=True)
     assert mean == np.datetime64("2010-04-09")
     # skips nans out completely - does not include them when calculating the average
@@ -88,14 +87,14 @@ def test_xarray_da_mean_skipna_true_datetime():
 
 def test_xarray_da_mean_skipna_none_datetime():
     date = np.datetime64("2010-04-09")
-    da = xr.DataArray(np.array([date, date, date, date, date, nat, nat, nat, nat, nat]))
+    da = xr.DataArray(array([date, date, date, date, date, nat, nat, nat, nat, nat]))
     mean = da.mean(skipna=None)
     assert mean == np.datetime64("2010-04-09")
 
 
 def test_xarray_da_mean_skipna_false_datetime():
     date = np.datetime64("2010-04-09")
-    da = xr.DataArray(np.array([date, date, date, date, date, nat, nat, nat, nat, nat]))
+    da = xr.DataArray(array([date, date, date, date, date, nat, nat, nat, nat, nat]))
     mean = da.mean(skipna=False)
     assert mean != np.datetime64("2010-04-09")
     # result is nat
