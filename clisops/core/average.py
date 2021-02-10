@@ -59,12 +59,15 @@ def average_over_dims(
     for coord in ds.coords:
         coord = ds.coords[coord]
         coord_type = get_coord_type(coord)
+
         if coord_type:
-            # check if the coordinate is a dimension
+            # Check if the coordinate is a dimension
             if coord.name in ds.dims:
                 found_dims[coord_type] = coord.name
 
+    # Set a variable for requested dimensions that were not detected
     undetected_dims = set(dims) - set(found_dims.keys())
+
     if ignore_undetected_dims is False and not set(dims).issubset(
         set(found_dims.keys())
     ):
@@ -72,15 +75,17 @@ def average_over_dims(
             f"Requested dimensions were not found in input dataset: {undetected_dims}."
         )
     else:
-        # remove undetected dim so that it can be ignored
+        # Remove undetected dim so that it can be ignored
         dims = [dim for dim in dims if dim not in undetected_dims]
 
-    # get dims by the name used in dataset
+    # Get dims by the name used in dataset
     dims_to_average = []
+
     for dim in dims:
         dims_to_average.append(found_dims[dim])
 
-    # mean can be carried out on a Dataset or DataArray
+    # The mean will be carried out on a Dataset or DataArray
+    # Calculate the mean, skip missing values and retain original attributes
     ds_averaged_over_dims = ds.mean(dim=dims_to_average, skipna=True, keep_attrs=True)
 
     return ds_averaged_over_dims
