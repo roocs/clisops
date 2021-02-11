@@ -55,7 +55,8 @@ jobs:
         - pip install -e .
       script:
         - py.test --cov clisops
-    - env:
+    - if: type=push
+      env:
         - TOXENV=py37-windows
         - DESIRED_PYTHON=3.7
         - MINICONDA_PATH=$(cygpath --windows /c/miniconda)
