@@ -137,8 +137,7 @@ def subset(
             AreaParameter
         ]
     ] = None,
-    level: Optional[
-        Union[str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter]
+    level: Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter]
     output_dir: Optional[Union[str, Path]] = None
     output_type: {"netcdf", "nc", "zarr", "xarray"}
     split_method: {"time:auto"}
