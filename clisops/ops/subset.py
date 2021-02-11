@@ -146,8 +146,8 @@ def subset(
     Returns
     -------
     List[Union[xr.Dataset, str]]
-    A list of the subsetted outputs in the format selected; str corresponds to file paths if the
-    output format selected is a file.
+        A list of the subsetted outputs in the format selected; str corresponds to file paths if the
+        output format selected is a file.
 
     Examples
     --------
