@@ -31,11 +31,11 @@ class Average(Operation):
 
         self.params = {"dims": dims, "ignore_undetected_dims": ignore_undetected_dims}
 
-    def _set_file_namer(self):
+    def _get_file_namer(self):
 
         if self.params.get("dims", None):
             dims = [convert_coord_to_axis(dim) for dim in self.params["dims"]]
-            extra = f"_avg_{''.join(sorted(dims))}"
+            extra = f"_avg-{''.join(sorted(dims))}"
         else:
             extra = ""
 
@@ -95,6 +95,6 @@ def average_over_dims(
     | file_namer: "standard"
 
     """
-    average = Average(**locals())
-    result = average.process()
-    return result
+    op = Average(**locals())
+    return op.process()
+

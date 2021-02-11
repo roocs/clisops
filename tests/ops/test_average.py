@@ -88,7 +88,7 @@ def test_average_time_nc(tmpdir):
         output_type="netcdf",
         file_namer="standard",
     )
-    _check_output_nc(result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_avg_t.nc")
+    _check_output_nc(result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_avg-t.nc")
 
 
 def test_average_lat_nc(tmpdir):
@@ -102,7 +102,7 @@ def test_average_lat_nc(tmpdir):
     )
 
     _check_output_nc(
-        result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-22991216_avg_y.nc"
+        result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-22991216_avg-y.nc"
     )
 
 
@@ -117,7 +117,7 @@ def test_average_lon_nc(tmpdir):
     )
 
     _check_output_nc(
-        result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-22991216_avg_x.nc"
+        result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-22991216_avg-x.nc"
     )
 
 
@@ -133,7 +133,7 @@ def test_average_level_nc(cmip6_o3, tmpdir):
 
     _check_output_nc(
         result,
-        fname="o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_18500116-19491216_avg_z.nc",
+        fname="o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_18500116-19491216_avg-z.nc",
     )
 
 
@@ -147,7 +147,7 @@ def test_average_multiple_dims_filename(tmpdir):
         file_namer="standard",
     )
 
-    _check_output_nc(result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_avg_tx.nc")
+    _check_output_nc(result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_avg-tx.nc")
 
 
 def test_average_multiple_dims_xarray():

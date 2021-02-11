@@ -32,17 +32,20 @@ class Subset(Operation):
 
         LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
 
+        # Set up args dictionary to be used by `self._calculate()`
         args = dict()
 
         parameters = parameterise(collection=self.ds, time=time, area=area, level=level)
 
+        # For each required parameter, check if the parameter can be accessed as a tuple
+        # If not: then use the dictionary representation for it
         for parameter in ["time", "area", "level"]:
 
             if parameters.get(parameter).tuple is not None:
                 args.update(parameters.get(parameter).asdict())
 
-        # rename start_time and end_time to start_date and end_date to
-        # match clisops/core/subset
+        # Rename start_time and end_time to start_date and end_date to
+        # match clisops.core.subset function parameters.
         if "start_time" in args:
             args["start_date"] = args.pop("start_time")
 
@@ -159,6 +162,5 @@ def subset(
     | file_namer: "standard"
 
     """
-    subsetter = Subset(**locals())
-    result = subsetter.process()
-    return result
+    op = Subset(**locals())
+    return op.process()
