@@ -66,6 +66,11 @@ def check_lon_alignment(ds, lon_bnds):
         else:
             first_element_value = low
             diff, offset = calculate_offset(lon, first_element_value)
+
+            # roll the dataset
             ds_roll = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=False)
+
+            # assign longitude to match the roll and copy attrs
             ds_roll.coords[lon.name] = ds_roll.coords[lon.name] + diff
+            ds_roll.coords[lon.name].attrs = ds.coords[lon.name].attrs
             return ds_roll

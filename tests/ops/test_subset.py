@@ -28,7 +28,10 @@ def _check_output_nc(result, fname="output_001.nc"):
 
 def _load_ds(fpath):
     if isinstance(fpath, (str, Path)):
-        return xr.open_dataset(fpath)
+        if fpath.endswith("*.nc"):
+            return xr.open_mfdataset(fpath)
+        else:
+            return xr.open_dataset(fpath)
     return xr.open_mfdataset(fpath)
 
 
@@ -742,6 +745,8 @@ def test_check_lon_alignment_rolled():
         area=area,
         output_type="xarray",
     )
+
+    assert result[0].lon.attrs == ds.lon.attrs
 
     assert area[0] <= all(result[0].lon.data) <= area[2]
     assert area[1] <= all(result[0].lat.data) <= area[3]
