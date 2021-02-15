@@ -117,5 +117,5 @@ Before you submit a pull request, check that it meets these guidelines:
    your new functionality into a function with a docstring, and add the
    feature to the list in README.md.
 #. The pull request should work for Python 3.6, 3.7, 3.8, and 3.9. Check
-   https://travis-ci.com/github/roocs/clisops/pull_requests
+   https://github.com/roocs/clisops/actions
    and make sure that the tests pass for all supported Python versions.

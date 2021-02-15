@@ -17,6 +17,7 @@ Other Changes
 * Using file caching to gather ``mini-esgf-data`` test data.
 * Added a ``dev`` recipe for pip installations (`pip install clisops[dev]`).
 * Updated pre-commit and pre-commit hooks to newest versions.
+* Migrated linux-based integration builds to GitHub CI.
 * New ``core.average`` submodule with ``average_shape`` + ``core.subset_create_weight_masks``. Depends on `xESMF` >= 0.5.2, which is a new optional dependency.
 * Added functionality to ``core.subset.create_mask`` so it can accept ``GeoDataFrames`` with non-integer indexes.
 
