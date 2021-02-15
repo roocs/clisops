@@ -21,6 +21,7 @@ Other Changes
 * Using file caching to gather ``mini-esgf-data`` test data.
 * Added a ``dev`` recipe for pip installations (`pip install clisops[dev]`).
 * Updated pre-commit and pre-commit hooks to newest versions.
+* Migrated linux-based integration builds to GitHub CI.
 * ``clisops.utils.file_namers`` adjusted to allow values to be overwritten and extras to be added to the end before the file extension.
 
 
