@@ -1,6 +1,7 @@
 import os
 import shutil
 
+from git import Repo
 import numpy as np
 import pandas as pd
 import pytest
@@ -293,14 +294,17 @@ def load_esgf_test_data():
     This fixture ensures that the required test data repository
     has been cloned to the cache directory within the home directory.
     """
-    tmp_repo = "/tmp/.mini-esgf-data"
-    test_data_dir = os.path.join(tmp_repo, "test_data")
-    target = os.path.join(MINI_ESGF_CACHE_DIR, "master")
+    branch = "master"
+    target = os.path.join(MINI_ESGF_CACHE_DIR, branch)
+
+    if not os.path.isdir(MINI_ESGF_CACHE_DIR):
+        os.makedirs(MINI_ESGF_CACHE_DIR)
 
     if not os.path.isdir(target):
+        repo = Repo.clone_from(ESGF_TEST_DATA_REPO_URL, target)
+        repo.git.checkout(branch)
 
-        os.makedirs(target)
-        os.system(f"git clone {ESGF_TEST_DATA_REPO_URL} {tmp_repo}")
-
-        shutil.move(test_data_dir, target)
-        shutil.rmtree(tmp_repo)
+    if not os.environ.get("ROOCS_AUTO_UPDATE_TEST_DATA", True) == "FALSE":
+        repo = Repo(target)
+        repo.git.checkout(branch)
+        repo.remotes[0].pull()

@@ -16,3 +16,4 @@ nbsphinx
 nbconvert
 ipython
 jinja2>=2.11
+GitPython==3.1.12
