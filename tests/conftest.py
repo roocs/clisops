@@ -304,7 +304,7 @@ def load_esgf_test_data():
         repo = Repo.clone_from(ESGF_TEST_DATA_REPO_URL, target)
         repo.git.checkout(branch)
 
-    if os.environ.get("ROOCS_AUTO_UPDATE_TEST_DATA", "true").lower() != "false":
+    elif os.environ.get("ROOCS_AUTO_UPDATE_TEST_DATA", "true").lower() != "false":
         repo = Repo(target)
         repo.git.checkout(branch)
         repo.remotes[0].pull()
