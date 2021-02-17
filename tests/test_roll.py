@@ -159,7 +159,6 @@ def test_xarray_roll_lon(tmpdir):
         )
 
 
-# seems to take a while..
 @pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
 @pytest.mark.skip(reason="rolling now done within subset")
 def test_convert_lon_coords(tmpdir):
