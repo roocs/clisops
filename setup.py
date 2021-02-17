@@ -17,6 +17,7 @@ with open(os.path.join(here, "clisops", "__version__.py"), "r") as f:
     exec(f.read(), about)
 
 requirements = [line.strip() for line in open("requirements.txt")]
+
 dev_requirements = [line.strip() for line in open("requirements_dev.txt")]
 
 setup_requirements = ["pytest-runner"]
@@ -32,6 +33,10 @@ docs_requirements = [
     "ipykernel",
     "jupyter_client",
     "matplotlib",
+]
+
+extra_requirements = [
+    "xesmf>=0.5.2",
 ]
 
 setup(
@@ -83,6 +88,7 @@ setup(
     extras_require=dict(
         docs=docs_requirements,
         dev=dev_requirements,
+        extra=extra_requirements,
     ),
     url="https://github.com/roocs/clisops",
 )

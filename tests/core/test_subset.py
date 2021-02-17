@@ -11,6 +11,11 @@ from clisops.utils import get_file
 
 from .._common import XCLIM_TESTS_DATA as TESTS_DATA
 
+try:
+    import xesmf
+except ImportError:
+    xesmf = None
+
 
 class TestSubsetTime:
     nc_poslons = get_file("cmip3/tas.sresb1.giss_model_e_r.run1.atm.da.nc")
@@ -800,6 +805,19 @@ class TestSubsetShape:
         vals, counts = np.unique(mask.values[mask.notnull()], return_counts=True)
         assert all(vals == [0, 1, 2])
         assert all(counts == [58, 250, 22])
+
+    @pytest.mark.skipif(
+        xesmf is None, reason="xESMF >= 0.5.2 is needed for average_shape."
+    )
+    def test_weight_masks_multiregions(self):
+        # rename is due to a small limitation of xESMF 0.5.2
+        ds = xr.open_dataset(self.nc_file).rename(bnds="bounds")
+        regions = gpd.read_file(self.multi_regions_geojson).set_index("id")
+        masks = subset.create_weight_masks(ds, poly=regions)
+
+        np.testing.assert_allclose(masks.sum(["lat", "lon"]), [1, 1, 1])
+        np.testing.assert_array_equal(masks.geom.values, regions.index)
+        np.testing.assert_allclose(masks.max("geom").sum(), 2.900397)
 
     def test_subset_multiregions(self):
         ds = xr.open_dataset(self.nc_file)
