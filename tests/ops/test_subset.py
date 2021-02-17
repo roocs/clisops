@@ -732,24 +732,48 @@ def test_300_60_cross(tmpdir):
 
 
 @pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
-def test_check_lon_alignment_rolled():
+class TestLonAlignmentRolled:
+
     ds = _load_ds(
         "/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/"
         "rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc"
     )
 
-    area = (-50.0, -90.0, 100.0, 90.0)
+    def test_roll_positive_1(self):
 
-    result = subset(
-        ds=ds,
-        area=area,
-        output_type="xarray",
-    )
+        area = (-50.0, -90.0, 100.0, 90.0)
 
-    assert result[0].lon.attrs == ds.lon.attrs
+        result = subset(
+            ds=self.ds,
+            area=area,
+            output_type="xarray",
+        )
 
-    assert area[0] <= all(result[0].lon.data) <= area[2]
-    assert area[1] <= all(result[0].lat.data) <= area[3]
+        assert result[0].lon.attrs == self.ds.lon.attrs
+
+        assert area[0] <= all(result[0].lon.values) <= area[2]
+        assert area[1] <= all(result[0].lat.values) <= area[3]
+
+        # check array contains expected values
+        assert np.array_equal(result[0].lon.values, np.arange(-50, 102.5, 2.5))
+
+    def test_roll_positive_2(self):
+
+        area = (-180.0, -90.0, 120.0, 90.0)
+
+        result = subset(
+            ds=self.ds,
+            area=area,
+            output_type="xarray",
+        )
+
+        assert result[0].lon.attrs == self.ds.lon.attrs
+
+        assert area[0] <= all(result[0].lon.values) <= area[2]
+        assert area[1] <= all(result[0].lat.values) <= area[3]
+
+        # check array contains expected values
+        assert np.array_equal(result[0].lon.values, np.arange(-180, 122.5, 2.5))
 
 
 @pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
