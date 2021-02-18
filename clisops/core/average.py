@@ -1,17 +1,13 @@
 """Average module."""
+from pathlib import Path
 from typing import Tuple, Union
 
-from pathlib import Path
 import geopandas as gpd
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils.xarray_utils import get_coord_type, known_coord_types
 
-
-__all__ = [
-    "average_over_dims",
-    "average_shape"
-]
+__all__ = ["average_over_dims", "average_shape"]
 
 
 def average_shape(
