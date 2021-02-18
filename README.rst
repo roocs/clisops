@@ -7,13 +7,9 @@ clisops - climate simulation operations
    :target: https://pypi.python.org/pypi/clisops
    :alt: Pypi
 
-
-
-.. image:: https://img.shields.io/travis/roocs/clisops.svg
-   :target: https://travis-ci.org/roocs/clisops
-   :alt: Travis
-
-
+.. image:: https://github.com/roocs/clisops/workflows/build/badge.svg
+    :target: https://github.com/roocs/clisops/actions
+    :alt: Build Status
 
 .. image:: https://readthedocs.org/projects/clisops/badge/?version=latest
    :target: https://clisops.readthedocs.io/en/latest/?badge=latest

@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
@@ -9,7 +11,7 @@ LOGGER = logging.getLogger(__file__)
 def calculate_offset(lon, first_element_value):
     """
     Calculate the number of elements to roll the dataset by in order to have
-    longitude from -180 to 180 degrees.
+    longitude from within requested bounds.
 
     :param lon: longitude coordinate of xarray dataset.
     :param first_element_value: the value of the first element of the longitude array to roll to.
@@ -18,15 +20,15 @@ def calculate_offset(lon, first_element_value):
     res = lon.values[1] - lon.values[0]
 
     # calculate how many degrees to move by to have lon[0] of rolled subset as lower bound of request
-    diff = first_element_value - lon.values[0]
+    diff = lon.values[0] - first_element_value
 
     # work out how many elements to roll by to roll data by 1 degree
     index = 1 / res
 
     # calculate the corresponding offset needed to change data by diff
-    offset = int(diff * index)
+    offset = int(round(diff * index))
 
-    return diff, offset
+    return offset
 
 
 def check_lon_alignment(ds, lon_bnds):
@@ -65,7 +67,20 @@ def check_lon_alignment(ds, lon_bnds):
         # roll the dataset and reassign the longitude values
         else:
             first_element_value = low
-            diff, offset = calculate_offset(lon, first_element_value)
-            ds_roll = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=False)
-            ds_roll.coords[lon.name] = ds_roll.coords[lon.name] + diff
+            offset = calculate_offset(lon, first_element_value)
+
+            # roll the dataset
+            ds_roll = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=True)
+
+            # assign longitude to match the roll and copy attrs
+            lon_vals = ds_roll.coords[lon.name].values
+
+            # treat the values differently according to positive/negative offset
+            if offset < 0:
+                lon_vals[offset:] = lon_vals[offset:] % 360
+            else:
+                lon_vals[:offset] = lon_vals[:offset] % -360
+
+            ds_roll.coords[lon.name] = lon_vals
+            ds_roll.coords[lon.name].attrs = ds.coords[lon.name].attrs
             return ds_roll

@@ -21,12 +21,12 @@ jobs:
 #        apt:
 #          packages:
 #            - pandoc
-    - env: TOXENV=black
-      name: "Black and flake8 compliance"
-      python: 3.6
-    - env: TOXENV=py38
-      name: "Python3.8 (Linux)"
-      python: 3.8
+    # - env: TOXENV=black
+    #   name: "Black and flake8 compliance"
+    #   python: 3.6
+    # - env: TOXENV=py38
+    #   name: "Python3.8 (Linux)"
+    #   python: 3.8
     - if: type=push
       env: TOXENV=py38-anaconda
       name: "Python3.8 (Linux + Anaconda)"
@@ -55,7 +55,8 @@ jobs:
         - pip install -e .
       script:
         - py.test --cov clisops
-    - env:
+    - if: type=push
+      env:
         - TOXENV=py37-windows
         - DESIRED_PYTHON=3.7
         - MINICONDA_PATH=$(cygpath --windows /c/miniconda)
@@ -101,12 +102,12 @@ jobs:
         - printenv
       install:
           - /usr/local/opt/python@3.8/bin/pip3 install -U tox-travis
-    - env: TOXENV=py37
-      name: "Python3.7 (Linux)"
-      python: 3.7
-    - env: TOXENV=py36
-      name: "Python3.6 (Linux)"
-      python: 3.6
+    # - env: TOXENV=py37
+    #   name: "Python3.7 (Linux)"
+    #   python: 3.7
+    # - env: TOXENV=py36
+    #   name: "Python3.6 (Linux)"
+    #   python: 3.6
   allow_failures:
       - env: TOXENV=macOS
       - env:

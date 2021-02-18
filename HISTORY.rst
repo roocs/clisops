@@ -17,6 +17,7 @@ Other Changes
 * Using file caching to gather ``mini-esgf-data`` test data.
 * Added a ``dev`` recipe for pip installations (`pip install clisops[dev]`).
 * Updated pre-commit and pre-commit hooks to newest versions.
+* Migrated linux-based integration builds to GitHub CI.
 
 
 v0.5.1 (2021-01-11)
