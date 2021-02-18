@@ -2,10 +2,15 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import xarray as xr
+from roocs_utils.parameter import parameterise
+from roocs_utils.parameter.area_parameter import AreaParameter
+from roocs_utils.parameter.level_parameter import LevelParameter
+from roocs_utils.parameter.time_parameter import TimeParameter
 from roocs_utils.xarray_utils.xarray_utils import open_xr_dataset
 
-from clisops import logging, utils
+from clisops import logging
 from clisops.core import subset_bbox, subset_level, subset_time
+from clisops.ops.base_operation import Operation
 from clisops.utils.common import expand_wildcards
 from clisops.utils.dataset_utils import check_lon_alignment
 from clisops.utils.file_namers import get_file_namer
@@ -18,49 +23,80 @@ __all__ = [
 LOGGER = logging.getLogger(__file__)
 
 
-def _subset(ds, args):
-    if "lon_bnds" and "lat_bnds" in args:
-        # subset with space and optionally time and level
-        LOGGER.debug(f"subset_bbox with parameters: {args}")
-        ds = check_lon_alignment(ds, args.get("lon_bnds"))
-        try:
-            result = subset_bbox(ds, **args)
-        except NotImplementedError:
-            raise Exception(
-                f"The input longitude bounds {args.get('lon_bnds')} are not within the longitude bounds of this dataset"
-                f" and rolling could not be completed successfully. "
-                f"Please re-run your request with longitudes within the bounds of the dataset."
-            )
-    else:
-        kwargs = {}
-        valid_args = ["start_date", "end_date"]
-        for arg in valid_args:
-            kwargs.setdefault(arg, args.get(arg, None))
+class Subset(Operation):
+    def _resolve_params(self, **params):
+        """ Generates a dictionary of subset parameters """
+        time = params.get("time", None)
+        area = params.get("area", None)
+        level = params.get("level", None)
 
-        # subset with time only
-        if any(kwargs.values()):
-            LOGGER.debug(f"subset_time with parameters: {kwargs}")
-            result = subset_time(ds, **kwargs)
+        LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
+
+        # Set up args dictionary to be used by `self._calculate()`
+        args = dict()
+
+        parameters = parameterise(collection=self.ds, time=time, area=area, level=level)
+
+        # For each required parameter, check if the parameter can be accessed as a tuple
+        # If not: then use the dictionary representation for it
+        for parameter in ["time", "area", "level"]:
+
+            if parameters.get(parameter).tuple is not None:
+                args.update(parameters.get(parameter).asdict())
+
+        # Rename start_time and end_time to start_date and end_date to
+        # match clisops.core.subset function parameters.
+        if "start_time" in args:
+            args["start_date"] = args.pop("start_time")
+
+        if "end_time" in args:
+            args["end_date"] = args.pop("end_time")
+
+        self.params = args
+
+    def _calculate(self):
+        if "lon_bnds" and "lat_bnds" in self.params:
+            # subset with space and optionally time and level
+            LOGGER.debug(f"subset_bbox with parameters: {self.params}")
+            ds = check_lon_alignment(self.ds, self.params.get("lon_bnds"))
+            try:
+                result = subset_bbox(ds, **self.params)
+            except NotImplementedError:
+                raise Exception(
+                    f"The input longitude bounds {self.params.get('lon_bnds')} are not within the longitude bounds "
+                    f"of this dataset and rolling could not be completed successfully. "
+                    f"Please re-run your request with longitudes within the bounds of the dataset."
+                )
         else:
-            result = ds
+            kwargs = {}
+            valid_args = ["start_date", "end_date"]
+            for arg in valid_args:
+                kwargs.setdefault(arg, self.params.get(arg, None))
 
-        kwargs = {}
-        valid_args = ["first_level", "last_level"]
-        for arg in valid_args:
-            kwargs.setdefault(arg, args.get(arg, None))
+            # subset with time only
+            if any(kwargs.values()):
+                LOGGER.debug(f"subset_time with parameters: {kwargs}")
+                result = subset_time(self.ds, **kwargs)
+            else:
+                result = self.ds
 
-        # subset with level only
-        if any(kwargs.values()):
-            LOGGER.debug(f"subset_level with parameters: {kwargs}")
-            result = subset_level(result, **kwargs)
+            kwargs = {}
+            valid_args = ["first_level", "last_level"]
+            for arg in valid_args:
+                kwargs.setdefault(arg, self.params.get(arg, None))
 
-    return result
+            # subset with level only
+            if any(kwargs.values()):
+                LOGGER.debug(f"subset_level with parameters: {kwargs}")
+                result = subset_level(result, **kwargs)
+
+        return result
 
 
 def subset(
     ds: Union[xr.Dataset, str, Path],
     *,
-    time: Optional[Union[str, Tuple[str, str]]] = None,
+    time: Optional[Union[str, Tuple[str, str], TimeParameter]] = None,
     area: Optional[
         Union[
             str,
@@ -70,10 +106,13 @@ def subset(
                 Union[int, float, str],
                 Union[int, float, str],
             ],
+            AreaParameter,
         ]
     ] = None,
     level: Optional[
-        Union[str, Tuple[Union[int, float, str], Union[int, float, str]]]
+        Union[
+            str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter
+        ]
     ] = None,
     output_dir: Optional[Union[str, Path]] = None,
     output_type="netcdf",
@@ -85,7 +124,7 @@ def subset(
     Parameters
     ----------
     ds: Union[xr.Dataset, str]
-    time: Optional[Union[str, Tuple[str, str]]] = None,
+    time: Optional[Union[str, Tuple[str, str], TimeParameter]] = None,
     area: Optional[
         Union[
             str,
@@ -95,9 +134,10 @@ def subset(
                 Union[int, float, str],
                 Union[int, float, str],
             ],
+            AreaParameter
         ]
     ] = None,
-    level: Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]]]] = None
+    level: Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter]
     output_dir: Optional[Union[str, Path]] = None
     output_type: {"netcdf", "nc", "zarr", "xarray"}
     split_method: {"time:auto"}
@@ -106,6 +146,8 @@ def subset(
     Returns
     -------
     List[Union[xr.Dataset, str]]
+        A list of the subsetted outputs in the format selected; str corresponds to file paths if the
+        output format selected is a file.
 
     Examples
     --------
@@ -119,30 +161,5 @@ def subset(
     | file_namer: "standard"
 
     """
-
-    if isinstance(ds, (str, Path)):
-        ds = expand_wildcards(ds)
-        ds = open_xr_dataset(ds)
-
-    LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
-    args = utils.map_params(ds, time, area, level)
-
-    subset_ds = _subset(ds, args)
-
-    outputs = list()
-    namer = get_file_namer(file_namer)()
-
-    time_slices = get_time_slices(subset_ds, split_method)
-
-    for tslice in time_slices:
-        if tslice is None:
-            result_ds = subset_ds
-        else:
-            result_ds = subset_ds.sel(time=slice(tslice[0], tslice[1]))
-
-        LOGGER.info(f"Processing subset for times: {tslice}")
-
-        output = get_output(result_ds, output_type, output_dir, namer)
-        outputs.append(output)
-
-    return outputs
+    op = Subset(**locals())
+    return op.process()

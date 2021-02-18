@@ -4,6 +4,7 @@ import pytest
 import geopandas as gpd
 import numpy as np
 import xarray as xr
+from roocs_utils.exceptions import InvalidParameterValue
 
 from clisops.core import average
 from clisops.utils import get_file
@@ -19,7 +20,7 @@ except ImportError:
 @pytest.mark.skipif(xesmf is None, reason="xESMF >= 0.5.2 is needed for average_shape.")
 class TestAverageShape:
     nc_file = get_file("cmip5/tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc")
-    lons_2d_nc_file = get_file("CRCM5/tasmax_bby_198406_se.nc")
+    lons_2d_nc_file = get_file("cmip6/sic_SImon_CCCma-CanESM5_ssp245_r13i1p2f1_2020.nc")
     nc_file_neglons = get_file("NRCANdaily/nrcan_canada_daily_tasmax_1990.nc")
     meridian_geojson = os.path.join(TESTS_DATA, "cmip5", "meridian.json")
     meridian_multi_geojson = os.path.join(TESTS_DATA, "cmip5", "meridian_multi.json")
@@ -64,21 +65,11 @@ class TestAverageShape:
         # Average temperature at surface for region in January (time=0)
         np.testing.assert_array_almost_equal(avg.isel(time=0), 269.25454934)
 
-    # Test not working with cf_xarray 0.3.1 (issue xESMF#55)
-    # Also, we need lon_bnds and lat_bnds, which are unavailable and uninferable.
+    # 2D lat/lon grids are buggy with current xesmf
     # def test_rotated_pole_with_time(self):
     #     ds = xr.open_dataset(self.lons_2d_nc_file)
 
-    #     with pytest.warns(None) as record:
-    #         sub = subset.subset_shape(
-    #             ds,
-    #             self.eastern_canada_geojson,
-    #         )
-
-    #     # Should only have 15 days of data.
-    #     assert len(sub.tasmax) == 15
-    #     # Average max temperature at surface for region on June 1st, 1984 (time=0)
-    #     np.testing.assert_allclose(float(np.mean(sub.tasmax.isel(time=0))), 289.634968)
+    #     avg = average.average_shape(ds.rename(vertices='bounds'), self.eastern_canada_geojson)
 
     def test_average_multiregions(self):
         ds = xr.open_dataset(self.nc_file)
@@ -88,3 +79,77 @@ class TestAverageShape:
             avg.isel(time=0), [268.30972367, 277.23981999, 277.58614891]
         )
         np.testing.assert_array_equal(avg.geom, ["Québec", "Europe", "Newfoundland"])
+
+
+class TestAverageOverDims:
+    nc_file = get_file("cmip5/tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc")
+
+    def test_average_no_dims(self):
+        ds = xr.open_dataset(self.nc_file)
+
+        avg_ds = average.average_over_dims(ds)
+
+        assert avg_ds == ds
+
+    def test_average_one_dim(self):
+        ds = xr.open_dataset(self.nc_file)
+
+        avg_ds = average.average_over_dims(ds, ["latitude"])
+
+        # time has not been averaged
+        assert len(avg_ds.time) == 12
+
+        # lat has been averaged over
+        assert "lat" not in avg_ds.dims
+
+    def test_average_two_dims(self):
+        ds = xr.open_dataset(self.nc_file)
+
+        avg_ds = average.average_over_dims(ds, ["latitude", "time"])
+
+        # time has been averaged over
+        assert "time" not in avg_ds.dims
+
+        # lat has been averaged over
+        assert "lat" not in avg_ds.dims
+
+    def test_average_wrong_dim(self):
+        ds = xr.open_dataset(self.nc_file)
+
+        with pytest.raises(InvalidParameterValue) as exc:
+            average.average_over_dims(ds, ["wrong", "latitude"])
+        assert (
+            str(exc.value)
+            == "Dimensions for averaging must be one of ['time', 'level', 'latitude', 'longitude']"
+        )
+
+    def test_undetected_dim(self):
+        ds = xr.open_dataset(self.nc_file)
+
+        with pytest.raises(InvalidParameterValue) as exc:
+            average.average_over_dims(ds, ["level", "time"])
+        assert (
+            str(exc.value)
+            == "Requested dimensions were not found in input dataset: {'level'}."
+        )
+
+    def test_average_undetected_dim_ignore(self):
+        ds = xr.open_dataset(self.nc_file)
+
+        # exception should not be raised as ignore_undetected_dims set to True
+        avg_ds = average.average_over_dims(
+            ds, ["level", "time"], ignore_undetected_dims=True
+        )
+
+        # time has been averaged over
+        assert "time" not in avg_ds.dims
+
+    def test_average_wrong_format(self):
+        ds = xr.open_dataset(self.nc_file)
+
+        with pytest.raises(InvalidParameterValue) as exc:
+            average.average_over_dims(ds, [0, "time"])
+        assert (
+            str(exc.value)
+            == "Dimensions for averaging must be one of ['time', 'level', 'latitude', 'longitude']"
+        )
