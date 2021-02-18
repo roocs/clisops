@@ -40,6 +40,9 @@ def average_shape(
     the input dataset `ds` most provide those. In opposition to `subset.subset_shape`, the
     weights computed here take partial overlaps and holes into account.
 
+    As xESMF computes the weight masks only once, skipping missing values is not really feasible. Thus,
+    all NaNs propagate when performing the average.
+
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
