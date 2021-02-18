@@ -15,8 +15,10 @@ def get_file_namer(name):
 class _BaseFileNamer(object):
     """ File namer base class"""
 
-    def __init__(self):
+    def __init__(self, replace=None, extra=""):
         self._count = 0
+        self._replace = replace
+        self._extra = extra
 
     def get_file_name(self, ds, fmt=None):
         """ Generate numbered file names """
@@ -89,6 +91,13 @@ class StandardFileNamer(SimpleFileNamer):
 
         if "__derive__extension" in template:
             attrs["__derive__extension"] = get_format_extension(fmt)
+
+        if "extra" in template:
+            attrs["extra"] = self._extra
+
+        if self._replace:
+            for key, value in self._replace.items():
+                attrs[key] = value
 
     def _get_time_range(self, da):
         """ Finds the time range of the data in the output. """

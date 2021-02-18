@@ -1,8 +1,12 @@
 Version History
 ===============
 
-Unreleased
------------
+v0.5.2
+------
+
+New Features
+^^^^^^^^^^^^
+* ``average_over_dims`` added into ``average.core`` and ``average.ops``
 
 Bug Fixes
 ^^^^^^^^^
@@ -18,6 +22,7 @@ Other Changes
 * Added a ``dev`` recipe for pip installations (`pip install clisops[dev]`).
 * Updated pre-commit and pre-commit hooks to newest versions.
 * Migrated linux-based integration builds to GitHub CI.
+* ``clisops.utils.file_namers`` adjusted to allow values to be overwritten and extras to be added to the end before the file extension.
 
 
 v0.5.1 (2021-01-11)
