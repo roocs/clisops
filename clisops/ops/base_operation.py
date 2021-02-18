@@ -85,7 +85,7 @@ class Operation(object):
         namer = self._get_file_namer()
 
         # Process the xarray Dataset - this will (usually) be lazily evaluated so
-        # no actual data will be read 
+        # no actual data will be read
         processed_ds = self._calculate()
 
         # Work out how many outputs should be created based on the size
@@ -99,7 +99,7 @@ class Operation(object):
             # - then just set the result Dataset to the processed Dataset
             if tslice is None:
                 result_ds = processed_ds
-            # If there is a time slice then extract the time slice from the 
+            # If there is a time slice then extract the time slice from the
             # processed Dataset
             else:
                 result_ds = processed_ds.sel(time=slice(tslice[0], tslice[1]))
