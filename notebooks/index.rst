@@ -7,3 +7,4 @@ Examples
 
    subset
    core_subset
+   core_average

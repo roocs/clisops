@@ -7,6 +7,7 @@ v0.5.2
 New Features
 ^^^^^^^^^^^^
 * ``average_over_dims`` added into ``average.core`` and ``average.ops``
+* New ``core.average.average_shape`` + ``core.subset.subset_create_weight_masks``. Depends on `xESMF` >= 0.5.2, which is a new optional dependency.
 
 Bug Fixes
 ^^^^^^^^^
@@ -22,11 +23,12 @@ Other Changes
 * Added a ``dev`` recipe for pip installations (`pip install clisops[dev]`).
 * Updated pre-commit and pre-commit hooks to newest versions.
 * Migrated linux-based integration builds to GitHub CI.
+* Added functionality to ``core.subset.create_mask`` so it can accept ``GeoDataFrames`` with non-integer indexes.
 * ``clisops.utils.file_namers`` adjusted to allow values to be overwritten and extras to be added to the end before the file extension.
 
 
 v0.5.1 (2021-01-11)
-------------------
+-------------------
 
 Breaking Changes
 ^^^^^^^^^^^^^^^^
