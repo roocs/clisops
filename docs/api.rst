@@ -18,14 +18,6 @@ Core average functionality
    :undoc-members:
    :show-inheritance:
 
-Core average functionality
-=========================
-
-.. automodule:: clisops.core.average
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 
 Subset operation
 ================
