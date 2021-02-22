@@ -4,11 +4,14 @@ Version History
 
 v0.6.0 (2021-02-22)
 -------------------
+Breaking Changes
+^^^^^^^^^^^^^^^^
+* New dev dependency: GitPython==3.1.12
+
 New Features
 ^^^^^^^^^^^^
 * ``average_over_dims`` added into ``average.core`` and ``average.ops``
 * New ``core.average.average_shape`` + ``core.subset.subset_create_weight_masks``. Depends on `xESMF` >= 0.5.2, which is a new optional dependency.
-
 
 Bug Fixes
 ^^^^^^^^^
