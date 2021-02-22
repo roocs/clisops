@@ -20,6 +20,6 @@ dependencies:
  - pyproj>=2.5
  - python-dateutil>=2.8.1
  - requests>=2.0
- #- roocs-utils>=0.1.5
- - pip:
-     - roocs-utils @ git+https://github.com/roocs/roocs-utils.git@master#egg=roocs-utils
+ - roocs-utils>=0.2.1
+# - pip:
+#     - roocs-utils @ git+https://github.com/roocs/roocs-utils.git@master#egg=roocs-utils
