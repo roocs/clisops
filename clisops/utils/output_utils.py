@@ -192,31 +192,36 @@ def _get_chunked_dataset(ds):
 
 
 def get_output(ds, output_type, output_dir, namer):
-
     """
     Return output after applying chunking and determining
     the output format and chunking
     """
-    fmt_method = get_format_writer(output_type)
-    LOGGER.info(f"fmt_method={fmt_method}, output_type={output_type}")
+    format_writer = get_format_writer(output_type)
+    LOGGER.info(f"format_writer={format_writer}, output_type={output_type}")
 
-    if not fmt_method:
+    # If there is no writer for this output type, just return the `ds` object
+    if not format_writer:
         LOGGER.info(f"Returning output as {type(ds)}")
         return ds
 
+    # Use the file namer to get the required file name
     file_name = namer.get_file_name(ds, fmt=output_type)
 
+    # Get the chunked Dataset object
     try:
         chunked_ds = _get_chunked_dataset(ds)
-    # catch where "time" attribute cannot be accessed in ds
+    # Catch where "time" attribute is not found in ds:
+    # - just set the chunked Dataset to the original Dataset
     except AttributeError:
         chunked_ds = ds
 
+    # If `output_dir` is not set, use current directory
     if not output_dir:
         output_dir = Path().cwd().expanduser()
     else:
         output_dir = Path(output_dir)
 
+    # Set output path
     output_path = output_dir.joinpath(file_name).as_posix()
 
     # TODO: writing output works currently only in sync mode, see:
@@ -224,9 +229,9 @@ def get_output(ds, output_type, output_dir, namer):
     #  - https://docs.dask.org/en/latest/scheduling.html
     with dask.config.set(scheduler="synchronous"):
 
-        writer = getattr(chunked_ds, fmt_method)
+        writer = getattr(chunked_ds, format_writer)
         delayed_obj = writer(output_path, compute=False)
-        delayed_obj.compute()
+        delayed_obj.compute()  # TypeError: float() argument must be a string or a number, not 'cftime._cftime.Datetime360Day'
 
     LOGGER.info(f"Wrote output file: {output_path}")
     return output_path

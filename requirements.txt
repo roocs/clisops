@@ -12,5 +12,5 @@ pyproj>=2.5
 bottleneck~=1.3.1
 python-dateutil>=2.8.1
 requests>=2.0
-roocs-utils>=0.2.0
+roocs-utils>=0.2.1
 # roocs-utils @ git+https://github.com/roocs/roocs-utils.git@master#egg=roocs-utils

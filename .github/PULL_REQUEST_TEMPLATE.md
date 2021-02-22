@@ -5,7 +5,6 @@
 - [ ] Tests for the changes have been added (for bug fixes / features)
 - [ ] Documentation has been added / updated (for bug fixes / features)
 - [ ] HISTORY.rst has been updated (with summary of main changes)
-- [ ] `bumpversion minor` has been called on this branch
 - [ ] I have added my relevant user information to `AUTHORS.md`
 
 * **What kind of change does this PR introduce?:** <!--(Bug fix, feature, docs update, etc.)-->
@@ -14,4 +13,4 @@
 * **Does this PR introduce a breaking change?:** <!--(Has there been an API change? New dependencies?)-->
 
 
-* **Other information:**: <!--(Relevant discussion threads? Outside documentation pages?)-->
+* **Other information:** <!--(Relevant discussion threads? Outside documentation pages?)-->
