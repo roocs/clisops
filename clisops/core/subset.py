@@ -737,7 +737,9 @@ def subset_shape(
 
     mask_2d = create_mask(
         x_dim=ds_copy.lon, y_dim=ds_copy.lat, poly=poly, wrap_lons=wrap_lons
-    )
+    ).clip(
+        1, 1
+    )  # 1 on the shapes, NaN elsewhere
 
     if np.all(mask_2d.isnull()):
         raise ValueError(
@@ -745,15 +747,29 @@ def subset_shape(
             'Try using the "buffer" option to create an expanded areas or verify polygon.'
         )
 
+    sp_dims = set(mask_2d.dims)  # Spatial dimensions
+
+    # Find the outer mask. When subsetting unconnected shapes,
+    # we dont want to drop the inner NaN regions, it may cause problems downstream.
+    inner_mask = xarray.full_like(mask_2d, True, dtype=bool)
+    for dim in sp_dims:
+        left = mask_2d.bfill(dim).sum(sp_dims - {dim})
+        right = mask_2d.ffill(dim).sum(sp_dims - {dim})
+        # True in the inner zone, False in the outer
+        inner_mask = inner_mask & (left != 0) & (right != 0)
+
+    # inner_mask including the shapes
+    inner_mask = mask_2d.notnull() | inner_mask
+
     # loop through variables
     for v in ds_copy.data_vars:
-        if set.issubset(set(mask_2d.dims), set(ds_copy[v].dims)):
+        if set.issubset(sp_dims, set(ds_copy[v].dims)):
+            # 1st mask values outside shape, then drop values outside inner_mask
             ds_copy[v] = ds_copy[v].where(mask_2d.notnull())
 
-    # Remove coordinates where all values are outside of region mask
-    for dim in mask_2d.dims:
-        mask_2d = mask_2d.dropna(dim, how="all")
-    ds_copy = ds_copy.sel({dim: mask_2d[dim] for dim in mask_2d.dims})
+    mask_2d = mask_2d.where(inner_mask, drop=True)
+    for dim in sp_dims:
+        ds_copy = ds_copy.sel({dim: mask_2d[dim]})
 
     # Add a CRS definition using CF conventions and as a global attribute in CRS_WKT for reference purposes
     ds_copy.attrs["crs"] = raster_crs.to_string()

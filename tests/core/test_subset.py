@@ -738,7 +738,7 @@ class TestSubsetShape:
 
         # Average temperature at surface for region in January (time=0)
         np.testing.assert_array_almost_equal(
-            float(np.mean(sub.tasmax.isel(time=0))), 269.2540588378906
+            float(np.mean(sub.tasmax.isel(time=0))), 269.254059
         )
         # Check that no warnings are raised for meridian crossing
         assert (
@@ -825,6 +825,7 @@ class TestSubsetShape:
         regions.set_index("id")
         ds_sub = subset.subset_shape(ds, shape=regions)
         assert ds_sub.notnull().sum() == 58 + 250 + 22
+        assert ds_sub.tas.shape == (12, 14, 128)
 
     def test_vectorize_touches_polygons(self):
         """Check that points touching the polygon are included in subset."""
