@@ -1,12 +1,20 @@
 Version History
 ===============
 
+v0.6.1 (2021-02-23)
+-------------------
+Bug Fixes
+^^^^^^^^^
+* Add cf-xarray as dependency. This is a dependency of roocs-utils>=0.2.1 so is not a breaking change.
+* Remove python-dateutil, fiona and geojson as dependencies, no longer needed.
+
 
 v0.6.0 (2021-02-22)
 -------------------
 Breaking Changes
 ^^^^^^^^^^^^^^^^
 * New dev dependency: GitPython==3.1.12
+* roocs-utils>=0.2.1 required.
 
 New Features
 ^^^^^^^^^^^^
