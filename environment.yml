@@ -8,10 +8,8 @@ dependencies:
  - xarray>=0.15
  - pandas>=1.0.3
  - cftime>=1.4.1
-# - netCDF4>=1.4
+ - netCDF4>=1.4
  - poppler>=0.67
-# - fiona>=1.8
-# - geojson>=2.5.0
  - shapely>=1.6
  - geopandas>=0.7
  - xesmf>=0.5.2

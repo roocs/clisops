@@ -6,7 +6,7 @@ v0.6.1 (2021-02-22)
 Bug Fixes
 ^^^^^^^^^
 * Add cf-xarray as dependency. This is a dependency of roocs-utils>=0.2.1 so is not a breaking change.
-* Remove python-dateutil, netCDF4, fiona, geopandas and bottleneck as dependencies, no longer needed.
+* Remove python-dateutil, fiona and geojson as dependencies, no longer needed.
 
 
 v0.6.0 (2021-02-22)
