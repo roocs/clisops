@@ -592,7 +592,9 @@ def subset_shape(
     """Subset a DataArray or Dataset spatially (and temporally) using a vector shape and date selection.
 
     Return a subset of a DataArray or Dataset for grid points falling within the area of a Polygon and/or
-    MultiPolygon shape, or grid points along the path of a LineString and/or MultiLineString.
+    MultiPolygon shape, or grid points along the path of a LineString and/or MultiLineString. If the shape
+    consists of several disjoint polygons, the output is cut to the smallest bbox including all
+    polygons.
 
     Parameters
     ----------
