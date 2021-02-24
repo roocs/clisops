@@ -948,10 +948,12 @@ class TestSubsetLevel:
 
         with pytest.warns(None) as record:
             subset.subset_level(da, first_level=81200, last_level=54100.6)
-        assert [str(q.message) for q in record] == [
+
+        msgs = {
             '"first_level" has been nudged to nearest valid level in xarray object.',
             '"last_level" has been nudged to nearest valid level in xarray object.',
-        ]
+        }
+        assert msgs.issubset({str(q.message) for q in record})
 
     def test_level_first_only(self):
         da = xr.open_dataset(self.nc_plev).o3
