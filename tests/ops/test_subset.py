@@ -540,14 +540,21 @@ def test_coord_variables_subsetted_i_j():
         output_type="xarray",
     )
 
-    # check within 10% of expected subset value
-    assert abs(area[1] - float(result[0].lat.min())) / area[1] <= 0.1
-    assert abs(float(result[0].lat.max()) - area[3]) / area[3] <= 0.1
+    print(ds.lon.values.min())
+    print(ds.lon.values.max())
+    print(ds.lon.values)
+    print(result[0].lon.values.min())
+    print(result[0].lon.values.max())
+    print(result[0].lon.values)
 
-    with pytest.raises(AssertionError):
-        assert abs(area[0] - float(result[0].lon.min())) / area[0] <= 0.1
-        assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
-        # working for lat but not lon in this example
+    # # check within 10% of expected subset value
+    # assert abs(area[1] - float(result[0].lat.min())) / area[1] <= 0.1
+    # assert abs(float(result[0].lat.max()) - area[3]) / area[3] <= 0.1
+    #
+    # with pytest.raises(AssertionError):
+    #     assert abs(area[0] - float(result[0].lon.min())) / area[0] <= 0.1
+    #     assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
+    #     # working for lat but not lon in this example
 
 
 def test_coord_variables_subsetted_i_j_test_dataset():
@@ -587,6 +594,13 @@ def test_coord_variables_subsetted_i_j_test_dataset():
     #     assert abs(area[0] - float(result[0].lon.min())) / area[0] <= 0.1
     #     assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
     #     # working for lat but not lon in this example
+
+    print(ds.lat.values.min())
+    print(ds.lat.values.max())
+    print(ds.lat.values)
+    print(result[0].lat.values.min())
+    print(result[0].lat.values.max())
+    print(result[0].lat.values)
 
 
 @pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
