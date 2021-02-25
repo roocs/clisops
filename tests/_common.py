@@ -113,6 +113,11 @@ C3S_CMIP5_TSICE = Path(
     "c3s-cmip5/output1/NCC/NorESM1-ME/rcp60/mon/seaIce/OImon/r1i1p1/tsice/v20120614/*.nc",
 ).as_posix()
 
+TEST_C3S_CMIP5_TSICE = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/gws/nopw/j04/cp4cds1_vol1/data/c3s-cmip5/output1/NCC/NorESM1-ME/rcp60/mon/seaIce/OImon/r1i1p1/tsice/v20120614/*.nc",
+).as_posix()
+
 C3S_CMIP5_TOS = Path(
     REAL_C3S_CMIP5_ARCHIVE_BASE,
     "c3s-cmip5/output1/BCC/bcc-csm1-1-m/historical/mon/ocean/Omon/r1i1p1/tos/v20120709/*.nc",

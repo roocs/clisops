@@ -20,6 +20,7 @@ from .._common import (
     CMIP6_MRSOFC,
     CMIP6_RLDS,
     CMIP6_TA,
+    TEST_C3S_CMIP5_TSICE,
 )
 
 
@@ -547,6 +548,45 @@ def test_coord_variables_subsetted_i_j():
         assert abs(area[0] - float(result[0].lon.min())) / area[0] <= 0.1
         assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
         # working for lat but not lon in this example
+
+
+def test_coord_variables_subsetted_i_j_test_dataset():
+    """
+    check coord variables e.g. lat/lon when original data
+    is on an irregular grid are subsetted correctly in output dataset
+    """
+
+    ds = _load_ds(TEST_C3S_CMIP5_TSICE)
+
+    assert "lat" in ds.coords
+    assert "lon" in ds.coords
+    assert "i" in ds.dims
+    assert "j" in ds.dims
+
+    area = (10.0, 10.0, 350.0, 65.0)
+
+    result = subset(
+        ds=TEST_C3S_CMIP5_TSICE,
+        time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
+        area=area,
+        output_type="xarray",
+    )
+
+    print(ds.lon.values.min())
+    print(ds.lon.values.max())
+    print(ds.lon.values)
+    print(result[0].lon.values.min())
+    print(result[0].lon.values.max())
+    print(result[0].lon.values)
+
+    # # check within 10% of expected subset value
+    # assert abs(area[1] - float(result[0].lat.min())) / area[1] <= 0.1
+    # assert abs(float(result[0].lat.max()) - area[3]) / area[3] <= 0.1
+    #
+    # with pytest.raises(AssertionError):
+    #     assert abs(area[0] - float(result[0].lon.min())) / area[0] <= 0.1
+    #     assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
+    #     # working for lat but not lon in this example
 
 
 @pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
