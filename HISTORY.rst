@@ -1,6 +1,13 @@
 Version History
 ===============
 
+v0.6.2 (unreleased)
+-------------------
+
+Bug Fixes
+^^^^^^^^^
+* Better support for disjoint shapes in ``subset_shape``.
+
 v0.6.1 (2021-02-23)
 -------------------
 Bug Fixes

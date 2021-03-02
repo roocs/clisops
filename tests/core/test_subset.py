@@ -678,14 +678,14 @@ class TestSubsetShape:
 
         # Average temperature at surface for region in January (time=0)
         np.testing.assert_array_almost_equal(
-            float(np.mean(sub.tas.isel(time=0))), 285.064453
+            float(np.mean(sub.tas.isel(time=0))), 285.064, 3
         )
         self.compare_vals(ds, sub, "tas")
 
         poly = gpd.read_file(self.meridian_multi_geojson)
         subtas = subset.subset_shape(ds.tas, poly)
         np.testing.assert_array_almost_equal(
-            float(np.mean(subtas.isel(time=0))), 281.091553
+            float(np.mean(subtas.isel(time=0))), 281.092, 3
         )
 
         assert sub.crs.prime_meridian_name == "Greenwich"
@@ -710,7 +710,7 @@ class TestSubsetShape:
 
         # Average temperature at surface for region in January (time=0)
         np.testing.assert_array_almost_equal(
-            float(np.mean(sub.tas.isel(time=0))), 276.732483
+            float(np.mean(sub.tas.isel(time=0))), 276.732, 3
         )
         # Check that no warnings are raised for meridian crossing
         assert (
@@ -738,7 +738,7 @@ class TestSubsetShape:
 
         # Average temperature at surface for region in January (time=0)
         np.testing.assert_array_almost_equal(
-            float(np.mean(sub.tasmax.isel(time=0))), 269.2540588378906
+            float(np.mean(sub.tasmax.isel(time=0))), 269.254, 3
         )
         # Check that no warnings are raised for meridian crossing
         assert (
@@ -825,6 +825,7 @@ class TestSubsetShape:
         regions.set_index("id")
         ds_sub = subset.subset_shape(ds, shape=regions)
         assert ds_sub.notnull().sum() == 58 + 250 + 22
+        assert ds_sub.tas.shape == (12, 14, 128)
 
     def test_vectorize_touches_polygons(self):
         """Check that points touching the polygon are included in subset."""
@@ -947,14 +948,12 @@ class TestSubsetLevel:
 
         with pytest.warns(None) as record:
             subset.subset_level(da, first_level=81200, last_level=54100.6)
-        assert [str(q.message) for q in record] == [
-            "Variables {'lat_bnds'} not found in object but are referred to in the CF attributes.",
-            "Variables {'lon_bnds'} not found in object but are referred to in the CF attributes.",
+
+        msgs = {
             '"first_level" has been nudged to nearest valid level in xarray object.',
             '"last_level" has been nudged to nearest valid level in xarray object.',
-            "Variables {'lat_bnds'} not found in object but are referred to in the CF attributes.",
-            "Variables {'lon_bnds'} not found in object but are referred to in the CF attributes.",
-        ]
+        }
+        assert msgs.issubset({str(q.message) for q in record})
 
     def test_level_first_only(self):
         da = xr.open_dataset(self.nc_plev).o3
