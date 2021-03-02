@@ -3,7 +3,6 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray as xr
-from matplotlib import pyplot as plt
 from roocs_utils.exceptions import InvalidParameterValue, MissingParameterValue
 from roocs_utils.parameter import area_parameter, time_parameter
 
@@ -21,7 +20,6 @@ from .._common import (
     CMIP6_MRSOFC,
     CMIP6_RLDS,
     CMIP6_TA,
-    TEST_C3S_CMIP5_TSICE,
 )
 
 
@@ -532,7 +530,7 @@ def test_coord_variables_subsetted_i_j():
     assert "i" in ds.dims
     assert "j" in ds.dims
 
-    area = (5.0, 10.0, 20.0, 65.0)
+    area = (50, -65.0, 250.0, 65.0)
 
     result = subset(
         ds=C3S_CMIP5_TSICE,
@@ -541,76 +539,23 @@ def test_coord_variables_subsetted_i_j():
         output_type="xarray",
     )
 
-    print(ds.lon.values.min())
-    print(ds.lon.values.max())
-    print(ds.lon.values)
-    print(result[0].lon.values.min())
-    print(result[0].lon.values.max())
-    print(result[0].lon.values)
+    out = result[0].tsice
+    assert out.values.shape == (180, 318, 178)
 
-    ds.tsice[0].plot()
-    plt.show()
-    # # check within 10% of expected subset value
-    # assert abs(area[1] - float(result[0].lat.min())) / area[1] <= 0.1
-    # assert abs(float(result[0].lat.max()) - area[3]) / area[3] <= 0.1
-    #
-    # with pytest.raises(AssertionError):
-    #     assert abs(area[0] - float(result[0].lon.min())) / area[0] <= 0.1
-    #     assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
-    #     # working for lat but not lon in this example
+    # all lats and lons (hence i and j) have been dropped in these ranges as they are all masked, only time dim remains
+    assert out.where(
+        np.logical_and(out.lon < area[0], out.lon > area[2]), drop=True
+    ).values.shape == (180, 0, 0)
+    assert out.where(
+        np.logical_and(out.lat < area[1], out.lat > area[3]), drop=True
+    ).values.shape == (180, 0, 0)
 
+    mask1 = ~(np.isnan(out.sel(time=out.time[0])))
 
-def test_coord_variables_subsetted_i_j_test_dataset():
-    """
-    check coord variables e.g. lat/lon when original data
-    is on an irregular grid are subsetted correctly in output dataset
-    """
-
-    ds = _load_ds(TEST_C3S_CMIP5_TSICE)
-
-    assert "lat" in ds.coords
-    assert "lon" in ds.coords
-    assert "i" in ds.dims
-    assert "j" in ds.dims
-
-    area = (10.0, 10.0, 350.0, 65.0)
-
-    result = subset(
-        ds=TEST_C3S_CMIP5_TSICE,
-        time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
-        area=area,
-        output_type="xarray",
-    )
-
-    print(ds.lon.values.min())
-    print(ds.lon.values.max())
-    print(ds.lon.values)
-    print(result[0].lon.values.min())
-    print(result[0].lon.values.max())
-    print(result[0].lon.values)
-
-    # # check within 10% of expected subset value
-    # assert abs(area[1] - float(result[0].lat.min())) / area[1] <= 0.1
-    # assert abs(float(result[0].lat.max()) - area[3]) / area[3] <= 0.1
-    #
-    # with pytest.raises(AssertionError):
-    #     assert abs(area[0] - float(result[0].lon.min())) / area[0] <= 0.1
-    #     assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
-    #     # working for lat but not lon in this example
-
-    print(ds.lat.values.min())
-    print(ds.lat.values.max())
-    print(ds.lat.values)
-    print(result[0].lat.values.min())
-    print(result[0].lat.values.max())
-    print(result[0].lat.values)
-
-    # fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(14, 4))
-    # ds.lon.plot(ax=ax1)
-    # ds.lat.plot(ax=ax2)
-
-    result[0].tsice[0].plot()
-    plt.show()
+    assert np.all(out.lon.values[mask1.values] >= area[0])
+    assert np.all(out.lon.values[mask1.values] <= area[2])
+    assert np.all(out.lat.values[mask1.values] >= area[1])
+    assert np.all(out.lat.values[mask1.values] <= area[3])
 
 
 @pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
@@ -636,11 +581,23 @@ def test_coord_variables_subsetted_rlat_rlon():
         output_type="xarray",
     )
 
-    # check within 10% of expected subset value
-    assert abs(area[1] - float(result[0].lat.min())) / area[1] <= 0.1
-    assert abs(float(result[0].lat.max()) - area[3]) / area[3] <= 0.1
-    assert abs(area[0] - float(result[0].lon.min())) / area[0] <= 0.1
-    assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
+    out = result[0].tos
+    assert out.values.shape == (96, 65, 15)
+
+    # all lats and lons (hence rlat and rlon) have been dropped in these ranges as they are all masked, only time dim remains
+    assert out.where(
+        np.logical_and(out.lon < area[0], out.lon > area[2]), drop=True
+    ).values.shape == (96, 0, 0)
+    assert out.where(
+        np.logical_and(out.lat < area[1], out.lat > area[3]), drop=True
+    ).values.shape == (96, 0, 0)
+
+    mask1 = ~(np.isnan(out.sel(time=out.time[0])))
+
+    assert np.all(out.lon.values[mask1.values] >= area[0])
+    assert np.all(out.lon.values[mask1.values] <= area[2])
+    assert np.all(out.lat.values[mask1.values] >= area[1])
+    assert np.all(out.lat.values[mask1.values] <= area[3])
 
 
 def test_time_invariant_subset_standard_name(load_esgf_test_data, tmpdir):
