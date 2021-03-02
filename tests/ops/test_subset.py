@@ -3,6 +3,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray as xr
+from matplotlib import pyplot as plt
 from roocs_utils.exceptions import InvalidParameterValue, MissingParameterValue
 from roocs_utils.parameter import area_parameter, time_parameter
 
@@ -547,6 +548,8 @@ def test_coord_variables_subsetted_i_j():
     print(result[0].lon.values.max())
     print(result[0].lon.values)
 
+    ds.tsice[0].plot()
+    plt.show()
     # # check within 10% of expected subset value
     # assert abs(area[1] - float(result[0].lat.min())) / area[1] <= 0.1
     # assert abs(float(result[0].lat.max()) - area[3]) / area[3] <= 0.1
@@ -601,6 +604,13 @@ def test_coord_variables_subsetted_i_j_test_dataset():
     print(result[0].lat.values.min())
     print(result[0].lat.values.max())
     print(result[0].lat.values)
+
+    # fig, (ax1, ax2) = plt.subplots(ncols=2, figsize=(14, 4))
+    # ds.lon.plot(ax=ax1)
+    # ds.lat.plot(ax=ax2)
+
+    result[0].tsice[0].plot()
+    plt.show()
 
 
 @pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
