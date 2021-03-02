@@ -146,19 +146,6 @@ def test_subset_invalid_area(cmip5_tas_file, tmpdir):
         )
 
 
-@pytest.mark.xfail(reason="cross the 0 degree meridian not implemented.")
-def test_subset_area_with_meridian(cmip5_tas_file, tmpdir):
-    """ Tests clisops subset function with a area subset."""
-    result = subset(
-        ds=cmip5_tas_file,
-        area=(-10.0, 49.0, 10.0, 65.0),
-        output_dir=tmpdir,
-        output_type="nc",
-        file_namer="simple",
-    )
-    _check_output_nc(result)
-
-
 def test_subset_with_time_and_area(cmip5_tas_file, tmpdir):
     """Tests clisops subset function with time and area subsets.
 
@@ -829,7 +816,6 @@ class TestSubset:
             level=(1000.0, 1000.0),
         )
 
-        # have a look at what date was used in clisops master
         assert s.params["start_date"] == "1999-01-01T00:00:00"
         assert s.params["end_date"] == "2100-12-30T00:00:00"
         assert s.params["lon_bnds"] == (-5, 10)
