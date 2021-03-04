@@ -31,7 +31,7 @@ class Regrid(Operation):
         """ Generates a dictionary of regrid parameters """
         # all regrid specific paramterers should be passed in via **params
         # this is where we resolve them and set self.params as a dict or as separate attributes
-        #  this would be where you make use of your other methods/ attributes e.g.
+        # this would be where you make use of your other methods/ attributes e.g.
         # get_grid_in(), get_grid_out() and get_weights() to generate the regridder
 
         # verify here that grid and method are valid inputs.
@@ -49,7 +49,7 @@ class Regrid(Operation):
     def _get_file_namer(self):
         # need to overwrite the file namer to make it clear in the output file name
         # that the dataset has been regridded - see ops.average.Average
-        # extra is hwat will go at the end of the file name before .nc
+        # extra is what will go at the end of the file name before .nc
         # this may not make sense so change if needed
 
         extra = f"_regrid-{self.method}-{self.grid_out}"
@@ -72,8 +72,8 @@ class Regrid(Operation):
         # the result is saved by the process() method on the base class - so I think that would replace your save()?
         regrid_ds = regrid.regrid(
             ds,
-            self.params(regridder, None),
-            self.params(adaptive_masking_threshold, None),
+            self.params("regridder", None),
+            self.params("adaptive_masking_threshold", None),
         )
 
         return regrid_ds
