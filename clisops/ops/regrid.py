@@ -1,6 +1,8 @@
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
+import xarray as xr
+
 from clisops import logging
 from clisops.core import regrid
 from clisops.ops.base_operation import Operation
@@ -72,8 +74,8 @@ class Regrid(Operation):
         # the result is saved by the process() method on the base class - so I think that would replace your save()?
         regrid_ds = regrid.regrid(
             ds,
-            self.params("regridder", None),
-            self.params("adaptive_masking_threshold", None),
+            self.params.get("regridder", None),
+            self.params.get("adaptive_masking_threshold", None),
         )
 
         return regrid_ds
