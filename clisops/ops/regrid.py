@@ -71,6 +71,8 @@ class Regrid(Operation):
 
         # return avg_ds
 
+        # remove halos before regridding
+
         # the result is saved by the process() method on the base class - so I think that would replace your save()?
         regrid_ds = regrid.regrid(
             ds,
