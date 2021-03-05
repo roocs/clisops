@@ -7,4 +7,4 @@ Examples
 
    subset
    core_subset
-   core_average
+   average_over_dims
