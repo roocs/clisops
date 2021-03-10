@@ -20,6 +20,7 @@ from .._common import (
     CMIP6_MRSOFC,
     CMIP6_RLDS,
     CMIP6_TA,
+    CMIP6_TOS,
 )
 
 
@@ -598,6 +599,22 @@ def test_time_invariant_subset_standard_name(load_esgf_test_data, tmpdir):
     )
 
     _check_output_nc(result, fname="mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc")
+
+
+def test_longitude_and_latitude_coords_only(load_esgf_test_data, tmpdir):
+    """ Test subset suceeds when latitude and longitude are coordinates not dims and are not called lat/lon """
+
+    result = subset(
+        ds=CMIP6_TOS,
+        area=(10, -70, 260, 70),
+        output_dir=tmpdir,
+        output_type="nc",
+    )
+
+    _check_output_nc(
+        result,
+        fname="tos_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_18500116-18691216.nc",
+    )
 
 
 def test_time_invariant_subset_simple_name(load_esgf_test_data, tmpdir):

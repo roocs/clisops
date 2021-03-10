@@ -248,7 +248,6 @@ def check_latlon_dimnames(func):
     def func_checker(*args, **kwargs):
         """
         Examine the names of the latitude and longitude dimensions and rename them temporarily.
-
         Checks here ensure that the names supplied via the xarray object dims are changed to be synonymous with subset
         algorithm dimensions, conversions are saved and are then undone to the processed file.
         """
@@ -279,6 +278,52 @@ def check_latlon_dimnames(func):
                         f"lat and lon-like dimensions are not found among arg `{argument}` dimensions: {list(dims)}."
                     )
                 argument = argument.rename(conversion)
+
+            formatted_args.append(argument)
+
+        final = func(*formatted_args, **kwargs)
+
+        for k, v in conversion.items():
+            final = final.rename({v: k})
+
+        return final
+
+    return func_checker
+
+
+def check_latlon_coord_names(func):
+    @wraps(func)
+    def func_checker(*args, **kwargs):
+        """
+        Checks to see if latitude and longitude coordinates exist
+        If they exist, gets the names of the latitude and longitude coordinates and renames them temporarily.
+
+        Checks here ensure that the names supplied via the xarray object dims are changed to be synonymous with subset
+        algorithm dimensions, conversions are saved and are then undone to the processed file.
+        """
+        if range(len(args)) == 0:
+            return func(*args, **kwargs)
+
+        formatted_args = list()
+        conversion = dict()
+        for argument in args:
+            if isinstance(argument, (xarray.DataArray, xarray.Dataset)):
+                coords = argument.cf.coordinates
+            else:
+                logging.info(f"No file or no coordinates found in arg `{argument}`.")
+                formatted_args.append(argument)
+                continue
+
+            lat = coords.get("latitude")[0]
+            lon = coords.get("longitude")[0]
+
+            if not lat or not lon:
+                return func(*args, **kwargs)
+
+            conversion[lat] = "lat"
+            conversion[lon] = "lon"
+
+            argument = argument.rename(conversion)
 
             formatted_args.append(argument)
 
@@ -793,6 +838,7 @@ def subset_shape(
 
 
 @check_latlon_dimnames
+@check_latlon_coord_names
 @check_lons
 def subset_bbox(
     da: Union[xarray.DataArray, xarray.Dataset],
@@ -866,7 +912,6 @@ def subset_bbox(
     elif (("lat" in da.coords) and ("lon" in da.coords)) or (
         ("lat" in da.data_vars) and ("lon" in da.data_vars)
     ):
-
         # Define a bounding box along the dimensions
         # This is an optimization, a simple `where` would work but take longer for large hi-res grids.
         if lat_bnds is not None:

@@ -39,7 +39,7 @@ def check_lon_alignment(ds, lon_bnds):
     low, high = lon_bnds
     lon = get_coord_by_type(ds, "longitude", ignore_aux_coords=False)
     lon = ds.coords[lon.name]
-    lon_min, lon_max = lon.values.min(), lon.values.max()
+    lon_min, lon_max = float(lon.min()), float(lon.max())
 
     # handle the case where there is only one longitude
     if len(lon.values) == 1:
