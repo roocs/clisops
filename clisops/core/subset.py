@@ -298,8 +298,8 @@ def check_latlon_coord_names(func):
         Checks to see if latitude and longitude coordinates exist
         If they exist, gets the names of the latitude and longitude coordinates and renames them temporarily.
 
-        Checks here ensure that the names supplied via the xarray object dims are changed to be synonymous with subset
-        algorithm dimensions, conversions are saved and are then undone to the processed file.
+        Checks here ensure that the names supplied via the xarray object are changed to be synonymous with subset
+        algorithm, conversions are saved and are then undone to the processed file.
         """
         if range(len(args)) == 0:
             return func(*args, **kwargs)
@@ -309,19 +309,24 @@ def check_latlon_coord_names(func):
         for argument in args:
             if isinstance(argument, (xarray.DataArray, xarray.Dataset)):
                 coords = argument.cf.coordinates
+                if not coords:
+                    logging.info("No coordinates found.")
+                    formatted_args.append(argument)
+                    continue
             else:
-                logging.info(f"No file or no coordinates found in arg `{argument}`.")
                 formatted_args.append(argument)
                 continue
 
-            lat = coords.get("latitude")[0]
-            lon = coords.get("longitude")[0]
+            lat = coords.get("latitude")
+            lon = coords.get("longitude")
 
             if not lat or not lon:
-                return func(*args, **kwargs)
+                logging.info("No latitude or longitude coordinates found.")
+                formatted_args.append(argument)
+                continue
 
-            conversion[lat] = "lat"
-            conversion[lon] = "lon"
+            conversion[lat[0]] = "lat"
+            conversion[lon[0]] = "lon"
 
             argument = argument.rename(conversion)
 
