@@ -8,14 +8,12 @@ from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
 from clisops.ops.subset import subset
 
+from .._common import CMIP6_RLDS_ONE_TIME_STEP
+
 
 def open_dataset():
     # use real dataset to get full longitude data
-    ds = (
-        "/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803"
-        "/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc"
-    )
-    return xr.open_dataset(ds)
+    return xr.open_dataset(CMIP6_RLDS_ONE_TIME_STEP)
 
 
 def setup_test():
@@ -41,8 +39,7 @@ def calculate_offset(x):
     return offset
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
-def test_roll_lon_minus_180():
+def test_roll_lon_minus_180(load_esgf_test_data):
     # test rolling longitude by -180
     ds, lon = setup_test()
 
@@ -62,8 +59,7 @@ def test_roll_lon_minus_180():
     assert ds.lon.values.max() == 357.5
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
-def test_roll_lon_minus_180_use_res():
+def test_roll_lon_minus_180_use_res(load_esgf_test_data):
     # test rolling longitude by -180
     ds, lon = setup_test()
 
@@ -90,8 +86,7 @@ def test_roll_lon_minus_180_use_res():
     )
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
-def test_roll_lon_plus_180():
+def test_roll_lon_plus_180(load_esgf_test_data):
     # test rolling longitude by 180
     ds, lon = setup_test()
 
@@ -105,8 +100,7 @@ def test_roll_lon_plus_180():
     assert ds.lon.values.max() == 357.5
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
-def test_roll_lon_plus_180_use_res():
+def test_roll_lon_plus_180_use_res(load_esgf_test_data):
     # test rolling longitude by -180
     ds, lon = setup_test()
 
@@ -122,8 +116,7 @@ def test_roll_lon_plus_180_use_res():
     assert ds.lon.values.max() == 357.5
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
-def test_plus_minus_180_equal():
+def test_plus_minus_180_equal(load_esgf_test_data):
     # check that rolling +180 and -180 gives the same result - when taking the resolution into account
     ds, lon = setup_test()
 
@@ -138,9 +131,8 @@ def test_plus_minus_180_equal():
     np.testing.assert_allclose(ds_minus.rlds.values, ds_plus.rlds.values)
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
 @pytest.mark.skip(reason="rolling now done within subset")
-def test_xarray_roll_lon(tmpdir):
+def test_xarray_roll_lon(tmpdir, load_esgf_test_data):
     ds, lon = setup_test()
 
     # work out how much to roll by
@@ -159,9 +151,8 @@ def test_xarray_roll_lon(tmpdir):
         )
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
 @pytest.mark.skip(reason="rolling now done within subset")
-def test_convert_lon_coords(tmpdir):
+def test_convert_lon_coords(tmpdir, load_esgf_test_data):
     # test reassigning coords to convert to -180 to 180 for comparison
     ds, lon = setup_test()
 
@@ -182,9 +173,8 @@ def test_convert_lon_coords(tmpdir):
     assert result
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
 @pytest.mark.skip(reason="rolling now done within subset")
-def test_roll_convert_lon_coords():
+def test_roll_convert_lon_coords(load_esgf_test_data):
     ds, lon = setup_test()
     # work out how much to roll by
     offset = calculate_offset(180)
@@ -213,8 +203,7 @@ def test_roll_convert_lon_coords():
     assert result
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
-def test_roll_compare_roll_coords():
+def test_roll_compare_roll_coords(load_esgf_test_data):
     ds, lon = setup_test()
     # work out how much to roll by
     offset = calculate_offset(180)
@@ -249,9 +238,8 @@ def test_roll_compare_roll_coords():
     )
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
 @pytest.mark.skip(reason="rolling now done within subset")
-def test_compare_methods():
+def test_compare_methods(load_esgf_test_data):
 
     # run subset with rolling then assigning
     ds, lon = setup_test()
@@ -297,8 +285,7 @@ def test_compare_methods():
     np.testing.assert_allclose(result1[0].rlds.values, result2[0].rlds.values)
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
-def test_irregular_grid_dataset():
+def test_irregular_grid_dataset(load_esgf_test_data):
     ds = xr.open_mfdataset(
         "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/"
         "ssp370/r1i1p1f1/Ofx/sftof/gn/v20191108/*.nc"
@@ -312,8 +299,7 @@ def test_irregular_grid_dataset():
     assert str(exc.value) == "dimensions ['longitude'] do not exist"
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
-def test_3d_grid_dataset():
+def test_3d_grid_dataset(load_esgf_test_data):
     ds = xr.open_mfdataset(
         "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp370/r1i1p1f1/Amon/ta/gn/v20191108/*.nc"
     )
