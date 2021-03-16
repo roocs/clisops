@@ -8,7 +8,7 @@ from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
 from clisops.ops.subset import subset
 
-from .._common import CMIP6_RLDS_ONE_TIME_STEP
+from ._common import CMIP6_RLDS_ONE_TIME_STEP
 
 
 def open_dataset():
@@ -285,6 +285,7 @@ def test_compare_methods(load_esgf_test_data):
     np.testing.assert_allclose(result1[0].rlds.values, result2[0].rlds.values)
 
 
+@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
 def test_irregular_grid_dataset(load_esgf_test_data):
     ds = xr.open_mfdataset(
         "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/"
@@ -299,6 +300,7 @@ def test_irregular_grid_dataset(load_esgf_test_data):
     assert str(exc.value) == "dimensions ['longitude'] do not exist"
 
 
+@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
 def test_3d_grid_dataset(load_esgf_test_data):
     ds = xr.open_mfdataset(
         "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp370/r1i1p1f1/Amon/ta/gn/v20191108/*.nc"
