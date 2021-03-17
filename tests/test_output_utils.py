@@ -1,9 +1,14 @@
+import os
+from glob import glob
 from pathlib import Path
+from unittest import mock
 
 import xarray as xr
 
+from clisops import CONFIG, logging
 from clisops.utils.common import expand_wildcards
-from clisops.utils.output_utils import get_time_slices
+from clisops.utils.file_namers import get_file_namer
+from clisops.utils.output_utils import get_output, get_time_slices
 from tests._common import CMIP5_TAS
 
 
@@ -75,3 +80,83 @@ def test_get_time_slices_multiple_slices(load_esgf_test_data):
 
         if second:
             assert resp[1] == second
+
+
+def test_no_staging_dir(caplog):
+
+    CONFIG["clisops:write"]["output_staging_dir"] = ""
+    ds = _open(CMIP5_TAS)
+    output_path = get_output(
+        ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")()
+    )
+
+    assert "Writing to temporary path: " not in caplog.text
+    assert output_path == "output_001.nc"
+
+    os.remove("output_001.nc")
+
+
+def test_invalid_staging_dir(caplog):
+    # check stagin dir not used with invalid directory
+    CONFIG["clisops:write"]["output_staging_dir"] = "test/not/real/dir/"
+
+    ds = _open(CMIP5_TAS)
+    output_path = get_output(
+        ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")()
+    )
+    assert "Writing to temporary path: " not in caplog.text
+
+    assert output_path == "output_001.nc"
+
+    os.remove("output_001.nc")
+
+
+def test_staging_dir_used(caplog):
+    # check staging dir used when valid directory
+    CONFIG["clisops:write"]["output_staging_dir"] = "tests/"
+
+    ds = _open(CMIP5_TAS)
+
+    output_path = get_output(
+        ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")()
+    )
+
+    assert "Writing to temporary path: tests/" in caplog.text
+    assert output_path == "output_001.nc"
+
+    os.remove("output_001.nc")
+
+
+def test_final_output_path_staging_dir():
+    # check final output file in correct location with a staging directory used
+    CONFIG["clisops:write"]["output_staging_dir"] = "tests/"
+
+    ds = _open(CMIP5_TAS)
+    get_output(ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")())
+
+    assert os.path.isfile("./output_001.nc")
+
+    os.remove("output_001.nc")
+
+
+def test_final_output_path_no_staging_dir():
+    # check final output file in correct location with a staging directory is not used
+    ds = _open(CMIP5_TAS)
+    get_output(ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")())
+
+    assert os.path.isfile("./output_001.nc")
+
+    os.remove("output_001.nc")
+
+
+def test_tmp_dir_deleted():
+    # check temporary directory under stagin dir gets deleted after data has bee staged
+    CONFIG["clisops:write"]["output_staging_dir"] = "tests/"
+
+    ds = _open(CMIP5_TAS)
+    get_output(ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")())
+
+    # check that no tmpdir directories exist
+    assert glob("tests/tmp*") == []
+
+    os.remove("output_001.nc")
