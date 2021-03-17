@@ -9,6 +9,10 @@ Bug Fixes
 * Better support for disjoint shapes in ``subset_shape``.
 * Identify latitude and longitude using ``cf-xarray`` rather than by "lat" and "lon"
 
+New Features
+^^^^^^^^^^^^
+* Add ``output_staging_dir`` option in `etc/roocs.ini`, to write files to initially before moving them to the requested output_dir.
+
 v0.6.1 (2021-02-23)
 -------------------
 Bug Fixes
