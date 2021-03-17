@@ -538,7 +538,6 @@ def create_weight_masks(
     return masks
 
 
-# @check_latlon_dimnames
 def subset_shape(
     ds: Union[xarray.DataArray, xarray.Dataset],
     shape: Union[str, Path, gpd.GeoDataFrame],
@@ -756,7 +755,6 @@ def subset_shape(
     return ds_copy
 
 
-# @check_latlon_dimnames
 @check_lons
 def subset_bbox(
     da: Union[xarray.DataArray, xarray.Dataset],
@@ -814,37 +812,36 @@ def subset_bbox(
     # Subset lat lon
     >>> prSub = subset_bbox(ds.pr, lon_bnds=[-75, -70], lat_bnds=[40, 45])  # doctest: +SKIP
     """
-
-    lat = get_lat(da)
-    lon = get_lon(da)
+    lat = get_lat(da).name
+    lon = get_lon(da).name
 
     # Rectilinear case (lat and lon are the 1D dimensions)
-    if (lat.name in da.dims) or (lon.name in da.dims):
+    if (lat in da.dims) or (lon in da.dims):
 
-        if lat.name in da.dims and lat_bnds is not None:
-            lat_bnds = _check_desc_coords(coord=lat, bounds=lat_bnds, dim=lat.name)
-            da = da.sel({lat.name: slice(*lat_bnds)})
+        if lat in da.dims and lat_bnds is not None:
+            lat_bnds = _check_desc_coords(coord=da[lat], bounds=lat_bnds, dim=lat)
+            da = da.sel({lat: slice(*lat_bnds)})
 
-        if lon.name in da.dims and lon_bnds is not None:
-            lon_bnds = _check_desc_coords(coord=lon, bounds=lon_bnds, dim=lon.name)
-            da = da.sel({lon.name: slice(*lon_bnds)})
+        if lon in da.dims and lon_bnds is not None:
+            lon_bnds = _check_desc_coords(coord=da[lon], bounds=lon_bnds, dim=lon)
+            da = da.sel({lon: slice(*lon_bnds)})
 
     # Curvilinear case (lat and lon are coordinates, not dimensions)
-    elif ((lat.name in da.coords) and (lon.name in da.coords)) or (
-        (lat.name in da.data_vars) and (lon.name in da.data_vars)
+    elif ((lat in da.coords) and (lon in da.coords)) or (
+        (lat in da.data_vars) and (lon in da.data_vars)
     ):
         # Define a bounding box along the dimensions
         # This is an optimization, a simple `where` would work but take longer for large hi-res grids.
         if lat_bnds is not None:
-            lat_b = assign_bounds(lat_bnds, lat)
-            lat_cond = in_bounds(lat_b, lat)
+            lat_b = assign_bounds(lat_bnds, da[lat])
+            lat_cond = in_bounds(lat_b, da[lat])
         else:
             lat_b = None
             lat_cond = True
 
         if lon_bnds is not None:
-            lon_b = assign_bounds(lon_bnds, lon)
-            lon_cond = in_bounds(lon_b, lon)
+            lon_b = assign_bounds(lon_bnds, da[lon])
+            lon_cond = in_bounds(lon_b, da[lon])
         else:
             lon_b = None
             lon_cond = True
@@ -852,7 +849,7 @@ def subset_bbox(
         # Crop original array using slice, which is faster than `where`.
         ind = np.where(lon_cond & lat_cond)
         args = dict()
-        for i, d in enumerate(lat.dims):
+        for i, d in enumerate(da[lat].dims):
             coords = da[d][ind[i]]
             bnds = _check_desc_coords(
                 coord=da[d], bounds=[coords.min().values, coords.max().values], dim=d
@@ -864,17 +861,17 @@ def subset_bbox(
 
         # Recompute condition on cropped coordinates
         if lat_bnds is not None:
-            lat_cond = in_bounds(lat_b, lat)
+            lat_cond = in_bounds(lat_b, da[lat])
 
         if lon_bnds is not None:
-            lon_cond = in_bounds(lon_b, lon)
+            lon_cond = in_bounds(lon_b, da[lon])
 
         # Mask coordinates outside the bounding box
         if isinstance(da, xarray.Dataset):
             # If da is a xr.DataSet Mask only variables that have the
             # same 2d coordinates as lat (or lon)
             for var in da.data_vars:
-                if set(lat.dims).issubset(da[var].dims):
+                if set(da[lat].dims).issubset(da[var].dims):
                     da[var] = da[var].where(lon_cond & lat_cond, drop=True)
         else:
 
@@ -980,7 +977,6 @@ def _check_crs_compatibility(shape_crs: CRS, raster_crs: CRS):
             )
 
 
-# @check_latlon_dimnames
 @check_lons
 @convert_lat_lon_to_da
 def subset_gridpoint(
