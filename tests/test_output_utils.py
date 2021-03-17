@@ -1,4 +1,5 @@
 import os
+import tempfile
 from glob import glob
 from pathlib import Path
 from unittest import mock
@@ -10,6 +11,8 @@ from clisops.utils.common import expand_wildcards
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import get_output, get_time_slices
 from tests._common import CMIP5_TAS
+
+LOGGER = logging.getLogger(__file__)
 
 
 def _open(coll):
@@ -80,6 +83,47 @@ def test_get_time_slices_multiple_slices(load_esgf_test_data):
 
         if second:
             assert resp[1] == second
+
+
+def test_tmp_dir_created_with_staging_dir():
+    # copy part of function that creates tmp dir to check that it is created
+    CONFIG["clisops:write"]["output_staging_dir"] = "tests/"
+    staging_dir = CONFIG["clisops:write"].get("output_staging_dir", "")
+
+    output_path = "./output_001.nc"
+
+    if os.path.isdir(staging_dir):
+        tmp_dir = tempfile.TemporaryDirectory(dir=staging_dir)
+        fname = os.path.basename(output_path)
+        target_path = os.path.join(tmp_dir.name, fname)
+        LOGGER.info(f"Writing to temporary path: {target_path}")
+    else:
+        target_path = output_path
+
+    assert target_path != "output_001.nc"
+    assert len(glob("tests/tmp*")) == 1
+    assert "tests/tmp" in glob("tests/tmp*")[0]
+
+    # delete the temporary directory
+    tmp_dir.cleanup()
+
+
+def test_tmp_dir_not_created_with_no_staging_dir():
+    # copy part of function that creates tmp dir to check that it is not created when no staging dir
+    CONFIG["clisops:write"]["output_staging_dir"] = ""
+    staging_dir = CONFIG["clisops:write"].get("output_staging_dir", "")
+
+    output_path = "./output_001.nc"
+
+    if os.path.isdir(staging_dir):
+        tmp_dir = tempfile.TemporaryDirectory(dir=staging_dir)
+        fname = os.path.basename(output_path)
+        target_path = os.path.join(tmp_dir.name, fname)
+        LOGGER.info(f"Writing to temporary path: {target_path}")
+    else:
+        target_path = output_path
+
+    assert target_path == "./output_001.nc"
 
 
 def test_no_staging_dir(caplog):

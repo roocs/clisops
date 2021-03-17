@@ -239,7 +239,6 @@ def get_output(ds, output_type, output_dir, namer):
         LOGGER.info(f"Writing to temporary path: {target_path}")
     else:
         target_path = output_path
-        LOGGER.info(f"Writing to path: {target_path}")
 
     # TODO: writing output works currently only in sync mode, see:
     #  - https://github.com/roocs/rook/issues/55
