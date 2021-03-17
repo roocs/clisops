@@ -117,3 +117,9 @@ C3S_CMIP5_TOS = Path(
     REAL_C3S_CMIP5_ARCHIVE_BASE,
     "c3s-cmip5/output1/BCC/bcc-csm1-1-m/historical/mon/ocean/Omon/r1i1p1/tos/v20120709/*.nc",
 ).as_posix()
+
+
+CMIP6_TOS = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tos/gn/v20190710/tos_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001-186912.nc",
+).as_posix()
