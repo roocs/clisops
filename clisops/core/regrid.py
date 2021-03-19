@@ -3,7 +3,7 @@ import warnings
 from pathlib import Path
 from typing import Tuple, Union
 
-import cfxarray as cfxr
+import cf_xarray as cfxr
 import numpy as np
 import xarray as xr
 import xesmf as xe
@@ -15,6 +15,11 @@ from clisops.utils import dataset_utils
 
 def regrid(ds, regridder, adaptive_masking_threshold):
     pass
+
+
+class Weights:
+    def __init__(self, from_id, grid_in, grid_out, method, format):
+        pass
 
 
 class Grid:
@@ -59,6 +64,8 @@ class Grid:
         # Detect latitude and longitude coordinates
         self.lat = self.detect_coordinate("latitude")
         self.lon = self.detect_coordinate("longitude")
+        self.lat_bnds = self.detect_bounds(self.lat)
+        self.lon_bnds = self.detect_bounds(self.lon)
 
         # Detect type
         if self.type == "":
@@ -71,7 +78,7 @@ class Grid:
         self.grid_remove_halo()
 
         # Lon/Lat dimension sizes
-        self.nlon, self.nlat, self.ncells = self.detect_shape()
+        self.nlat, self.nlon, self.ncells = self.detect_shape()
 
         # Compute bounds if not specified and if possible
         if self.lat_bnds == "" or self.lon_bnds == "":
@@ -89,14 +96,17 @@ class Grid:
 
     def __repr__(self):
         info = (
-            "clisops Grid\n" + "Lat x Lon:      {} x {}\n".format(self.nlat, self.nlon)
-            if self.type != "irregular"
-            else ""
+            "clisops Grid\n"
+            + (
+                "Lat x Lon:      {} x {}\n".format(self.nlat, self.nlon)
+                if self.type != "irregular"
+                else ""
+            )
             + "Gridcells:      {}\n".format(self.ncells)
             + "Format:         {}\n".format(self.format)
-            + "Type:           {}\n".format(self.format)
-            + "Extent:         {}\n".format(self.format)
-            + "Source:         {}\n".format(self.format)
+            + "Type:           {}\n".format(self.type)
+            + "Extent:         {}\n".format(self.extent)
+            + "Source:         {}\n".format(self.source)
             + "Bounds?         {}\n".format(self.lat_bnds != "" and self.lon_bnds != "")
             + "Permanent Mask: {}".format(self.mask)
         )
@@ -279,6 +289,7 @@ class Grid:
                         "long_name": "longitude_bounds",
                         "units": "degrees_east",
                     }
+                    self.format = "CF"
                     return ds_ref
 
                 else:
@@ -294,18 +305,26 @@ class Grid:
         elif self.format == "xESMF":
             if grid_format == "CF":
                 # ToDo: Check if it is regular_lat_lon, Check dimension sizes
+                # Define lat, lon, lat_bnds, lon_bnds
                 lat = self.ds.lat[:, 0]
                 lon = self.ds.lon[0, :]
-                vertex_lat = np.zeros((lat.shape[0], lon.shape[0], 4), dtype="double")
-                vertex_lon = np.zeros((lat.shape[0], lon.shape[0], 4), dtype="double")
                 lat_bnds = np.zeros((lat.shape[0], 2), dtype="double")
                 lon_bnds = np.zeros((lon.shape[0], 2), dtype="double")
-                vertex_lat = _reravel(vertex_lat, ds.lat_b, lon.shape[0], lat.shape[0])
-                vertex_lon = _reravel(vertex_lon, ds.lon_b, lon.shape[0], lat.shape[0])
-                lat_bnds[:, 0] = np.min(vertex_lat[:, 0, :], axis=1)
-                lat_bnds[:, 1] = np.max(vertex_lat[:, 0, :], axis=1)
-                lon_bnds[:, 0] = np.min(vertex_lon[0, :, :], axis=1)
-                lon_bnds[:, 1] = np.max(vertex_lon[0, :, :], axis=1)
+                # From (N+1, M+1) shaped bounds to (N, M, 4) shaped vertices
+                lat_vertices = cfxr.vertices_to_bounds(
+                    self.ds.lat_b, ("bnds", "lat", "lon")
+                ).values
+                lon_vertices = cfxr.vertices_to_bounds(
+                    self.ds.lon_b, ("bnds", "lat", "lon")
+                ).values
+                lat_vertices = np.moveaxis(lat_vertices, 0, -1)
+                lon_vertices = np.moveaxis(lon_vertices, 0, -1)
+                # From (N, M, 4) shaped vertices to (N, 2)  and (M, 2) shaped bounds
+                lat_bnds[:, 0] = np.min(lat_vertices[:, 0, :], axis=1)
+                lat_bnds[:, 1] = np.max(lat_vertices[:, 0, :], axis=1)
+                lon_bnds[:, 0] = np.min(lon_vertices[0, :, :], axis=1)
+                lon_bnds[:, 1] = np.max(lon_vertices[0, :, :], axis=1)
+                # Create dataset
                 ds_ref = xr.Dataset(
                     data_vars={},
                     coords={
@@ -315,9 +334,11 @@ class Grid:
                         "lon_bnds": (["lon", "bnds"], lon_bnds),
                     },
                 )
+
                 # ToDo: Case of other units (rad), Case of "degrees_south/west"?!
                 # ToDo: Reformat data variables if in ds, apply imask on data variables
                 # ToDo: vertical axis, time axis, ... ?!
+                # Add variable attributes to the coordinate variables
                 ds_ref["lat"].attrs = {
                     "bounds": "lat_bnds",
                     "units": "degrees_north",
@@ -340,6 +361,7 @@ class Grid:
                     "long_name": "longitude_bounds",
                     "units": "degrees_east",
                 }
+                self.format = "CF"
                 return ds_ref
             else:
                 raise Exception(
@@ -417,7 +439,7 @@ class Grid:
     def detect_type(self):
         # TODO: Extend for other formats for regular_lat_lon, curvilinear / rotated_pole, irregular
         if self.format == "CF":
-            if len(self.ds[self.lat].dims) == 1 and len(self.ds[self.lon].dims) == 1:
+            if self.ds[self.lat].ndim == 1 and self.ds[self.lon].ndim == 1:
                 lat_1D = self.ds[self.lat].dims[0]
                 lon_1D = self.ds[self.lon].dims[0]
                 # if lat_1D in ds[var].dims and lon_1D in ds[var].dims:
@@ -431,7 +453,7 @@ class Grid:
                         lat_1D == lon_1D
                         and all(
                             [
-                                len(self.ds[bnds].dims) == 2
+                                self.ds[bnds].ndim == 2
                                 for bnds in [self.lon_bnds, self.lat_bnds]
                             ]
                         )
@@ -448,7 +470,7 @@ class Grid:
                         return "irregular"
                     elif all(
                         [
-                            len(self.ds[bnds].dims) == 2
+                            self.ds[bnds].ndim == 2
                             for bnds in [self.lon_bnds, self.lat_bnds]
                         ]
                     ) and all(
@@ -465,7 +487,7 @@ class Grid:
                         raise Exception("The grid type is not supported.")
                 # else:
                 #    raise Exception("The grid type is not supported.")
-            elif len(self.ds[self.lat].dims) == 2 and len(self.ds[self.lon].dims) == 2:
+            elif self.ds[self.lat].ndim == 2 and self.ds[self.lon].ndim == 2:
                 # Test for curvilinear or restructure lat/lon coordinate variables
                 # ToDo: Check if regular_lat_lon despite 2D
                 #  - requires additional function checking
@@ -526,7 +548,7 @@ class Grid:
         # ds=dataset_utils.check_lon_alignment(ds, (0,360)) # does not work yet for this purpose
 
         # Approximate the resolution in x direction
-        if len(self.ds[self.lon].shape) == 2:
+        if self.ds[self.lon].ndim == 2:
             approx_xres = np.amax(
                 [
                     np.average(
@@ -543,7 +565,7 @@ class Grid:
                     ),
                 ]
             )
-        elif len(self.ds[self.lon].shape) == 1:
+        elif self.ds[self.lon].ndim == 1:
             approx_xres = np.average(
                 np.absolute(
                     self.ds[self.lon].values[1:] - self.ds[self.lon].values[:-1]
@@ -603,6 +625,35 @@ class Grid:
         # ds_in_LR_mask["mask"]=xr.where(~np.isnan(ds_LR['tos'].isel(time=0)), 1, 0).astype(int)
         return None
 
+    def detect_shape(self):
+        if self.ds[self.lon].ndim != self.ds[self.lon].ndim:
+            raise Exception(
+                "The coordinate variables %s and %s have not the same number of dimensions!"
+                % (self.lat, self.lon)
+            )
+        elif self.ds[self.lat].ndim == 2:
+            nlat = self.ds[self.lat].shape[0]
+            nlon = self.ds[self.lon].shape[1]
+            ncells = nlat * nlon
+        elif self.ds[self.lat].ndim == 1:
+            if (
+                self.ds[self.lat].shape == self.ds[self.lon].shape
+                and self.type == "irregular"
+            ):
+                nlat = self.ds[self.lat].shape[0]
+                nlon = nlat
+                ncells = nlat
+            else:
+                nlat = self.ds[self.lat].shape[0]
+                nlon = self.ds[self.lon].shape[0]
+                ncells = nlat * nlon
+        else:
+            raise Exception(
+                "The coordinate variables %s and %s are not 1- or 2-dimensional!"
+                % (self.lat, self.lon)
+            )
+        return (nlat, nlon, ncells)
+
     def detect_coordinate(self, coordinate):
         """
         Using cf_xarray function. Might as well use a roocs_utils function, like:
@@ -641,17 +692,98 @@ class Grid:
         # 34d function
         # Computation may fail, in this case, raise Warning
         # Without bounds, regrid method 'conservative' cannot be used
-        pass
+        if self.format == "CF":
+            if self.type == "regular_lat_lon":
+                if (
+                    np.amin(self.ds[self.lat].values) < -90.0
+                    or np.amax(self.ds[self.lat].values) > 90.0
+                ):
+                    warnings.warn("At least one latitude value exceeds [-90,90].")
+                    return
+                if self.nlat < 3 or self.nlon < 3:
+                    warnings.warn(
+                        "The latitude and longitude axes need at least 3 entries"
+                        " to be able to calculate the bounds."
+                    )
+                    return
+                # Assuming lat / lon values are strong monotonically decreasing/increasing
+                # Latitude / Longitude bounds shaped (nlat, 2) / (nlon, 2)
+                lat_bnds = np.zeros((self.ds[self.lat].shape[0], 2), dtype="double")
+                lon_bnds = np.zeros((self.ds[self.lon].shape[0], 2), dtype="double")
+                # lat_bnds
+                lat_bnds[1:, 0] = (
+                    self.ds[self.lat].values[:-1] + self.ds[self.lat].values[1:]
+                ) / 2.0
+                lat_bnds[:-1, 1] = lat_bnds[1:, 0]
+                lat_bnds[0, 0] = self.ds[self.lat].values[0] - lat_bnds[1, 0]
+                lat_bnds[-1, 1] = (
+                    self.ds[self.lat].values[-1]
+                    - lat_bnds[-1, 0]
+                    + self.ds[self.lat].values[-1]
+                )
+                lat_bnds = np.where(lat_bnds < -90.0, -90.0, lat_bnds)
+                lat_bnds = np.where(lat_bnds > 90.0, 90.0, lat_bnds)
+                # lon_bnds
+                lon_bnds[1:, 0] = (
+                    self.ds[self.lon].values[:-1] + self.ds[self.lon].values[1:]
+                ) / 2.0
+                lon_bnds[:-1, 1] = lon_bnds[1:, 0]
+                lon_bnds[0, 0] = self.ds[self.lon].values[0] - lon_bnds[1, 0]
+                lon_bnds[-1, 1] = (
+                    self.ds[self.lon].values[-1]
+                    - lon_bnds[-1, 0]
+                    + self.ds[self.lon].values[-1]
+                )
+                # Add to the dataset as coordinates and attach variable attributes
+                self.ds["lat_bnds"] = ((self.ds[self.lat].dims[0], "bnds"), lat_bnds)
+                self.ds["lon_bnds"] = ((self.ds[self.lon].dims[0], "bnds"), lon_bnds)
+                self.ds.set_coords(["lat_bnds", "lon_bnds"])
+                self.ds[self.lat].attrs["bounds"] = "lat_bnds"
+                self.ds[self.lon].attrs["bounds"] = "lon_bnds"
+                self.ds["lat_bnds"].attrs = {
+                    "long_name": "latitude_bounds",
+                    "units": "degrees_north",
+                }
+                self.ds["lon_bnds"].attrs = {
+                    "long_name": "longitude_bounds",
+                    "units": "degrees_east",
+                }
+                # Set the Class attributes
+                self.lat_bnds = "lat_bnds"
+                self.lon_bnds = "lon_bnds"
+                # Issue warning
+                warnings.warn(
+                    "Successfully calculated a set of latitude and longitude bounds."
+                    " They might, however, differ from the actual bounds"
+                    " of the model grid!"
+                )
+            else:
+                warnings.warn(
+                    "The bounds can not be calculated for grid_type '%s' and format '%s'."
+                    % (self.type, self.format)
+                )
+        else:
+            warnings.warn(
+                "The bounds can not be calculated for grid_type '%s' and format '%s'."
+                % (self.type, self.format)
+            )
+
+
+"""
+#Functions and code from the regrid-prototype notebooks that might
+#be useful at some point in setting this up.
 
 
 def _reravel(vertex_bounds, bounds, M, N):
-    """
+
     Helper function to go from the M+1, N+1 style to
     the vertex style M, N, 4 of lat/lon bounds.
 
     Basically inverted _unravel as found on
     https://nbviewer.jupyter.org/gist/bradyrx/421627385666eefdb0a20567c2da9976
-    """
+    Using cf_xarray.vertices_to_bounds instead,
+    the following solution yet leaves out gridpoints
+
     vertex_bounds[:, :, 0] = bounds[0:N, 0:M]
 
     # fill in missing row
@@ -661,14 +793,6 @@ def _reravel(vertex_bounds, bounds, M, N):
     # fill in remaining element
     vertex_bounds[N - 1, M - 1, 3] = bounds[N, M]
     return vertex_bounds
-
-
-"""
-#Functions and code from the regrid-prototype notebooks that might
-#be useful at some point in setting this up.
-
-
-
 
 
 
@@ -1007,10 +1131,6 @@ def _unravel(new_bounds, vertex_bounds, M, N):
     new_bounds[N, M] = vertex_bounds[N-1, M-1, 3]
     return new_bounds
 
-
-class Weights:
-    def __init__(self, from_id, grid_in, grid_out, method, format):
-        pass
 
 # In case of problems, activate ESMF verbose mode
 import ESMF
