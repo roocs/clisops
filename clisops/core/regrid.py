@@ -3,7 +3,7 @@ import warnings
 from pathlib import Path
 from typing import Tuple, Union
 
-import cfxarray as cfxr
+import cf_xarray as cfxr
 import numpy as np
 import xarray as xr
 import xesmf as xe
@@ -70,8 +70,8 @@ class Grid:
         # Cut off halo (duplicate grid rows / columns)
         self.grid_remove_halo()
 
-        # Lon/Lat dimension sizes
-        self.nlon, self.nlat, self.ncells = self.detect_shape()
+        # # Lon/Lat dimension sizes
+        # self.nlon, self.nlat, self.ncells = self.detect_shape()
 
         # Compute bounds if not specified and if possible
         if self.lat_bnds == "" or self.lon_bnds == "":
@@ -82,7 +82,7 @@ class Grid:
             self.extent = self.detect_extent()
 
         # Get a permanent mask if there is
-        self.mask = self.detect_mask()
+        # self.mask = self.detect_mask()
 
     def __str__(self):
         return self.__repr__()
@@ -133,7 +133,7 @@ class Grid:
     def grid_from_instructor(self, grid_instructor):
         if len(grid_instructor) not in [1, 2, 3, 6]:
             raise Exception(
-                "The grid_instructor has to be a tuple of length 1, 2, 5 or 6!"
+                "The grid_instructor has to be a tuple of length 1, 2, 3 or 6!"
             )
         elif len(grid_instructor) in [1, 2]:
             grid = xe.util.grid_global(grid_instructor[0], grid_instructor[-1])
@@ -300,8 +300,12 @@ class Grid:
                 vertex_lon = np.zeros((lat.shape[0], lon.shape[0], 4), dtype="double")
                 lat_bnds = np.zeros((lat.shape[0], 2), dtype="double")
                 lon_bnds = np.zeros((lon.shape[0], 2), dtype="double")
-                vertex_lat = _reravel(vertex_lat, ds.lat_b, lon.shape[0], lat.shape[0])
-                vertex_lon = _reravel(vertex_lon, ds.lon_b, lon.shape[0], lat.shape[0])
+                vertex_lat = _reravel(
+                    vertex_lat, self.ds.lat_b, lon.shape[0], lat.shape[0]
+                )
+                vertex_lon = _reravel(
+                    vertex_lon, self.ds.lon_b, lon.shape[0], lat.shape[0]
+                )
                 lat_bnds[:, 0] = np.min(vertex_lat[:, 0, :], axis=1)
                 lat_bnds[:, 1] = np.max(vertex_lat[:, 0, :], axis=1)
                 lon_bnds[:, 0] = np.min(vertex_lon[0, :, :], axis=1)

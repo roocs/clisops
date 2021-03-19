@@ -128,3 +128,19 @@ CMIP6_TOS = Path(
     MINI_ESGF_CACHE_DIR,
     "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tos/gn/v20190710/tos_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001-186912.nc",
 ).as_posix()
+
+
+# test daatsets used for regridding tests - one time step, full lat/lon
+# cmip6 atmosphere grid
+# x-res = 2.0
+CMIP6_TAS_ONE_TIME_STEP = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/badc/cmip6/data/CMIP6/CMIP/CAS/FGOALS-g3/historical/r1i1p1f1/Amon/tas/gn/v20190818/tas_Amon_FGOALS-g3_historical_r1i1p1f1_gn_185001.nc",
+).as_posix()
+
+# cmip6 ocean grids
+# x-res = 0.90
+CMIP6_TOS_ONE_TIME_STEP = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Omon/tos/gn/v20190710/tos_Omon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_185001.nc",
+).as_posix()
