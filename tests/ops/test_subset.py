@@ -20,6 +20,7 @@ from .._common import (
     CMIP6_MRSOFC,
     CMIP6_RLDS,
     CMIP6_TA,
+    CMIP6_TOS,
 )
 
 
@@ -144,19 +145,6 @@ def test_subset_invalid_area(cmip5_tas_file, tmpdir):
             area=("zero", 49.0, 10.0, 65.0),
             output_dir=tmpdir,
         )
-
-
-@pytest.mark.xfail(reason="cross the 0 degree meridian not implemented.")
-def test_subset_area_with_meridian(cmip5_tas_file, tmpdir):
-    """ Tests clisops subset function with a area subset."""
-    result = subset(
-        ds=cmip5_tas_file,
-        area=(-10.0, 49.0, 10.0, 65.0),
-        output_dir=tmpdir,
-        output_type="nc",
-        file_namer="simple",
-    )
-    _check_output_nc(result)
 
 
 def test_subset_with_time_and_area(cmip5_tas_file, tmpdir):
@@ -530,7 +518,7 @@ def test_coord_variables_subsetted_i_j():
     assert "i" in ds.dims
     assert "j" in ds.dims
 
-    area = (5.0, 10.0, 20.0, 65.0)
+    area = (50, -65.0, 250.0, 65.0)
 
     result = subset(
         ds=C3S_CMIP5_TSICE,
@@ -539,14 +527,23 @@ def test_coord_variables_subsetted_i_j():
         output_type="xarray",
     )
 
-    # check within 10% of expected subset value
-    assert abs(area[1] - float(result[0].lat.min())) / area[1] <= 0.1
-    assert abs(float(result[0].lat.max()) - area[3]) / area[3] <= 0.1
+    out = result[0].tsice
+    assert out.values.shape == (180, 318, 178)
 
-    with pytest.raises(AssertionError):
-        assert abs(area[0] - float(result[0].lon.min())) / area[0] <= 0.1
-        assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
-        # working for lat but not lon in this example
+    # all lats and lons (hence i and j) have been dropped in these ranges as they are all masked, only time dim remains
+    assert out.where(
+        np.logical_and(out.lon < area[0], out.lon > area[2]), drop=True
+    ).values.shape == (180, 0, 0)
+    assert out.where(
+        np.logical_and(out.lat < area[1], out.lat > area[3]), drop=True
+    ).values.shape == (180, 0, 0)
+
+    mask1 = ~(np.isnan(out.sel(time=out.time[0])))
+
+    assert np.all(out.lon.values[mask1.values] >= area[0])
+    assert np.all(out.lon.values[mask1.values] <= area[2])
+    assert np.all(out.lat.values[mask1.values] >= area[1])
+    assert np.all(out.lat.values[mask1.values] <= area[3])
 
 
 @pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
@@ -572,11 +569,23 @@ def test_coord_variables_subsetted_rlat_rlon():
         output_type="xarray",
     )
 
-    # check within 10% of expected subset value
-    assert abs(area[1] - float(result[0].lat.min())) / area[1] <= 0.1
-    assert abs(float(result[0].lat.max()) - area[3]) / area[3] <= 0.1
-    assert abs(area[0] - float(result[0].lon.min())) / area[0] <= 0.1
-    assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
+    out = result[0].tos
+    assert out.values.shape == (96, 65, 15)
+
+    # all lats and lons (hence rlat and rlon) have been dropped in these ranges as they are all masked, only time dim remains
+    assert out.where(
+        np.logical_and(out.lon < area[0], out.lon > area[2]), drop=True
+    ).values.shape == (96, 0, 0)
+    assert out.where(
+        np.logical_and(out.lat < area[1], out.lat > area[3]), drop=True
+    ).values.shape == (96, 0, 0)
+
+    mask1 = ~(np.isnan(out.sel(time=out.time[0])))
+
+    assert np.all(out.lon.values[mask1.values] >= area[0])
+    assert np.all(out.lon.values[mask1.values] <= area[2])
+    assert np.all(out.lat.values[mask1.values] >= area[1])
+    assert np.all(out.lat.values[mask1.values] <= area[3])
 
 
 def test_time_invariant_subset_standard_name(load_esgf_test_data, tmpdir):
@@ -590,6 +599,22 @@ def test_time_invariant_subset_standard_name(load_esgf_test_data, tmpdir):
     )
 
     _check_output_nc(result, fname="mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc")
+
+
+def test_longitude_and_latitude_coords_only(load_esgf_test_data, tmpdir):
+    """ Test subset suceeds when latitude and longitude are coordinates not dims and are not called lat/lon """
+
+    result = subset(
+        ds=CMIP6_TOS,
+        area=(10, -70, 260, 70),
+        output_dir=tmpdir,
+        output_type="nc",
+    )
+
+    _check_output_nc(
+        result,
+        fname="tos_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_18500116-18691216.nc",
+    )
 
 
 def test_time_invariant_subset_simple_name(load_esgf_test_data, tmpdir):
@@ -808,7 +833,6 @@ class TestSubset:
             level=(1000.0, 1000.0),
         )
 
-        # have a look at what date was used in clisops master
         assert s.params["start_date"] == "1999-01-01T00:00:00"
         assert s.params["end_date"] == "2100-12-30T00:00:00"
         assert s.params["lon_bnds"] == (-5, 10)

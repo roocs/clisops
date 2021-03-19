@@ -201,3 +201,23 @@ def test_dim_not_found_ignore():
 
     assert "time" not in result[0]
     assert "height" in result[0]
+
+
+def test_aux_variables():
+    """
+    test auxiliary variables are remembered in output dataset
+    Have to create a netcdf file with auxiliary variable
+    """
+
+    ds = _load_ds("tests/ops/file.nc")
+
+    assert "do_i_get_written" in ds.variables
+
+    result = average_over_dims(
+        ds=ds,
+        dims=["level", "time"],
+        ignore_undetected_dims=True,
+        output_type="xarray",
+    )
+
+    assert "do_i_get_written" in result[0].variables
