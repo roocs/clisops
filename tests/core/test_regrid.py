@@ -79,7 +79,7 @@ def test_grid_init_ds_tos_curvilinear(load_esgf_test_data):
 def test_grid_instructor_global():
     grid = Grid(grid_instructor=(1.5, 1.5))
 
-    assert grid.format == "xESMF"
+    assert grid.format == "CF"
     assert grid.source == "xESMF"
     assert grid.lat == "lat"
     assert grid.lon == "lon"
@@ -98,7 +98,7 @@ def test_grid_instructor_global():
 def test_grid_instructor_2d_regional_change_lon():
     grid = Grid(grid_instructor=(50, 240, 1.5, -90, 90, 1.5))
 
-    assert grid.format == "xESMF"
+    assert grid.format == "CF"
     assert grid.source == "xESMF"
     assert grid.lat == "lat"
     assert grid.lon == "lon"
@@ -118,7 +118,7 @@ def test_grid_instructor_2d_regional_change_lon():
 def test_grid_instructor_2d_regional_change_lat():
     grid = Grid(grid_instructor=(0, 360, 1.5, -60, 50, 1.5))
 
-    assert grid.format == "xESMF"
+    assert grid.format == "CF"
     assert grid.source == "xESMF"
     assert grid.lat == "lat"
     assert grid.lon == "lon"
@@ -135,14 +135,19 @@ def test_grid_instructor_2d_regional_change_lat():
 
 
 def test_grid_instructor_2d_regional_change_lon_and_lat():
-    grid = Grid(grid_instructor=(50, 240, 1.5, -60, 50, 1.5))
+    grid_instructor = (50, 240, 1.5, -60, 50, 1.5)
+    grid = Grid(grid_instructor=grid_instructor)
 
-    assert grid.format == "xESMF"
+    assert grid.format == "CF"
     assert grid.source == "xESMF"
     assert grid.lat == "lat"
     assert grid.lon == "lon"
     assert grid.type == "regular_lat_lon"
     assert grid.extent == "regional"
+
+    # check that grid_from_instructor sets the format to xESMF
+    grid.grid_from_instructor(grid_instructor)
+    assert grid.format == "xESMF"
 
     # not implemented yet
     # assert grid.lat_bnds == ""
@@ -156,7 +161,7 @@ def test_grid_instructor_2d_regional_change_lon_and_lat():
 def test_grid_instructor_2d_global():
     grid = Grid(grid_instructor=(0, 360, 1.5, -90, 90, 1.5))
 
-    assert grid.format == "xESMF"
+    assert grid.format == "CF"
     assert grid.source == "xESMF"
     assert grid.lat == "lat"
     assert grid.lon == "lon"
