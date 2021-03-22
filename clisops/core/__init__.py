@@ -1,3 +1,4 @@
+from .regrid import Grid, Weights, regrid
 from .subset import (
     create_mask,
     subset_bbox,
