@@ -683,7 +683,7 @@ class Grid:
                 "The coordinate variable '%s' does not have a 'bounds' attribute."
                 % coordinate
             )
-            return ""
+            return
 
     def compute_bounds(self):
         # TODO

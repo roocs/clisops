@@ -25,16 +25,17 @@ def test_grid_init_ds_tas_regular(load_esgf_test_data):
     assert grid.lon == ds.lon.name
     assert grid.type == "regular_lat_lon"
     assert grid.extent == "global"
+    assert grid.lat_bnds == ds.lat_bnds.name
+    assert grid.lon_bnds == ds.lon_bnds.name
+    assert grid.nlat == 80
+    assert grid.nlon == 180
+    assert grid.ncells == 14400
 
     # not implemented yet
-    # assert grid.lat_bnds == ""
-    # assert grid.lon_bnds == ""
     # assert self.mask
-    # assert grid.nlat = 0
-    # assert grid.nlon = 0
-    # assert grid.ncells = 0
 
 
+@pytest.mark.skip("Doesn't have bounds attribute")
 def test_grid_init_da_tas_regular(load_esgf_test_data):
     ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
     da = ds.tas
@@ -46,14 +47,14 @@ def test_grid_init_da_tas_regular(load_esgf_test_data):
     assert grid.lon == da.lon.name
     assert grid.type == "regular_lat_lon"
     assert grid.extent == "global"
+    assert grid.lat_bnds == ""
+    assert grid.lon_bnds == ""
+    assert grid.nlat == 80
+    assert grid.nlon == 180
+    assert grid.ncells == 14400
 
     # not implemented yet
-    # assert grid.lat_bnds == ""
-    # assert grid.lon_bnds == ""
     # assert self.mask
-    # assert grid.nlat = 0
-    # assert grid.nlon = 0
-    # assert grid.ncells = 0
 
 
 def test_grid_init_ds_tos_curvilinear(load_esgf_test_data):
@@ -66,18 +67,20 @@ def test_grid_init_ds_tos_curvilinear(load_esgf_test_data):
     assert grid.lon == ds.longitude.name
     assert grid.type == "curvilinear"
     assert grid.extent == "global"
+    assert grid.lat_bnds == "vertices_latitude"
+    assert grid.lon_bnds == "vertices_longitude"
+
+    # assert grid.nlat == 404 # this is number of 'j's
+    # assert grid.nlon == 802 # this is the number of 'i's
+    assert grid.ncells == 324008
 
     # not implemented yet
-    # assert grid.lat_bnds == ""
-    # assert grid.lon_bnds == ""
     # assert self.mask
-    # assert grid.nlat = 0
-    # assert grid.nlon = 0
-    # assert grid.ncells = 0
 
 
 def test_grid_instructor_global():
-    grid = Grid(grid_instructor=(1.5, 1.5))
+    grid_instructor = (1.5, 1.5)
+    grid = Grid(grid_instructor=grid_instructor)
 
     assert grid.format == "CF"
     assert grid.source == "xESMF"
@@ -86,17 +89,23 @@ def test_grid_instructor_global():
     assert grid.type == "regular_lat_lon"
     assert grid.extent == "global"
 
+    # check that grid_from_instructor sets the format to xESMF
+    grid.grid_from_instructor(grid_instructor)
+    assert grid.format == "xESMF"
+
+    assert grid.lat_bnds == "lat_bnds"
+    assert grid.lon_bnds == "lon_bnds"
+    assert grid.nlat == 120
+    assert grid.nlon == 240
+    assert grid.ncells == 28800
+
     # not implemented yet
-    # assert grid.lat_bnds == ""
-    # assert grid.lon_bnds == ""
     # assert self.mask
-    # assert grid.nlat = 0
-    # assert grid.nlon = 0
-    # assert grid.ncells = 0
 
 
 def test_grid_instructor_2d_regional_change_lon():
-    grid = Grid(grid_instructor=(50, 240, 1.5, -90, 90, 1.5))
+    grid_instructor = (50, 240, 1.5, -90, 90, 1.5)
+    grid = Grid(grid_instructor=grid_instructor)
 
     assert grid.format == "CF"
     assert grid.source == "xESMF"
@@ -105,18 +114,24 @@ def test_grid_instructor_2d_regional_change_lon():
     assert grid.type == "regular_lat_lon"
     assert grid.extent == "regional"
 
+    # check that grid_from_instructor sets the format to xESMF
+    grid.grid_from_instructor(grid_instructor)
+    assert grid.format == "xESMF"
+
+    assert grid.lat_bnds == "lat_bnds"
+    assert grid.lon_bnds == "lon_bnds"
+    assert grid.nlat == 120
+    assert grid.nlon == 127
+    assert grid.ncells == 15240
+
     # not implemented yet
-    # assert grid.lat_bnds == ""
-    # assert grid.lon_bnds == ""
     # assert self.mask
-    # assert grid.nlat = 0
-    # assert grid.nlon = 0
-    # assert grid.ncells = 0
 
 
 # this is global but would have expected to be regional?
 def test_grid_instructor_2d_regional_change_lat():
-    grid = Grid(grid_instructor=(0, 360, 1.5, -60, 50, 1.5))
+    grid_instructor = (0, 360, 1.5, -60, 50, 1.5)
+    grid = Grid(grid_instructor=grid_instructor)
 
     assert grid.format == "CF"
     assert grid.source == "xESMF"
@@ -125,13 +140,14 @@ def test_grid_instructor_2d_regional_change_lat():
     assert grid.type == "regular_lat_lon"
     # assert grid.extent == "regional"
 
+    assert grid.lat_bnds == "lat_bnds"
+    assert grid.lon_bnds == "lon_bnds"
+    assert grid.nlat == 74
+    assert grid.nlon == 240
+    assert grid.ncells == 17760
+
     # not implemented yet
-    # assert grid.lat_bnds == ""
-    # assert grid.lon_bnds == ""
     # assert self.mask
-    # assert grid.nlat = 0
-    # assert grid.nlon = 0
-    # assert grid.ncells = 0
 
 
 def test_grid_instructor_2d_regional_change_lon_and_lat():
@@ -149,17 +165,19 @@ def test_grid_instructor_2d_regional_change_lon_and_lat():
     grid.grid_from_instructor(grid_instructor)
     assert grid.format == "xESMF"
 
+    assert grid.lat_bnds == "lat_bnds"
+    assert grid.lon_bnds == "lon_bnds"
+    assert grid.nlat == 74
+    assert grid.nlon == 127
+    assert grid.ncells == 9398
+
     # not implemented yet
-    # assert grid.lat_bnds == ""
-    # assert grid.lon_bnds == ""
     # assert self.mask
-    # assert grid.nlat = 0
-    # assert grid.nlon = 0
-    # assert grid.ncells = 0
 
 
 def test_grid_instructor_2d_global():
-    grid = Grid(grid_instructor=(0, 360, 1.5, -90, 90, 1.5))
+    grid_instructor = (0, 360, 1.5, -90, 90, 1.5)
+    grid = Grid(grid_instructor=grid_instructor)
 
     assert grid.format == "CF"
     assert grid.source == "xESMF"
@@ -168,13 +186,18 @@ def test_grid_instructor_2d_global():
     assert grid.type == "regular_lat_lon"
     assert grid.extent == "global"
 
+    # check that grid_from_instructor sets the format to xESMF
+    grid.grid_from_instructor(grid_instructor)
+    assert grid.format == "xESMF"
+
+    assert grid.lat_bnds == "lat_bnds"
+    assert grid.lon_bnds == "lon_bnds"
+    assert grid.nlat == 120
+    assert grid.nlon == 240
+    assert grid.ncells == 28800
+
     # not implemented yet
-    # assert grid.lat_bnds == ""
-    # assert grid.lon_bnds == ""
     # assert self.mask
-    # assert grid.nlat = 0
-    # assert grid.nlon = 0
-    # assert grid.ncells = 0
 
 
 def test_from_grid_id():
@@ -187,14 +210,14 @@ def test_from_grid_id():
     # assert grid.lon == "lon"
     # assert grid.type == "regular_lat_lon"
     # assert grid.extent == "global"
-
-    # not implemented yet
     # assert grid.lat_bnds == ""
     # assert grid.lon_bnds == ""
-    # assert self.mask
     # assert grid.nlat = 0
     # assert grid.nlon = 0
     # assert grid.ncells = 0
+
+    # not implemented yet
+    # assert self.mask0
     pass
 
 
@@ -218,10 +241,11 @@ def test_subsetted_grid():
     assert grid.type == "regular_lat_lon"
     assert grid.extent == "regional"
 
+    assert grid.lat_bnds == ds.lat_bnds.name
+    assert grid.lon_bnds == ds.lon_bnds.name
+    assert grid.nlat == 35
+    assert grid.nlon == 88
+    assert grid.ncells == 3080
+
     # not implemented yet
-    # assert grid.lat_bnds == ""
-    # assert grid.lon_bnds == ""
     # assert self.mask
-    # assert grid.nlat = 0
-    # assert grid.nlon = 0
-    # assert grid.ncells = 0
