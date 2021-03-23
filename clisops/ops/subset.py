@@ -14,7 +14,7 @@ from clisops.ops.base_operation import Operation
 from clisops.utils.common import expand_wildcards
 from clisops.utils.dataset_utils import check_lon_alignment
 from clisops.utils.file_namers import get_file_namer
-from clisops.utils.output_utils import get_output, get_time_slices
+from clisops.utils.output_utils import get_da, get_output, get_time_slices
 
 __all__ = [
     "subset",
@@ -89,6 +89,9 @@ class Subset(Operation):
             if any(kwargs.values()):
                 LOGGER.debug(f"subset_level with parameters: {kwargs}")
                 result = subset_level(result, **kwargs)
+
+        if get_da(result).nbytes == 0:
+            raise Exception("No data found in requested subset.")
 
         return result
 
