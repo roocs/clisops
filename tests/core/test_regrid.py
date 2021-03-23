@@ -69,9 +69,8 @@ def test_grid_init_ds_tos_curvilinear(load_esgf_test_data):
     assert grid.extent == "global"
     assert grid.lat_bnds == "vertices_latitude"
     assert grid.lon_bnds == "vertices_longitude"
-
-    # assert grid.nlat == 404 # this is number of 'j's
-    # assert grid.nlon == 802 # this is the number of 'i's
+    assert grid.nlat == 404  # this is number of 'j's
+    assert grid.nlon == 802  # this is the number of 'i's
     assert grid.ncells == 324008
 
     # not implemented yet
@@ -128,7 +127,6 @@ def test_grid_instructor_2d_regional_change_lon():
     # assert self.mask
 
 
-# this is global but would have expected to be regional?
 def test_grid_instructor_2d_regional_change_lat():
     grid_instructor = (0, 360, 1.5, -60, 50, 1.5)
     grid = Grid(grid_instructor=grid_instructor)
@@ -138,7 +136,11 @@ def test_grid_instructor_2d_regional_change_lat():
     assert grid.lat == "lat"
     assert grid.lon == "lon"
     assert grid.type == "regular_lat_lon"
-    # assert grid.extent == "regional"
+
+    # Extent in y-direction yet ignored, as not of importance
+    #  for xesmf.Regridder. Extent in x-direction should be
+    #  detected as "global"
+    assert grid.extent == "global"
 
     assert grid.lat_bnds == "lat_bnds"
     assert grid.lon_bnds == "lon_bnds"
@@ -210,11 +212,11 @@ def test_from_grid_id():
     # assert grid.lon == "lon"
     # assert grid.type == "regular_lat_lon"
     # assert grid.extent == "global"
-    # assert grid.lat_bnds == ""
-    # assert grid.lon_bnds == ""
-    # assert grid.nlat = 0
-    # assert grid.nlon = 0
-    # assert grid.ncells = 0
+    # assert grid.lat_bnds == "lat_bnds"
+    # assert grid.lon_bnds == "lon_bnds"
+    # assert grid.nlat = 145
+    # assert grid.nlon = 288
+    # assert grid.ncells = 41760
 
     # not implemented yet
     # assert self.mask0
