@@ -21,8 +21,6 @@ from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import cascaded_union, split
 from xarray.core.utils import get_temp_dimname
 
-from clisops.utils.output_utils import get_da
-
 __all__ = [
     "create_mask",
     "distance",
