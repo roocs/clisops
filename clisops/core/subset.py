@@ -642,11 +642,11 @@ def subset_shape(
     # Only case not implemented is when lon_bnds cross the 0 deg meridian but dataset grid has all positive lons
     try:
         ds_copy = subset_bbox(ds_copy, lon_bnds=lon_bnds, lat_bnds=lat_bnds)
-    except ValueError:
+    except ValueError as e:
         raise ValueError(
             "No grid cell centroids found within provided polygon bounding box. "
             'Try using the "buffer" option to create an expanded area.'
-        )
+        ) from e
     except NotImplementedError:
         pass
 
