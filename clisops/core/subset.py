@@ -640,17 +640,16 @@ def subset_shape(
     # Only case not implemented is when lon_bnds cross the 0 deg meridian but dataset grid has all positive lons
     try:
         ds_copy = subset_bbox(ds_copy, lon_bnds=lon_bnds, lat_bnds=lat_bnds)
+    except ValueError as e:
+        raise ValueError(
+            "No grid cell centroids found within provided polygon bounding box. "
+            'Try using the "buffer" option to create an expanded area.'
+        ) from e
     except NotImplementedError:
         pass
 
     lon = get_lon(ds_copy)
     lat = get_lat(ds_copy)
-
-    if lon.size == 0 or lat.size == 0:
-        raise ValueError(
-            "No grid cell centroids found within provided polygon bounding box. "
-            'Try using the "buffer" option to create an expanded area.'
-        )
 
     if start_date or end_date:
         ds_copy = subset_time(ds_copy, start_date=start_date, end_date=end_date)
@@ -889,6 +888,11 @@ def subset_bbox(
 
     if first_level or last_level:
         da = subset_level(da, first_level=first_level, last_level=last_level)
+
+    if da[lat].size == 0 or da[lon].size == 0:
+        raise ValueError(
+            "There were no valid data points found in the requested subset."
+        )
 
     return da
 

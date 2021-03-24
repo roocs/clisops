@@ -19,6 +19,7 @@ from .._common import (
     CMIP5_ZOSTOGA,
     CMIP6_MRSOFC,
     CMIP6_RLDS,
+    CMIP6_RLDS_ONE_TIME_STEP,
     CMIP6_TA,
     CMIP6_TOS,
 )
@@ -592,7 +593,7 @@ def test_time_invariant_subset_standard_name(load_esgf_test_data, tmpdir):
 
     result = subset(
         ds=CMIP6_MRSOFC,
-        area=(5.0, 10.0, 20.0, 65.0),
+        area=(5.0, 10.0, 360.0, 90.0),
         output_dir=tmpdir,
         output_type="nc",
         file_namer="standard",
@@ -621,7 +622,7 @@ def test_time_invariant_subset_simple_name(load_esgf_test_data, tmpdir):
 
     result = subset(
         ds=CMIP6_MRSOFC,
-        area=(5.0, 10.0, 20.0, 65.0),
+        area=(5.0, 10.0, 360.0, 90.0),
         output_dir=tmpdir,
         output_type="nc",
         file_namer="simple",
@@ -636,7 +637,7 @@ def test_time_invariant_subset_with_time(load_esgf_test_data):
         subset(
             ds=CMIP6_MRSOFC,
             time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
-            area=(5.0, 10.0, 20.0, 65.0),
+            area=(5.0, 10.0, 360.0, 90.0),
             output_type="xarray",
         )
     assert str(exc.value) == "'Dataset' object has no attribute 'time'"
@@ -881,3 +882,51 @@ class TestSubset:
                 ds=cmip5_tas_file,
                 area=("zero", 10, 50, 60),
             )
+
+
+def test_no_lon_in_range():
+
+    with pytest.raises(Exception) as exc:
+        subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(8.37, -90, 8.56, 90),
+            time=("2006-01-01T00:00:00", "2099-12-30T00:00:00"),
+            output_type="xarray",
+        )
+
+    assert (
+        str(exc.value)
+        == "There were no valid data points found in the requested subset."
+    )
+
+
+def test_no_lat_in_range():
+
+    with pytest.raises(Exception) as exc:
+        subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(0, 39.12, 360, 39.26),
+            time=("2006-01-01T00:00:00", "2099-12-30T00:00:00"),
+            output_type="xarray",
+        )
+
+    assert (
+        str(exc.value)
+        == "There were no valid data points found in the requested subset."
+    )
+
+
+def test_no_lat_lon_in_range():
+
+    with pytest.raises(Exception) as exc:
+        subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(8.37, 39.12, 8.56, 39.26),
+            time=("2006-01-01T00:00:00", "2099-12-30T00:00:00"),
+            output_type="xarray",
+        )
+
+    assert (
+        str(exc.value)
+        == "There were no valid data points found in the requested subset."
+    )
