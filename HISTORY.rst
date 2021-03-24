@@ -3,8 +3,8 @@ Version History
 
 v0.6.3 (Unreleased)
 -------------------
-Bug Fixes
-^^^^^^^^^
+Breaking Change
+^^^^^^^^^^^^^^^
 * Raise an exception in ``core.subset.subset_bbox`` when there are no data points in the result.
 
 v0.6.2 (2021-03-22)
