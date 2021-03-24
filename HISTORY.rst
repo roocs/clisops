@@ -1,6 +1,17 @@
 Version History
 ===============
 
+v0.6.3 (Unreleased)
+-------------------
+Breaking Changes
+^^^^^^^^^^^^^^^^
+* Raise an exception in ``core.subset.subset_bbox`` when there are no data points in the result.
+* ``cf-python``>=3.8.0 now a dependency.
+
+Bug Fixes
+^^^^^^^^^
+* In ``core.subset.check_start_end_dates`` check if start and end date requested exist in the calendar of the dataset. If not, nudge the date forward if start date or backwards if end date.
+
 v0.6.2 (2021-03-22)
 -------------------
 

@@ -74,7 +74,7 @@ def filter_times_within(times, start=None, end=None):
 
 
 def get_da(ds):
-    """ Returns xr.DataArray when format of ds may be either."""
+    """ Returns xr.DataArray when format of ds may be either xr.Dataset or xr.DataArray."""
     if isinstance(ds, xr.DataArray):
         da = ds
     else:
