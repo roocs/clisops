@@ -6,7 +6,6 @@ v0.6.3 (Unreleased)
 Breaking Changes
 ^^^^^^^^^^^^^^^^
 * Raise an exception in ``core.subset.subset_bbox`` when there are no data points in the result.
-* ``cf-python``>=3.8.0 now a dependency.
 
 Bug Fixes
 ^^^^^^^^^

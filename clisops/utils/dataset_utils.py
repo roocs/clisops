@@ -2,7 +2,7 @@ import math
 import warnings
 from datetime import timedelta
 
-import cf
+import cftime
 import numpy as np
 from dateutil import parser as date_parser
 from roocs_utils.utils.time_utils import to_isoformat
@@ -111,7 +111,15 @@ def check_date_exists_in_calendar(da, date, days=-1):
 
     for i in range(5):
         try:
-            cf.dt(date, calendar=cal)
+            cftime.datetime(
+                date.year,
+                date.month,
+                date.day,
+                date.hour,
+                date.minute,
+                date.second,
+                calendar=cal,
+            )
             return to_isoformat(date)
         except ValueError:
             date = date + timedelta(days=days)
