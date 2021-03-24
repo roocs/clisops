@@ -886,7 +886,6 @@ class TestSubset:
 
 def test_no_lon_in_range():
 
-    # area=(8.37, 39.12, 8.56, 39.26)
     with pytest.raises(Exception) as exc:
         subset(
             ds=CMIP6_RLDS_ONE_TIME_STEP,
@@ -895,7 +894,10 @@ def test_no_lon_in_range():
             output_type="xarray",
         )
 
-    assert str(exc.value) == "No data found in requested subset."
+    assert (
+        str(exc.value)
+        == "There were no valid data points found in the requested subset."
+    )
 
 
 def test_no_lat_in_range():
@@ -908,7 +910,10 @@ def test_no_lat_in_range():
             output_type="xarray",
         )
 
-    assert str(exc.value) == "No data found in requested subset."
+    assert (
+        str(exc.value)
+        == "There were no valid data points found in the requested subset."
+    )
 
 
 def test_no_lat_lon_in_range():
@@ -921,4 +926,7 @@ def test_no_lat_lon_in_range():
             output_type="xarray",
         )
 
-    assert str(exc.value) == "No data found in requested subset."
+    assert (
+        str(exc.value)
+        == "There were no valid data points found in the requested subset."
+    )
