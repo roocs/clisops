@@ -1,6 +1,11 @@
 import math
+import warnings
+from datetime import timedelta
 
+import cf
 import numpy as np
+from dateutil import parser as date_parser
+from roocs_utils.utils.time_utils import to_isoformat
 from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
 from clisops import logging
@@ -84,3 +89,33 @@ def check_lon_alignment(ds, lon_bnds):
             ds_roll.coords[lon.name] = lon_vals
             ds_roll.coords[lon.name].attrs = ds.coords[lon.name].attrs
             return ds_roll
+
+
+def check_date_exists_in_calendar(da, date, days=-1):
+    """
+    Check that the date specified exists in the calendar type of the dataset. If not,
+    change the date by the specified number of days (up to a maximum of 5 times) to find a date that does exist.
+
+    :param da: xarray.Dataset or xarray.DataArray
+    :param date: The date to check, as a string.
+    :param days: The number of days to jump by by in time to find a date that does exist.
+                 A negative value means the search will go backwards in time. The default number of days is -1.
+
+    :return: (str) The next possible existing date in the calendar of the dataset.
+    """
+
+    # turn date into datetime object
+    date = date_parser.parse(date)
+    # get the calendar type
+    cal = da.cf["time"].data[0].calendar
+
+    for i in range(5):
+        try:
+            cf.dt(date, calendar=cal)
+            return to_isoformat(date)
+        except ValueError:
+            date = date + timedelta(days=days)
+
+    raise ValueError(
+        f"Could not find an existing date near {date} in the calendar of the xarray object: {cal}"
+    )

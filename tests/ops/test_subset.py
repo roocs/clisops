@@ -19,6 +19,7 @@ from .._common import (
     CMIP5_ZOSTOGA,
     CMIP6_MRSOFC,
     CMIP6_RLDS,
+    CMIP6_SICONC,
     CMIP6_TA,
     CMIP6_TOS,
 )
@@ -881,3 +882,55 @@ class TestSubset:
                 ds=cmip5_tas_file,
                 area=("zero", 10, 50, 60),
             )
+
+
+def test_invalid_date_as_end_date():
+
+    # use no leap dataset
+    ds = _load_ds(CMIP6_SICONC)
+
+    end_date = "2012-02-29T00:00:00"
+
+    # check end date normally raises an error
+    with pytest.raises(ValueError) as exc:
+        ds.time.sel(time=slice(None, end_date))
+    assert (
+        str(exc.value)
+        == "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 0, 0, 0, 0)"
+    )
+
+    result = subset(
+        ds=CMIP6_SICONC,
+        area=(20, 30.0, 150, 70.0),
+        time=("2000-01-01T00:00:00", end_date),
+        output_type="xarray",
+    )
+
+    # check end date of result is correct
+    assert result[0].time.values[-1].strftime() == "2012-02-15 00:00:00"
+
+
+def test_invalid_date_as_start_date():
+
+    # use no leap dataset
+    ds = _load_ds(CMIP6_SICONC)
+
+    start_date = "2012-02-29T00:00:00"
+
+    # check start date normally raises an error
+    with pytest.raises(ValueError) as exc:
+        ds.time.sel(time=slice(None, start_date))
+    assert (
+        str(exc.value)
+        == "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 0, 0, 0, 0)"
+    )
+
+    result = subset(
+        ds=CMIP6_SICONC,
+        area=(20, 30.0, 150, 70.0),
+        time=(start_date, "2014-07-29T00:00:00"),
+        output_type="xarray",
+    )
+
+    # check start date of result is correct
+    assert result[0].time.values[0].strftime() == "2012-03-16 12:00:00"
