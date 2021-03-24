@@ -1,5 +1,4 @@
 import math
-import warnings
 from datetime import timedelta
 
 import cftime
