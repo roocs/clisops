@@ -820,7 +820,7 @@ def test_check_lon_alignment_curvilinear_grid():
         )
     assert (
         str(exc.value)
-        == "The input longitude bounds (-50.0, 100.0) are not within the longitude bounds "
+        == "The requested longitude subset (-50.0, 100.0) is not within the longitude bounds "
         "of this dataset and the data could not be converted to this longitude frame successfully. "
         "Please re-run your request with longitudes within the bounds of the dataset: (0.00, 359.99)"
     )
@@ -837,7 +837,7 @@ def test_could_not_roll():
         )
     assert (
         str(exc.value)
-        == "The input longitude bounds (160.0, -100.0) are not within the longitude "
+        == "The requested longitude subset (160.0, -100.0) is not within the longitude "
         "bounds of this dataset and the data could not be converted to this longitude frame successfully. "
         "Please re-run your request with longitudes within the bounds of the dataset: (0.00, 357.50)"
     )

@@ -60,7 +60,7 @@ def check_lon_alignment(ds, lon_bnds):
         # check if lon is a dimension
         if lon.name not in ds.dims:
             raise Exception(
-                f"The input longitude bounds {lon_bnds} are not within the longitude bounds "
+                f"The requested longitude subset {lon_bnds} is not within the longitude bounds "
                 f"of this dataset and the data could not be converted to this longitude frame successfully. "
                 f"Please re-run your request with longitudes within the bounds of the dataset: ({lon_min:.2f}, {lon_max:.2f})"
             )
