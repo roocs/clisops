@@ -104,11 +104,9 @@ def check_date_exists_in_calendar(da, date, day="sub"):
 
     :return: (str) The next possible existing date in the calendar of the dataset.
     """
-    # hold the input date in a new variable
-    input_date = date
 
     # turn date into AnyCalendarDateTime object
-    date = str_to_AnyCalendarDateTime(date)
+    d = str_to_AnyCalendarDateTime(date)
 
     # get the calendar type
     cal = da.cf["time"].data[0].calendar
@@ -116,25 +114,25 @@ def check_date_exists_in_calendar(da, date, day="sub"):
     for i in range(5):
         try:
             cftime.datetime(
-                date.year,
-                date.month,
-                date.day,
-                date.hour,
-                date.minute,
-                date.second,
+                d.year,
+                d.month,
+                d.day,
+                d.hour,
+                d.minute,
+                d.second,
                 calendar=cal,
             )
-            return date.value
+            return d.value
         except ValueError:
             if day == "add":
-                date.add_day()
+                d.add_day()
             elif day == "sub":
-                date.sub_day()
+                d.sub_day()
             else:
                 raise Exception(
                     f"Invalid value for day: {day}. This should be either 'sub' to indicate subtracting a day or 'add' for adding a day."
                 )
 
     raise ValueError(
-        f"Could not find an existing date near {input_date} in the calendar of the xarray object: {cal}"
+        f"Could not find an existing date near {date} in the calendar of the xarray object: {cal}"
     )
