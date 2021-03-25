@@ -60,9 +60,9 @@ def check_lon_alignment(ds, lon_bnds):
         # check if lon is a dimension
         if lon.name not in ds.dims:
             raise Exception(
-                f"The longitude of this dataset runs from {lon_min:.2f} to {lon_max:.2f}, "
-                f"and rolling could not be completed successfully. "
-                f"Please re-run your request with longitudes between these bounds."
+                f"The input longitude bounds {lon_bnds} are not within the longitude bounds "
+                f"of this dataset and rolling could not be completed successfully. "
+                f"Please re-run your request with longitudes within the bounds of the dataset: ({lon_min:.2f}, {lon_max:.2f})"
             )
         # roll the dataset and reassign the longitude values
         else:

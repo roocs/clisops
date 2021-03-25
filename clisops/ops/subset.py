@@ -10,6 +10,7 @@ from roocs_utils.xarray_utils.xarray_utils import open_xr_dataset
 
 from clisops import logging
 from clisops.core import subset_bbox, subset_level, subset_time
+from clisops.core.subset import get_lon
 from clisops.ops.base_operation import Operation
 from clisops.utils.common import expand_wildcards
 from clisops.utils.dataset_utils import check_lon_alignment
@@ -62,10 +63,12 @@ class Subset(Operation):
             try:
                 result = subset_bbox(ds, **self.params)
             except NotImplementedError:
+                lon = get_lon(ds)
+                lon_min, lon_max = lon.values.min(), lon.values.max()
                 raise Exception(
                     f"The input longitude bounds {self.params.get('lon_bnds')} are not within the longitude bounds "
                     f"of this dataset and rolling could not be completed successfully. "
-                    f"Please re-run your request with longitudes within the bounds of the dataset."
+                    f"Please re-run your request with longitudes within the bounds of the dataset: ({lon_min:.2f}, {lon_max:.2f})"
                 )
         else:
             kwargs = {}
