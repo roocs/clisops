@@ -67,7 +67,7 @@ class Subset(Operation):
                 lon_min, lon_max = lon.values.min(), lon.values.max()
                 raise Exception(
                     f"The input longitude bounds {self.params.get('lon_bnds')} are not within the longitude bounds "
-                    f"of this dataset and rolling could not be completed successfully. "
+                    f"of this dataset and the data could not be converted to this longitude frame successfully. "
                     f"Please re-run your request with longitudes within the bounds of the dataset: ({lon_min:.2f}, {lon_max:.2f})"
                 )
         else:
