@@ -89,7 +89,7 @@ def check_start_end_dates(func):
                 stacklevel=2,
             )
             kwargs["start_date"] = check_date_exists_in_calendar(
-                da, kwargs["start_date"], 1
+                da, kwargs["start_date"], "add"
             )
             nudged = da.time.sel(time=slice(kwargs["start_date"], None)).values[0]
             kwargs["start_date"] = to_isoformat(nudged)
@@ -113,7 +113,7 @@ def check_start_end_dates(func):
                 stacklevel=2,
             )
             kwargs["end_date"] = check_date_exists_in_calendar(
-                da, kwargs["end_date"], -1
+                da, kwargs["end_date"], "sub"
             )
             nudged = da.time.sel(time=slice(None, kwargs["end_date"])).values[-1]
             kwargs["end_date"] = to_isoformat(nudged)

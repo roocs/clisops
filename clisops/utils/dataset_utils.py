@@ -1,10 +1,8 @@
 import math
-from datetime import timedelta
 
 import cftime
 import numpy as np
-from dateutil import parser as date_parser
-from roocs_utils.utils.time_utils import to_isoformat
+from roocs_utils.utils.time_utils import str_to_AnyCalendarDateTime
 from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
 from clisops import logging
@@ -90,21 +88,28 @@ def check_lon_alignment(ds, lon_bnds):
             return ds_roll
 
 
-def check_date_exists_in_calendar(da, date, days=-1):
+def check_date_exists_in_calendar(da, date, day="sub"):
     """
     Check that the date specified exists in the calendar type of the dataset. If not,
-    change the date by the specified number of days (up to a maximum of 5 times) to find a date that does exist.
+    change the date a day at a time (up to a maximum of 5 times) to find a date that does exist.
+
+    The direction to change the date by is indicated by 'day'.
 
     :param da: xarray.Dataset or xarray.DataArray
     :param date: The date to check, as a string.
-    :param days: The number of days to jump by by in time to find a date that does exist.
-                 A negative value means the search will go backwards in time. The default number of days is -1.
+    :param day: The direction to move in days to find a date that does exist.
+                'sub' means the search will go backwards in time until an existing date is found.
+                'add' means the search will go forwards in time.
+                The default is 'sub'.
 
     :return: (str) The next possible existing date in the calendar of the dataset.
     """
+    # hold the input date in a new variable
+    input_date = date
 
-    # turn date into datetime object
-    date = date_parser.parse(date)
+    # turn date into AnyCalendarDateTime object
+    date = str_to_AnyCalendarDateTime(date)
+
     # get the calendar type
     cal = da.cf["time"].data[0].calendar
 
@@ -119,10 +124,17 @@ def check_date_exists_in_calendar(da, date, days=-1):
                 date.second,
                 calendar=cal,
             )
-            return to_isoformat(date)
+            return date.value
         except ValueError:
-            date = date + timedelta(days=days)
+            if day == "add":
+                date.add_day()
+            elif day == "sub":
+                date.sub_day()
+            else:
+                raise Exception(
+                    f"Invalid value for day: {day}. This should be either 'sub' to indicate subtracting a day or 'add' for adding a day."
+                )
 
     raise ValueError(
-        f"Could not find an existing date near {date} in the calendar of the xarray object: {cal}"
+        f"Could not find an existing date near {input_date} in the calendar of the xarray object: {cal}"
     )
