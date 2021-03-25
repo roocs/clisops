@@ -7,6 +7,10 @@ Breaking Change
 ^^^^^^^^^^^^^^^
 * Raise an exception in ``core.subset.subset_bbox`` when there are no data points in the result.
 
+Other Changes
+^^^^^^^^^^^^^
+* Error message improved to include longitude bounds of the dataset when the bounds requested in ``ops.subset.subset`` are not within range and rolling could not be completed.
+
 v0.6.2 (2021-03-22)
 -------------------
 
