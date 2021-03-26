@@ -21,7 +21,7 @@ from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import cascaded_union, split
 from xarray.core.utils import get_temp_dimname
 
-from clisops.utils.dataset_utils import check_date_exists_in_calendar
+from clisops.utils.dataset_utils import adjust_date_to_calendar
 
 __all__ = [
     "create_mask",
@@ -88,8 +88,8 @@ def check_start_end_dates(func):
                 UserWarning,
                 stacklevel=2,
             )
-            kwargs["start_date"] = check_date_exists_in_calendar(
-                da, kwargs["start_date"], "add"
+            kwargs["start_date"] = adjust_date_to_calendar(
+                da, kwargs["start_date"], "forwards"
             )
             nudged = da.time.sel(time=slice(kwargs["start_date"], None)).values[0]
             kwargs["start_date"] = to_isoformat(nudged)
@@ -112,8 +112,8 @@ def check_start_end_dates(func):
                 UserWarning,
                 stacklevel=2,
             )
-            kwargs["end_date"] = check_date_exists_in_calendar(
-                da, kwargs["end_date"], "sub"
+            kwargs["end_date"] = adjust_date_to_calendar(
+                da, kwargs["end_date"], "backwards"
             )
             nudged = da.time.sel(time=slice(None, kwargs["end_date"])).values[-1]
             kwargs["end_date"] = to_isoformat(nudged)

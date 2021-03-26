@@ -88,23 +88,22 @@ def check_lon_alignment(ds, lon_bnds):
             return ds_roll
 
 
-def check_date_exists_in_calendar(da, date, day="sub"):
+def adjust_date_to_calendar(da, date, direction="backwards"):
     """
     Check that the date specified exists in the calendar type of the dataset. If not,
     change the date a day at a time (up to a maximum of 5 times) to find a date that does exist.
 
-    The direction to change the date by is indicated by 'day'.
+    The direction to change the date by is indicated by 'direction'.
 
     :param da: xarray.Dataset or xarray.DataArray
     :param date: The date to check, as a string.
-    :param day: The direction to move in days to find a date that does exist.
-                'sub' means the search will go backwards in time until an existing date is found.
-                'add' means the search will go forwards in time.
-                The default is 'sub'.
+    :param direction: The direction to move in days to find a date that does exist.
+                     'backwards' means the search will go backwards in time until an existing date is found.
+                     'forwards' means the search will go forwards in time.
+                      The default is 'backwards'.
 
     :return: (str) The next possible existing date in the calendar of the dataset.
     """
-
     # turn date into AnyCalendarDateTime object
     d = str_to_AnyCalendarDateTime(date)
 
@@ -124,15 +123,15 @@ def check_date_exists_in_calendar(da, date, day="sub"):
             )
             return d.value
         except ValueError:
-            if day == "add":
+            if direction == "forwards":
                 d.add_day()
-            elif day == "sub":
+            elif direction == "backwards":
                 d.sub_day()
             else:
                 raise Exception(
-                    f"Invalid value for day: {day}. This should be either 'sub' to indicate subtracting a day or 'add' for adding a day."
+                    f"Invalid value for direction: {direction}. This should be either 'backwards' to indicate subtracting a day or 'forwards' for adding a day."
                 )
 
     raise ValueError(
-        f"Could not find an existing date near {date} in the calendar of the xarray object: {cal}"
+        f"Could not find an existing date near {date} in the calendar: {cal}"
     )
