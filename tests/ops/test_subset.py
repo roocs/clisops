@@ -805,7 +805,7 @@ def test_roll_positive_mini_data():
 
 
 @pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
-def test_check_lon_alignment_irregular_grid():
+def test_check_lon_alignment_curvilinear_grid():
     ds = _load_ds(
         "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp370/r1i1p1f1/Ofx/sftof/gn/v20191108/*.nc"
     )
@@ -819,9 +819,27 @@ def test_check_lon_alignment_irregular_grid():
             output_type="xarray",
         )
     assert (
-        str(exc.value) == "The longitude of this dataset runs from 0.00 to 359.99, "
-        "and rolling could not be completed successfully. "
-        "Please re-run your request with longitudes between these bounds."
+        str(exc.value)
+        == "The requested longitude subset (-50.0, 100.0) is not within the longitude bounds "
+        "of this dataset and the data could not be converted to this longitude frame successfully. "
+        "Please re-run your request with longitudes within the bounds of the dataset: (0.00, 359.99)"
+    )
+
+
+def test_could_not_roll():
+    area = (160, 45, -100, 90)
+
+    with pytest.raises(Exception) as exc:
+        subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=area,
+            output_type="xarray",
+        )
+    assert (
+        str(exc.value)
+        == "The requested longitude subset (160.0, -100.0) is not within the longitude "
+        "bounds of this dataset and the data could not be converted to this longitude frame successfully. "
+        "Please re-run your request with longitudes within the bounds of the dataset: (0.00, 357.50)"
     )
 
 
