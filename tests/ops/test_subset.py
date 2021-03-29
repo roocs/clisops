@@ -22,6 +22,7 @@ from .._common import (
     CMIP6_RLDS_ONE_TIME_STEP,
     CMIP6_TA,
     CMIP6_TOS,
+    CMIP6_TOS_ONE_TIME_STEP,
 )
 
 
@@ -947,4 +948,65 @@ def test_no_lat_lon_in_range():
     assert (
         str(exc.value)
         == "There were no valid data points found in the requested subset."
+    )
+
+
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
+def test_curvilinear_ds_no_data_in_bbox_real_data():
+    ds = _load_ds(
+        "/badc/cmip6/data/CMIP6/ScenarioMIP/CNRM-CERFACS/CNRM-CM6-1/ssp245/r1i1p1f2/Omon/tos/gn/v20190219/tos_Omon_CNRM-CM6-1_ssp245_r1i1p1f2_gn_201501-210012.nc"
+    )
+    with pytest.raises(ValueError) as exc:
+        subset(
+            ds=ds,
+            area="1,40,2,4",
+            time="2021-01-01/2050-12-31",
+            output_type="xarray",
+        )
+    assert (
+        str(exc.value)
+        == "There were no valid data points found in the requested subset. Please expand the area covered by the bounding box."
+    )
+
+
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
+def test_curvilinear_ds_no_data_in_bbox_real_data_swap_lat():
+    ds = _load_ds(
+        "/badc/cmip6/data/CMIP6/ScenarioMIP/CNRM-CERFACS/CNRM-CM6-1/ssp245/r1i1p1f2/Omon/tos/gn/v20190219/tos_Omon_CNRM-CM6-1_ssp245_r1i1p1f2_gn_201501-210012.nc"
+    )
+    with pytest.raises(ValueError) as exc:
+        subset(
+            ds=ds,
+            area="1,4,2,40",
+            time="2021-01-01/2050-12-31",
+            output_type="xarray",
+        )
+    assert (
+        str(exc.value)
+        == "There were no valid data points found in the requested subset. Please expand the area covered by the bounding box."
+    )
+
+
+def test_curvilinear_ds_no_data_in_bbox():
+
+    with pytest.raises(ValueError) as exc:
+        subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area="1,40,1.00001,4",
+            time="2021-01-01/2050-12-31",
+            output_type="xarray",
+        )
+    assert (
+        str(exc.value)
+        == "zero-size array to reduction operation minimum which has no identity"
+    )
+
+
+def test_curvilinear_increase_lon_of_bbox():
+
+    subset(
+        ds=CMIP6_TOS_ONE_TIME_STEP,
+        area="1,40,4,4",
+        time="2021-01-01/2050-12-31",
+        output_type="xarray",
     )

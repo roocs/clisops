@@ -128,3 +128,9 @@ CMIP6_TOS = Path(
     MINI_ESGF_CACHE_DIR,
     "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tos/gn/v20190710/tos_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001-186912.nc",
 ).as_posix()
+
+
+CMIP6_TOS_ONE_TIME_STEP = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Omon/tos/gn/v20190710/tos_Omon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_185001.nc",
+).as_posix()
