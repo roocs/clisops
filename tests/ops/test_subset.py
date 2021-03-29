@@ -992,7 +992,7 @@ def test_curvilinear_ds_no_data_in_bbox():
     with pytest.raises(ValueError) as exc:
         subset(
             ds=CMIP6_TOS_ONE_TIME_STEP,
-            area="1,40,1.00001,4",
+            area="1,5,1.2,4",
             time="2021-01-01/2050-12-31",
             output_type="xarray",
         )
