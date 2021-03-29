@@ -11,6 +11,11 @@ Bug Fixes
 ^^^^^^^^^
 * In ``core.subset.check_start_end_dates`` check if start and end date requested exist in the calendar of the dataset. If not, nudge the date forward if start date or backwards if end date.
 
+Other Changes
+^^^^^^^^^^^^^
+* Error message improved to include longitude bounds of the dataset when the bounds requested in ``ops.subset.subset`` are not within range and rolling could not be completed.
+
+
 v0.6.2 (2021-03-22)
 -------------------
 
