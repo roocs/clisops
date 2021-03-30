@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from clisops.core.regrid import Grid
+from clisops.core.regrid import Grid, Weights, regrid
 from clisops.ops.subset import subset
 
 from .._common import CMIP6_TAS_ONE_TIME_STEP, CMIP6_TOS_ONE_TIME_STEP
@@ -137,7 +137,7 @@ def test_grid_instructor_2d_regional_change_lat():
     assert grid.lon == "lon"
     assert grid.type == "regular_lat_lon"
 
-    # Extent in y-direction yet ignored, as not of importance
+    # Extent in y-direction ignored, as not of importance
     #  for xesmf.Regridder. Extent in x-direction should be
     #  detected as "global"
     assert grid.extent == "global"
@@ -251,3 +251,71 @@ def test_subsetted_grid():
 
     # not implemented yet
     # assert self.mask
+
+
+# test all methods
+
+
+class TestWeights:
+    def test_grids_in_and_out_bilinear(self):
+        ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+        grid_in = Grid(ds=ds)
+
+        assert grid_in.extent == "global"
+
+        grid_instructor_out = (0, 360, 1.5, -90, 90, 1.5)
+        grid_out = Grid(grid_instructor=grid_instructor_out)
+
+        w = Weights(grid_in=grid_in, grid_out=grid_out, method="bilinear")
+
+        assert w.method == "bilinear"
+
+        # id not implemented yet
+        # assert w.id ==
+
+        # default file_name = method_inputgrid_outputgrid_periodic"
+        assert w.Regridder.filename == "bilinear_80x180_120x240_peri.nc"
+
+    def test_grids_in_and_out_conservative(self):
+        ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+        grid_in = Grid(ds=ds)
+
+        assert grid_in.extent == "global"
+
+        grid_instructor_out = (0, 360, 1.5, -90, 90, 1.5)
+        grid_out = Grid(grid_instructor=grid_instructor_out)
+
+        w = Weights(grid_in=grid_in, grid_out=grid_out, method="bilinear")
+
+        assert w.method == "bilinear"
+
+        # id not implemented yet
+        # assert w.id ==
+
+        # default file_name = method_inputgrid_outputgrid_periodic"
+        assert w.Regridder.filename == "bilinear_80x180_120x240_peri.nc"
+
+    def test_from_id(self):
+        pass
+
+    def test_from_disk(self):
+        pass
+
+
+class TestRegrid:
+
+    ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+    grid_in = Grid(ds=ds)
+
+    grid_instructor_out = (0, 360, 1.5, -90, 90, 1.5)
+    grid_out = Grid(grid_instructor=grid_instructor_out)
+
+    def test_adaptive_masking(self):
+        w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="conservative")
+        r = regrid(self.ds, w.Regridder, adaptive_masking_threshold=0.7)
+        print(r)
+
+    def test_no_adaptive_masking(self):
+        w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="bilinear")
+        r = regrid(self.ds.tas, w.Regridder)
+        print(r)

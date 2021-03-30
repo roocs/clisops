@@ -25,6 +25,7 @@ def regrid(ds, Regridder, adaptive_masking_threshold=0.5):
 
     # adaptive-masking will be supported in xesmf from version 0.6+ and make this lines
     #   obsolete
+    # import pdb;pdb.set_trace()
     if (
         Regridder.method in ["conservative", "conservative_normed", "patch"]
         and adaptive_masking_threshold >= 0.0
@@ -35,12 +36,12 @@ def regrid(ds, Regridder, adaptive_masking_threshold=0.5):
         return Regridder(ds, keep_attrs=True)
 
 
-def adaptive_masking(ds_in, regridder, min_norm_contribution=0.5):
+def adaptive_masking(ds_in, Regridder, min_norm_contribution=0.5):
     """Performs regridding incl. renormalization for conservative weights"""
     validi = ds_in.notnull().astype("d")
-    valido = regridder(validi, keep_attrs=True)
+    valido = Regridder(validi, keep_attrs=True)
     tempi0 = ds_in.fillna(0)
-    tempo0 = regridder(tempi0)
+    tempo0 = Regridder(tempi0)
     # min_norm_contribution factor could prevent values for cells that should be masked.
     # It prevents the renormalization for cells that get less than min_norm_contribution
     #  from source cells. If the factor==0.66 it means that at most one third of the source cells' area
@@ -113,6 +114,7 @@ class Weights:
             if self.grid_in.extent == "global":
                 periodic = True
         except AttributeError:
+            # forced to False for conservative regridding in xesmf
             if self.method not in ["conservative", "conservative_normed"]:
                 warnings.warn(
                     "The grid extent could not be accessed. "
