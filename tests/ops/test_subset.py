@@ -20,6 +20,8 @@ from .._common import (
     CMIP6_MRSOFC,
     CMIP6_RLDS,
     CMIP6_RLDS_ONE_TIME_STEP,
+    CMIP6_SICONC,
+    CMIP6_SICONC_DAY,
     CMIP6_TA,
     CMIP6_TOS,
 )
@@ -900,6 +902,110 @@ class TestSubset:
                 ds=cmip5_tas_file,
                 area=("zero", 10, 50, 60),
             )
+
+
+def test_end_date_nudged_backwards():
+
+    # use no leap dataset
+    ds = _load_ds(CMIP6_SICONC_DAY)
+
+    end_date = "2012-02-29T12:00:00"
+
+    # check end date normally raises an error
+    with pytest.raises(ValueError) as exc:
+        ds.time.sel(time=slice(None, end_date))
+    assert (
+        str(exc.value)
+        == "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0)"
+    )
+
+    result = subset(
+        ds=CMIP6_SICONC_DAY,
+        area=(20, 30.0, 150, 70.0),
+        time=("2000-01-01T12:00:00", end_date),
+        output_type="xarray",
+    )
+
+    # check end date of result is correct
+    assert result[0].time.values[-1].strftime() == "2012-02-28 12:00:00"
+
+
+def test_start_date_nudged_forwards():
+
+    # use no leap dataset
+    ds = _load_ds(CMIP6_SICONC_DAY)
+
+    start_date = "2012-02-29T12:00:00"
+
+    # check start date normally raises an error
+    with pytest.raises(ValueError) as exc:
+        ds.time.sel(time=slice(None, start_date))
+    assert (
+        str(exc.value)
+        == "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0)"
+    )
+
+    result = subset(
+        ds=CMIP6_SICONC_DAY,
+        area=(20, 30.0, 150, 70.0),
+        time=(start_date, "2014-07-29T12:00:00"),
+        output_type="xarray",
+    )
+
+    # check start date of result is correct
+    assert result[0].time.values[0].strftime() == "2012-03-01 12:00:00"
+
+
+def test_end_date_nudged_backwards_monthly_data():
+
+    # use no leap dataset
+    ds = _load_ds(CMIP6_SICONC)
+
+    end_date = "2012-02-29T12:00:00"
+
+    # check end date normally raises an error
+    with pytest.raises(ValueError) as exc:
+        ds.time.sel(time=slice(None, end_date))
+    assert (
+        str(exc.value)
+        == "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0)"
+    )
+
+    result = subset(
+        ds=CMIP6_SICONC,
+        area=(20, 30.0, 150, 70.0),
+        time=("2000-01-01T12:00:00", end_date),
+        output_type="xarray",
+    )
+
+    # check end date of result is correct
+    assert result[0].time.values[-1].strftime() == "2012-02-15 00:00:00"
+
+
+def test_start_date_nudged_backwards_monthly_data():
+
+    # use no leap dataset
+    ds = _load_ds(CMIP6_SICONC)
+
+    start_date = "2012-02-29T12:00:00"
+
+    # check start date normally raises an error
+    with pytest.raises(ValueError) as exc:
+        ds.time.sel(time=slice(None, start_date))
+    assert (
+        str(exc.value)
+        == "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0)"
+    )
+
+    result = subset(
+        ds=CMIP6_SICONC,
+        area=(20, 30.0, 150, 70.0),
+        time=(start_date, "2014-07-29T12:00:00"),
+        output_type="xarray",
+    )
+
+    # check start date of result is correct
+    assert result[0].time.values[0].strftime() == "2012-03-16 12:00:00"
 
 
 def test_no_lon_in_range():
