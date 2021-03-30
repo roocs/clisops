@@ -856,15 +856,30 @@ def subset_bbox(
         # Crop original array using slice, which is faster than `where`.
         ind = np.where(lon_cond & lat_cond)
         args = dict()
+
         for i, d in enumerate(da[lat].dims):
-            coords = da[d][ind[i]]
-            bnds = _check_desc_coords(
-                coord=da[d], bounds=[coords.min().values, coords.max().values], dim=d
-            )
+            try:
+                coords = da[d][ind[i]]
+                bnds = _check_desc_coords(
+                    coord=da[d],
+                    bounds=[coords.min().values, coords.max().values],
+                    dim=d,
+                )
+            except ValueError:
+                raise ValueError(
+                    "There were no valid data points found in the requested subset. Please expand "
+                    "the area covered by the bounding box."
+                )
             args[d] = slice(*bnds)
         # If the dims of lat and lon do not have coords, sel defaults to isel,
         # and then the last element is not returned.
         da = da.sel(**args)
+
+        if da[lat].size == 0 or da[lon].size == 0:
+            raise ValueError(
+                "There were no valid data points found in the requested subset. Please expand "
+                "the area covered by the bounding box."
+            )
 
         # Recompute condition on cropped coordinates
         if lat_bnds is not None:
