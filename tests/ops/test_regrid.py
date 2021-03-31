@@ -24,21 +24,22 @@ def test_regrid_none(tmpdir):
     """ test behaviour when none passed as method and grid - should the default regrdding take place?"""
     result = regrid(
         CMIP5_TAS,
-        method=None,
         grid=None,
         output_dir=tmpdir,
         output_type="netcdf",
         file_namer="standard",
     )
 
-    _check_output_nc(result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_regrid-nn-1deg.nc")
+    _check_output_nc(
+        result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_regrid-nearest_s2d-1deg.nc"
+    )
 
 
 def test_regrid_basic(tmpdir):
     """ test a basic regridding oepration"""
     result = regrid(
         CMIP5_TAS,
-        method="nn",
+        method="nearest_s2d",
         adaptive_masking_threshold=0.5,
         grid="1deg",
         output_dir=tmpdir,
@@ -46,4 +47,6 @@ def test_regrid_basic(tmpdir):
         file_namer="standard",
     )
 
-    _check_output_nc(result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_regrid-nn-1deg.nc")
+    _check_output_nc(
+        result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_regrid-nearest_s2d-1deg.nc"
+    )

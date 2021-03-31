@@ -23,9 +23,9 @@ def regrid(ds, Regridder, adaptive_masking_threshold=0.5):
     #                 adaptive_masking_threshold=adaptive_masking_threshold,
     #                 keep_attrs=True)
 
-    # adaptive-masking will be supported in xesmf from version 0.6+ and make this lines
-    #   obsolete
-    # import pdb;pdb.set_trace()
+    # adaptive-masking will be supported in xesmf from version 0.6+
+    # I think it does not make sense to implement it here, as one would have to implement it
+    #  supporting an entire xarray.Dataset as input
     if (
         Regridder.method in ["conservative", "conservative_normed", "patch"]
         and adaptive_masking_threshold >= 0.0
@@ -208,7 +208,7 @@ class Grid:
         self.source = None
 
         # Grid from dataset/dataarray, grid_instructor or grid_id
-        if isinstance(ds, xr.Dataset) or isinstance(ds, xr.DataArray):
+        if isinstance(ds, (xr.Dataset, xr.DataArray)):
             self.ds = ds
             self.format = self.detect_format()
             self.source = "Dataset"
@@ -257,6 +257,7 @@ class Grid:
 
         # Temporary fix for cf_xarray bug that identifies lat_bnds/lon_bnds as latitude/longitude
         #  if lat_bnds and lon_bnds are registered as coordinates of the xarray.Dataset
+        # https://github.com/xarray-contrib/cf-xarray/issues/191
         if self.lat_bnds and self.lon_bnds:
             if self.lat_bnds in self.ds.coords and self.lon_bnds in self.ds.coords:
                 self.ds = self.ds.reset_coords(
@@ -264,11 +265,15 @@ class Grid:
                 )
 
     def __str__(self):
-        return self.__repr__()
+        if self.type == "irregular":
+            grid_str = str(self.ncells) + "_cells_grid"
+        else:
+            grid_str = str(self.nlat) + "x" + str(self.nlon) + "_cells_grid"
+        return grid_str
 
     def __repr__(self):
         info = (
-            "clisops Grid\n"
+            "clisops {}\n".format(self.__str__())
             + (
                 "Lat x Lon:      {} x {}\n".format(self.nlat, self.nlon)
                 if self.type != "irregular"
@@ -305,8 +310,9 @@ class Grid:
             "1deg_lsm": "land_sea_mask_1degree.nc4",
             "2deg_lsm": "land_sea_mask_2degree.nc4",
         }
+        target_grids = "target_grids"  # Disk location of the target grids
         try:
-            grid = xr.open_dataset(grid_dict[grid_id])
+            grid = xr.open_dataset(target_grids + "/" + grid_dict[grid_id])
         except KeyError:
             raise KeyError("The grid_id '%s' you specified does not exist!" % grid_id)
         self.ds = grid
@@ -565,11 +571,193 @@ class Grid:
 
     def grid_remove_halo(self):
         # TODO
+        # If dimension is not named after the coordinate variable, get dimension name and then isel.
+        # Always assuming for 2D coordinate variables, the first dimension is latitude, the second longitude
         # Plan:
         # Detect duplicated cells and check if they occupy entire rows / columns
         # If single duplicated cells are found, raise Error
         # If duplicated rows/columns are found, remove them with xarray.Dataset.isel()
-        pass
+
+        # This might be moved out of this class to be a general util function,
+        # as something similar is required for subsetting and averaging.
+
+        # In this class, as a single Grid object does not have the info whether
+        #  it is an input or an output grid, it is not checked whether the extent
+        #  of the output grid domain requires the halo to be removed or if partial row/column
+        #  halos would prevent the remapping process. For each duplicated grid point one would
+        #  have to check if it falls into the domain of the output grid / subset_bbox / area to
+        #  average over.
+
+        # Create array of (ilat, ilon) tuples
+        if self.ds[self.lon].ndim == 2 or (
+            self.ds[self.lon].ndim == 1 and self.type == "irregular"
+        ):
+            latlon_halo = np.array(
+                list(
+                    zip(
+                        self.ds[self.lat].values.ravel(),
+                        self.ds[self.lon].values.ravel(),
+                    )
+                ),
+                dtype=("double,double"),
+            ).reshape(self.ds[self.lon].values.shape)
+        else:
+            latlon_halo = list()
+
+        # For 1D regular_lat_lon - find duplicates - remove them assuming dimensions and coordinate variables have the same name
+        if isinstance(latlon_halo, list):
+            dup_rows = [
+                i
+                for i in list(range(self.ds[self.lat].shape[0]))
+                if i not in np.unique(self.ds[self.lat], return_index=True)[1]
+            ]
+            dup_cols = [
+                i
+                for i in list(range(self.ds[self.lon].shape[0]))
+                if i not in np.unique(self.ds[self.lon], return_index=True)[1]
+            ]
+            if dup_cols != []:
+                lat_dim = self.ds[self.lat].dims[0]
+                self.ds = self.ds.isel(
+                    {
+                        lat_dim: [
+                            i
+                            for i in range(0, self.ds[self.lat].shape[0])
+                            if i not in dup_cols
+                        ]
+                    }
+                )
+                warnings.warn(
+                    "The selected dataset contains duplicate grid cells. "
+                    "The following %i duplicated columns will be removed: %s"
+                    % (len(dup_cols), ", ".join([str(i) for i in dup_cols]))
+                )
+            if dup_rows != []:
+                lon_dim = self.ds[self.lon].dims[0]
+                self.ds = self.ds.isel(
+                    {
+                        lon_dim: [
+                            i
+                            for i in range(0, self.ds[self.lon].shape[0])
+                            if i not in dup_rows
+                        ]
+                    }
+                )
+                warnings.warn(
+                    "The selected dataset contains duplicate grid cells. "
+                    "The following %i duplicated rows will be removed: %s"
+                    % (len(dup_rows), ", ".join([str(i) for i in dup_rows]))
+                )
+            return
+        # For 1D irregular - find duplicates - remove them using xarray.Dataset.isel
+        elif self.type == "irregular" and self.ds[self.lon].ndim == 1:
+            mask_duplicates = self._create_duplicate_mask(latlon_halo)
+            dup_cells = np.where(mask_duplicates is True)[0]
+            if dup_cells != []:
+                # ncells dimension name:
+                ncells_dim = self.ds[self.lon].dims[0]
+                self.ds = self.ds.isel(
+                    {
+                        ncells_dim: [
+                            i
+                            for i in range(0, self.ds[self.lon].shape[0])
+                            if i not in dup_cells
+                        ]
+                    }
+                )
+                warnings.warn(
+                    "The selected dataset contains duplicate grid cells. "
+                    "The following %i duplicated cells will be removed: %s"
+                    % (len(dup_cells), self._list_ten(dup_cells))
+                )
+            return
+        # For 2D coordinate variables - find duplicates - remove them using xarray.Dataset.isel
+        #    ... assuming lat is the first dimension and lon is the second
+        #        dimension of the 2D coordinate variables
+        else:
+            mask_duplicates = self._create_duplicate_mask(latlon_halo)
+            # All duplicate rows indices:
+            dup_rows = list()
+            for i in range(mask_duplicates.shape[0]):
+                if all(mask_duplicates[i, :]):
+                    dup_rows.append(i)
+            # All duplicate columns indices:
+            dup_cols = list()
+            for j in range(mask_duplicates.shape[1]):
+                if all(mask_duplicates[:, j]):
+                    dup_cols.append(j)
+            for i in dup_rows:
+                mask_duplicates[i, :] = False
+            for j in dup_cols:
+                mask_duplicates[:, j] = False
+            # All duplicate rows indices:
+            dup_part_rows = list()
+            for i in range(mask_duplicates.shape[0]):
+                if any(mask_duplicates[i, :]):
+                    dup_part_rows.append(i)
+            # All duplicate columns indices:
+            dup_part_cols = list()
+            for j in range(mask_duplicates.shape[1]):
+                if any(mask_duplicates[:, j]):
+                    dup_part_cols.append(j)
+            if dup_part_cols != [] or dup_part_rows != []:
+                raise Exception(
+                    "The selected dataset contains dupliated grid cells. "
+                    "Several rows or columns of the grid are partially duplicated and thus cannot be removed!"
+                )
+            else:
+                if dup_cols != []:
+                    warnings.warn(
+                        "The selected dataset contains duplicate grid cells. "
+                        "The following %i duplicated columns will be removed: %s"
+                        % (len(dup_cols), ", ".join([str(i) for i in dup_cols]))
+                    )
+                    lon_dim = self.ds[self.lon].dims[1]
+                    self.ds = self.ds.isel(
+                        {
+                            lon_dim: [
+                                i
+                                for i in range(0, self.ds[self.lon].shape[1])
+                                if i not in dup_cols
+                            ]
+                        }
+                    )
+                if dup_rows != []:
+                    warnings.warn(
+                        "The selected dataset contains duplicate grid cells. "
+                        "The following %i duplicated rows will be removed: %s"
+                        % (len(dup_rows), ", ".join([str(i) for i in dup_rows]))
+                    )
+                    lat_dim = self.ds[self.lat].dims[0]
+                    self.ds = self.ds.isel(
+                        {
+                            lat_dim: [
+                                i
+                                for i in range(0, self.ds[self.lat].shape[0])
+                                if i not in dup_rows
+                            ]
+                        }
+                    )
+            return
+
+    def _create_duplicate_mask(self, arr):
+        "Create duplicate mask helper function"
+        arr_flat = arr.ravel()
+        mask = np.zeros_like(arr_flat, dtype=bool)
+        mask[np.unique(arr_flat, return_index=True)[1]] = True
+        mask_duplicates = np.where(mask, False, True).reshape(arr.shape)
+        return mask_duplicates
+
+    def _list_ten(self, list1d):
+        "List up to 10 list elements equally distributed to beginning and end of list. Helper function."
+        if len(list1d) < 11:
+            return ", ".join(str(i) for i in list1d)
+        else:
+            return (
+                ", ".join(str(i) for i in list1d[0:5])
+                + " ... "
+                + ", ".join(str(i) for i in list1d[-5:])
+            )
 
     def detect_format(self):
         # TODO: Extend for formats CF, xESMF, ESMF, UGRID, SCRIP
@@ -593,7 +781,7 @@ class Grid:
 
         # Test if SCRIP
         if all([var in self.ds for var in SCRIP_vars]) and all(
-            [dim in self.ds for dim in SCRIP_dims]
+            [dim in self.ds.dims for dim in SCRIP_dims]
         ):
             return "SCRIP"
         # Test if xESMF

@@ -4,7 +4,8 @@ from typing import List, Optional, Tuple, Union
 import xarray as xr
 
 from clisops import logging
-from clisops.core import regrid
+from clisops.core import Grid, Weights
+from clisops.core import regrid as core_regrid
 from clisops.ops.base_operation import Operation
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import get_output, get_time_slices
@@ -15,19 +16,29 @@ __all__ = [
 
 LOGGER = logging.getLogger(__file__)
 
+supported_regridding_methods = ["conservative", "patch", "nearest_s2d", "bilinear"]
+
 
 class Regrid(Operation):
-    def get_grid_in(self):
-        # self.grid_in =
-        pass
+    def _get_grid_in(self, grid_desc):
+        if isinstance(grid_desc, (xr.Dataset, xr.DataArray)):
+            return Grid(ds=grid_desc)
+        raise Exception(
+            "An xarray.Dataset or xarray.DataArray has to be provided as input."
+        )
 
-    def get_grid_out(self):
-        # self.grid_out =
-        pass
+    def _get_grid_out(self, grid_desc):
+        if isinstance(grid_desc, str):
+            return Grid(grid_id=grid_desc)
+        elif isinstance(grid_desc, tuple):
+            return Grid(grid_instructor=grid_desc)
+        elif isinstance(grid_desc, (xr.Dataset, xr.DataArray)):
+            return Grid(ds=grid_desc)
+        else:
+            return Grid()
 
-    def get_weights(self):
-        # self.weights =
-        pass
+    def _get_weights(self, grid_in, grid_out, method):
+        return Weights(grid_in=grid_in, grid_out=grid_out, method=method)
 
     def _resolve_params(self, **params):
         """ Generates a dictionary of regrid parameters """
@@ -42,11 +53,47 @@ class Regrid(Operation):
         # self.method = params.get("method", "nn")
 
         adaptive_masking_threshold = params.get("adaptive_masking_threshold", 0.5)
+        grid = params.get("grid", "1deg")
+        method = params.get("method", "nearest_s2d")
+
+        if method not in supported_regridding_methods:
+            raise Exception(
+                "The selected regridding method is not supported. "
+                "Please choose one of %s." % ", ".join(supported_regridding_methods)
+            )
+
+        LOGGER.debug(
+            f"Input parameters: method: {method}, grid: {grid}, adaptive_masking: {adaptive_masking_threshold}"
+        )
+
+        grid_in = self._get_grid_in(self.ds)
+        grid_out = self._get_grid_out(grid)
+        weights = self._get_weights(grid_in=grid_in, grid_out=grid_out, method=method)
 
         self.params = {
-            "regridder": regridder,
+            "grid_in": grid_in,
+            "grid_out": grid_out,
+            "method": method,
+            "regridder": weights.Regridder,
             "adaptive_masking_threshold": adaptive_masking_threshold,
         }
+
+        # In case there was a Halo removed, the shape of grid_in.ds and self.ds would not match anymore
+        #  An alternative would be to store the halo information (duplicated rows, columns) in an attribute,
+        #  and then remove those rows and columns from self.ds?
+        self.ds = self.params.get("grid_in").ds
+
+        # Theres no __str__() method for the Regridder object, so I used its filename attribute,
+        #  which specifies a default filename (which has but not much to do with the filename we would give the weight file).
+        # Better option might be to have the Weights class extend the Regridder class or to define
+        #  a __str__() method for the Weights class.
+        LOGGER.debug(
+            "Resolved parameters: grid_in: {}, grid_out: {}, regridder: {}".format(
+                self.params.get("grid_in").__str__(),
+                self.params.get("grid_out").__str__(),
+                self.params.get("regridder").filename,
+            )
+        )
 
     def _get_file_namer(self):
         # need to overwrite the file namer to make it clear in the output file name
@@ -54,7 +101,9 @@ class Regrid(Operation):
         # extra is what will go at the end of the file name before .nc
         # this may not make sense so change if needed
 
-        extra = f"_regrid-{self.method}-{self.grid_out}"
+        extra = "_regrid-{}-{}".format(
+            self.params.get("method"), self.params.get("grid_out").__str__()
+        )
 
         namer = get_file_namer(self._file_namer)(extra=extra)
 
@@ -74,11 +123,16 @@ class Regrid(Operation):
         # remove halos before regridding
 
         # the result is saved by the process() method on the base class - so I think that would replace your save()?
-        regrid_ds = regrid.regrid(
-            ds,
+        regrid_ds = core_regrid(
+            self.ds,
             self.params.get("regridder", None),
             self.params.get("adaptive_masking_threshold", None),
         )
+
+        # The output ds might not yet be optimal
+        # Will need to test which data variables get dropped or modified by the remapping.
+        # It seems time_bnds, ... get dropped but the vertices of the old dataset are kept.
+        # Also, might want to set more global attributes (clisops+xesmf version, weights information)
 
         return regrid_ds
 
@@ -86,7 +140,7 @@ class Regrid(Operation):
 def regrid(
     ds: Union[xr.Dataset, str, Path],
     *,
-    method="nn",  # do we want defaults for these values?
+    method="nearest_s2d",  # do we want defaults for these values? Yes, but now I added them at _resolve as well. Where to get rid of them?
     adaptive_masking_threshold=0.5,
     grid="1deg",
     output_dir: Optional[Union[str, Path]] = None,
