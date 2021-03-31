@@ -10,7 +10,7 @@ from roocs_utils.xarray_utils.xarray_utils import open_xr_dataset
 
 from clisops import logging
 from clisops.core import subset_bbox, subset_level, subset_time
-from clisops.core.subset import get_lon
+from clisops.core.subset import assign_bounds, get_lat, get_lon
 from clisops.ops.base_operation import Operation
 from clisops.utils.common import expand_wildcards
 from clisops.utils.dataset_utils import check_lon_alignment
@@ -57,13 +57,22 @@ class Subset(Operation):
 
     def _calculate(self):
         if "lon_bnds" and "lat_bnds" in self.params:
+            lon = get_lon(self.ds)
+            lat = get_lat(self.ds)
+
+            # ensure lat/lon bounds have positive ordering, before trying to roll
+            # if descending in dataset, they will be flipped in subset_bbox
+            self.params["lon_bnds"], self.params["lat_bnds"] = (
+                assign_bounds(self.params.get("lon_bnds"), self.ds[lon.name]),
+                assign_bounds(self.params.get("lat_bnds"), self.ds[lat.name]),
+            )
+
             # subset with space and optionally time and level
             LOGGER.debug(f"subset_bbox with parameters: {self.params}")
             ds = check_lon_alignment(self.ds, self.params.get("lon_bnds"))
             try:
                 result = subset_bbox(ds, **self.params)
             except NotImplementedError:
-                lon = get_lon(ds)
                 lon_min, lon_max = lon.values.min(), lon.values.max()
                 raise Exception(
                     f"The requested longitude subset {self.params.get('lon_bnds')} is not within the longitude bounds "
