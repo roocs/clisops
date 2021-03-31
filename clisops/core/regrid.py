@@ -577,6 +577,16 @@ class Grid:
         # If single duplicated cells are found, raise Error
         # If duplicated rows/columns are found, remove them with xarray.Dataset.isel()
 
+        # This might be moved out of this class to be a general util function,
+        # as something similar is required for subsetting and averaging.
+
+        # In this class, as a single Grid object does not have the info whether
+        #  it is an input or an output grid, it is not checked whether the extent
+        #  of the output grid domain requires the halo to be removed or if partial row/column
+        #  halos would prevent the remapping process. For each duplicated grid point one would
+        #  have to check if it falls into the domain of the output grid / subset_bbox / area to
+        #  average over.
+
         # Create array of (ilat, ilon) tuples
         if self.ds[self.lon].ndim == 2 or (
             self.ds[self.lon].ndim == 1 and self.type == "irregular"
