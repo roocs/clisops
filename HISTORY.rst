@@ -1,6 +1,20 @@
 Version History
 ===============
 
+v0.6.4 (unreleased)
+-------------------
+
+New Features
+^^^^^^^^^^^^
+* ``ops.subset.subset`` now ensures all latitude and longitude bounds are in ascending order before passing to ``core.subset.subset_bbox``
+* ``core.subset.subset_level`` now checks that the order of the bounds matches the order of the level data.
+* ``core.subset._check_desc_coords`` now checks the bounds provided are ascending before flipping them.
+
+Other Changes
+^^^^^^^^^^^^^
+* clisops logging no longer disbales other loggers.
+* ``bottleneck`` removed as a dependency - it is not required.
+
 v0.6.3 (2021-03-30)
 -------------------
 
