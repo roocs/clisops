@@ -13,7 +13,7 @@ New Features
 Other Changes
 ^^^^^^^^^^^^^
 * clisops logging no longer disbales other loggers.
-* ``bottleneck`` removed as a dependency - it is not required.
+
 
 v0.6.3 (2021-03-30)
 -------------------
