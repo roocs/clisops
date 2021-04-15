@@ -1,8 +1,8 @@
 import os
-import pytest
 
 import geopandas as gpd
 import numpy as np
+import pytest
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
 
@@ -87,9 +87,9 @@ class TestAverageOverDims:
     def test_average_no_dims(self):
         ds = xr.open_dataset(self.nc_file)
 
-        avg_ds = average.average_over_dims(ds)
-
-        assert avg_ds == ds
+        with pytest.raises(InvalidParameterValue) as exc:
+            average.average_over_dims(ds)
+        assert str(exc.value) == "At least one dimension for averaging must be provided"
 
     def test_average_one_dim(self):
         ds = xr.open_dataset(self.nc_file)

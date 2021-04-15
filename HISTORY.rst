@@ -4,6 +4,10 @@ Version History
 v0.6.4 (unreleased)
 -------------------
 
+Breaking Changes
+^^^^^^^^^^^^^^^^
+* Exception raised in ``core.average.average_over_dims`` when dims is None.
+
 New Features
 ^^^^^^^^^^^^
 * ``ops.subset.subset`` now ensures all latitude and longitude bounds are in ascending order before passing to ``core.subset.subset_bbox``
