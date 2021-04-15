@@ -829,23 +829,6 @@ def test_check_lon_alignment_curvilinear_grid():
     )
 
 
-def test_could_not_roll():
-    area = (160, 45, -100, 90)
-
-    with pytest.raises(Exception) as exc:
-        subset(
-            ds=CMIP6_RLDS_ONE_TIME_STEP,
-            area=area,
-            output_type="xarray",
-        )
-    assert (
-        str(exc.value)
-        == "The requested longitude subset (160.0, -100.0) is not within the longitude "
-        "bounds of this dataset and the data could not be converted to this longitude frame successfully. "
-        "Please re-run your request with longitudes within the bounds of the dataset: (0.00, 357.50)"
-    )
-
-
 class TestSubset:
     def test_resolve_params(self, cmip5_tas_file):
         s = Subset(
@@ -1110,9 +1093,227 @@ def test_curvilinear_ds_no_data_in_bbox():
 
 def test_curvilinear_increase_lon_of_bbox():
 
-    subset(
+    result = subset(
         ds=CMIP6_TOS_ONE_TIME_STEP,
         area="1,40,4,4",
         time="2021-01-01/2050-12-31",
         output_type="xarray",
     )
+
+    assert result
+
+
+class TestReverseBounds:
+    def test_reverse_lat_regular(self, load_esgf_test_data):
+        result = subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        result_rev = subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(20, 45, 240, -45),
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].rlds, result_rev[0].rlds)
+
+    def test_reverse_lon_regular(self, load_esgf_test_data):
+        result = subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        result_rev = subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(240, -45, 20, 45),
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].rlds, result_rev[0].rlds)
+
+    def test_reverse_lon_cross_meridian_regular(self, load_esgf_test_data):
+        result = subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(-70, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        result_rev = subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(240, -45, -70, 45),
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].rlds, result_rev[0].rlds)
+
+    def test_reverse_lat_and_lon_regular(self, load_esgf_test_data):
+        result = subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(-70, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        result_rev = subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(240, 45, -70, -45),
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].rlds, result_rev[0].rlds)
+
+    def test_reverse_lat_curvilinear(self, load_esgf_test_data):
+        result = subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        result_rev = subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area=(20, 45, 240, -45),
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].tos, result_rev[0].tos)
+
+    def test_reverse_lon_curvilinear(self, load_esgf_test_data):
+        result = subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        result_rev = subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area=(240, -45, 20, 45),
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].tos, result_rev[0].tos)
+
+    def test_reverse_lon_cross_meridian_curvilinear(self, load_esgf_test_data):
+        # can't roll because ds has a curvilinear grid
+        with pytest.raises(Exception) as exc:
+            subset(
+                ds=CMIP6_TOS_ONE_TIME_STEP,
+                area=(-70, -45, 240, 45),
+                output_type="xarray",
+            )
+
+        # can't roll because ds has a curvilinear grid
+        with pytest.raises(Exception) as exc_rev:
+            subset(
+                ds=CMIP6_TOS_ONE_TIME_STEP,
+                area=(240, -45, -70, 45),
+                output_type="xarray",
+            )
+
+        assert (
+            str(exc.value)
+            == "The requested longitude subset (-70.0, 240.0) is not within the longitude bounds of this dataset and the data could not be converted to this longitude frame successfully. Please re-run your request with longitudes within the bounds of the dataset: (0.01, 360.00)"
+        )
+        assert str(exc.value) == str(exc_rev.value)
+
+    def test_reverse_lat_and_lon_curvilinear(self, load_esgf_test_data):
+        result = subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        result_rev = subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area=(20, 45, 240, -45),
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].tos, result_rev[0].tos)
+
+    def test_reverse_with_desc_lat_lon_regular(self):
+        ds = _load_ds(CMIP6_RLDS_ONE_TIME_STEP)
+
+        result = subset(
+            ds=ds,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        # make lat and lon descending
+        ds_rev = ds.sortby("lat", ascending=False).sortby("lon", ascending=False)
+
+        result_rev = subset(
+            ds=ds_rev,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        # return lat and lon to ascending
+        result_rev = (
+            result_rev[0].sortby("lat", ascending=True).sortby("lon", ascending=True)
+        )
+
+        np.testing.assert_array_equal(result[0].rlds, result_rev.rlds)
+
+    def test_reverse_with_desc_lat_lon_curvilinear(self):
+        ds = _load_ds(CMIP6_TOS_ONE_TIME_STEP)
+
+        result = subset(
+            ds=ds,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        # make i and j descending
+        ds_rev = ds.sortby("i", ascending=False).sortby("j", ascending=False)
+
+        result_rev = subset(
+            ds=ds_rev,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        # return lat and lon to ascending
+        result_rev = (
+            result_rev[0].sortby("i", ascending=True).sortby("j", ascending=True)
+        )
+
+        np.testing.assert_array_equal(result[0].tos, result_rev.tos)
+
+    def test_reverse_level(self, cmip6_o3):
+        result = subset(
+            ds=cmip6_o3,
+            level="100000/100",
+            output_type="xarray",
+        )
+
+        result_rev = subset(
+            ds=cmip6_o3,
+            level="100/100000",
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].o3, result_rev[0].o3)
+
+    def test_reverse_time(self, load_esgf_test_data):
+
+        result = subset(
+            ds=CMIP5_TAS,
+            time="2021-01-01/2050-12-31",
+            output_type="xarray",
+        )
+
+        assert result[0].time.size == 360
+
+        with pytest.raises(ValueError) as exc:
+            subset(
+                ds=CMIP5_TAS,
+                time="2050-12-31/2021-01-01",
+                output_type="xarray",
+            )
+        assert (
+            str(exc.value)
+            == 'Start date ("2051-01-16T00:00:00") is after end date ("2020-12-16T00:00:00").'
+        )

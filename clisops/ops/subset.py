@@ -10,7 +10,7 @@ from roocs_utils.xarray_utils.xarray_utils import open_xr_dataset
 
 from clisops import logging
 from clisops.core import subset_bbox, subset_level, subset_time
-from clisops.core.subset import get_lon
+from clisops.core.subset import assign_bounds, get_lat, get_lon
 from clisops.ops.base_operation import Operation
 from clisops.utils.common import expand_wildcards
 from clisops.utils.dataset_utils import check_lon_alignment
@@ -57,13 +57,23 @@ class Subset(Operation):
 
     def _calculate(self):
         if "lon_bnds" and "lat_bnds" in self.params:
+            lon = get_lon(self.ds)
+            lat = get_lat(self.ds)
+
+            # ensure lat/lon bounds are in the same order as data, before trying to roll
+            # if descending in dataset, they will be flipped in subset_bbox
+            self.params["lon_bnds"], self.params["lat_bnds"] = (
+                assign_bounds(self.params.get("lon_bnds"), self.ds[lon.name]),
+                assign_bounds(self.params.get("lat_bnds"), self.ds[lat.name]),
+            )
+
             # subset with space and optionally time and level
             LOGGER.debug(f"subset_bbox with parameters: {self.params}")
+            # bounds are always ascending, so if lon is descending rolling will not work.
             ds = check_lon_alignment(self.ds, self.params.get("lon_bnds"))
             try:
                 result = subset_bbox(ds, **self.params)
             except NotImplementedError:
-                lon = get_lon(ds)
                 lon_min, lon_max = lon.values.min(), lon.values.max()
                 raise Exception(
                     f"The requested longitude subset {self.params.get('lon_bnds')} is not within the longitude bounds "
@@ -85,11 +95,19 @@ class Subset(Operation):
 
             kwargs = {}
             valid_args = ["first_level", "last_level"]
+
             for arg in valid_args:
                 kwargs.setdefault(arg, self.params.get(arg, None))
 
             # subset with level only
             if any(kwargs.values()):
+                # ensure bounds are ascending
+                if self.params.get("first_level") > self.params.get("last_level"):
+                    first, last = self.params.get("first_level"), self.params.get(
+                        "last_level"
+                    )
+                    self.params["first_level"], self.params["last_level"] = last, first
+
                 LOGGER.debug(f"subset_level with parameters: {kwargs}")
                 result = subset_level(result, **kwargs)
 
@@ -163,6 +181,11 @@ def subset(
     | split_method: "time:auto"
     | file_namer: "standard"
 
+    Note
+    ----
+        If you request a selection range (such as level, latitude or longitude) that specifies the lower
+        and upper bounds in the opposite direction to the actual coordinate values then clisops.ops.subset
+        will detect this issue and reverse your selection before returning the data subset.
     """
     op = Subset(**locals())
     return op.process()

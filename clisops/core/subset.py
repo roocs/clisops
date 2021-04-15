@@ -810,6 +810,12 @@ def subset_bbox(
     Union[xarray.DataArray, xarray.Dataset]
       Subsetted xarray.DataArray or xarray.Dataset
 
+    Note
+    ----
+        subset_bbox expects the lower and upper bounds to be provided in ascending order.
+        If the actual coordinate values are descending then this will be detected
+        and your selection reversed before the data subset is returned.
+
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
@@ -953,8 +959,8 @@ def in_bounds(bounds: Tuple[float, float], coord: xarray.Coordinate) -> bool:
 
 
 def _check_desc_coords(coord, bounds, dim):
-    """If Dataset coordinates are descending reverse bounds."""
-    if np.all(coord.diff(dim=dim) < 0) and len(coord) > 1:
+    """If Dataset coordinates are descending, and bounds are ascending, reverse bounds."""
+    if np.all(coord.diff(dim=dim) < 0) and len(coord) > 1 and bounds[1] > bounds[0]:
         bounds = np.flip(bounds)
     return bounds
 
@@ -1238,7 +1244,14 @@ def subset_level(
     TBA
     """
     level = xu.get_coord_by_type(da, "level")
-    return da.sel(**{level.name: slice(first_level, last_level)})
+
+    first_level, last_level = _check_desc_coords(
+        level, (first_level, last_level), level.name
+    )
+
+    da = da.sel(**{level.name: slice(first_level, last_level)})
+
+    return da
 
 
 @convert_lat_lon_to_da
