@@ -130,7 +130,9 @@ def average_over_dims(
     """
 
     if not dims:
-        return ds
+        raise InvalidParameterValue(
+            "At least one dimension for averaging must be provided"
+        )
 
     if not set(dims).issubset(set(known_coord_types)):
         raise InvalidParameterValue(
