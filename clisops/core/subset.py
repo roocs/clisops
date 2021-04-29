@@ -920,7 +920,8 @@ def subset_bbox(
 
     if da[lat].size == 0 or da[lon].size == 0:
         raise ValueError(
-            "There were no valid data points found in the requested subset."
+            "There were no valid data points found in the requested subset. Please expand "
+            "the area covered by the bounding box, the time period or the level range you have selected."
         )
 
     return da
