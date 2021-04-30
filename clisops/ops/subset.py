@@ -26,7 +26,7 @@ LOGGER = logging.getLogger(__file__)
 
 class Subset(Operation):
     def _resolve_params(self, **params):
-        """ Generates a dictionary of subset parameters """
+        """Generates a dictionary of subset parameters"""
         time = params.get("time", None)
         area = params.get("area", None)
         level = params.get("level", None)

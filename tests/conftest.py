@@ -172,7 +172,7 @@ def ndq_series():
 
 @pytest.fixture
 def areacella():
-    """Return a rectangular grid of grid cell area. """
+    """Return a rectangular grid of grid cell area."""
     r = 6100000
     lon_bnds = np.arange(-180, 181, 1)
     lat_bnds = np.arange(-90, 91, 1)

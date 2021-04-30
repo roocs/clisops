@@ -42,7 +42,7 @@ def _load_ds(fpath):
 
 
 def test_subset_no_params(cmip5_tas_file, tmpdir):
-    """ Test subset without area param."""
+    """Test subset without area param."""
     result = subset(
         ds=cmip5_tas_file,
         output_dir=tmpdir,
@@ -53,7 +53,7 @@ def test_subset_no_params(cmip5_tas_file, tmpdir):
 
 
 def test_subset_time(cmip5_tas_file, tmpdir):
-    """ Tests clisops subset function with a time subset."""
+    """Tests clisops subset function with a time subset."""
     result = subset(
         ds=cmip5_tas_file,
         time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
@@ -84,7 +84,7 @@ def test_subset_args_as_parameter_classes(cmip5_tas_file, tmpdir):
 
 
 def test_subset_invalid_time(cmip5_tas_file, tmpdir):
-    """ Tests subset with invalid time param."""
+    """Tests subset with invalid time param."""
     with pytest.raises(InvalidParameterValue):
         subset(
             ds=cmip5_tas_file,
@@ -97,7 +97,7 @@ def test_subset_invalid_time(cmip5_tas_file, tmpdir):
 
 
 def test_subset_ds_is_none(tmpdir):
-    """ Tests subset with ds=None."""
+    """Tests subset with ds=None."""
     with pytest.raises(MissingParameterValue):
         subset(
             ds=None,
@@ -108,7 +108,7 @@ def test_subset_ds_is_none(tmpdir):
 
 
 def test_subset_no_ds(tmpdir):
-    """ Tests subset with no dataset provided."""
+    """Tests subset with no dataset provided."""
     with pytest.raises(TypeError):
         subset(
             time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
@@ -118,7 +118,7 @@ def test_subset_no_ds(tmpdir):
 
 
 def test_subset_area_simple_file_name(cmip5_tas_file, tmpdir):
-    """ Tests clisops subset function with a area subset (simple file name)."""
+    """Tests clisops subset function with a area subset (simple file name)."""
     result = subset(
         ds=cmip5_tas_file,
         area=(0.0, 10.0, 10.0, 65.0),
@@ -130,7 +130,7 @@ def test_subset_area_simple_file_name(cmip5_tas_file, tmpdir):
 
 
 def test_subset_area_project_file_name(cmip5_tas_file, tmpdir):
-    """ Tests clisops subset function with a area subset (derived file name)."""
+    """Tests clisops subset function with a area subset (derived file name)."""
     result = subset(
         ds=cmip5_tas_file,
         area=(0.0, 10.0, 10.0, 65.0),
@@ -142,7 +142,7 @@ def test_subset_area_project_file_name(cmip5_tas_file, tmpdir):
 
 
 def test_subset_invalid_area(cmip5_tas_file, tmpdir):
-    """ Tests subset with invalid area param."""
+    """Tests subset with invalid area param."""
     with pytest.raises(InvalidParameterValue):
         subset(
             ds=cmip5_tas_file,
@@ -247,7 +247,7 @@ def test_subset_4D_data_all_argument_permutations(load_esgf_test_data, tmpdir):
 
 
 def test_subset_with_multiple_files_tas(load_esgf_test_data, tmpdir):
-    """ Tests with multiple tas files"""
+    """Tests with multiple tas files"""
     result = subset(
         ds=CMIP5_TAS,
         time=("2001-01-01T00:00:00", "2020-12-30T00:00:00"),
@@ -260,7 +260,7 @@ def test_subset_with_multiple_files_tas(load_esgf_test_data, tmpdir):
 
 
 def test_subset_with_multiple_files_zostoga(load_esgf_test_data, tmpdir):
-    """ Tests with multiple zostoga files"""
+    """Tests with multiple zostoga files"""
     result = subset(
         ds=CMIP5_ZOSTOGA,
         time=("2000-01-01T00:00:00", "2020-12-30T00:00:00"),
@@ -272,7 +272,7 @@ def test_subset_with_multiple_files_zostoga(load_esgf_test_data, tmpdir):
 
 
 def test_subset_with_multiple_files_rh(load_esgf_test_data, tmpdir):
-    """ Tests with multiple rh files"""
+    """Tests with multiple rh files"""
     result = subset(
         ds=CMIP5_RH,
         time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
@@ -285,7 +285,7 @@ def test_subset_with_multiple_files_rh(load_esgf_test_data, tmpdir):
 
 
 def test_subset_with_tas_series(tmpdir, tas_series):
-    """ Test with tas_series fixture"""
+    """Test with tas_series fixture"""
     result = subset(
         ds=tas_series(["20", "22", "25"]),
         time=("2000-07-01T00:00:00", "2020-12-30T00:00:00"),
@@ -449,7 +449,7 @@ def test_area_within_area_subset_chunked(load_esgf_test_data):
 
 
 def test_subset_level(cmip6_o3):
-    """ Tests clisops subset function with a level subset."""
+    """Tests clisops subset function with a level subset."""
     # Levels are: 100000, ..., 100
     ds = _load_ds(cmip6_o3)
 
@@ -606,7 +606,7 @@ def test_time_invariant_subset_standard_name(load_esgf_test_data, tmpdir):
 
 
 def test_longitude_and_latitude_coords_only(load_esgf_test_data, tmpdir):
-    """ Test subset suceeds when latitude and longitude are coordinates not dims and are not called lat/lon """
+    """Test subset suceeds when latitude and longitude are coordinates not dims and are not called lat/lon"""
 
     result = subset(
         ds=CMIP6_TOS,
@@ -1004,7 +1004,8 @@ def test_no_lon_in_range():
 
     assert (
         str(exc.value)
-        == "There were no valid data points found in the requested subset."
+        == "There were no valid data points found in the requested subset. Please expand "
+        "the area covered by the bounding box, the time period or the level range you have selected."
     )
 
 
@@ -1020,7 +1021,8 @@ def test_no_lat_in_range():
 
     assert (
         str(exc.value)
-        == "There were no valid data points found in the requested subset."
+        == "There were no valid data points found in the requested subset. Please expand "
+        "the area covered by the bounding box, the time period or the level range you have selected."
     )
 
 
@@ -1036,7 +1038,8 @@ def test_no_lat_lon_in_range():
 
     assert (
         str(exc.value)
-        == "There were no valid data points found in the requested subset."
+        == "There were no valid data points found in the requested subset. Please expand "
+        "the area covered by the bounding box, the time period or the level range you have selected."
     )
 
 
