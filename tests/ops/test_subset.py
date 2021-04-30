@@ -1004,7 +1004,8 @@ def test_no_lon_in_range():
 
     assert (
         str(exc.value)
-        == "There were no valid data points found in the requested subset."
+        == "There were no valid data points found in the requested subset. Please expand "
+        "the area covered by the bounding box, the time period or the level range you have selected."
     )
 
 
@@ -1020,7 +1021,8 @@ def test_no_lat_in_range():
 
     assert (
         str(exc.value)
-        == "There were no valid data points found in the requested subset."
+        == "There were no valid data points found in the requested subset. Please expand "
+        "the area covered by the bounding box, the time period or the level range you have selected."
     )
 
 
@@ -1036,7 +1038,8 @@ def test_no_lat_lon_in_range():
 
     assert (
         str(exc.value)
-        == "There were no valid data points found in the requested subset."
+        == "There were no valid data points found in the requested subset. Please expand "
+        "the area covered by the bounding box, the time period or the level range you have selected."
     )
 
 
