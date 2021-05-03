@@ -710,7 +710,8 @@ def subset_shape(
     mask_2d = create_mask(x_dim=lon, y_dim=lat, poly=poly, wrap_lons=wrap_lons).clip(
         1, 1
     )
-    # 1 on the shapes, NaN elsewhere. We simply want to remove the 0s from the zeroth shape, for our outer mask trick below.
+    # 1 on the shapes, NaN elsewhere.
+    # We simply want to remove the 0s from the zeroth shape, for our outer mask trick below.
 
     if np.all(mask_2d.isnull()):
         raise ValueError(
