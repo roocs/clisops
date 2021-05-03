@@ -1,10 +1,10 @@
 import os
-from pkg_resources import parse_version
 
 import geopandas as gpd
 import numpy as np
 import pytest
 import xarray as xr
+from pkg_resources import parse_version
 from roocs_utils.exceptions import InvalidParameterValue
 
 from clisops.core import average
@@ -14,6 +14,7 @@ from .._common import XCLIM_TESTS_DATA as TESTS_DATA
 
 try:
     import xesmf
+
     if parse_version(xesmf.__version__) < parse_version("0.5.2"):
         raise ImportError
 except ImportError:
