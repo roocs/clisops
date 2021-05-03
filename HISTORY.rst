@@ -7,6 +7,7 @@ v0.6.4 (unreleased)
 Breaking Changes
 ^^^^^^^^^^^^^^^^
 * Exception raised in ``core.average.average_over_dims`` when dims is None.
+* Exception raised in ``core.average.average_over_shape`` when grid and polygon have no overlapping values.
 
 New Features
 ^^^^^^^^^^^^
