@@ -28,7 +28,7 @@ SUPPORTED_SPLIT_METHODS = ["time:auto"]
 
 
 def check_format(fmt):
-    """ Checks requested format exists. """
+    """Checks requested format exists."""
     if fmt not in SUPPORTED_FORMATS:
         raise KeyError(
             f'Format not recognised: "{fmt}". Must be one of: {SUPPORTED_FORMATS}.'
@@ -36,19 +36,19 @@ def check_format(fmt):
 
 
 def get_format_writer(fmt):
-    """ Finds the output method for the requested output format. """
+    """Finds the output method for the requested output format."""
     check_format(fmt)
     return SUPPORTED_FORMATS[fmt]["method"]
 
 
 def get_format_extension(fmt):
-    """ Finds the extension for the requested output format. """
+    """Finds the extension for the requested output format."""
     check_format(fmt)
     return SUPPORTED_FORMATS[fmt]["extension"]
 
 
 def _format_time(tm: Union[str, dt], fmt="%Y-%m-%d"):
-    """ Convert to datetime if time is a numpy datetime """
+    """Convert to datetime if time is a numpy datetime"""
     if not hasattr(tm, "strftime"):
         tm = pd.to_datetime(str(tm))
 
@@ -74,7 +74,7 @@ def filter_times_within(times, start=None, end=None):
 
 
 def get_da(ds):
-    """ Returns xr.DataArray when format of ds may be either xr.Dataset or xr.DataArray."""
+    """Returns xr.DataArray when format of ds may be either xr.Dataset or xr.DataArray."""
     if isinstance(ds, xr.DataArray):
         da = ds
     else:
