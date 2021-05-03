@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Tuple, Union
 
 import geopandas as gpd
-import numpy as np
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils.xarray_utils import get_coord_type, known_coord_types
