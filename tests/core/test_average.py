@@ -1,4 +1,5 @@
 import os
+from pkg_resources import parse_version
 
 import geopandas as gpd
 import numpy as np
@@ -13,6 +14,8 @@ from .._common import XCLIM_TESTS_DATA as TESTS_DATA
 
 try:
     import xesmf
+    if parse_version(xesmf.__version__) < parse_version("0.5.2"):
+        raise ImportError
 except ImportError:
     xesmf = None
 
@@ -79,6 +82,13 @@ class TestAverageShape:
             avg.isel(time=0), [268.30972367, 277.23981999, 277.58614891]
         )
         np.testing.assert_array_equal(avg.geom, ["Québec", "Europe", "Newfoundland"])
+
+    def test_non_overlapping_regions(self):
+        ds = xr.open_dataset(self.nc_file_neglons)
+        regions = gpd.read_file(self.meridian_geojson)
+
+        with pytest.raises(ValueError):
+            average.average_shape(ds.tasmax, shape=regions)
 
 
 class TestAverageOverDims:

@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Tuple, Union
 
 import geopandas as gpd
+import numpy as np
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils.xarray_utils import get_coord_type, known_coord_types
@@ -75,6 +76,10 @@ def average_shape(
         poly = poly.to_crs(4326)
 
     savger = SpatialAverager(ds_copy, poly.geometry)
+    if savger.weights.nnz == 0:
+        raise ValueError(
+            "There were no valid data points found in the requested averaging region. Verify objects overlap."
+        )
     ds_out = savger(ds_copy)
 
     # Set geom coords to poly's index
