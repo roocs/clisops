@@ -21,21 +21,6 @@ def _load_ds(fpath):
     return xr.open_mfdataset(fpath)
 
 
-def test_average_basic(tmpdir):
-    result = average_over_dims(
-        CMIP5_TAS,
-        dims=None,
-        ignore_undetected_dims=False,
-        output_dir=tmpdir,
-        output_type="netcdf",
-        file_namer="standard",
-    )
-
-    _check_output_nc(
-        result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-22991216.nc"
-    )
-
-
 def test_average_basic_data_array(cmip5_tas_file):
     ds = xr.open_dataset(cmip5_tas_file)
     result = average_over_dims(
@@ -160,6 +145,17 @@ def test_average_multiple_dims_xarray():
 
     assert "time" not in result[0]
     assert "lon" not in result[0]
+
+
+def test_average_no_dims(tmpdir):
+    with pytest.raises(InvalidParameterValue) as exc:
+        average_over_dims(
+            CMIP5_TAS,
+            dims=None,
+            ignore_undetected_dims=False,
+            output_type="xarray",
+        )
+    assert str(exc.value) == "At least one dimension for averaging must be provided"
 
 
 def test_unknown_dim():

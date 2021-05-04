@@ -1,11 +1,10 @@
 import os
-import shutil
 
-from git import Repo
 import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
+from git import Repo
 
 from clisops.utils import get_file
 from tests._common import MINI_ESGF_CACHE_DIR, write_roocs_cfg
@@ -173,7 +172,7 @@ def ndq_series():
 
 @pytest.fixture
 def areacella():
-    """Return a rectangular grid of grid cell area. """
+    """Return a rectangular grid of grid cell area."""
     r = 6100000
     lon_bnds = np.arange(-180, 181, 1)
     lat_bnds = np.arange(-90, 91, 1)
@@ -273,7 +272,6 @@ def cmip5_tas_file():
     return str(
         get_file(
             "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc",
-            branch="add_cmip5_hadgem",  # This will be removed once the branch is merged into "main"
         )
     )
 

@@ -1,9 +1,6 @@
 import os
 
-import pytest
-from roocs_utils.exceptions import InvalidParameterValue
-
-from clisops import CONFIG, utils
+from clisops import CONFIG
 
 
 def test_local_config_loads():

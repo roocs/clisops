@@ -21,6 +21,8 @@ from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import cascaded_union, split
 from xarray.core.utils import get_temp_dimname
 
+from clisops.utils.dataset_utils import adjust_date_to_calendar
+
 __all__ = [
     "create_mask",
     "distance",
@@ -86,6 +88,9 @@ def check_start_end_dates(func):
                 UserWarning,
                 stacklevel=2,
             )
+            kwargs["start_date"] = adjust_date_to_calendar(
+                da, kwargs["start_date"], "forwards"
+            )
             nudged = da.time.sel(time=slice(kwargs["start_date"], None)).values[0]
             kwargs["start_date"] = to_isoformat(nudged)
 
@@ -106,6 +111,9 @@ def check_start_end_dates(func):
                 '"end_date" has been nudged to nearest valid time step in xarray object.',
                 UserWarning,
                 stacklevel=2,
+            )
+            kwargs["end_date"] = adjust_date_to_calendar(
+                da, kwargs["end_date"], "backwards"
             )
             nudged = da.time.sel(time=slice(None, kwargs["end_date"])).values[-1]
             kwargs["end_date"] = to_isoformat(nudged)
@@ -640,17 +648,16 @@ def subset_shape(
     # Only case not implemented is when lon_bnds cross the 0 deg meridian but dataset grid has all positive lons
     try:
         ds_copy = subset_bbox(ds_copy, lon_bnds=lon_bnds, lat_bnds=lat_bnds)
+    except ValueError as e:
+        raise ValueError(
+            "No grid cell centroids found within provided polygon bounding box. "
+            'Try using the "buffer" option to create an expanded area.'
+        ) from e
     except NotImplementedError:
         pass
 
     lon = get_lon(ds_copy)
     lat = get_lat(ds_copy)
-
-    if lon.size == 0 or lat.size == 0:
-        raise ValueError(
-            "No grid cell centroids found within provided polygon bounding box. "
-            'Try using the "buffer" option to create an expanded area.'
-        )
 
     if start_date or end_date:
         ds_copy = subset_time(ds_copy, start_date=start_date, end_date=end_date)
@@ -703,7 +710,8 @@ def subset_shape(
     mask_2d = create_mask(x_dim=lon, y_dim=lat, poly=poly, wrap_lons=wrap_lons).clip(
         1, 1
     )
-    # 1 on the shapes, NaN elsewhere. We simply want to remove the 0s from the zeroth shape, for our outer mask trick below.
+    # 1 on the shapes, NaN elsewhere.
+    # We simply want to remove the 0s from the zeroth shape, for our outer mask trick below.
 
     if np.all(mask_2d.isnull()):
         raise ValueError(
@@ -803,6 +811,12 @@ def subset_bbox(
     Union[xarray.DataArray, xarray.Dataset]
       Subsetted xarray.DataArray or xarray.Dataset
 
+    Note
+    ----
+        subset_bbox expects the lower and upper bounds to be provided in ascending order.
+        If the actual coordinate values are descending then this will be detected
+        and your selection reversed before the data subset is returned.
+
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
@@ -849,15 +863,30 @@ def subset_bbox(
         # Crop original array using slice, which is faster than `where`.
         ind = np.where(lon_cond & lat_cond)
         args = dict()
+
         for i, d in enumerate(da[lat].dims):
-            coords = da[d][ind[i]]
-            bnds = _check_desc_coords(
-                coord=da[d], bounds=[coords.min().values, coords.max().values], dim=d
-            )
+            try:
+                coords = da[d][ind[i]]
+                bnds = _check_desc_coords(
+                    coord=da[d],
+                    bounds=[coords.min().values, coords.max().values],
+                    dim=d,
+                )
+            except ValueError:
+                raise ValueError(
+                    "There were no valid data points found in the requested subset. Please expand "
+                    "the area covered by the bounding box."
+                )
             args[d] = slice(*bnds)
         # If the dims of lat and lon do not have coords, sel defaults to isel,
         # and then the last element is not returned.
         da = da.sel(**args)
+
+        if da[lat].size == 0 or da[lon].size == 0:
+            raise ValueError(
+                "There were no valid data points found in the requested subset. Please expand "
+                "the area covered by the bounding box."
+            )
 
         # Recompute condition on cropped coordinates
         if lat_bnds is not None:
@@ -889,6 +918,12 @@ def subset_bbox(
 
     if first_level or last_level:
         da = subset_level(da, first_level=first_level, last_level=last_level)
+
+    if da[lat].size == 0 or da[lon].size == 0:
+        raise ValueError(
+            "There were no valid data points found in the requested subset. Please expand "
+            "the area covered by the bounding box, the time period or the level range you have selected."
+        )
 
     return da
 
@@ -926,8 +961,8 @@ def in_bounds(bounds: Tuple[float, float], coord: xarray.Coordinate) -> bool:
 
 
 def _check_desc_coords(coord, bounds, dim):
-    """If Dataset coordinates are descending reverse bounds."""
-    if np.all(coord.diff(dim=dim) < 0) and len(coord) > 1:
+    """If Dataset coordinates are descending, and bounds are ascending, reverse bounds."""
+    if np.all(coord.diff(dim=dim) < 0) and len(coord) > 1 and bounds[1] > bounds[0]:
         bounds = np.flip(bounds)
     return bounds
 
@@ -1211,7 +1246,14 @@ def subset_level(
     TBA
     """
     level = xu.get_coord_by_type(da, "level")
-    return da.sel(**{level.name: slice(first_level, last_level)})
+
+    first_level, last_level = _check_desc_coords(
+        level, (first_level, last_level), level.name
+    )
+
+    da = da.sel(**{level.name: slice(first_level, last_level)})
+
+    return da
 
 
 @convert_lat_lon_to_da

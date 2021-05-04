@@ -11,7 +11,8 @@ import clisops
 from .__version__ import __author__, __email__, __version__
 
 logging.config.fileConfig(
-    os.path.join(os.path.dirname(__file__), "etc", "logging.conf")
+    os.path.join(os.path.dirname(__file__), "etc", "logging.conf"),
+    disable_existing_loggers=False,
 )
 CONFIG = get_config(clisops)
 
