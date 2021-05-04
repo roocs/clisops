@@ -17,8 +17,8 @@ New Features
 
 Other Changes
 ^^^^^^^^^^^^^
-* clisops logging no longer disbales other loggers.
-
+* clisops logging no longer disables other loggers.
+* GitHub CI now leverages ``tox`` for testing as well as tests averaging functions via a conda-based build.
 
 v0.6.3 (2021-03-30)
 -------------------
