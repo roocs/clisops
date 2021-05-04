@@ -69,5 +69,4 @@ jobs:
       - name: Test with conda
         run: |
             source activate clisops
-            pip install --upgrade git+https://github.com/pangeo-data/xESMF.git
             pytest --cov tests
