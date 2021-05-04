@@ -75,6 +75,10 @@ def average_shape(
         poly = poly.to_crs(4326)
 
     savger = SpatialAverager(ds_copy, poly.geometry)
+    if savger.weights.nnz == 0:
+        raise ValueError(
+            "There were no valid data points found in the requested averaging region. Verify objects overlap."
+        )
     ds_out = savger(ds_copy)
 
     # Set geom coords to poly's index

@@ -18,6 +18,6 @@ dependencies:
  - pyproj>=2.5
  - requests>=2.0
  - roocs-utils>=0.3.0
- - cf_xarray>=0.3.1
+ - cf_xarray>=0.5.1
 #  - pip:
 #     - roocs-utils @ git+https://github.com/roocs/roocs-utils.git@master#egg=roocs-utils
