@@ -30,7 +30,7 @@ jobs:
         include:
           - python-version: 3.6
             tox-env: py36
-          - python-version: 3.7
+          - python-version: 3.7-xarray
             tox-env: py37
           - python-version: 3.8
             tox-env: py38
@@ -47,21 +47,6 @@ jobs:
     - name: Test with tox
       run: tox -e ${{ matrix.tox-env }}
 
-  xarray:
-    needs: pypi
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        tox-env: [xarray]
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
-        with:
-          python-version: 3.7
-      - name: Install tox
-        run: pip install tox
-      - name: Test with tox against xarray@master
-        run: tox -e ${{ matrix.tox-env }}
 
   conda-xesmf:
     needs: black
