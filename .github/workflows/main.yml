@@ -2,8 +2,8 @@ name: build
 
 on:
   push:
-    # branches:
-    #   - master
+    branches:
+      - master
   pull_request:
 
 jobs:
@@ -60,7 +60,7 @@ jobs:
           python-version: 3.7
       - name: Install tox
         run: pip install tox
-      - name: Run tests against xarray master
+      - name: Test with tox against xarray@master
         run: tox -e ${{ matrix.tox-env }}
 
   conda-xesmf:
