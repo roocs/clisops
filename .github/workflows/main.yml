@@ -47,6 +47,22 @@ jobs:
     - name: Test with tox
       run: tox -e ${{ matrix.tox-env }}
 
+  xarray:
+    needs: pypi
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        tox-env: [xarray]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install tox
+        run: pip install tox
+      - name: Run tests against xarray master
+        run: tox -e ${{ matrix.tox-env }}
+
   conda-xesmf:
     needs: black
     runs-on: ubuntu-latest
