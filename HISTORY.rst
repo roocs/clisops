@@ -1,7 +1,7 @@
 Version History
 ===============
 
-v0.6.4 (unreleased)
+v0.6.4 (2021-05-17)
 -------------------
 
 Breaking Changes
@@ -19,6 +19,7 @@ Other Changes
 ^^^^^^^^^^^^^
 * clisops logging no longer disables other loggers.
 * GitHub CI now leverages ``tox`` for testing as well as tests averaging functions via a conda-based build.
+* Added a CI build to run against xarray@master that is allowed to fail.
 
 v0.6.3 (2021-03-30)
 -------------------
@@ -26,7 +27,7 @@ v0.6.3 (2021-03-30)
 Breaking Changes
 ^^^^^^^^^^^^^^^^
 * Raise an exception in ``core.subset.subset_bbox`` when there are no data points in the result.
-* ``roocs-utils``>=0.6.3 required.
+* ``roocs-utils``>=0.3.0 required.
 
 Bug Fixes
 ^^^^^^^^^
