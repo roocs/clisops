@@ -1,6 +1,13 @@
 Version History
 ===============
 
+v0.6.5 (unreleased)
+-------------------
+
+New Features
+^^^^^^^^^^^^
+* New optional dependency ``PyGEOS``, when installed the performance of ``core.subset.create_mask`` and ``cure.subset.subset_shape`` are greatly improved.
+
 v0.6.4 (2021-05-17)
 -------------------
 
