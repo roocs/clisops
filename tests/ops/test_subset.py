@@ -898,9 +898,8 @@ def test_end_date_nudged_backwards():
     # check end date normally raises an error
     with pytest.raises(ValueError) as exc:
         ds.time.sel(time=slice(None, end_date))
-    assert (
-        str(exc.value)
-        == "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0)"
+    assert str(exc.value).startswith(
+        "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0"
     )
 
     result = subset(
@@ -924,9 +923,8 @@ def test_start_date_nudged_forwards():
     # check start date normally raises an error
     with pytest.raises(ValueError) as exc:
         ds.time.sel(time=slice(None, start_date))
-    assert (
-        str(exc.value)
-        == "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0)"
+    assert str(exc.value).startswith(
+        "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0"
     )
 
     result = subset(
@@ -950,9 +948,8 @@ def test_end_date_nudged_backwards_monthly_data():
     # check end date normally raises an error
     with pytest.raises(ValueError) as exc:
         ds.time.sel(time=slice(None, end_date))
-    assert (
-        str(exc.value)
-        == "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0)"
+    assert str(exc.value).startswith(
+        "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0"
     )
 
     result = subset(
@@ -976,9 +973,8 @@ def test_start_date_nudged_backwards_monthly_data():
     # check start date normally raises an error
     with pytest.raises(ValueError) as exc:
         ds.time.sel(time=slice(None, start_date))
-    assert (
-        str(exc.value)
-        == "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0)"
+    assert str(exc.value).startswith(
+        "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0"
     )
 
     result = subset(
