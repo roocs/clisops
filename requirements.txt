@@ -12,3 +12,4 @@ roocs-utils>=0.3.0
 cf-xarray>=0.5.1
 scipy>=1.6.1
 # roocs-utils @ git+https://github.com/roocs/roocs-utils.git@master#egg=roocs-utils
+roocs-grids @ git+https://github.com/roocs/roocs-grids.git@main#egg=roocs-grids

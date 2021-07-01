@@ -74,7 +74,7 @@ class Regrid(Operation):
             "grid_in": grid_in,
             "grid_out": grid_out,
             "method": method,
-            "regridder": weights.Regridder,
+            "regridder": weights.regridder,
             "adaptive_masking_threshold": adaptive_masking_threshold,
         }
 
@@ -110,20 +110,17 @@ class Regrid(Operation):
         return namer
 
     def _calculate(self):
-        # calculate is where clisops.core.regird should be called
-        # e.g. in ops.average.Average._calculate()
-        # avg_ds = average.average_over_dims(
-        #     self.ds,
-        #     self.params.get("dims", None),
-        #     self.params.get("ignore_undetected_dims", None),
-        # )
-
-        # return avg_ds
-
+        """
+        Process the regridding request:
+        - remove halos if present
+        - call: "clisops.core.regrid.regrid(...)"
+        - return the resulting regridded Xarray Dataset
+        """
         # remove halos before regridding
 
-        # the result is saved by the process() method on the base class - so I think that would replace your save()?
-        regrid_ds = core_regrid(
+        # the result is saved by the process() method on the base class - 
+        # so I think that would replace your save()?
+        regridded_ds = core_regrid(
             self.ds,
             self.params.get("regridder", None),
             self.params.get("adaptive_masking_threshold", None),
@@ -134,7 +131,7 @@ class Regrid(Operation):
         # It seems time_bnds, ... get dropped but the vertices of the old dataset are kept.
         # Also, might want to set more global attributes (clisops+xesmf version, weights information)
 
-        return regrid_ds
+        return regridded_ds
 
 
 def regrid(

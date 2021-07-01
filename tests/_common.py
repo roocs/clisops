@@ -149,3 +149,9 @@ CMIP6_TOS_ONE_TIME_STEP = Path(
     MINI_ESGF_CACHE_DIR,
     "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Omon/tos/gn/v20190710/tos_Omon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_185001.nc",
 ).as_posix()
+
+# cmip5 regular gridded one time step
+CMIP5_MRSOS_ONE_TIME_STEP = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/day/land/day/r1i1p1/latest/mrsos/mrsos_day_HadGEM2-ES_rcp85_r1i1p1_20051201.nc"
+).as_posix()
