@@ -274,7 +274,7 @@ class TestWeights:
         # assert w.id ==
 
         # default file_name = method_inputgrid_outputgrid_periodic"
-        assert w.Regridder.filename == "bilinear_80x180_120x240_peri.nc"
+        assert w.regridder.filename == "bilinear_80x180_120x240_peri.nc"
 
     def test_grids_in_and_out_conservative(self):
         ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
@@ -293,7 +293,7 @@ class TestWeights:
         # assert w.id ==
 
         # default file_name = method_inputgrid_outputgrid_periodic"
-        assert w.Regridder.filename == "bilinear_80x180_120x240_peri.nc"
+        assert w.regridder.filename == "bilinear_80x180_120x240_peri.nc"
 
     def test_from_id(self):
         pass
@@ -312,10 +312,10 @@ class TestRegrid:
 
     def test_adaptive_masking(self):
         w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="conservative")
-        r = regrid(self.ds, w.Regridder, adaptive_masking_threshold=0.7)
+        r = regrid(self.ds, w.regridder, adaptive_masking_threshold=0.7)
         print(r)
 
     def test_no_adaptive_masking(self):
         w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="bilinear")
-        r = regrid(self.ds.tas, w.Regridder)
+        r = regrid(self.ds.tas, w.regridder)
         print(r)
