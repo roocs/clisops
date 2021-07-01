@@ -20,5 +20,6 @@ dependencies:
  - roocs-utils>=0.3.0
  - cf_xarray>=0.5.1
  - pygeos>=0.8
+ - scipy>=1.6.1
 #  - pip:
 #     - roocs-utils @ git+https://github.com/roocs/roocs-utils.git@master#egg=roocs-utils
