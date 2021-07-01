@@ -5,14 +5,12 @@ from typing import Tuple, Union
 
 import cf_xarray as cfxr
 import numpy as np
+import roocs_grids
 import scipy
 import xarray as xr
 import xesmf as xe
-
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils.xarray_utils import get_coord_by_attr, get_coord_by_type
-
-import roocs_grids
 
 from clisops.utils import dataset_utils
 
@@ -754,7 +752,7 @@ class Grid:
 
     def _list_ten(self, list1d):
         """
-        List up to 10 list elements equally distributed to beginning and end of list. 
+        List up to 10 list elements equally distributed to beginning and end of list.
         Helper function.
         """
         if len(list1d) < 11:
@@ -802,8 +800,8 @@ class Grid:
 
         # Test if CF standard_names latitude and longitude can be found
         elif (
-            get_coord_by_type(self.ds, "latitude") is not None and
-            get_coord_by_type(self.ds, "longitude") is not None
+            get_coord_by_type(self.ds, "latitude") is not None
+            and get_coord_by_type(self.ds, "longitude") is not None
             # cfxr.accessor._get_with_standard_name(self.ds, "latitude") != []
             # and cfxr.accessor._get_with_standard_name(self.ds, "longitude") != []
         ):
@@ -1044,7 +1042,7 @@ class Grid:
         roocs_utils.xarray_utils.xarray_utils.get_coord_by_type(ds, coord_type, ignore_aux_coords=True)
         """
         # coordinates = self.ds.cf[coordinate].name
-    #    coordinates = get_coord_by_attr(self.ds, "standard_name", coordinate).name
+        #    coordinates = get_coord_by_attr(self.ds, "standard_name", coordinate).name
         coord = get_coord_by_type(self.ds, coord_type)
         return coord.name
         """

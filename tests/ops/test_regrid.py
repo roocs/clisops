@@ -4,12 +4,11 @@ from unittest.mock import Mock
 
 import pytest
 import xarray as xr
+from roocs_grids import grid_dict
 
 import clisops
 from clisops import CONFIG
 from clisops.ops.regrid import regrid
-
-from roocs_grids import grid_dict
 
 from .._common import CMIP5_MRSOS_ONE_TIME_STEP
 
@@ -45,12 +44,15 @@ def test_regrid_basic(tmpdir, load_esgf_test_data):
 
 def test_regrid_grid_as_none(tmpdir, load_esgf_test_data):
     """
-    Test behaviour when none passed as method and grid - 
+    Test behaviour when none passed as method and grid -
     should use the default regridding.
     """
     fpath = CMIP5_MRSOS_ONE_TIME_STEP
 
-    with pytest.raises(Exception, match="xarray.Dataset, grid_id or grid_instructor have to be specified as input."):
+    with pytest.raises(
+        Exception,
+        match="xarray.Dataset, grid_id or grid_instructor have to be specified as input.",
+    ):
         regrid(
             fpath,
             grid=None,
@@ -60,7 +62,7 @@ def test_regrid_grid_as_none(tmpdir, load_esgf_test_data):
         )
 
 
-@pytest.mark.parametrize('grid_id', sorted(grid_dict))
+@pytest.mark.parametrize("grid_id", sorted(grid_dict))
 def test_regrid_regular_grid_to_all_roocs_grids(tmpdir, load_esgf_test_data, grid_id):
     "Test regridded a regular lat/lon field to all roocs grid types."
     fpath = CMIP5_MRSOS_ONE_TIME_STEP
@@ -84,4 +86,3 @@ def test_regrid_regular_grid_to_all_roocs_grids(tmpdir, load_esgf_test_data, gri
     ds = xr.open_dataset(nc_file)
     assert "mrsos" in ds
     assert ds.mrsos.size > 100
-
