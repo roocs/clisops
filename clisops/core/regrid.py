@@ -160,7 +160,7 @@ class Weights:
         # Identify folder by id
         # Load weightfile with xesmf.Regridder
         # Load additional info from the json file: setattr(self, key, initial_data[key])
-        # self.Regridder = xe.Regridder(method=method, reuse_weights=True, weights=filename)
+        # self.regridder = xe.Regridder(method=method, reuse_weights=True, weights=filename)
         return
 
     def save_to_disk(self, filename=None, format="xESMF"):
