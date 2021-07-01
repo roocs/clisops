@@ -51,7 +51,7 @@ def test_regrid_grid_as_none(tmpdir, load_esgf_test_data):
     fpath = CMIP5_MRSOS_ONE_TIME_STEP
 
     with pytest.raises(Exception, match="xarray.Dataset, grid_id or grid_instructor have to be specified as input."):
-        result = regrid(
+        regrid(
             fpath,
             grid=None,
             output_dir=tmpdir,
