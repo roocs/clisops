@@ -1,3 +1,13 @@
+from pkg_resources import parse_version
+
+try:
+    import xesmf
+
+    if parse_version(xesmf.__version__) < parse_version("0.6.0"):
+        raise ImportError
+except ImportError:
+    xesmf = None
+
 import os
 import sys
 from unittest.mock import Mock
@@ -21,6 +31,9 @@ def _load_ds(fpath):
     return xr.open_mfdataset(fpath)
 
 
+@pytest.mark.skipif(
+    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
+)
 def test_regrid_basic(tmpdir, load_esgf_test_data):
     "Test a basic regridding operation."
     fpath = CMIP5_MRSOS_ONE_TIME_STEP
@@ -42,6 +55,9 @@ def test_regrid_basic(tmpdir, load_esgf_test_data):
     )
 
 
+@pytest.mark.skipif(
+    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
+)
 def test_regrid_grid_as_none(tmpdir, load_esgf_test_data):
     """
     Test behaviour when none passed as method and grid -
@@ -62,6 +78,9 @@ def test_regrid_grid_as_none(tmpdir, load_esgf_test_data):
         )
 
 
+@pytest.mark.skipif(
+    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
+)
 @pytest.mark.parametrize("grid_id", sorted(grid_dict))
 def test_regrid_regular_grid_to_all_roocs_grids(tmpdir, load_esgf_test_data, grid_id):
     "Test regridded a regular lat/lon field to all roocs grid types."
