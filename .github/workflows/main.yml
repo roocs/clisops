@@ -77,3 +77,4 @@ jobs:
         run: |
             source activate clisops
             pytest --cov tests
+
