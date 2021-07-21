@@ -5,14 +5,19 @@ from typing import Tuple, Union
 
 import cf_xarray as cfxr
 import numpy as np
+import roocs_grids
 import scipy
 import xarray as xr
-import xesmf as xe
+
+try:
+    import xesmf as xe
+except ImportError:
+    raise ValueError(
+        "Package xesmf >= 0.6.0 is required to use the regridding functionality."
+    )
 
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils.xarray_utils import get_coord_by_attr, get_coord_by_type
-
-import roocs_grids
 
 from clisops.utils import dataset_utils
 
@@ -24,36 +29,20 @@ def regrid(ds, regridder, adaptive_masking_threshold=0.5):
     #                 adaptive_masking_threshold=adaptive_masking_threshold,
     #                 keep_attrs=True)
 
-    # adaptive-masking will be supported in xesmf from version 0.6+
-    # I think it does not make sense to implement it here, as one would have to implement it
-    #  supporting an entire xarray.Dataset as input
+    # It might in general be sufficient to always act  as if the threshold was
+    #  set correctly and let xesmf handle it. But then we might not allow it
+    #  the bilinear method, as the results do not look too great and I am still
+    #  not sure/convinced adaptive_masking makes sense for this method.
     if (
         regridder.method in ["conservative", "conservative_normed", "patch"]
         and adaptive_masking_threshold >= 0.0
         and adaptive_masking_threshold < 1.0
     ):
-        return adaptive_masking(ds, regridder, adaptive_masking_threshold)
+        return regridder(
+            ds, skipna=True, na_thres=adaptive_masking_threshold, keep_attrs=True
+        )
     else:
-        return regridder(ds, keep_attrs=True)
-
-
-def adaptive_masking(ds_in, regridder, min_norm_contribution=0.5):
-    """Performs regridding incl. renormalization for conservative weights"""
-    validi = ds_in.notnull().astype("d")
-    valido = regridder(validi, keep_attrs=True)
-
-    tempi0 = ds_in.fillna(0)
-    tempo0 = regridder(tempi0)
-    # min_norm_contribution factor could prevent values for cells that should be masked.
-    # It prevents the renormalization for cells that get less than min_norm_contribution
-    #  from source cells. If the factor==0.66 it means that at most one third of the source cells' area
-    #  contributing to the target cell is masked. This factor has however to be tweaked manually for each
-    #  pair of source and destination grid.
-    if min_norm_contribution < 1:
-        valido = xr.where(valido < min_norm_contribution, np.nan, valido)
-
-    ds_out = xr.where(valido != 0, tempo0 / valido, np.nan)
-    return ds_out
+        return regridder(ds, skipna=False, keep_attrs=True)
 
 
 class Weights:
@@ -104,9 +93,6 @@ class Weights:
 
             if not self.regridder:
                 self.regridder = self.compute()
-                # Masking out-of-domain values and missing values
-                #  will be obsolete with future xesmf versions (0.6+)
-                self.add_matrix_NaNs()
 
     def compute(self, ignore_degenerate=None):
         """
@@ -114,6 +100,9 @@ class Weights:
         If grids have problems of degenerated cells near the poles
         there is the ignore_degenerate option.
         """
+
+        # ToDo: properly test / check the periodic attribute of the xESMF Regridder.
+        #  The grid.extent check done here might not be suitable to set the periodic att.
 
         # Is grid periodic in longitude
         periodic = False
@@ -135,6 +124,7 @@ class Weights:
             self.method,
             periodic=periodic,
             ignore_degenerate=ignore_degenerate,
+            unmapped_to_nan=True,
         )
 
     def _reformat(self, format_from, format_to):
@@ -172,21 +162,6 @@ class Weights:
         # else:
         # read file, reformat to xESMF sparse matrix and initialize xesmf.Regridder
         raise NotImplementedError
-
-    def add_matrix_NaNs(self):
-        """
-        Add Nans to matrices, which makes any output cell with a weight from a NaN input cell = NaN
-        Will likely be obsolete with future versions of xesmf (0.6+)
-        """
-        X = self.regridder.weights
-        M = scipy.sparse.csr_matrix(X)
-        # indptr: https://stackoverflow.com/questions/52299420/scipy-csr-matrix-understand-indptr
-        # Creates array with length nrows+1 with information about non-zero values,
-        #  with np.diff calculating how many non-zero elements there are in each row
-        num_nonzeros = np.diff(M.indptr)
-        # Setting rows with only zeros to NaN
-        M[num_nonzeros == 0, 0] = np.NaN
-        self.regridder.weights = scipy.sparse.coo_matrix(M)
 
 
 class Grid:
@@ -754,7 +729,7 @@ class Grid:
 
     def _list_ten(self, list1d):
         """
-        List up to 10 list elements equally distributed to beginning and end of list. 
+        List up to 10 list elements equally distributed to beginning and end of list.
         Helper function.
         """
         if len(list1d) < 11:
@@ -802,8 +777,9 @@ class Grid:
 
         # Test if CF standard_names latitude and longitude can be found
         elif (
-            get_coord_by_type(self.ds, "latitude") is not None and
-            get_coord_by_type(self.ds, "longitude") is not None
+            get_coord_by_type(self.ds, "latitude", ignore_aux_coords=False) is not None
+            and get_coord_by_type(self.ds, "longitude", ignore_aux_coords=False)
+            is not None
             # cfxr.accessor._get_with_standard_name(self.ds, "latitude") != []
             # and cfxr.accessor._get_with_standard_name(self.ds, "longitude") != []
         ):
@@ -1044,8 +1020,8 @@ class Grid:
         roocs_utils.xarray_utils.xarray_utils.get_coord_by_type(ds, coord_type, ignore_aux_coords=True)
         """
         # coordinates = self.ds.cf[coordinate].name
-    #    coordinates = get_coord_by_attr(self.ds, "standard_name", coordinate).name
-        coord = get_coord_by_type(self.ds, coord_type)
+        #    coordinates = get_coord_by_attr(self.ds, "standard_name", coordinate).name
+        coord = get_coord_by_type(self.ds, coord_type, ignore_aux_coords=False)
         return coord.name
         """
         coordinates = cfxr.accessor._get_with_standard_name(self.ds, coordinate)
@@ -1064,7 +1040,7 @@ class Grid:
         """
 
     def set_standard_name(self, coord_type):
-        coord = get_coord_by_type(self.ds, coord_type)
+        coord = get_coord_by_type(self.ds, coord_type, ignore_aux_coords=False)
         coord.attrs["standard_name"] = coord_type
 
     def detect_bounds(self, coordinate):

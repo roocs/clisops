@@ -41,7 +41,7 @@ class Regrid(Operation):
         return Weights(grid_in=grid_in, grid_out=grid_out, method=method)
 
     def _resolve_params(self, **params):
-        """ Generates a dictionary of regrid parameters """
+        """Generates a dictionary of regrid parameters"""
         # all regrid specific paramterers should be passed in via **params
         # this is where we resolve them and set self.params as a dict or as separate attributes
         # this would be where you make use of your other methods/ attributes e.g.
@@ -118,7 +118,7 @@ class Regrid(Operation):
         """
         # remove halos before regridding
 
-        # the result is saved by the process() method on the base class - 
+        # the result is saved by the process() method on the base class -
         # so I think that would replace your save()?
         regridded_ds = core_regrid(
             self.ds,
