@@ -76,5 +76,5 @@ jobs:
       - name: Test with conda
         run: |
             source activate clisops
-            pytest --cov tests
+            python -m pytest --cov tests
 
