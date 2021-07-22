@@ -25,9 +25,7 @@ def _load_ds(fpath):
     return xr.open_mfdataset(fpath)
 
 
-@pytest.mark.skipif(
-    xe is None, reason=XESMF_IMPORT_MSG
-)
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_basic(tmpdir, load_esgf_test_data):
     "Test a basic regridding operation."
     fpath = CMIP5_MRSOS_ONE_TIME_STEP
@@ -49,9 +47,7 @@ def test_regrid_basic(tmpdir, load_esgf_test_data):
     )
 
 
-@pytest.mark.skipif(
-    xe is None, reason=XESMF_IMPORT_MSG
-)
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_grid_as_none(tmpdir, load_esgf_test_data):
     """
     Test behaviour when none passed as method and grid -
@@ -72,9 +68,7 @@ def test_regrid_grid_as_none(tmpdir, load_esgf_test_data):
         )
 
 
-@pytest.mark.skipif(
-    xe is None, reason=XESMF_IMPORT_MSG
-)
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 @pytest.mark.parametrize("grid_id", sorted(grid_dict))
 def test_regrid_regular_grid_to_all_roocs_grids(tmpdir, load_esgf_test_data, grid_id):
     "Test regridded a regular lat/lon field to all roocs grid types."

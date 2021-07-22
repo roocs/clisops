@@ -16,6 +16,7 @@ import xarray as xr
 # If set to None, the `require_xesmf` decorator will check this
 try:
     import xesmf as xe
+
     if parse_version(xe.__version__) < parse_version("0.6.0"):
         raise ImportError()
 except ImportError:
@@ -30,6 +31,7 @@ from clisops.utils import dataset_utils
 
 def require_xesmf(func):
     "Decorator to ensure that xesmf is installed before function/method is called."
+
     @functools.wraps(func)
     def wrapper_func(*args, **kwargs):
         if xe is None:
@@ -187,7 +189,6 @@ class Weights:
 
 
 class Grid:
-
     @require_xesmf
     def __init__(self, ds=None, grid_id=None, grid_instructor=None):
         "Initialise the Grid object. Supporting only 2D horizontal grids."
