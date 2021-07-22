@@ -29,10 +29,10 @@ from clisops.utils import dataset_utils
 
 
 def require_xesmf(func):
-    """Decorator to ensure that xesmf is installed before function/method is called."""
+    "Decorator to ensure that xesmf is installed before function/method is called."
     @functools.wraps(func)
     def wrapper_func(*args, **kwargs):
-        if xe == None:
+        if xe is None:
             raise ValueError(
                 "Package xesmf >= 0.6.0 is required to use the regridding functionality."
             )
