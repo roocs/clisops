@@ -2,6 +2,8 @@
 import warnings
 from pathlib import Path
 from typing import Tuple, Union
+import functools
+from pkg_resources import parse_version
 
 import cf_xarray as cfxr
 import numpy as np
@@ -9,12 +11,16 @@ import roocs_grids
 import scipy
 import xarray as xr
 
+
+# Try importing xesmf and set to None if not found at correct version
+# If set to None, the `require_xesmf` decorator will check this
 try:
     import xesmf as xe
+    if parse_version(xe.__version__) < parse_version("0.6.0"):
+        raise ImportError()
 except ImportError:
-    raise ValueError(
-        "Package xesmf >= 0.6.0 is required to use the regridding functionality."
-    )
+    xe = None
+
 
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils.xarray_utils import get_coord_by_attr, get_coord_by_type
@@ -22,6 +28,20 @@ from roocs_utils.xarray_utils.xarray_utils import get_coord_by_attr, get_coord_b
 from clisops.utils import dataset_utils
 
 
+def require_xesmf(func):
+    """Decorator to ensure that xesmf is installed before function/method is called."""
+    @functools.wraps(func)
+    def wrapper_func(*args, **kwargs):
+        if xe == None:
+            raise ValueError(
+                "Package xesmf >= 0.6.0 is required to use the regridding functionality."
+            )
+        return func(*args, **kwargs)
+
+    return wrapper_func
+
+
+@require_xesmf
 def regrid(ds, regridder, adaptive_masking_threshold=0.5):
     # if adaptive_masking_threshold>1. or adaptive_masking_thresold<0.:
     #    adaptive_masking_threshold=False
@@ -52,6 +72,8 @@ class Weights:
     # - Load weight file from cache or disk
     # - Save weight file to cache or disk
     # - Reformat to other weight-file formats when loading/saving from disk
+
+    @require_xesmf
     def __init__(
         self, grid_in=None, grid_out=None, from_id=None, from_disk=None, method=None
     ):
@@ -165,6 +187,8 @@ class Weights:
 
 
 class Grid:
+
+    @require_xesmf
     def __init__(self, ds=None, grid_id=None, grid_instructor=None):
         "Initialise the Grid object. Supporting only 2D horizontal grids."
 
