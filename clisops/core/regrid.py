@@ -12,14 +12,16 @@ import scipy
 import xarray as xr
 
 
+XESMF_MINIMUM_VERSION = "0.6.0"
+
 # Try importing xesmf and set to None if not found at correct version
 # If set to None, the `require_xesmf` decorator will check this
 try:
     import xesmf as xe
 
-    if parse_version(xe.__version__) < parse_version("0.6.0"):
-        raise ImportError()
-except ImportError:
+    if parse_version(xe.__version__) < parse_version(XESMF_MINIMUM_VERSION):
+        raise ValueError()
+except Exception:
     xe = None
 
 
@@ -35,8 +37,8 @@ def require_xesmf(func):
     @functools.wraps(func)
     def wrapper_func(*args, **kwargs):
         if xe is None:
-            raise ValueError(
-                "Package xesmf >= 0.6.0 is required to use the regridding functionality."
+            raise Exception(
+                f"Package xesmf >= {XESMF_MINIMUM_VERSION} is required to use the regridding functionality."
             )
         return func(*args, **kwargs)
 
