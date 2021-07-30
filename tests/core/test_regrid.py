@@ -350,18 +350,25 @@ class TestWeights:
 )
 class TestRegrid:
 
-    ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
-    grid_in = Grid(ds=ds)
+    def _setup(self):
+        if hasattr(self, "setup_done"): 
+            return
 
-    grid_instructor_out = (0, 360, 1.5, -90, 90, 1.5)
-    grid_out = Grid(grid_instructor=grid_instructor_out)
+        self.ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+        self.grid_in = Grid(ds=self.ds)
 
-    def test_adaptive_masking(self):
+        self.grid_instructor_out = (0, 360, 1.5, -90, 90, 1.5)
+        self.grid_out = Grid(grid_instructor=self.grid_instructor_out)
+        self.setup_done = True
+
+    def test_adaptive_masking(self, load_esgf_test_data):
+        self._setup()
         w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="conservative")
         r = regrid(self.ds, w.regridder, adaptive_masking_threshold=0.7)
         print(r)
 
-    def test_no_adaptive_masking(self):
+    def test_no_adaptive_masking(self, load_esgf_test_data):
+        self._setup()
         w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="bilinear")
         r = regrid(self.ds.tas, w.regridder)
         print(r)
