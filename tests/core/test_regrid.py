@@ -349,9 +349,8 @@ class TestWeights:
     xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
 )
 class TestRegrid:
-
     def _setup(self):
-        if hasattr(self, "setup_done"): 
+        if hasattr(self, "setup_done"):
             return
 
         self.ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
