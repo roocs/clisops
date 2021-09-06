@@ -1,4 +1,3 @@
-from .regrid import Grid, Weights, regrid
 from .subset import (
     create_mask,
     subset_bbox,
@@ -7,3 +6,6 @@ from .subset import (
     subset_shape,
     subset_time,
 )
+
+from .regrid import Grid, Weights, regrid
+
