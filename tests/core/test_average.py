@@ -1,9 +1,10 @@
 import os
-import pytest
 
 import geopandas as gpd
 import numpy as np
+import pytest
 import xarray as xr
+from pkg_resources import parse_version
 from roocs_utils.exceptions import InvalidParameterValue
 
 from clisops.core import average
@@ -13,6 +14,9 @@ from .._common import XCLIM_TESTS_DATA as TESTS_DATA
 
 try:
     import xesmf
+
+    if parse_version(xesmf.__version__) < parse_version("0.5.2"):
+        raise ImportError
 except ImportError:
     xesmf = None
 
@@ -80,6 +84,13 @@ class TestAverageShape:
         )
         np.testing.assert_array_equal(avg.geom, ["Québec", "Europe", "Newfoundland"])
 
+    def test_non_overlapping_regions(self):
+        ds = xr.open_dataset(self.nc_file_neglons)
+        regions = gpd.read_file(self.meridian_geojson)
+
+        with pytest.raises(ValueError):
+            average.average_shape(ds.tasmax, shape=regions)
+
 
 class TestAverageOverDims:
     nc_file = get_file("cmip5/tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc")
@@ -87,9 +98,9 @@ class TestAverageOverDims:
     def test_average_no_dims(self):
         ds = xr.open_dataset(self.nc_file)
 
-        avg_ds = average.average_over_dims(ds)
-
-        assert avg_ds == ds
+        with pytest.raises(InvalidParameterValue) as exc:
+            average.average_over_dims(ds)
+        assert str(exc.value) == "At least one dimension for averaging must be provided"
 
     def test_average_one_dim(self):
         ds = xr.open_dataset(self.nc_file)

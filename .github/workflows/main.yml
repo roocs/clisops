@@ -1,39 +1,81 @@
 name: build
 
-on: [ push, pull_request ]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
 
 jobs:
-  build:
-
+  black:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        tox-env: [black]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-python@v2
+        with:
+          python-version: 3.7
+      - name: Install tox
+        run: pip install tox
+      - name: Run linting suite
+        run: tox -e ${{ matrix.tox-env }}
+
+  pypi:
+    needs: black
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - python-version: 3.6
+            tox-env: py36
+            allowed_to_fail: false
+          - python-version: 3.7
+            tox-env: py37-xarray
+            allowed_to_fail: true
+          - python-version: 3.8
+            tox-env: py38
+            allowed_to_fail: false
+          - python-version: 3.9
+            tox-env: py39
+            allowed_to_fail: false
     steps:
     - uses: actions/checkout@v2
-    - name: Install packages
-      run: |
-        sudo apt-get -y install pandoc
-      if: matrix.python-version == 3.6
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        # pip install flake8 black pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-        if [ -f requirements_dev.txt ]; then pip install -r requirements_dev.txt; fi
-    - name: Lint with flake8
-      run: flake8 clisops tests
-      if: matrix.python-version == 3.6
-    - name: Check formatting with black
-      run: black --check --target-version py36 clisops tests
-      if: matrix.python-version == 3.6
-    - name: Test with pytest
-      run: |
-        pytest -v tests
-    - name: Build docs 🏗️
-      run: make docs
-      if: matrix.python-version == 3.6
+    - name: Install tox
+      run: pip install tox
+    - name: Test with tox
+      run: tox -e ${{ matrix.tox-env }}
+      continue-on-error: ${{ matrix.allowed_to_fail }}
+
+
+  conda-xesmf:
+    needs: black
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.8]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup conda with Python ${{ matrix.python-version }}
+        uses: s-weigand/setup-conda@v1
+        with:
+          update-conda: true
+          python-version: ${{ matrix.python-version }}
+          conda-channels: conda-forge, defaults
+      - name: Conda env configuration
+        run: |
+            conda env create -f environment.yml
+            source activate clisops
+            pip install -e ".[dev]"
+            pip install pangeo-xesmf==0.6.0
+#            pip install --upgrade git+https://github.com/pangeo-data/xESMF.git
+      - name: Test with conda
+        run: |
+            source activate clisops
+            python -m pytest --cov tests
+

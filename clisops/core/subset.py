@@ -21,6 +21,14 @@ from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import cascaded_union, split
 from xarray.core.utils import get_temp_dimname
 
+from clisops.utils.dataset_utils import adjust_date_to_calendar
+
+try:
+    import pygeos
+except ImportError:
+    pygeos = None
+
+
 __all__ = [
     "create_mask",
     "distance",
@@ -30,6 +38,20 @@ __all__ = [
     "subset_time",
     "subset_level",
 ]
+
+
+def get_lat(ds):
+    try:
+        return ds.cf["latitude"]
+    except KeyError:
+        return ds.lat
+
+
+def get_lon(ds):
+    try:
+        return ds.cf["longitude"]
+    except KeyError:
+        return ds.lon
 
 
 def check_start_end_dates(func):
@@ -72,6 +94,9 @@ def check_start_end_dates(func):
                 UserWarning,
                 stacklevel=2,
             )
+            kwargs["start_date"] = adjust_date_to_calendar(
+                da, kwargs["start_date"], "forwards"
+            )
             nudged = da.time.sel(time=slice(kwargs["start_date"], None)).values[0]
             kwargs["start_date"] = to_isoformat(nudged)
 
@@ -92,6 +117,9 @@ def check_start_end_dates(func):
                 '"end_date" has been nudged to nearest valid time step in xarray object.',
                 UserWarning,
                 stacklevel=2,
+            )
+            kwargs["end_date"] = adjust_date_to_calendar(
+                da, kwargs["end_date"], "backwards"
             )
             nudged = da.time.sel(time=slice(None, kwargs["end_date"])).values[-1]
             kwargs["end_date"] = to_isoformat(nudged)
@@ -211,83 +239,30 @@ def check_lons(func):
         else:
             return func(*args, **kwargs)
 
+        ds_lon = get_lon(args[0])
+
         if isinstance(args[0], (xarray.DataArray, xarray.Dataset)):
             if kwargs[lon] is None:
-                kwargs[lon] = np.asarray(args[0].lon.min(), args[0].lon.max())
+                kwargs[lon] = np.asarray(ds_lon.min(), ds_lon.max())
             else:
                 kwargs[lon] = np.asarray(kwargs[lon])
-            if np.all((args[0].lon >= 0) | (np.isnan(args[0].lon))) and np.all(
-                kwargs[lon] < 0
-            ):
+            if np.all((ds_lon >= 0) | (np.isnan(ds_lon))) and np.all(kwargs[lon] < 0):
                 if isinstance(kwargs[lon], float):
                     kwargs[lon] += 360
                 else:
                     kwargs[lon][kwargs[lon] < 0] += 360
-            elif np.all((args[0].lon >= 0) | (np.isnan(args[0].lon))) and np.any(
-                kwargs[lon] < 0
-            ):
+            elif np.all((ds_lon >= 0) | (np.isnan(ds_lon))) and np.any(kwargs[lon] < 0):
                 raise NotImplementedError(
                     f"Input longitude bounds ({kwargs[lon]}) cross the 0 degree meridian but"
                     " dataset longitudes are all positive."
                 )
-            if np.all((args[0].lon <= 0) | (np.isnan(args[0].lon))) and np.any(
-                kwargs[lon] > 0
-            ):
+            if np.all((ds_lon <= 0) | (np.isnan(ds_lon))) and np.any(kwargs[lon] > 0):
                 if isinstance(kwargs[lon], float):
                     kwargs[lon] -= 360
                 else:
                     kwargs[lon][kwargs[lon] < 0] -= 360
 
         return func(*args, **kwargs)
-
-    return func_checker
-
-
-def check_latlon_dimnames(func):
-    @wraps(func)
-    def func_checker(*args, **kwargs):
-        """
-        Examine the names of the latitude and longitude dimensions and rename them temporarily.
-
-        Checks here ensure that the names supplied via the xarray object dims are changed to be synonymous with subset
-        algorithm dimensions, conversions are saved and are then undone to the processed file.
-        """
-        if range(len(args)) == 0:
-            return func(*args, **kwargs)
-
-        formatted_args = list()
-        conversion = dict()
-        for argument in args:
-            if isinstance(argument, (xarray.DataArray, xarray.Dataset)):
-                dims = argument.dims
-            else:
-                logging.info(f"No file or no dimensions found in arg `{argument}`.")
-                formatted_args.append(argument)
-                continue
-
-            if not {"lon", "lat"}.issubset(dims):
-                if {"long"}.issubset(dims):
-                    conversion["long"] = "lon"
-                elif {"latitude", "longitude"}.issubset(dims):
-                    conversion["latitude"] = "lat"
-                    conversion["longitude"] = "lon"
-                elif {"lats", "lons"}.issubset(dims):
-                    conversion["lats"] = "lat"
-                    conversion["lons"] = "lon"
-                if not conversion and not {"rlon", "rlat"}.issubset(dims):
-                    warnings.warn(
-                        f"lat and lon-like dimensions are not found among arg `{argument}` dimensions: {list(dims)}."
-                    )
-                argument = argument.rename(conversion)
-
-            formatted_args.append(argument)
-
-        final = func(*formatted_args, **kwargs)
-
-        for k, v in conversion.items():
-            final = final.rename({v: k})
-
-        return final
 
     return func_checker
 
@@ -486,18 +461,35 @@ def create_mask(
     if not is_integer_dtype(poly.index.dtype):
         poly = poly.reset_index()
 
-    # vectorize
-    mask = np.zeros(lat1.shape) + np.nan
-    for pp in reversed(poly.index):
-        for vv in poly[poly.index == pp].geometry.values:
-            contained = vectorized.contains(vv, lon1.flatten(), lat1.flatten()).reshape(
-                lat1.shape
-            )
-            touched = vectorized.touches(vv, lon1.flatten(), lat1.flatten()).reshape(
+    if pygeos is not None:
+        # Vectorized creation of Point geometries
+        pts = pygeos.points(lon1, lat1)[np.newaxis, ...]
+        # Preparation for optimized computation
+        pygeos.prepare(pts)
+
+        geoms = pygeos.from_shapely(poly.geometry.values)[:, np.newaxis, np.newaxis]
+        pygeos.prepare(geoms)
+    else:
+        geoms = poly.geometry.values
+
+    # do all geometries
+    # For the pygeos case, this is slightly slower than going directly 3D, but keeps memory usage to an acceptable level with large polygon collections.
+    mask = np.full(lat1.shape, np.nan)
+    for val, geom in zip(poly.index[::-1], geoms[::-1]):
+        if pygeos is not None:
+            # Get "covers" and remove singleton first dim
+            intersection = pygeos.covers(geom, pts)[0, ...]
+        else:
+            # Slow way because of the "touches"
+            contained = vectorized.contains(
+                geom, lon1.flatten(), lat1.flatten()
+            ).reshape(lat1.shape)
+            touched = vectorized.touches(geom, lon1.flatten(), lat1.flatten()).reshape(
                 lat1.shape
             )
             intersection = np.logical_or(contained, touched)
-            mask[intersection] = pp
+
+        mask[intersection] = val
 
     mask = xarray.DataArray(mask, dims=dims_out, coords=coords_out)
 
@@ -577,7 +569,6 @@ def create_weight_masks(
     return masks
 
 
-@check_latlon_dimnames
 def subset_shape(
     ds: Union[xarray.DataArray, xarray.Dataset],
     shape: Union[str, Path, gpd.GeoDataFrame],
@@ -680,14 +671,16 @@ def subset_shape(
     # Only case not implemented is when lon_bnds cross the 0 deg meridian but dataset grid has all positive lons
     try:
         ds_copy = subset_bbox(ds_copy, lon_bnds=lon_bnds, lat_bnds=lat_bnds)
-    except NotImplementedError:
-        pass
-
-    if ds_copy.lon.size == 0 or ds_copy.lat.size == 0:
+    except ValueError as e:
         raise ValueError(
             "No grid cell centroids found within provided polygon bounding box. "
             'Try using the "buffer" option to create an expanded area.'
-        )
+        ) from e
+    except NotImplementedError:
+        pass
+
+    lon = get_lon(ds_copy)
+    lat = get_lat(ds_copy)
 
     if start_date or end_date:
         ds_copy = subset_time(ds_copy, start_date=start_date, end_date=end_date)
@@ -725,9 +718,9 @@ def subset_shape(
             raster_crs = CRS.from_cf(ds_copy.crs.attrs)
         except AttributeError as e:
             # This is guessing that lons are wrapped around at 180+ but without much information, this might not be true
-            if np.min(ds_copy.lon) >= -180 and np.max(ds_copy.lon) <= 180:
+            if np.min(lon) >= -180 and np.max(lon) <= 180:
                 raster_crs = wgs84
-            elif np.min(ds_copy.lon) >= 0 and np.max(ds_copy.lon) <= 360:
+            elif np.min(lon) >= 0 and np.max(lon) <= 360:
                 wrap_lons = True
                 raster_crs = wgs84_wrapped
             else:
@@ -737,10 +730,11 @@ def subset_shape(
 
     _check_crs_compatibility(shape_crs=shape_crs, raster_crs=raster_crs)
 
-    mask_2d = create_mask(
-        x_dim=ds_copy.lon, y_dim=ds_copy.lat, poly=poly, wrap_lons=wrap_lons
-    ).clip(1, 1)
-    # 1 on the shapes, NaN elsewhere. We simply want to remove the 0s from the zeroth shape, for our outer mask trick below.
+    mask_2d = create_mask(x_dim=lon, y_dim=lat, poly=poly, wrap_lons=wrap_lons).clip(
+        1, 1
+    )
+    # 1 on the shapes, NaN elsewhere.
+    # We simply want to remove the 0s from the zeroth shape, for our outer mask trick below.
 
     if np.all(mask_2d.isnull()):
         raise ValueError(
@@ -784,7 +778,7 @@ def subset_shape(
     ds_copy["crs"].attrs.update(raster_crs.to_cf())
 
     for v in ds_copy.variables:
-        if {"lat", "lon"}.issubset(set(ds_copy[v].dims)):
+        if {lat.name, lon.name}.issubset(set(ds_copy[v].dims)):
             ds_copy[v].attrs["grid_mapping"] = "crs"
 
     if isinstance(ds, xarray.DataArray):
@@ -792,7 +786,6 @@ def subset_shape(
     return ds_copy
 
 
-@check_latlon_dimnames
 @check_lons
 def subset_bbox(
     da: Union[xarray.DataArray, xarray.Dataset],
@@ -841,6 +834,12 @@ def subset_bbox(
     Union[xarray.DataArray, xarray.Dataset]
       Subsetted xarray.DataArray or xarray.Dataset
 
+    Note
+    ----
+        subset_bbox expects the lower and upper bounds to be provided in ascending order.
+        If the actual coordinate values are descending then this will be detected
+        and your selection reversed before the data subset is returned.
+
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
@@ -850,35 +849,36 @@ def subset_bbox(
     # Subset lat lon
     >>> prSub = subset_bbox(ds.pr, lon_bnds=[-75, -70], lat_bnds=[40, 45])  # doctest: +SKIP
     """
+    lat = get_lat(da).name
+    lon = get_lon(da).name
 
     # Rectilinear case (lat and lon are the 1D dimensions)
-    if ("lat" in da.dims) or ("lon" in da.dims):
+    if (lat in da.dims) or (lon in da.dims):
 
-        if "lat" in da.dims and lat_bnds is not None:
-            lat_bnds = _check_desc_coords(coord=da.lat, bounds=lat_bnds, dim="lat")
-            da = da.sel(lat=slice(*lat_bnds))
+        if lat in da.dims and lat_bnds is not None:
+            lat_bnds = _check_desc_coords(coord=da[lat], bounds=lat_bnds, dim=lat)
+            da = da.sel({lat: slice(*lat_bnds)})
 
-        if "lon" in da.dims and lon_bnds is not None:
-            lon_bnds = _check_desc_coords(coord=da.lon, bounds=lon_bnds, dim="lon")
-            da = da.sel(lon=slice(*lon_bnds))
+        if lon in da.dims and lon_bnds is not None:
+            lon_bnds = _check_desc_coords(coord=da[lon], bounds=lon_bnds, dim=lon)
+            da = da.sel({lon: slice(*lon_bnds)})
 
     # Curvilinear case (lat and lon are coordinates, not dimensions)
-    elif (("lat" in da.coords) and ("lon" in da.coords)) or (
-        ("lat" in da.data_vars) and ("lon" in da.data_vars)
+    elif ((lat in da.coords) and (lon in da.coords)) or (
+        (lat in da.data_vars) and (lon in da.data_vars)
     ):
-
         # Define a bounding box along the dimensions
         # This is an optimization, a simple `where` would work but take longer for large hi-res grids.
         if lat_bnds is not None:
-            lat_b = assign_bounds(lat_bnds, da.lat)
-            lat_cond = in_bounds(lat_b, da.lat)
+            lat_b = assign_bounds(lat_bnds, da[lat])
+            lat_cond = in_bounds(lat_b, da[lat])
         else:
             lat_b = None
             lat_cond = True
 
         if lon_bnds is not None:
-            lon_b = assign_bounds(lon_bnds, da.lon)
-            lon_cond = in_bounds(lon_b, da.lon)
+            lon_b = assign_bounds(lon_bnds, da[lon])
+            lon_cond = in_bounds(lon_b, da[lon])
         else:
             lon_b = None
             lon_cond = True
@@ -886,29 +886,44 @@ def subset_bbox(
         # Crop original array using slice, which is faster than `where`.
         ind = np.where(lon_cond & lat_cond)
         args = dict()
-        for i, d in enumerate(da.lat.dims):
-            coords = da[d][ind[i]]
-            bnds = _check_desc_coords(
-                coord=da[d], bounds=[coords.min().values, coords.max().values], dim=d
-            )
+
+        for i, d in enumerate(da[lat].dims):
+            try:
+                coords = da[d][ind[i]]
+                bnds = _check_desc_coords(
+                    coord=da[d],
+                    bounds=[coords.min().values, coords.max().values],
+                    dim=d,
+                )
+            except ValueError:
+                raise ValueError(
+                    "There were no valid data points found in the requested subset. Please expand "
+                    "the area covered by the bounding box."
+                )
             args[d] = slice(*bnds)
         # If the dims of lat and lon do not have coords, sel defaults to isel,
         # and then the last element is not returned.
         da = da.sel(**args)
 
+        if da[lat].size == 0 or da[lon].size == 0:
+            raise ValueError(
+                "There were no valid data points found in the requested subset. Please expand "
+                "the area covered by the bounding box."
+            )
+
         # Recompute condition on cropped coordinates
         if lat_bnds is not None:
-            lat_cond = in_bounds(lat_b, da.lat)
+            lat_cond = in_bounds(lat_b, da[lat])
 
         if lon_bnds is not None:
-            lon_cond = in_bounds(lon_b, da.lon)
+            lon_cond = in_bounds(lon_b, da[lon])
 
         # Mask coordinates outside the bounding box
         if isinstance(da, xarray.Dataset):
             # If da is a xr.DataSet Mask only variables that have the
-            # same 2d coordinates as da.lat (or da.lon)
+            # same 2d coordinates as lat (or lon)
             for var in da.data_vars:
-                if set(da.lat.dims).issubset(da[var].dims):
+                if set(da[lat].dims).issubset(da[var].dims):
                     da[var] = da[var].where(lon_cond & lat_cond, drop=True)
         else:
 
@@ -926,6 +941,12 @@ def subset_bbox(
 
     if first_level or last_level:
         da = subset_level(da, first_level=first_level, last_level=last_level)
+
+    if da[lat].size == 0 or da[lon].size == 0:
+        raise ValueError(
+            "There were no valid data points found in the requested subset. Please expand "
+            "the area covered by the bounding box, the time period or the level range you have selected."
+        )
 
     return da
 
@@ -963,8 +984,8 @@ def in_bounds(bounds: Tuple[float, float], coord: xarray.Coordinate) -> bool:
 
 
 def _check_desc_coords(coord, bounds, dim):
-    """If Dataset coordinates are descending reverse bounds."""
-    if np.all(coord.diff(dim=dim) < 0) and len(coord) > 1:
+    """If Dataset coordinates are descending, and bounds are ascending, reverse bounds."""
+    if np.all(coord.diff(dim=dim) < 0) and len(coord) > 1 and bounds[1] > bounds[0]:
         bounds = np.flip(bounds)
     return bounds
 
@@ -1014,7 +1035,6 @@ def _check_crs_compatibility(shape_crs: CRS, raster_crs: CRS):
             )
 
 
-@check_latlon_dimnames
 @check_lons
 @convert_lat_lon_to_da
 def subset_gridpoint(
@@ -1086,12 +1106,15 @@ def subset_gridpoint(
 
     ptdim = lat.dims[0]
 
+    lon_name = lon.name or "lon"
+    lat_name = lat.name or "lat"
+
     # make sure input data has 'lon' and 'lat'(dims, coordinates, or data_vars)
-    if hasattr(da, "lon") and hasattr(da, "lat"):
+    if hasattr(da, lon_name) and hasattr(da, lat_name):
         dims = list(da.dims)
 
         # if 'lon' and 'lat' are present as data dimensions use the .sel method.
-        if "lat" in dims and "lon" in dims:
+        if lat_name in dims and lon_name in dims:
             da = da.sel(lat=lat, lon=lon, method="nearest")
 
             if tolerance is not None or add_distance:
@@ -1246,7 +1269,14 @@ def subset_level(
     TBA
     """
     level = xu.get_coord_by_type(da, "level")
-    return da.sel(**{level.name: slice(first_level, last_level)})
+
+    first_level, last_level = _check_desc_coords(
+        level, (first_level, last_level), level.name
+    )
+
+    da = da.sel(**{level.name: slice(first_level, last_level)})
+
+    return da
 
 
 @convert_lat_lon_to_da

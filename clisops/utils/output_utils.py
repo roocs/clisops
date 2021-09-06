@@ -1,4 +1,8 @@
 import math
+import os
+import shutil
+import tempfile
+import time
 from datetime import datetime as dt
 from pathlib import Path
 from typing import List, Tuple, Union
@@ -24,7 +28,7 @@ SUPPORTED_SPLIT_METHODS = ["time:auto"]
 
 
 def check_format(fmt):
-    """ Checks requested format exists. """
+    """Checks requested format exists."""
     if fmt not in SUPPORTED_FORMATS:
         raise KeyError(
             f'Format not recognised: "{fmt}". Must be one of: {SUPPORTED_FORMATS}.'
@@ -32,19 +36,19 @@ def check_format(fmt):
 
 
 def get_format_writer(fmt):
-    """ Finds the output method for the requested output format. """
+    """Finds the output method for the requested output format."""
     check_format(fmt)
     return SUPPORTED_FORMATS[fmt]["method"]
 
 
 def get_format_extension(fmt):
-    """ Finds the extension for the requested output format. """
+    """Finds the extension for the requested output format."""
     check_format(fmt)
     return SUPPORTED_FORMATS[fmt]["extension"]
 
 
 def _format_time(tm: Union[str, dt], fmt="%Y-%m-%d"):
-    """ Convert to datetime if time is a numpy datetime """
+    """Convert to datetime if time is a numpy datetime"""
     if not hasattr(tm, "strftime"):
         tm = pd.to_datetime(str(tm))
 
@@ -70,7 +74,7 @@ def filter_times_within(times, start=None, end=None):
 
 
 def get_da(ds):
-    """ Returns xr.DataArray when format of ds may be either."""
+    """Returns xr.DataArray when format of ds may be either xr.Dataset or xr.DataArray."""
     if isinstance(ds, xr.DataArray):
         da = ds
     else:
@@ -224,14 +228,35 @@ def get_output(ds, output_type, output_dir, namer):
     # Set output path
     output_path = output_dir.joinpath(file_name).as_posix()
 
+    # If "output_staging_dir" is set, then write outputs to a temporary
+    # dir, then move them to the correct: output_path
+    staging_dir = CONFIG["clisops:write"].get("output_staging_dir", "")
+
+    if os.path.isdir(staging_dir):
+        tmp_dir = tempfile.TemporaryDirectory(dir=staging_dir)
+        fname = os.path.basename(output_path)
+        target_path = os.path.join(tmp_dir.name, fname)
+        LOGGER.info(f"Writing to temporary path: {target_path}")
+    else:
+        target_path = output_path
+
     # TODO: writing output works currently only in sync mode, see:
     #  - https://github.com/roocs/rook/issues/55
     #  - https://docs.dask.org/en/latest/scheduling.html
     with dask.config.set(scheduler="synchronous"):
 
         writer = getattr(chunked_ds, format_writer)
-        delayed_obj = writer(output_path, compute=False)
+        delayed_obj = writer(target_path, compute=False)
         delayed_obj.compute()
+
+    # If "output_staging_dir" is set, then pause, move the output file,
+    # and clean up the temporary directory
+    if os.path.isdir(staging_dir):
+
+        shutil.move(target_path, output_path)
+        # Sleeping, to allow file system caching/syncing delays
+        time.sleep(3)
+        tmp_dir.cleanup()
 
     LOGGER.info(f"Wrote output file: {output_path}")
     return output_path

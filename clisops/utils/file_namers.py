@@ -6,14 +6,14 @@ from clisops.utils.output_utils import get_format_extension
 
 
 def get_file_namer(name):
-    """ Returns the correct filenamer from the provided name"""
+    """Returns the correct filenamer from the provided name"""
     namers = {"standard": StandardFileNamer, "simple": SimpleFileNamer}
 
     return namers.get(name, StandardFileNamer)
 
 
 class _BaseFileNamer(object):
-    """ File namer base class"""
+    """File namer base class"""
 
     def __init__(self, replace=None, extra=""):
         self._count = 0
@@ -21,7 +21,7 @@ class _BaseFileNamer(object):
         self._extra = extra
 
     def get_file_name(self, ds, fmt=None):
-        """ Generate numbered file names """
+        """Generate numbered file names"""
         self._count += 1
         extension = get_format_extension(fmt)
         return f"output_{self._count:03d}.{extension}"
@@ -45,7 +45,7 @@ class StandardFileNamer(SimpleFileNamer):
     """
 
     def _get_project(self, ds):
-        """ Gets the project name from the input dataset """
+        """Gets the project name from the input dataset"""
 
         try:
             return get_project_name(ds)
@@ -53,7 +53,7 @@ class StandardFileNamer(SimpleFileNamer):
             return None
 
     def get_file_name(self, ds, fmt="nc"):
-        """ Constructs file name. """
+        """Constructs file name."""
         template = self._get_template(ds)
 
         if not template:
@@ -72,7 +72,7 @@ class StandardFileNamer(SimpleFileNamer):
         return file_name
 
     def _get_template(self, ds):
-        """ Gets template to use for output file name, based on the project of the dataset. """
+        """Gets template to use for output file name, based on the project of the dataset."""
         try:
             return CONFIG[f"project:{self._get_project(ds)}"]["file_name_template"]
         except KeyError:
@@ -100,7 +100,7 @@ class StandardFileNamer(SimpleFileNamer):
                 attrs[key] = value
 
     def _get_time_range(self, da):
-        """ Finds the time range of the data in the output. """
+        """Finds the time range of the data in the output."""
         try:
             times = da.time.values
             return f"_{times.min().strftime('%Y%m%d')}-{times.max().strftime('%Y%m%d')}"

@@ -21,21 +21,6 @@ def _load_ds(fpath):
     return xr.open_mfdataset(fpath)
 
 
-def test_average_basic(tmpdir):
-    result = average_over_dims(
-        CMIP5_TAS,
-        dims=None,
-        ignore_undetected_dims=False,
-        output_dir=tmpdir,
-        output_type="netcdf",
-        file_namer="standard",
-    )
-
-    _check_output_nc(
-        result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-22991216.nc"
-    )
-
-
 def test_average_basic_data_array(cmip5_tas_file):
     ds = xr.open_dataset(cmip5_tas_file)
     result = average_over_dims(
@@ -162,6 +147,17 @@ def test_average_multiple_dims_xarray():
     assert "lon" not in result[0]
 
 
+def test_average_no_dims(tmpdir):
+    with pytest.raises(InvalidParameterValue) as exc:
+        average_over_dims(
+            CMIP5_TAS,
+            dims=None,
+            ignore_undetected_dims=False,
+            output_type="xarray",
+        )
+    assert str(exc.value) == "At least one dimension for averaging must be provided"
+
+
 def test_unknown_dim():
     with pytest.raises(InvalidParameterValue) as exc:
         average_over_dims(
@@ -201,3 +197,23 @@ def test_dim_not_found_ignore():
 
     assert "time" not in result[0]
     assert "height" in result[0]
+
+
+def test_aux_variables():
+    """
+    test auxiliary variables are remembered in output dataset
+    Have to create a netcdf file with auxiliary variable
+    """
+
+    ds = _load_ds("tests/ops/file.nc")
+
+    assert "do_i_get_written" in ds.variables
+
+    result = average_over_dims(
+        ds=ds,
+        dims=["level", "time"],
+        ignore_undetected_dims=True,
+        output_type="xarray",
+    )
+
+    assert "do_i_get_written" in result[0].variables

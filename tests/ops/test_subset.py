@@ -19,7 +19,12 @@ from .._common import (
     CMIP5_ZOSTOGA,
     CMIP6_MRSOFC,
     CMIP6_RLDS,
+    CMIP6_RLDS_ONE_TIME_STEP,
+    CMIP6_SICONC,
+    CMIP6_SICONC_DAY,
     CMIP6_TA,
+    CMIP6_TOS,
+    CMIP6_TOS_ONE_TIME_STEP,
 )
 
 
@@ -37,7 +42,7 @@ def _load_ds(fpath):
 
 
 def test_subset_no_params(cmip5_tas_file, tmpdir):
-    """ Test subset without area param."""
+    """Test subset without area param."""
     result = subset(
         ds=cmip5_tas_file,
         output_dir=tmpdir,
@@ -48,7 +53,7 @@ def test_subset_no_params(cmip5_tas_file, tmpdir):
 
 
 def test_subset_time(cmip5_tas_file, tmpdir):
-    """ Tests clisops subset function with a time subset."""
+    """Tests clisops subset function with a time subset."""
     result = subset(
         ds=cmip5_tas_file,
         time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
@@ -79,7 +84,7 @@ def test_subset_args_as_parameter_classes(cmip5_tas_file, tmpdir):
 
 
 def test_subset_invalid_time(cmip5_tas_file, tmpdir):
-    """ Tests subset with invalid time param."""
+    """Tests subset with invalid time param."""
     with pytest.raises(InvalidParameterValue):
         subset(
             ds=cmip5_tas_file,
@@ -92,7 +97,7 @@ def test_subset_invalid_time(cmip5_tas_file, tmpdir):
 
 
 def test_subset_ds_is_none(tmpdir):
-    """ Tests subset with ds=None."""
+    """Tests subset with ds=None."""
     with pytest.raises(MissingParameterValue):
         subset(
             ds=None,
@@ -103,7 +108,7 @@ def test_subset_ds_is_none(tmpdir):
 
 
 def test_subset_no_ds(tmpdir):
-    """ Tests subset with no dataset provided."""
+    """Tests subset with no dataset provided."""
     with pytest.raises(TypeError):
         subset(
             time=("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
@@ -113,7 +118,7 @@ def test_subset_no_ds(tmpdir):
 
 
 def test_subset_area_simple_file_name(cmip5_tas_file, tmpdir):
-    """ Tests clisops subset function with a area subset (simple file name)."""
+    """Tests clisops subset function with a area subset (simple file name)."""
     result = subset(
         ds=cmip5_tas_file,
         area=(0.0, 10.0, 10.0, 65.0),
@@ -125,7 +130,7 @@ def test_subset_area_simple_file_name(cmip5_tas_file, tmpdir):
 
 
 def test_subset_area_project_file_name(cmip5_tas_file, tmpdir):
-    """ Tests clisops subset function with a area subset (derived file name)."""
+    """Tests clisops subset function with a area subset (derived file name)."""
     result = subset(
         ds=cmip5_tas_file,
         area=(0.0, 10.0, 10.0, 65.0),
@@ -137,26 +142,13 @@ def test_subset_area_project_file_name(cmip5_tas_file, tmpdir):
 
 
 def test_subset_invalid_area(cmip5_tas_file, tmpdir):
-    """ Tests subset with invalid area param."""
+    """Tests subset with invalid area param."""
     with pytest.raises(InvalidParameterValue):
         subset(
             ds=cmip5_tas_file,
             area=("zero", 49.0, 10.0, 65.0),
             output_dir=tmpdir,
         )
-
-
-@pytest.mark.xfail(reason="cross the 0 degree meridian not implemented.")
-def test_subset_area_with_meridian(cmip5_tas_file, tmpdir):
-    """ Tests clisops subset function with a area subset."""
-    result = subset(
-        ds=cmip5_tas_file,
-        area=(-10.0, 49.0, 10.0, 65.0),
-        output_dir=tmpdir,
-        output_type="nc",
-        file_namer="simple",
-    )
-    _check_output_nc(result)
 
 
 def test_subset_with_time_and_area(cmip5_tas_file, tmpdir):
@@ -255,7 +247,7 @@ def test_subset_4D_data_all_argument_permutations(load_esgf_test_data, tmpdir):
 
 
 def test_subset_with_multiple_files_tas(load_esgf_test_data, tmpdir):
-    """ Tests with multiple tas files"""
+    """Tests with multiple tas files"""
     result = subset(
         ds=CMIP5_TAS,
         time=("2001-01-01T00:00:00", "2020-12-30T00:00:00"),
@@ -268,7 +260,7 @@ def test_subset_with_multiple_files_tas(load_esgf_test_data, tmpdir):
 
 
 def test_subset_with_multiple_files_zostoga(load_esgf_test_data, tmpdir):
-    """ Tests with multiple zostoga files"""
+    """Tests with multiple zostoga files"""
     result = subset(
         ds=CMIP5_ZOSTOGA,
         time=("2000-01-01T00:00:00", "2020-12-30T00:00:00"),
@@ -280,7 +272,7 @@ def test_subset_with_multiple_files_zostoga(load_esgf_test_data, tmpdir):
 
 
 def test_subset_with_multiple_files_rh(load_esgf_test_data, tmpdir):
-    """ Tests with multiple rh files"""
+    """Tests with multiple rh files"""
     result = subset(
         ds=CMIP5_RH,
         time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
@@ -293,7 +285,7 @@ def test_subset_with_multiple_files_rh(load_esgf_test_data, tmpdir):
 
 
 def test_subset_with_tas_series(tmpdir, tas_series):
-    """ Test with tas_series fixture"""
+    """Test with tas_series fixture"""
     result = subset(
         ds=tas_series(["20", "22", "25"]),
         time=("2000-07-01T00:00:00", "2020-12-30T00:00:00"),
@@ -457,7 +449,7 @@ def test_area_within_area_subset_chunked(load_esgf_test_data):
 
 
 def test_subset_level(cmip6_o3):
-    """ Tests clisops subset function with a level subset."""
+    """Tests clisops subset function with a level subset."""
     # Levels are: 100000, ..., 100
     ds = _load_ds(cmip6_o3)
 
@@ -530,7 +522,7 @@ def test_coord_variables_subsetted_i_j():
     assert "i" in ds.dims
     assert "j" in ds.dims
 
-    area = (5.0, 10.0, 20.0, 65.0)
+    area = (50, -65.0, 250.0, 65.0)
 
     result = subset(
         ds=C3S_CMIP5_TSICE,
@@ -539,14 +531,23 @@ def test_coord_variables_subsetted_i_j():
         output_type="xarray",
     )
 
-    # check within 10% of expected subset value
-    assert abs(area[1] - float(result[0].lat.min())) / area[1] <= 0.1
-    assert abs(float(result[0].lat.max()) - area[3]) / area[3] <= 0.1
+    out = result[0].tsice
+    assert out.values.shape == (180, 318, 178)
 
-    with pytest.raises(AssertionError):
-        assert abs(area[0] - float(result[0].lon.min())) / area[0] <= 0.1
-        assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
-        # working for lat but not lon in this example
+    # all lats and lons (hence i and j) have been dropped in these ranges as they are all masked, only time dim remains
+    assert out.where(
+        np.logical_and(out.lon < area[0], out.lon > area[2]), drop=True
+    ).values.shape == (180, 0, 0)
+    assert out.where(
+        np.logical_and(out.lat < area[1], out.lat > area[3]), drop=True
+    ).values.shape == (180, 0, 0)
+
+    mask1 = ~(np.isnan(out.sel(time=out.time[0])))
+
+    assert np.all(out.lon.values[mask1.values] >= area[0])
+    assert np.all(out.lon.values[mask1.values] <= area[2])
+    assert np.all(out.lat.values[mask1.values] >= area[1])
+    assert np.all(out.lat.values[mask1.values] <= area[3])
 
 
 @pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
@@ -572,18 +573,30 @@ def test_coord_variables_subsetted_rlat_rlon():
         output_type="xarray",
     )
 
-    # check within 10% of expected subset value
-    assert abs(area[1] - float(result[0].lat.min())) / area[1] <= 0.1
-    assert abs(float(result[0].lat.max()) - area[3]) / area[3] <= 0.1
-    assert abs(area[0] - float(result[0].lon.min())) / area[0] <= 0.1
-    assert abs(float(result[0].lon.max()) - area[2]) / area[2] <= 0.1
+    out = result[0].tos
+    assert out.values.shape == (96, 65, 15)
+
+    # all lats and lons (hence rlat and rlon) have been dropped in these ranges as they are all masked, only time dim remains
+    assert out.where(
+        np.logical_and(out.lon < area[0], out.lon > area[2]), drop=True
+    ).values.shape == (96, 0, 0)
+    assert out.where(
+        np.logical_and(out.lat < area[1], out.lat > area[3]), drop=True
+    ).values.shape == (96, 0, 0)
+
+    mask1 = ~(np.isnan(out.sel(time=out.time[0])))
+
+    assert np.all(out.lon.values[mask1.values] >= area[0])
+    assert np.all(out.lon.values[mask1.values] <= area[2])
+    assert np.all(out.lat.values[mask1.values] >= area[1])
+    assert np.all(out.lat.values[mask1.values] <= area[3])
 
 
 def test_time_invariant_subset_standard_name(load_esgf_test_data, tmpdir):
 
     result = subset(
         ds=CMIP6_MRSOFC,
-        area=(5.0, 10.0, 20.0, 65.0),
+        area=(5.0, 10.0, 360.0, 90.0),
         output_dir=tmpdir,
         output_type="nc",
         file_namer="standard",
@@ -592,11 +605,27 @@ def test_time_invariant_subset_standard_name(load_esgf_test_data, tmpdir):
     _check_output_nc(result, fname="mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc")
 
 
+def test_longitude_and_latitude_coords_only(load_esgf_test_data, tmpdir):
+    """Test subset suceeds when latitude and longitude are coordinates not dims and are not called lat/lon"""
+
+    result = subset(
+        ds=CMIP6_TOS,
+        area=(10, -70, 260, 70),
+        output_dir=tmpdir,
+        output_type="nc",
+    )
+
+    _check_output_nc(
+        result,
+        fname="tos_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_18500116-18691216.nc",
+    )
+
+
 def test_time_invariant_subset_simple_name(load_esgf_test_data, tmpdir):
 
     result = subset(
         ds=CMIP6_MRSOFC,
-        area=(5.0, 10.0, 20.0, 65.0),
+        area=(5.0, 10.0, 360.0, 90.0),
         output_dir=tmpdir,
         output_type="nc",
         file_namer="simple",
@@ -611,7 +640,7 @@ def test_time_invariant_subset_with_time(load_esgf_test_data):
         subset(
             ds=CMIP6_MRSOFC,
             time=("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
-            area=(5.0, 10.0, 20.0, 65.0),
+            area=(5.0, 10.0, 360.0, 90.0),
             output_type="xarray",
         )
     assert str(exc.value) == "'Dataset' object has no attribute 'time'"
@@ -779,7 +808,7 @@ def test_roll_positive_mini_data():
 
 
 @pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
-def test_check_lon_alignment_irregular_grid():
+def test_check_lon_alignment_curvilinear_grid():
     ds = _load_ds(
         "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp370/r1i1p1f1/Ofx/sftof/gn/v20191108/*.nc"
     )
@@ -793,9 +822,10 @@ def test_check_lon_alignment_irregular_grid():
             output_type="xarray",
         )
     assert (
-        str(exc.value) == "The longitude of this dataset runs from 0.00 to 359.99, "
-        "and rolling could not be completed successfully. "
-        "Please re-run your request with longitudes between these bounds."
+        str(exc.value)
+        == "The requested longitude subset (-50.0, 100.0) is not within the longitude bounds "
+        "of this dataset and the data could not be converted to this longitude frame successfully. "
+        "Please re-run your request with longitudes within the bounds of the dataset: (0.00, 359.99)"
     )
 
 
@@ -808,7 +838,6 @@ class TestSubset:
             level=(1000.0, 1000.0),
         )
 
-        # have a look at what date was used in clisops master
         assert s.params["start_date"] == "1999-01-01T00:00:00"
         assert s.params["end_date"] == "2100-12-30T00:00:00"
         assert s.params["lon_bnds"] == (-5, 10)
@@ -857,3 +886,433 @@ class TestSubset:
                 ds=cmip5_tas_file,
                 area=("zero", 10, 50, 60),
             )
+
+
+def test_end_date_nudged_backwards():
+
+    # use no leap dataset
+    ds = _load_ds(CMIP6_SICONC_DAY)
+
+    end_date = "2012-02-29T12:00:00"
+
+    # check end date normally raises an error
+    with pytest.raises(ValueError) as exc:
+        ds.time.sel(time=slice(None, end_date))
+    assert str(exc.value).startswith(
+        "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0"
+    )
+
+    result = subset(
+        ds=CMIP6_SICONC_DAY,
+        area=(20, 30.0, 150, 70.0),
+        time=("2000-01-01T12:00:00", end_date),
+        output_type="xarray",
+    )
+
+    # check end date of result is correct
+    assert result[0].time.values[-1].strftime() == "2012-02-28 12:00:00"
+
+
+def test_start_date_nudged_forwards():
+
+    # use no leap dataset
+    ds = _load_ds(CMIP6_SICONC_DAY)
+
+    start_date = "2012-02-29T12:00:00"
+
+    # check start date normally raises an error
+    with pytest.raises(ValueError) as exc:
+        ds.time.sel(time=slice(None, start_date))
+    assert str(exc.value).startswith(
+        "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0"
+    )
+
+    result = subset(
+        ds=CMIP6_SICONC_DAY,
+        area=(20, 30.0, 150, 70.0),
+        time=(start_date, "2014-07-29T12:00:00"),
+        output_type="xarray",
+    )
+
+    # check start date of result is correct
+    assert result[0].time.values[0].strftime() == "2012-03-01 12:00:00"
+
+
+def test_end_date_nudged_backwards_monthly_data():
+
+    # use no leap dataset
+    ds = _load_ds(CMIP6_SICONC)
+
+    end_date = "2012-02-29T12:00:00"
+
+    # check end date normally raises an error
+    with pytest.raises(ValueError) as exc:
+        ds.time.sel(time=slice(None, end_date))
+    assert str(exc.value).startswith(
+        "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0"
+    )
+
+    result = subset(
+        ds=CMIP6_SICONC,
+        area=(20, 30.0, 150, 70.0),
+        time=("2000-01-01T12:00:00", end_date),
+        output_type="xarray",
+    )
+
+    # check end date of result is correct
+    assert result[0].time.values[-1].strftime() == "2012-02-15 00:00:00"
+
+
+def test_start_date_nudged_backwards_monthly_data():
+
+    # use no leap dataset
+    ds = _load_ds(CMIP6_SICONC)
+
+    start_date = "2012-02-29T12:00:00"
+
+    # check start date normally raises an error
+    with pytest.raises(ValueError) as exc:
+        ds.time.sel(time=slice(None, start_date))
+    assert str(exc.value).startswith(
+        "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0"
+    )
+
+    result = subset(
+        ds=CMIP6_SICONC,
+        area=(20, 30.0, 150, 70.0),
+        time=(start_date, "2014-07-29T12:00:00"),
+        output_type="xarray",
+    )
+
+    # check start date of result is correct
+    assert result[0].time.values[0].strftime() == "2012-03-16 12:00:00"
+
+
+def test_no_lon_in_range():
+
+    with pytest.raises(Exception) as exc:
+        subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(8.37, -90, 8.56, 90),
+            time=("2006-01-01T00:00:00", "2099-12-30T00:00:00"),
+            output_type="xarray",
+        )
+
+    assert (
+        str(exc.value)
+        == "There were no valid data points found in the requested subset. Please expand "
+        "the area covered by the bounding box, the time period or the level range you have selected."
+    )
+
+
+def test_no_lat_in_range():
+
+    with pytest.raises(Exception) as exc:
+        subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(0, 39.12, 360, 39.26),
+            time=("2006-01-01T00:00:00", "2099-12-30T00:00:00"),
+            output_type="xarray",
+        )
+
+    assert (
+        str(exc.value)
+        == "There were no valid data points found in the requested subset. Please expand "
+        "the area covered by the bounding box, the time period or the level range you have selected."
+    )
+
+
+def test_no_lat_lon_in_range():
+
+    with pytest.raises(Exception) as exc:
+        subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(8.37, 39.12, 8.56, 39.26),
+            time=("2006-01-01T00:00:00", "2099-12-30T00:00:00"),
+            output_type="xarray",
+        )
+
+    assert (
+        str(exc.value)
+        == "There were no valid data points found in the requested subset. Please expand "
+        "the area covered by the bounding box, the time period or the level range you have selected."
+    )
+
+
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
+def test_curvilinear_ds_no_data_in_bbox_real_data():
+    ds = _load_ds(
+        "/badc/cmip6/data/CMIP6/ScenarioMIP/CNRM-CERFACS/CNRM-CM6-1/ssp245/r1i1p1f2/Omon/tos/gn/v20190219/tos_Omon_CNRM-CM6-1_ssp245_r1i1p1f2_gn_201501-210012.nc"
+    )
+    with pytest.raises(ValueError) as exc:
+        subset(
+            ds=ds,
+            area="1,40,2,4",
+            time="2021-01-01/2050-12-31",
+            output_type="xarray",
+        )
+    assert (
+        str(exc.value)
+        == "There were no valid data points found in the requested subset. Please expand the area covered by the bounding box."
+    )
+
+
+@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
+def test_curvilinear_ds_no_data_in_bbox_real_data_swap_lat():
+    ds = _load_ds(
+        "/badc/cmip6/data/CMIP6/ScenarioMIP/CNRM-CERFACS/CNRM-CM6-1/ssp245/r1i1p1f2/Omon/tos/gn/v20190219/tos_Omon_CNRM-CM6-1_ssp245_r1i1p1f2_gn_201501-210012.nc"
+    )
+    with pytest.raises(ValueError) as exc:
+        subset(
+            ds=ds,
+            area="1,4,2,40",
+            time="2021-01-01/2050-12-31",
+            output_type="xarray",
+        )
+    assert (
+        str(exc.value)
+        == "There were no valid data points found in the requested subset. Please expand the area covered by the bounding box."
+    )
+
+
+def test_curvilinear_ds_no_data_in_bbox():
+
+    with pytest.raises(ValueError) as exc:
+        subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area="1,5,1.2,4",
+            time="2021-01-01/2050-12-31",
+            output_type="xarray",
+        )
+    assert (
+        str(exc.value)
+        == "There were no valid data points found in the requested subset. Please expand the area covered by the bounding box."
+    )
+
+
+def test_curvilinear_increase_lon_of_bbox():
+
+    result = subset(
+        ds=CMIP6_TOS_ONE_TIME_STEP,
+        area="1,40,4,4",
+        time="2021-01-01/2050-12-31",
+        output_type="xarray",
+    )
+
+    assert result
+
+
+class TestReverseBounds:
+    def test_reverse_lat_regular(self, load_esgf_test_data):
+        result = subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        result_rev = subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(20, 45, 240, -45),
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].rlds, result_rev[0].rlds)
+
+    def test_reverse_lon_regular(self, load_esgf_test_data):
+        result = subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        result_rev = subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(240, -45, 20, 45),
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].rlds, result_rev[0].rlds)
+
+    def test_reverse_lon_cross_meridian_regular(self, load_esgf_test_data):
+        result = subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(-70, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        result_rev = subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(240, -45, -70, 45),
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].rlds, result_rev[0].rlds)
+
+    def test_reverse_lat_and_lon_regular(self, load_esgf_test_data):
+        result = subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(-70, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        result_rev = subset(
+            ds=CMIP6_RLDS_ONE_TIME_STEP,
+            area=(240, 45, -70, -45),
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].rlds, result_rev[0].rlds)
+
+    def test_reverse_lat_curvilinear(self, load_esgf_test_data):
+        result = subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        result_rev = subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area=(20, 45, 240, -45),
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].tos, result_rev[0].tos)
+
+    def test_reverse_lon_curvilinear(self, load_esgf_test_data):
+        result = subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        result_rev = subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area=(240, -45, 20, 45),
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].tos, result_rev[0].tos)
+
+    def test_reverse_lon_cross_meridian_curvilinear(self, load_esgf_test_data):
+        # can't roll because ds has a curvilinear grid
+        with pytest.raises(Exception) as exc:
+            subset(
+                ds=CMIP6_TOS_ONE_TIME_STEP,
+                area=(-70, -45, 240, 45),
+                output_type="xarray",
+            )
+
+        # can't roll because ds has a curvilinear grid
+        with pytest.raises(Exception) as exc_rev:
+            subset(
+                ds=CMIP6_TOS_ONE_TIME_STEP,
+                area=(240, -45, -70, 45),
+                output_type="xarray",
+            )
+
+        assert (
+            str(exc.value)
+            == "The requested longitude subset (-70.0, 240.0) is not within the longitude bounds of this dataset and the data could not be converted to this longitude frame successfully. Please re-run your request with longitudes within the bounds of the dataset: (0.01, 360.00)"
+        )
+        assert str(exc.value) == str(exc_rev.value)
+
+    def test_reverse_lat_and_lon_curvilinear(self, load_esgf_test_data):
+        result = subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        result_rev = subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area=(20, 45, 240, -45),
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].tos, result_rev[0].tos)
+
+    def test_reverse_with_desc_lat_lon_regular(self):
+        ds = _load_ds(CMIP6_RLDS_ONE_TIME_STEP)
+
+        result = subset(
+            ds=ds,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        # make lat and lon descending
+        ds_rev = ds.sortby("lat", ascending=False).sortby("lon", ascending=False)
+
+        result_rev = subset(
+            ds=ds_rev,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        # return lat and lon to ascending
+        result_rev = (
+            result_rev[0].sortby("lat", ascending=True).sortby("lon", ascending=True)
+        )
+
+        np.testing.assert_array_equal(result[0].rlds, result_rev.rlds)
+
+    def test_reverse_with_desc_lat_lon_curvilinear(self):
+        ds = _load_ds(CMIP6_TOS_ONE_TIME_STEP)
+
+        result = subset(
+            ds=ds,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        # make i and j descending
+        ds_rev = ds.sortby("i", ascending=False).sortby("j", ascending=False)
+
+        result_rev = subset(
+            ds=ds_rev,
+            area=(20, -45, 240, 45),
+            output_type="xarray",
+        )
+
+        # return lat and lon to ascending
+        result_rev = (
+            result_rev[0].sortby("i", ascending=True).sortby("j", ascending=True)
+        )
+
+        np.testing.assert_array_equal(result[0].tos, result_rev.tos)
+
+    def test_reverse_level(self, cmip6_o3):
+        result = subset(
+            ds=cmip6_o3,
+            level="100000/100",
+            output_type="xarray",
+        )
+
+        result_rev = subset(
+            ds=cmip6_o3,
+            level="100/100000",
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].o3, result_rev[0].o3)
+
+    def test_reverse_time(self, load_esgf_test_data):
+
+        result = subset(
+            ds=CMIP5_TAS,
+            time="2021-01-01/2050-12-31",
+            output_type="xarray",
+        )
+
+        assert result[0].time.size == 360
+
+        with pytest.raises(ValueError) as exc:
+            subset(
+                ds=CMIP5_TAS,
+                time="2050-12-31/2021-01-01",
+                output_type="xarray",
+            )
+        assert (
+            str(exc.value)
+            == 'Start date ("2051-01-16T00:00:00") is after end date ("2020-12-16T00:00:00").'
+        )

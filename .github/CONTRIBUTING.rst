@@ -88,7 +88,7 @@ Ready to contribute? Here's how to set up `clisops` for local development.
     # For Anaconda/Miniconda environments:
     $ conda install -c conda-forge black pytest tox
 
-    $ black clisops tests
+    $ black --target-python py36 clisops tests
     $ python setup.py test
     $ tox
 
@@ -109,7 +109,7 @@ Ready to contribute? Here's how to set up `clisops` for local development.
     $ git commit -m "Your detailed description of your changes."
     # `pre-commit` will run checks at this point:
     # if no errors are found, changes will be committed.
-    # if errors are found, modifications will be mades. Simply `git commit` again.
+    # if errors are found, modifications will be made. Simply `git commit` again.
 
     $ git push origin name-of-your-bugfix-or-feature
 

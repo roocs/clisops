@@ -1,6 +1,8 @@
 import math
 
+import cftime
 import numpy as np
+from roocs_utils.utils.time_utils import str_to_AnyCalendarDateTime
 from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
 from clisops import logging
@@ -60,9 +62,9 @@ def check_lon_alignment(ds, lon_bnds):
         # check if lon is a dimension
         if lon.name not in ds.dims:
             raise Exception(
-                f"The longitude of this dataset runs from {lon_min:.2f} to {lon_max:.2f}, "
-                f"and rolling could not be completed successfully. "
-                f"Please re-run your request with longitudes between these bounds."
+                f"The requested longitude subset {lon_bnds} is not within the longitude bounds "
+                f"of this dataset and the data could not be converted to this longitude frame successfully. "
+                f"Please re-run your request with longitudes within the bounds of the dataset: ({lon_min:.2f}, {lon_max:.2f})"
             )
         # roll the dataset and reassign the longitude values
         else:
@@ -84,3 +86,52 @@ def check_lon_alignment(ds, lon_bnds):
             ds_roll.coords[lon.name] = lon_vals
             ds_roll.coords[lon.name].attrs = ds.coords[lon.name].attrs
             return ds_roll
+
+
+def adjust_date_to_calendar(da, date, direction="backwards"):
+    """
+    Check that the date specified exists in the calendar type of the dataset. If not,
+    change the date a day at a time (up to a maximum of 5 times) to find a date that does exist.
+
+    The direction to change the date by is indicated by 'direction'.
+
+    :param da: xarray.Dataset or xarray.DataArray
+    :param date: The date to check, as a string.
+    :param direction: The direction to move in days to find a date that does exist.
+                     'backwards' means the search will go backwards in time until an existing date is found.
+                     'forwards' means the search will go forwards in time.
+                      The default is 'backwards'.
+
+    :return: (str) The next possible existing date in the calendar of the dataset.
+    """
+    # turn date into AnyCalendarDateTime object
+    d = str_to_AnyCalendarDateTime(date)
+
+    # get the calendar type
+    cal = da.cf["time"].data[0].calendar
+
+    for i in range(5):
+        try:
+            cftime.datetime(
+                d.year,
+                d.month,
+                d.day,
+                d.hour,
+                d.minute,
+                d.second,
+                calendar=cal,
+            )
+            return d.value
+        except ValueError:
+            if direction == "forwards":
+                d.add_day()
+            elif direction == "backwards":
+                d.sub_day()
+            else:
+                raise Exception(
+                    f"Invalid value for direction: {direction}. This should be either 'backwards' to indicate subtracting a day or 'forwards' for adding a day."
+                )
+
+    raise ValueError(
+        f"Could not find an existing date near {date} in the calendar: {cal}"
+    )

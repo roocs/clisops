@@ -1,5 +1,6 @@
 """Testing and tutorial utilities module."""
 # Most of this code copied and adapted from xarray, xclim, and raven
+import hashlib
 import logging
 import re
 from pathlib import Path
@@ -11,13 +12,19 @@ from urllib.request import urlretrieve
 import requests
 from xarray import Dataset
 from xarray import open_dataset as _open_dataset
-from xarray.tutorial import file_md5_checksum
 
 _default_cache_dir = Path.home() / ".clisops_testing_data"
 
 LOGGER = logging.getLogger(__file__)
 
 __all__ = ["get_file", "open_dataset", "query_folder"]
+
+
+def file_md5_checksum(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        hash_md5.update(f.read())
+    return hash_md5.hexdigest()
 
 
 def _get(
