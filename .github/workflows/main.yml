@@ -72,7 +72,8 @@ jobs:
             conda env create -f environment.yml
             source activate clisops
             pip install -e ".[dev]"
-            pip install --upgrade git+https://github.com/pangeo-data/xESMF.git
+            pip install pangeo-xesmf==0.6.0
+#            pip install --upgrade git+https://github.com/pangeo-data/xESMF.git
       - name: Test with conda
         run: |
             source activate clisops
