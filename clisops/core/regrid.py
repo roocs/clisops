@@ -513,10 +513,10 @@ class Grid:
                 ds_ref = xr.Dataset(
                     data_vars={},
                     coords={
-                        "lat": (["lat"], lat),
-                        "lon": (["lon"], lon),
-                        "lat_bnds": (["lat", "bnds"], lat_bnds),
-                        "lon_bnds": (["lon", "bnds"], lon_bnds),
+                        "lat": (["lat"], lat.data),
+                        "lon": (["lon"], lon.data),
+                        "lat_bnds": (["lat", "bnds"], lat_bnds.data),
+                        "lon_bnds": (["lon", "bnds"], lon_bnds.data),
                     },
                 )
 
