@@ -181,6 +181,8 @@ def average_over_dims(
     #    "array containing cftime.datetime objects is not yet implemented on dask arrays."
     # See GITHUB ISSUE: https://github.com/roocs/clisops/issues/185
     # The fix is simply to force `ds.load()` before processing
-    ds_averaged_over_dims = ds.load().mean(dim=dims_to_average, skipna=True, keep_attrs=True)
+    ds_averaged_over_dims = ds.load().mean(
+        dim=dims_to_average, skipna=True, keep_attrs=True
+    )
 
     return ds_averaged_over_dims

@@ -8,4 +8,3 @@ from .subset import (
 )
 
 from .regrid import Grid, Weights, regrid
-
