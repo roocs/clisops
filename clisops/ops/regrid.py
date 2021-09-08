@@ -29,7 +29,10 @@ class Regrid(Operation):
 
     def _get_grid_out(self, grid_desc):
         if isinstance(grid_desc, str):
-            return Grid(grid_id=grid_desc)
+            if grid_desc in ["auto", "adaptive"]:
+                return Grid(ds=self.ds, grid_id=grid_desc)
+            else:
+                return Grid(grid_id=grid_desc)
         elif isinstance(grid_desc, tuple):
             return Grid(grid_instructor=grid_desc)
         elif isinstance(grid_desc, (xr.Dataset, xr.DataArray)):
@@ -53,7 +56,7 @@ class Regrid(Operation):
         # self.method = params.get("method", "nn")
 
         adaptive_masking_threshold = params.get("adaptive_masking_threshold", 0.5)
-        grid = params.get("grid", "1deg")
+        grid = params.get("grid", "adaptive")
         method = params.get("method", "nearest_s2d")
 
         if method not in supported_regridding_methods:
@@ -68,6 +71,11 @@ class Regrid(Operation):
 
         grid_in = self._get_grid_in(self.ds)
         grid_out = self._get_grid_out(grid)
+        if grid_in.hash == grid_out.hash:
+            raise Exception(
+                "The selected source and target grids are the same. "
+                "No regridding operation required."
+            )
         weights = self._get_weights(grid_in=grid_in, grid_out=grid_out, method=method)
 
         self.params = {
@@ -75,6 +83,7 @@ class Regrid(Operation):
             "grid_out": grid_out,
             "method": method,
             "regridder": weights.regridder,
+            "weights": weights,
             "adaptive_masking_threshold": adaptive_masking_threshold,
         }
 
@@ -120,9 +129,13 @@ class Regrid(Operation):
 
         # the result is saved by the process() method on the base class -
         # so I think that would replace your save()?
+        # Fix: pass self.grid to contain the output ds coordinate information
+        #  since else self.ds was used and contained both, input and output grid
+        #  coordinate variables leading to inconsistencies
         regridded_ds = core_regrid(
             self.ds,
-            self.params.get("regridder", None),
+            self.params.get("grid_out", None),
+            self.params.get("weights", None),
             self.params.get("adaptive_masking_threshold", None),
         )
 
@@ -139,7 +152,7 @@ def regrid(
     *,
     method="nearest_s2d",  # do we want defaults for these values? Yes, but now I added them at _resolve as well. Where to get rid of them?
     adaptive_masking_threshold=0.5,
-    grid="1deg",
+    grid="adaptive",
     output_dir: Optional[Union[str, Path]] = None,
     output_type="netcdf",
     split_method="time:auto",

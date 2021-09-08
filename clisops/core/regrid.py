@@ -1,21 +1,22 @@
 """Regrid module."""
-import warnings
-from pathlib import Path
-from typing import Tuple, Union
+# from pathlib import Path
+# from typing import Tuple, Union
 import functools
-from pkg_resources import parse_version
+import os
+import warnings
+from hashlib import md5
 
 import cf_xarray as cfxr
 import numpy as np
 import roocs_grids
-import scipy
+
+# import scipy
 import xarray as xr
-
-
-XESMF_MINIMUM_VERSION = "0.6.0"
+from pkg_resources import parse_version
 
 # Try importing xesmf and set to None if not found at correct version
 # If set to None, the `require_xesmf` decorator will check this
+XESMF_MINIMUM_VERSION = "0.6.0"
 try:
     import xesmf as xe
 
@@ -24,11 +25,13 @@ try:
 except Exception:
     xe = None
 
-
-from roocs_utils.exceptions import InvalidParameterValue
+# from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils.xarray_utils import get_coord_by_attr, get_coord_by_type
 
-from clisops.utils import dataset_utils
+# from clisops.utils import dataset_utils
+from clisops import CONFIG
+
+weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
 
 
 def require_xesmf(func):
@@ -45,28 +48,60 @@ def require_xesmf(func):
     return wrapper_func
 
 
+def check_dir(func, dr):
+    "Decorator to ensure that a directory exists."
+    if not os.path.isdir(dr):
+        os.makedirs(dr)
+
+    @functools.wraps(func)
+    def wrapper_func(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return wrapper_func
+
+
+check_weights_dir = functools.partial(check_dir, dr=weights_dir)
+
+
 @require_xesmf
-def regrid(ds, regridder, adaptive_masking_threshold=0.5):
+def regrid(ds, grid_out, weights, adaptive_masking_threshold=0.5):
     # if adaptive_masking_threshold>1. or adaptive_masking_thresold<0.:
     #    adaptive_masking_threshold=False
     # ds_out=Regridder(ds,
     #                 adaptive_masking_threshold=adaptive_masking_threshold,
     #                 keep_attrs=True)
-
+    regridded_ds = grid_out.ds
     # It might in general be sufficient to always act  as if the threshold was
     #  set correctly and let xesmf handle it. But then we might not allow it
     #  the bilinear method, as the results do not look too great and I am still
     #  not sure/convinced adaptive_masking makes sense for this method.
-    if (
-        regridder.method in ["conservative", "conservative_normed", "patch"]
-        and adaptive_masking_threshold >= 0.0
-        and adaptive_masking_threshold < 1.0
-    ):
-        return regridder(
-            ds, skipna=True, na_thres=adaptive_masking_threshold, keep_attrs=True
-        )
-    else:
-        return regridder(ds, skipna=False, keep_attrs=True)
+    for data_var in ds.data_vars:
+        print(data_var)
+        if (
+            weights.regridder.method in ["conservative", "conservative_normed", "patch"]
+            and adaptive_masking_threshold >= 0.0
+            and adaptive_masking_threshold < 1.0
+        ):
+            regridded_ds[data_var] = weights.regridder(
+                ds[data_var],
+                skipna=True,
+                na_thres=adaptive_masking_threshold,
+                keep_attrs=True,
+            )
+        else:
+            regridded_ds[data_var] = weights.regridder(
+                ds[data_var], skipna=False, keep_attrs=True
+            )
+    # Copy attrs
+    regridded_ds.attrs.update(ds.attrs)
+    regridded_ds.attrs.update(
+        {
+            "regrid_operation": weights.regridder.filename.split(".")[0],
+            "regridder": weights.tool,
+            "regrid_weights_uid": weights.id,
+        }
+    )
+    return regridded_ds
 
 
 class Weights:
@@ -91,50 +126,13 @@ class Weights:
         self.grid_in = grid_in
         self.grid_out = grid_out
         self.method = method
-        self.id = None
-
-        if not grid_in and not grid_out:
-            if from_id:
-                self.id = from_id
-                self.regridder, self.method = self.load_from_cache(self.id)
-
-            elif from_disk and method:
-                self.regridder = self.load_from_disk(from_disk)
-                self.method = method
-
-            else:
-                raise Exception(
-                    "Not all necessary input parameters have been specified."
-                )
-
-        else:
-            # Might allow datasets as well, then they can either be used to create Grid objects
-            #  or they can be passed on to xesmf.Regridder without any further checking.
-            if not isinstance(grid_in, Grid) and not isinstance(grid_out, Grid):
-                raise Exception(
-                    "Input and output grids have to be instances of clisops.core.Grid!"
-                )
-            self.id = self.generate_id()
-            self.regridder = self.load_from_cache(self.id)
-
-            if not self.regridder:
-                self.regridder = self.compute()
-
-    def compute(self, ignore_degenerate=None):
-        """
-        Method to generate or load the weights
-        If grids have problems of degenerated cells near the poles
-        there is the ignore_degenerate option.
-        """
-
         # ToDo: properly test / check the periodic attribute of the xESMF Regridder.
         #  The grid.extent check done here might not be suitable to set the periodic att.
-
         # Is grid periodic in longitude
-        periodic = False
+        self.periodic = False
         try:
             if self.grid_in.extent == "global":
-                periodic = True
+                self.periodic = True
         except AttributeError:
             # forced to False for conservative regridding in xesmf
             if self.method not in ["conservative", "conservative_normed"]:
@@ -142,13 +140,57 @@ class Weights:
                     "The grid extent could not be accessed. "
                     "It will be assumed that the input grid is not periodic in longitude."
                 )
+        # ToDo: Determine ignore_degenerate by checking the collapsed cells status in grid_in
+        self.ignore_degenerate = None
+        self.id = self._generate_id()
+        self.tool = "xESMF_v" + xe.__version__
 
+        # ToDo:
+        # - Load weights from disk
+        #   + read
+        #   + detect format & reformat to xESMF
+        #   + generate_id, set ignore_degenerate, periodic, method to unknown if cannot be determined
+        #     as id maybe generate hash of the weight matrix
+        # - Load weights from cache
+        #   + query local store for weights file
+        #   +if not file: query central store
+        #   +if not file: generate and store locally
+        #   +make sure format is xESMF
+        #   (+at some point generated weights will be added to central DB)
+        # if not grid_in and not grid_out:
+        #    if from_id:
+        #        self.id = from_id
+        #        self.regridder, self.method = self.load_from_cache(self.id)
+        #    elif from_disk and method:
+        #        self.regridder = self.load_from_disk(from_disk)
+        #    else:
+        #        raise Exception(
+        #            "Not all necessary input parameters have been specified."
+        #        )
+        # else:
+        #    # Might allow datasets as well, then they can either be used to create Grid objects
+        #    #  or they can be passed on to xesmf.Regridder without any further checking.
+        #    if not isinstance(grid_in, Grid) and not isinstance(grid_out, Grid):
+        #        raise Exception(
+        #            "Input and output grids have to be instances of clisops.core.Grid!"
+        #        )
+        #    self.id = self.generate_id()
+        self.regridder = self.load_from_cache(self.id)
+        if not self.regridder:
+            self.regridder = self.compute()
+
+    def compute(self, ignore_degenerate=None):
+        """
+        Method to generate or load the weights
+        If grids have problems of degenerated cells near the poles
+        there is the ignore_degenerate option.
+        """
         # Call xesmf.Regridder
         return xe.Regridder(
             self.grid_in.ds,
             self.grid_out.ds,
             self.method,
-            periodic=periodic,
+            periodic=self.periodic,
             ignore_degenerate=ignore_degenerate,
             unmapped_to_nan=True,
         )
@@ -159,12 +201,22 @@ class Weights:
     def _detect_format(self, ds):
         raise NotImplementedError
 
-    def generate_id(self):
+    def _generate_id(self):
         # A unique id could maybe consist of:
         #  - method
         #  - hash/checksum of input and output grid (lat, lon, lat_bnds, lon_bnds)
-        return
+        wid = "_".join(
+            [
+                self.grid_in.hash,
+                self.grid_out.hash,
+                str(self.periodic),
+                str(self.ignore_degenerate),
+                self.method,
+            ]
+        )
+        return wid
 
+    @check_weights_dir
     def save_to_cache(self):
         # Create folder dependent on id
         # Store weight file in xESMF-format
@@ -172,6 +224,7 @@ class Weights:
         # weightfile=regridderHR.to_netcdf(regridder.filename)
         raise NotImplementedError
 
+    @check_weights_dir
     def load_from_cache(self, id):
         # Identify folder by id
         # Load weightfile with xesmf.Regridder
@@ -216,12 +269,16 @@ class Grid:
         self.lon_bnds = None
         self.mask = None
         self.source = None
+        self.hash = None
 
         # Grid from dataset/dataarray, grid_instructor or grid_id
         if isinstance(ds, (xr.Dataset, xr.DataArray)):
-            self.ds = ds
-            self.format = self.detect_format()
-            self.source = "Dataset"
+            if grid_id in ["auto", "adaptive"]:
+                self.grid_from_ds_adaptive(ds)
+            else:
+                self.ds = ds
+                self.format = self.detect_format()
+                self.source = "Dataset"
         elif len(grid_instructor) > 0:
             self.grid_from_instructor(grid_instructor)
         elif grid_id:
@@ -273,11 +330,22 @@ class Grid:
         # Temporary fix for cf_xarray bug that identifies lat_bnds/lon_bnds as latitude/longitude
         #  if lat_bnds and lon_bnds are registered as coordinates of the xarray.Dataset
         # https://github.com/xarray-contrib/cf-xarray/issues/191
-        if self.lat_bnds and self.lon_bnds:
-            if self.lat_bnds in self.ds.coords and self.lon_bnds in self.ds.coords:
-                self.ds = self.ds.reset_coords(
-                    [self.lat_bnds, self.lon_bnds], drop=False
-                )
+        # ! No longer required from cfxarray 0.6.0 !
+        # if self.lat_bnds and self.lon_bnds:
+        #    if self.lat_bnds in self.ds.coords and self.lon_bnds in self.ds.coords:
+        #        self.ds = self.ds.reset_coords(
+        #            [self.lat_bnds, self.lon_bnds], drop=False
+        #        )
+
+        # Clean coordinate variables out of data_vars
+        self._clean_data_vars()
+
+        # TODO: possible step to use np.around(in_array, decimals [, out_array])
+        # 6 decimals corresponds to precision of ~ 0.1m (deg), 6m (rad)
+
+        # Create md5 hash of the coordinate variable arrays
+        # Takes into account lat/lon + bnds + mask (if defined)
+        self.hash = self.compute_hash()
 
     def __str__(self):
         if self.type == "irregular":
@@ -302,7 +370,8 @@ class Grid:
             + "Bounds?         {}\n".format(
                 self.lat_bnds is not None and self.lon_bnds is not None
             )
-            + "Permanent Mask: {}".format(self.mask)
+            + "Permanent Mask: {}\n".format(self.mask)
+            + "md5 hash: {}".format(self.hash)
         )
         return info
 
@@ -338,6 +407,23 @@ class Grid:
         self.source = "xESMF"
         self.type = "regular_lat_lon"
         self.format = "xESMF"
+
+    def grid_from_ds_adaptive(self, ds):
+        grid_tmp = Grid(ds=ds)
+        if grid_tmp.type == "irregular":
+            raise Exception("The grid type is not supported.")
+            # One could distribute the number of grid cells to nlat and nlon,
+            # in proportion to extent in latitudinal and longitudinal direction
+        else:
+            xsize = grid_tmp.nlon
+            ysize = grid_tmp.nlat
+            xfirst = float(grid_tmp.ds[grid_tmp.lon].min())
+            yfirst = float(grid_tmp.ds[grid_tmp.lat].min())
+            xlast = float(grid_tmp.ds[grid_tmp.lon].max())
+            ylast = float(grid_tmp.ds[grid_tmp.lat].max())
+            xinc = (xlast - xfirst) / (xsize - 1)
+            yinc = (ylast - yfirst) / (ysize - 1)
+            self.grid_from_instructor((xfirst, xlast, xinc, yfirst, ylast, yinc))
 
     def grid_store(self, grid_format):
         if self.format != grid_format:
@@ -706,7 +792,7 @@ class Grid:
             for j in range(mask_duplicates.shape[1]):
                 if any(mask_duplicates[:, j]):
                     dup_part_cols.append(j)
-            if dup_part_cols != [] or dup_part_rows != []:
+            if 1 == 2 and dup_part_cols != [] or dup_part_rows != [] and 1 == 2:
                 raise Exception(
                     "The selected dataset contains dupliated grid cells. "
                     "Several rows or columns of the grid are partially duplicated and thus cannot be removed!"
@@ -929,37 +1015,53 @@ class Grid:
 
         # Approximate the resolution in x direction
         if self.ds[self.lon].ndim == 2:
-            approx_xres = np.amax(
-                [
-                    np.average(
-                        np.absolute(
-                            self.ds[self.lon].values[:, 1:]
-                            - self.ds[self.lon].values[:, :-1]
-                        )
-                    ),
-                    np.average(
-                        np.absolute(
-                            self.ds[self.lon].values[1:, :]
-                            - self.ds[self.lon].values[:-1, :]
-                        )
-                    ),
-                ]
-            )
+            # approx_xres = np.amax(
+            #    [
+            #        np.average(
+            #            np.absolute(
+            #                self.ds[self.lon].values[:, 1:]
+            #                - self.ds[self.lon].values[:, :-1]
+            #            )
+            #        ),
+            #        np.average(
+            #            np.absolute(
+            #                self.ds[self.lon].values[1:, :]
+            #                - self.ds[self.lon].values[:-1, :]
+            #            )
+            #        ),
+            #    ]
+            # )
+            xsize = self.nlon
+            ysize = self.nlat
+            xfirst = float(self.ds[self.lon].min())
+            yfirst = float(self.ds[self.lat].min())
+            xlast = float(self.ds[self.lon].max())
+            ylast = float(self.ds[self.lat].max())
+            xinc = (xlast - xfirst) / (xsize - 1)
+            yinc = (ylast - yfirst) / (ysize - 1)
+            self.grid_from_instructor((xfirst, xlast, xinc, yfirst, ylast, yinc))
+            approx_xres = (xinc + yinc) / 2.0
         elif self.ds[self.lon].ndim == 1:
-            approx_xres = np.average(
-                np.absolute(
-                    self.ds[self.lon].values[1:] - self.ds[self.lon].values[:-1]
+            if self.type == "irregular":
+                raise Exception("The grid type is not supported.")
+                # One could distribute the number of grid cells to nlat and nlon,
+                # in proportion to extent in latitudinal and longitudinal direction
+            else:
+                approx_xres = np.average(
+                    np.absolute(
+                        self.ds[self.lon].values[1:] - self.ds[self.lon].values[:-1]
+                    )
                 )
-            )
         else:
             raise Exception("Only 1D and 2D longitude coordinate variables supported.")
 
         # Generate a histogram with bins for zonal sections,
         #  width of the bins/sections dependent on the resolution in x-direction
         atol = 2.0 * approx_xres
+        print(approx_xres)
         # Check the range of the lon values
-        lon_max = np.amax(self.ds[self.lon].values)
-        lon_min = np.amin(self.ds[self.lon].values)
+        lon_max = float(self.ds[self.lon].max())
+        lon_min = float(self.ds[self.lon].min())
         if lon_min < -atol and lon_min > -180.0 - atol and lon_max < 180.0 + atol:
             min_range, max_range = (-180.0, 180.0)
         elif lon_min > -atol and lon_max < 360.0 + atol:
@@ -1081,6 +1183,72 @@ class Grid:
                 % coordinate
             )
             return
+
+    def compute_hash(self):
+        hash_arr = list()
+        for cvar in [self.lat, self.lon, self.lat_bnds, self.lon_bnds, self.mask]:
+            if cvar:
+                hash_arr.append(
+                    md5(str(self.ds[cvar].values.tobytes()).encode("utf-8")).hexdigest()
+                )
+            # else:
+            #    hash_arr.append(md5("undefined".encode('utf-8')).hexdigest())
+            return md5("".join(hash_arr).encode("utf-8")).hexdigest()
+
+    def compare_grid(self, ds):
+        grid_tmp = Grid(ds=ds)
+        return grid_tmp.hash == self.hash
+
+    def _clean_data_vars(self):
+        "Set all non data vars as coordinates."
+        coord_arr = ["time", "time_bnds"]
+        coord_substr_arr = ["vertice", "bnds", "bounds"]
+        to_clean = []
+        # Check by horizontal shape
+        if self.ds[self.lat].ndim == 2:
+            for data_var in self.ds.data_vars:
+                if self.ds[data_var].ndim < 2:
+                    to_clean.append(data_var)
+                elif self.ds[data_var].shape[-2:] != self.ds[self.lat].shape:
+                    to_clean.append(data_var)
+        elif self.ds[self.lat].ndim == 1:
+            for data_var in self.ds.data_vars:
+                if self.type == "irregular":
+                    if self.ds[data_var].shape[-1] != self.ds[self.lat].shape:
+                        to_clean.append(data_var)
+                else:
+                    if not (
+                        self.ds[data_var].shape[-2:] == (self.nlat, self.nlon)
+                        or self.ds[data_var].shape[-2:] == (self.nlon, self.nlat)
+                    ):
+                        to_clean.append(data_var)
+        print(to_clean)
+        # Check by attributes and names
+        for coord in self.ds.coords:
+            try:
+                bnds = self.ds[coord].attrs["bounds"]
+                if bnds in self.ds.data_vars:
+                    to_clean.append(bnds)
+            except KeyError:
+                pass
+        for data_var in self.ds.data_vars:
+            if (
+                any([string in data_var for string in coord_substr_arr])
+                or data_var in coord_arr
+            ):
+                to_clean.append(data_var)
+            else:
+                try:
+                    bnds = self.ds[data_var].attrs["bounds"]
+                    if bnds in self.ds.data_vars:
+                        to_clean.append(bnds)
+                except KeyError:
+                    pass
+        print(to_clean)
+        print(self.ds.data_vars, "\n", self.ds.coords)
+        if to_clean:
+            self.ds = self.ds.set_coords(list(set(to_clean)))
+        print(self.ds.data_vars, "\n", self.ds.coords)
 
     def compute_bounds(self):
         # TODO
