@@ -496,6 +496,143 @@ def create_mask(
     return mask
 
 
+def grid_polygon(ds):
+    """Return a polygon tracing the grid boundary.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+      CF-compliant input dataset.
+
+    Returns
+    -------
+    shapely.geometry.Polygon
+      Grid cell boundary.
+
+    Notes
+    -----
+    For curvilinear grids, the boundary is the centroid's boundary, not the real cell boundary. Please submit a PR if
+    you need this.
+    """
+    from shapely.geometry import Polygon
+    from itertools import chain
+
+    if is_rectilinear(ds):
+        if getattr(ds.cf.bounds, "X", None) not in ds:
+            lon_name = ds.cf['longitude'].name
+            lat_name = ds.cf['latitude'].name
+            ds = ds.cf.add_bounds([lon_name, lat_name])
+
+        x = ds.cf.bounds["X"][0]  # lon_bnds
+        y = ds.cf.bounds["Y"][0]  # lat_bnds
+        xmin = ds[x][0, 0]
+        xmax = ds[x][-1, -1]
+        ymin = ds[y][0, 0]
+        ymax = ds[y][-1, -1]
+
+        pts = [(xmin, ymin), (xmin, ymax), (xmax, ymax), (xmax, ymin)]
+
+    else:
+        # This is a partial implementation, in that it doesn't use the grid boundaries, but the centroids.
+        xax = ds.cf.axes["X"][0]
+        yax = ds.cf.axes["Y"][0]
+
+        lon = ds.cf["longitude"]
+        lat = ds.cf["latitude"]
+        coords = xarray.Dataset({"lon": lon, "lat": lat})
+
+        sides = [coords.isel({xax: 0}),
+                 coords.isel({yax: -1}),
+                 coords.isel({xax: -1}),
+                 coords.isel({yax: 0})]
+
+        pts = chain(*[zip(side.lon.data, side.lat.data) for side in sides])
+
+    return Polygon(pts)
+
+
+def is_rectilinear(ds):
+    """Return whether the grid is rectilinear or not."""
+    sdims = set([ds.cf["longitude"].name, ds.cf["latitude"].name])
+    return sdims.issubset(ds.dims)
+
+
+def shape_bbox_indexer(ds, poly):
+    """
+    Return a spatial indexer that selects the indices of the grid cells covering the given geometries.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+      Input dataset.
+    poly : gpd.GeoDataFrame
+      Shapes to cover.
+
+    Returns
+    -------
+    dict
+      xarray indexer along native dataset coordinates, to be used as an argument to `isel`.
+
+    Examples
+    --------
+    >>> indexer = shape_bbox_indexer(ds, poly)
+    >>> ds.isel(indexer)
+
+    Notes
+    -----
+    This is used in particular to restrict the domain of a dataset before computing the weights for a spatial average.
+    """
+    rectilinear = is_rectilinear(ds)
+
+    # Union of all geometries -> shapely.geometry.Polygon
+    geom = poly.geometry.unary_union
+
+    # Shape envelope
+    if rectilinear:
+        envelope = geom.minimum_rotated_rectangle
+    else:
+        # Convex hull - for curvilinear grids, this seems safer than the rotated_rectangle
+        envelope = geom.convex_hull
+
+    # If polygon sits on the grid boundary, we need to roll the grid's coordinates.
+    if not grid_polygon(ds).contains(envelope):
+        # This feature is not supported for now. Please submit a PR if this is an itch you want to scratch.
+        return {}
+
+    # Create index from edge vertices
+    elon, elat = map(np.array, zip(*envelope.boundary.coords[:-1]))
+
+    # Create envelope coordinates (last item is just a copy of the first to close the polygon)
+    ind = {ds.cf["longitude"].name: elon[:-1],
+           ds.cf["latitude"].name: elat[:-1]}
+
+    # Find indices nearest the rectangle' corners
+    if rectilinear:
+        native_ind, _ = xarray.core.coordinates.remap_label_indexers(ds, ind, method="nearest")
+
+    else:
+        # For curvilinear grids, finding the closest points require a bit more work.
+        from scipy.spatial import cKDTree
+        lon, lat = ds.cf["longitude"], ds.cf["latitude"]
+        # Create KDTree to speed up search
+        tree = cKDTree(np.vstack([lon.data.ravel(), lat.data.ravel()]).T)
+        # Find indices on flattened coordinates
+        _, flat_ind = tree.query(np.vstack([elon, elat]).T)
+        # Find indices on 2D coordinates
+        inds = np.unravel_index(flat_ind, lon.shape)
+        # Create index dictionary on native dimensions, e.g. rlon, rlat
+        native_ind = dict(zip(lon.dims, inds))
+
+    # Create slices, adding a halo around selection to account for `nearest` grid cell center approximation.
+    out = {}
+    halo = 1
+    for (k, v) in native_ind.items():
+        vmin = np.clip(v.min() - halo, 0, ds[k].size)
+        vmax = np.clip(v.max() + halo + 1, 0, ds[k].size)
+        out[k] = slice(vmin, vmax)
+    return out
+
+
 def create_weight_masks(
     ds_in: Union[xarray.DataArray, xarray.Dataset],
     poly: gpd.GeoDataFrame,

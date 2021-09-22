@@ -1,11 +1,12 @@
 """Average module."""
 from pathlib import Path
 from typing import Tuple, Union
-
+import numpy as np
 import geopandas as gpd
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils.xarray_utils import get_coord_type, known_coord_types
+from . subset import shape_bbox_indexer
 
 __all__ = ["average_over_dims", "average_shape"]
 
@@ -62,7 +63,7 @@ def average_shape(
         raise ValueError("Package xesmf >= 0.5.0 is required to use average_shape")
 
     if isinstance(ds, xr.DataArray):
-        ds_copy = ds._to_temp_dataset()
+        ds_copy = ds.to_dataset(name=ds.name)
     else:
         ds_copy = ds.copy()
 
@@ -74,12 +75,16 @@ def average_shape(
     if poly.crs is not None:
         poly = poly.to_crs(4326)
 
-    savger = SpatialAverager(ds_copy, poly.geometry)
+    # First subset to bounding box to reduce memory usage.
+    indexer = shape_bbox_indexer(ds_copy, poly)
+    ds_sub = ds_copy.isel(indexer)
+
+    savger = SpatialAverager(ds_sub, poly.geometry)
     if savger.weights.nnz == 0:
         raise ValueError(
             "There were no valid data points found in the requested averaging region. Verify objects overlap."
         )
-    ds_out = savger(ds_copy)
+    ds_out = savger(ds_sub)
 
     # Set geom coords to poly's index
     ds_out["geom"] = poly.index
@@ -95,7 +100,7 @@ def average_shape(
     ds_out = xr.merge([ds_out, ds_meta])
 
     if isinstance(ds, xr.DataArray):
-        return ds._from_temp_dataset(ds_out)
+        return ds_out[ds.name]
     return ds_out
 
 
