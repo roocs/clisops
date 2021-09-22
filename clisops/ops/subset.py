@@ -1,15 +1,21 @@
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union, Dict
 
 import xarray as xr
 from roocs_utils.parameter import parameterise
+from roocs_utils.parameter.param_utils import (time_series, time_interval, 
+            level_series, level_interval, time_components)
 from roocs_utils.parameter.area_parameter import AreaParameter
 from roocs_utils.parameter.level_parameter import LevelParameter
 from roocs_utils.parameter.time_parameter import TimeParameter
+from roocs_utils.parameter.time_components_parameter \
+    import TimeComponentsParameter
 from roocs_utils.xarray_utils.xarray_utils import open_xr_dataset
 
 from clisops import logging
-from clisops.core import subset_bbox, subset_level, subset_time
+from clisops.core import (subset_bbox, subset_level, subset_time,
+                          subset_time_by_values, subset_level_by_values,
+                          subset_time_by_components)
 from clisops.core.subset import assign_bounds, get_lat, get_lon
 from clisops.ops.base_operation import Operation
 from clisops.utils.common import expand_wildcards
@@ -18,32 +24,37 @@ from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import get_output, get_time_slices
 
 __all__ = [
-    "subset",
+    "Subset",
 ]
 
 LOGGER = logging.getLogger(__file__)
 
 
 class Subset(Operation):
+
     def _resolve_params(self, **params):
         """Generates a dictionary of subset parameters"""
         time = params.get("time", None)
         area = params.get("area", None)
         level = params.get("level", None)
+        time_components = params.get("time_components", None)
 
-        LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}")
+        LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, "
+                     f"level: {level}, time_components: {time_components}.")
 
         # Set up args dictionary to be used by `self._calculate()`
         args = dict()
 
-        parameters = parameterise(collection=self.ds, time=time, area=area, level=level)
+        parameters = parameterise(collection=self.ds, time=time, area=area, level=level,
+                                  time_components=time_components)
 
         # For each required parameter, check if the parameter can be accessed as a tuple
         # If not: then use the dictionary representation for it
-        for parameter in ["time", "area", "level"]:
+        for param_name in ["time", "area", "level", "time_components"]:
 
-            if parameters.get(parameter).tuple is not None:
-                args.update(parameters.get(parameter).asdict())
+            param_value = parameters.get(param_name)
+            if param_value.value is not None:
+                args.update(param_value.asdict())
 
         # Rename start_time and end_time to start_date and end_date to
         # match clisops.core.subset function parameters.
@@ -86,20 +97,24 @@ class Subset(Operation):
             for arg in valid_args:
                 kwargs.setdefault(arg, self.params.get(arg, None))
 
-            # subset with time only
+            # Subset over time interval if requested
             if any(kwargs.values()):
                 LOGGER.debug(f"subset_time with parameters: {kwargs}")
                 result = subset_time(self.ds, **kwargs)
+            # Subset a series of time values if requested
+            elif self.params.get("time_values"):
+                result = subset_time_by_values(self.ds, time_values=self.params["time_values"])
             else:
                 result = self.ds
 
+            # Now test for level subsetting
             kwargs = {}
             valid_args = ["first_level", "last_level"]
 
             for arg in valid_args:
                 kwargs.setdefault(arg, self.params.get(arg, None))
 
-            # subset with level only
+            # Subset with level only
             if any(kwargs.values()):
                 # ensure bounds are ascending
                 if self.params.get("first_level") > self.params.get("last_level"):
@@ -110,6 +125,17 @@ class Subset(Operation):
 
                 LOGGER.debug(f"subset_level with parameters: {kwargs}")
                 result = subset_level(result, **kwargs)
+
+            elif self.params.get("level_values", None):
+                kwargs = {"level_values": self.params["level_values"]}
+                LOGGER.debug(f"subset_level_by_values with parameters: {kwargs}")
+                result = subset_level_by_values(result, **kwargs)
+
+        # Now apply time components if specified
+        time_comps = self.params.get("time_components")
+        if time_comps:
+            LOGGER.debug(f"subset_by_time_components with parameters: {time_comps}")
+            result = subset_time_by_components(result, time_components=time_comps)
 
         return result
 
@@ -135,6 +161,7 @@ def subset(
             str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter
         ]
     ] = None,
+    time_components: Optional[Union[str, Dict, TimeComponentsParameter]] = None,
     output_dir: Optional[Union[str, Path]] = None,
     output_type="netcdf",
     split_method="time:auto",
@@ -158,7 +185,9 @@ def subset(
             AreaParameter
         ]
     ] = None,
-    level: Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter]
+    level: Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]], 
+           LevelParameter] = None,
+    time_components: Optional[Union[str, Dict, TimeComponentsParameter]] = None,
     output_dir: Optional[Union[str, Path]] = None
     output_type: {"netcdf", "nc", "zarr", "xarray"}
     split_method: {"time:auto"}
@@ -176,6 +205,8 @@ def subset(
     | time: ("1999-01-01T00:00:00", "2100-12-30T00:00:00") or "2085-01-01T12:00:00Z/2120-12-30T12:00:00Z"
     | area: (-5.,49.,10.,65) or "0.,49.,10.,65" or [0, 49.5, 10, 65]
     | level: (1000.,) or "1000/2000" or ("1000.50", "2000.60")
+    | time_components: "year:2000,2004,2008|month:01,02" or {"year": (2000, 2004, 2008),
+    |                                                        "months": (1, 2)}
     | output_dir: "/cache/wps/procs/req0111"
     | output_type: "netcdf"
     | split_method: "time:auto"
@@ -189,3 +220,4 @@ def subset(
     """
     op = Subset(**locals())
     return op.process()
+

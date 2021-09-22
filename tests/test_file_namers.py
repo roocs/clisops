@@ -4,7 +4,7 @@ import pytest
 import xarray as xr
 
 from clisops import CONFIG
-from clisops.ops.subset import subset
+from clisops.ops.subset import subset, time_interval
 from clisops.utils.file_namers import get_file_namer
 from tests._common import C3S_CORDEX_PSL, CMIP5_TAS, CMIP6_SICONC
 
@@ -41,7 +41,7 @@ def test_SimpleFileNamer_with_chunking(load_esgf_test_data, tmpdir):
     CONFIG["clisops:write"]["file_size_limit"] = temp_max_file_size
     outputs = subset(
         ds=CMIP5_TAS,
-        time=(start_time, end_time),
+        time=time_interval(start_time, end_time),
         area=area,
         output_dir=tmpdir,
         output_type="nc",

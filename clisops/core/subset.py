@@ -2,9 +2,10 @@
 import logging
 import numbers
 import warnings
+import re
 from functools import wraps
 from pathlib import Path
-from typing import Optional, Sequence, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union, Dict
 
 import cf_xarray  # noqa
 import geopandas as gpd
@@ -36,7 +37,10 @@ __all__ = [
     "subset_gridpoint",
     "subset_shape",
     "subset_time",
+    "subset_time_by_values",
+    "subset_time_by_components",
     "subset_level",
+    "subset_level_by_values"
 ]
 
 
@@ -262,6 +266,81 @@ def check_lons(func):
                 else:
                     kwargs[lon][kwargs[lon] < 0] -= 360
 
+        return func(*args, **kwargs)
+
+    return func_checker
+
+
+def check_levels_exist(func):
+    @wraps(func)
+    def func_checker(*args, **kwargs):
+        """
+        Check the requested levels exist in the input Dataset/DataArray.
+        If not: raise an Exception.
+
+        if the requested levels are not sorted in the order of the actual array then 
+        re-sort them to match the array in the input data.
+        
+        Modifies the "level_values" list in `kwargs` in place, if required.
+        """
+        da = args[0]
+
+        req_levels = set(kwargs.get("level_values", set()))
+        da_levels = xu.get_coord_by_type(da, "level")
+        levels = {lev for lev in da_levels.values}
+
+        if not req_levels.issubset(levels):
+            mismatch_levels = req_levels.difference(levels)
+            raise ValueError(f"Requested levels include some not found in "
+                             f"the dataset: {mismatch_levels}")
+
+        # Now re-order the requested levels in case they do not match the data order
+        req_levels = sorted(req_levels)
+
+        if da_levels.values[-1] < da_levels.values[0]:
+            req_levels.reverse()
+
+        # Re-set the requested levels to fixed values
+        kwargs["level_values"] = req_levels
+        return func(*args, **kwargs)
+
+    return func_checker
+
+
+def check_datetimes_exist(func):
+    @wraps(func)
+    def func_checker(*args, **kwargs):
+        """
+        Check the requested datetimes exist in the input Dataset/DataArray.
+        If not: raise an Exception.
+
+        if the requested datetimes are not sorted in the order of the actual array then 
+        re-sort them to match the array in the input data.
+        
+        Modifies the "time_values" list in `kwargs` in place, if required.
+        """
+        da = args[0]
+
+        da_times = xu.get_coord_by_type(da, "time")
+        tm_class = da_times.values[0].__class__
+        times = {tm for tm in da_times.values}
+
+        # Convert time values to required format/type
+        req_times = {tm_class(*[int(i) for i in re.split("[-:T ]", tm)]) 
+                    for tm in kwargs.get("time_values", [])}
+
+        if not req_times.issubset(times):
+            mismatch_times = req_times.difference(times)
+            raise ValueError(f"Requested datetimes include some not found in "
+                             f"the dataset: {mismatch_times}")
+
+        # Now re-order the requested times in case they do not match the data order
+        req_times = sorted(req_times)
+        if da_times.values[-1] < da_times.values[0]:
+            req_times.reverse()
+
+        # Re-set the requested times to fixed values
+        kwargs["time_values"] = req_times
         return func(*args, **kwargs)
 
     return func_checker
@@ -795,6 +874,8 @@ def subset_bbox(
     end_date: Optional[str] = None,
     first_level: Optional[Union[float, int]] = None,
     last_level: Optional[Union[float, int]] = None,
+    time_values: Optional[Sequence[str]] = None,
+    level_values: Optional[Union[Sequence[float], Sequence[int]]] = None
 ) -> Union[xarray.DataArray, xarray.Dataset]:
     """Subset a DataArray or Dataset spatially (and temporally) using a lat lon bounding box and date selection.
 
@@ -828,7 +909,10 @@ def subset_bbox(
       Last level of the subset.
       Can be either an integer or float.
       Defaults to last level of input data-array.
-
+    time_values: Optional[Sequence[str]]
+      A list of datetime strings to subset.
+    level_values: Optional[Union[Sequence[float], Sequence[int]]]
+      A list of level values to select.
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
@@ -939,8 +1023,14 @@ def subset_bbox(
     if start_date or end_date:
         da = subset_time(da, start_date=start_date, end_date=end_date)
 
+    elif time_values:
+        da = subset_time_by_values(da, time_values)
+
     if first_level or last_level:
         da = subset_level(da, first_level=first_level, last_level=last_level)
+
+    elif level_values:
+        da = subset_level_by_values(da, level_values)
 
     if da[lat].size == 0 or da[lon].size == 0:
         raise ValueError(
@@ -1221,6 +1311,88 @@ def subset_time(
     return da.sel(time=slice(start_date, end_date))
 
 
+@check_datetimes_exist
+def subset_time_by_values(
+    da: Union[xarray.DataArray, xarray.Dataset],
+    time_values: Optional[Sequence[str]] = None,
+) -> Union[xarray.DataArray, xarray.Dataset]:
+    """Subset input DataArray or Dataset based on a sequence of datetime strings.
+    Return a subset of a DataArray or Dataset for datetimes matching those requested.
+
+    Parameters
+    ----------
+    da : Union[xarray.DataArray, xarray.Dataset]
+      Input data.
+    time_values: Optional[Sequence[str]] = None
+
+    Returns
+    -------
+    Union[xarray.DataArray, xarray.Dataset]
+      Subsetted xarray.DataArray or xarray.Dataset
+
+    Examples
+    --------
+    >>> import xarray as xr  # doctest: +SKIP
+    >>> from clisops.core.subset import subset_time_by_values  # doctest: +SKIP
+    >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
+    ...
+    # Subset a selection of datetimes
+    >>> times = ["2015-01-01", "2018-12-05", "2021-06-06"]
+    >>> prSub = subset_time_by_values(ds.pr, time_values=times)  # doctest: +SKIP
+
+    Notes
+    -----
+    If any datetimes are not found, a ValueError will be raised.
+    The requested datetimes will automatically be re-ordered to match the order in the 
+    input dataset.
+    """
+    return da.sel(time=time_values)
+
+
+def subset_time_by_components(
+    da: Union[xarray.DataArray, xarray.Dataset],
+    *,
+    time_components: Union[Dict, None] = None
+):
+    """Subsets by one or more time components (year, month, day etc).
+
+    Parameters
+    ----------
+    da : Union[xarray.DataArray, xarray.Dataset]
+      Input data.
+    time_components: Union[Dict, None] = None
+
+    Returns
+    -------
+    xarray.DataArray
+
+    Examples
+    --------
+    >>> import xarray as xr  # doctest: +SKIP
+    >>> from clisops.core.subset import subset_time_by_components  # doctest: +SKIP
+    ...
+    To select all Winter months (Dec, Jan, Feb) or [12, 1, 2]:
+    >>> da = xr.open_dataset(path_to_file).pr  # doctest: +SKIP
+    >>> winter_dict = {"month": [12, 1, 2]}
+    >>> res = subset_time_by_components(da, time_components=winter_dict)  # doctest: +SKIP
+    """
+    # Create a set of indices that match the requested time components
+    req_indices = set(range(len(da.time.values)))
+
+    for t_comp in ("year", "month", "day", "hour", "minute", "second"):
+        req_t_comp = time_components.get(t_comp, [])
+
+        # Exclude any time component that has not been requested
+        if not req_t_comp:
+            continue
+
+        t_comp_indices = da.groupby(f"time.{t_comp}").groups
+        req_indices = req_indices.intersection({idx for tc in req_t_comp
+                                                for idx in t_comp_indices[tc]})
+        
+    return da.isel(time=sorted(req_indices))
+
+
 @check_start_end_levels
 def subset_level(
     da: Union[xarray.DataArray, xarray.Dataset],
@@ -1251,7 +1423,7 @@ def subset_level(
     Examples
     --------
     >>> import xarray as xr  # doctest: +SKIP
-    >>> from clisops.core.subset import subset_time  # doctest: +SKIP
+    >>> from clisops.core.subset import subset_level  # doctest: +SKIP
     >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
     ...
     # Subset complete levels
@@ -1277,6 +1449,46 @@ def subset_level(
     da = da.sel(**{level.name: slice(first_level, last_level)})
 
     return da
+
+
+@check_levels_exist
+def subset_level_by_values(
+    da: Union[xarray.DataArray, xarray.Dataset],
+    level_values: Optional[Union[Sequence[float], Sequence[int]]] = None,
+) -> Union[xarray.DataArray, xarray.Dataset]:
+    """Subset input DataArray or Dataset based on a sequence of vertical level values.
+    Return a subset of a DataArray or Dataset for levels matching those requested.
+
+    Parameters
+    ----------
+    da : Union[xarray.DataArray, xarray.Dataset]
+      Input data.
+    level_values: Optional[Union[Sequence[float], Sequence[int]]]
+      A list of level values to select.
+
+    Returns
+    -------
+    Union[xarray.DataArray, xarray.Dataset]
+      Subsetted xarray.DataArray or xarray.Dataset
+
+    Examples
+    --------
+    >>> import xarray as xr  # doctest: +SKIP
+    >>> from clisops.core.subset import subset_level_by_values  # doctest: +SKIP
+    >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
+    ...
+    # Subset a selection of levels
+    >>> levels = [1000., 850., 250., 100.]
+    >>> prSub = subset_level_by_values(ds.pr, level_values=levels)  # doctest: +SKIP
+
+    Notes
+    -----
+    If any levels are not found, a ValueError will be raised.
+    The requested levels will automatically be re-ordered to match the order in the 
+    input dataset.
+    """
+    level = xu.get_coord_by_type(da, "level")
+    return da.sel(**{level.name: level_values})
 
 
 @convert_lat_lon_to_da
@@ -1328,3 +1540,5 @@ def distance(
     )
     out.attrs["units"] = "m"
     return out
+
+
