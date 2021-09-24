@@ -75,7 +75,12 @@ def average_shape(
         poly = poly.to_crs(4326)
 
     savger = SpatialAverager(ds_copy, poly.geometry)
-    if savger.weights.nnz == 0:
+    nonnull = (
+        savger.weights.data.nnz
+        if isinstance(savger.weights, xr.DataArray)
+        else savger.weights.nnz
+    )
+    if nonnull == 0:
         raise ValueError(
             "There were no valid data points found in the requested averaging region. Verify objects overlap."
         )
