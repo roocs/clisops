@@ -519,8 +519,8 @@ def grid_polygon(ds):
 
     if is_rectilinear(ds):
         if getattr(ds.cf.bounds, "X", None) not in ds:
-            lon_name = ds.cf['longitude'].name
-            lat_name = ds.cf['latitude'].name
+            lon_name = ds.cf["longitude"].name
+            lat_name = ds.cf["latitude"].name
             ds = ds.cf.add_bounds([lon_name, lat_name])
 
         x = ds.cf.bounds["X"][0]  # lon_bnds
@@ -541,10 +541,12 @@ def grid_polygon(ds):
         lat = ds.cf["latitude"]
         coords = xarray.Dataset({"lon": lon, "lat": lat})
 
-        sides = [coords.isel({xax: 0}),
-                 coords.isel({yax: -1}),
-                 coords.isel({xax: -1}),
-                 coords.isel({yax: 0})]
+        sides = [
+            coords.isel({xax: 0}),
+            coords.isel({yax: -1}),
+            coords.isel({xax: -1}),
+            coords.isel({yax: 0}),
+        ]
 
         pts = chain(*[zip(side.lon.data, side.lat.data) for side in sides])
 
@@ -603,16 +605,18 @@ def shape_bbox_indexer(ds, poly):
     elon, elat = map(np.array, zip(*envelope.boundary.coords[:-1]))
 
     # Create envelope coordinates (last item is just a copy of the first to close the polygon)
-    ind = {ds.cf["longitude"].name: elon[:-1],
-           ds.cf["latitude"].name: elat[:-1]}
+    ind = {ds.cf["longitude"].name: elon[:-1], ds.cf["latitude"].name: elat[:-1]}
 
     # Find indices nearest the rectangle' corners
     if rectilinear:
-        native_ind, _ = xarray.core.coordinates.remap_label_indexers(ds, ind, method="nearest")
+        native_ind, _ = xarray.core.coordinates.remap_label_indexers(
+            ds, ind, method="nearest"
+        )
 
     else:
         # For curvilinear grids, finding the closest points require a bit more work.
         from scipy.spatial import cKDTree
+
         lon, lat = ds.cf["longitude"], ds.cf["latitude"]
         # Create KDTree to speed up search
         tree = cKDTree(np.vstack([lon.data.ravel(), lat.data.ravel()]).T)

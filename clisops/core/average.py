@@ -6,7 +6,7 @@ import geopandas as gpd
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils.xarray_utils import get_coord_type, known_coord_types
-from . subset import shape_bbox_indexer
+from .subset import shape_bbox_indexer
 
 __all__ = ["average_over_dims", "average_shape"]
 
