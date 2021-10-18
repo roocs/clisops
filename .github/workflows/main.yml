@@ -30,7 +30,7 @@ jobs:
         include:
           - python-version: 3.6
             tox-env: py36
-            allowed_to_fail: false
+            allowed_to_fail: true
           - python-version: 3.7
             tox-env: py37
             allowed_to_fail: false
