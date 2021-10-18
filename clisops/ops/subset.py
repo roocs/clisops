@@ -1,21 +1,23 @@
 from pathlib import Path
-from typing import List, Optional, Tuple, Union, Dict
+from typing import Dict, List, Optional, Tuple, Union
 
 import xarray as xr
 from roocs_utils.parameter import parameterise
-from roocs_utils.parameter.param_utils import (time_series, time_interval, 
-            level_series, level_interval, time_components)
 from roocs_utils.parameter.area_parameter import AreaParameter
 from roocs_utils.parameter.level_parameter import LevelParameter
+from roocs_utils.parameter.time_components_parameter import TimeComponentsParameter
 from roocs_utils.parameter.time_parameter import TimeParameter
-from roocs_utils.parameter.time_components_parameter \
-    import TimeComponentsParameter
 from roocs_utils.xarray_utils.xarray_utils import open_xr_dataset
 
 from clisops import logging
-from clisops.core import (subset_bbox, subset_level, subset_time,
-                          subset_time_by_values, subset_level_by_values,
-                          subset_time_by_components)
+from clisops.core import (
+    subset_bbox,
+    subset_level,
+    subset_level_by_values,
+    subset_time,
+    subset_time_by_components,
+    subset_time_by_values,
+)
 from clisops.core.subset import assign_bounds, get_lat, get_lon
 from clisops.ops.base_operation import Operation
 from clisops.utils.common import expand_wildcards
@@ -31,22 +33,28 @@ LOGGER = logging.getLogger(__file__)
 
 
 class Subset(Operation):
-
     def _resolve_params(self, **params):
         """Generates a dictionary of subset parameters"""
         time = params.get("time", None)
         area = params.get("area", None)
         level = params.get("level", None)
-        time_components = params.get("time_components", None)
+        time_comps = params.get("time_components", None)
 
-        LOGGER.debug(f"Mapping parameters: time: {time}, area: {area}, "
-                     f"level: {level}, time_components: {time_components}.")
+        LOGGER.debug(
+            f"Mapping parameters: time: {time}, area: {area}, "
+            f"level: {level}, time_components: {time_comps}."
+        )
 
         # Set up args dictionary to be used by `self._calculate()`
         args = dict()
 
-        parameters = parameterise(collection=self.ds, time=time, area=area, level=level,
-                                  time_components=time_components)
+        parameters = parameterise(
+            collection=self.ds,
+            time=time,
+            area=area,
+            level=level,
+            time_components=time_comps,
+        )
 
         # For each required parameter, check if the parameter can be accessed as a tuple
         # If not: then use the dictionary representation for it
@@ -103,7 +111,9 @@ class Subset(Operation):
                 result = subset_time(self.ds, **kwargs)
             # Subset a series of time values if requested
             elif self.params.get("time_values"):
-                result = subset_time_by_values(self.ds, time_values=self.params["time_values"])
+                result = subset_time_by_values(
+                    self.ds, time_values=self.params["time_values"]
+                )
             else:
                 result = self.ds
 
@@ -185,7 +195,7 @@ def subset(
             AreaParameter
         ]
     ] = None,
-    level: Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]], 
+    level: Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]],
            LevelParameter] = None,
     time_components: Optional[Union[str, Dict, TimeComponentsParameter]] = None,
     output_dir: Optional[Union[str, Path]] = None
@@ -220,4 +230,3 @@ def subset(
     """
     op = Subset(**locals())
     return op.process()
-

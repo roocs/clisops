@@ -6,17 +6,16 @@ import pytest
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue, MissingParameterValue
 from roocs_utils.parameter import area_parameter, time_parameter
-
-from clisops import CONFIG
-from clisops.ops.subset import (
-    Subset,
+from roocs_utils.parameter.param_utils import (
     level_interval,
     level_series,
-    subset,
     time_components,
     time_interval,
     time_series,
 )
+
+from clisops import CONFIG
+from clisops.ops.subset import Subset, subset
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import _format_time
 
