@@ -7,5 +7,5 @@ from .subset import (
     subset_shape,
     subset_time,
     subset_time_by_components,
-    subset_time_by_values
+    subset_time_by_values,
 )
