@@ -71,37 +71,55 @@ def regrid(ds, grid_out, weights, adaptive_masking_threshold=0.5):
     #                 adaptive_masking_threshold=adaptive_masking_threshold,
     #                 keep_attrs=True)
     regridded_ds = grid_out.ds
-    # It might in general be sufficient to always act  as if the threshold was
-    #  set correctly and let xesmf handle it. But then we might not allow it
-    #  the bilinear method, as the results do not look too great and I am still
-    #  not sure/convinced adaptive_masking makes sense for this method.
-    for data_var in ds.data_vars:
-        print(data_var)
-        if (
-            weights.regridder.method in ["conservative", "conservative_normed", "patch"]
-            and adaptive_masking_threshold >= 0.0
-            and adaptive_masking_threshold < 1.0
-        ):
-            regridded_ds[data_var] = weights.regridder(
-                ds[data_var],
-                skipna=True,
-                na_thres=adaptive_masking_threshold,
-                keep_attrs=True,
-            )
-        else:
-            regridded_ds[data_var] = weights.regridder(
-                ds[data_var], skipna=False, keep_attrs=True
-            )
+
     # Copy attrs
     regridded_ds.attrs.update(ds.attrs)
     regridded_ds.attrs.update(
         {
             "regrid_operation": weights.regridder.filename.split(".")[0],
-            "regridder": weights.tool,
+            "regrid_tool": weights.tool,
             "regrid_weights_uid": weights.id,
         }
     )
-    return regridded_ds
+
+    # It might in general be sufficient to always act as if the threshold was
+    #  set correctly and let xesmf handle it. But then we might not allow it
+    #  the bilinear method, as the results do not look too great and I am still
+    #  not sure/convinced adaptive_masking makes sense for this method.
+    if isinstance(ds, xr.Dataset):
+        for data_var in ds.data_vars:
+            if (
+                weights.regridder.method
+                in ["conservative", "conservative_normed", "patch"]
+                and adaptive_masking_threshold >= 0.0
+                and adaptive_masking_threshold < 1.0
+            ):
+                regridded_ds[data_var] = weights.regridder(
+                    ds[data_var],
+                    skipna=True,
+                    na_thres=adaptive_masking_threshold,
+                    keep_attrs=True,
+                )
+            else:
+                regridded_ds[data_var] = weights.regridder(
+                    ds[data_var], skipna=False, keep_attrs=True
+                )
+        return regridded_ds
+    else:
+        if (
+            weights.regridder.method in ["conservative", "conservative_normed", "patch"]
+            and adaptive_masking_threshold >= 0.0
+            and adaptive_masking_threshold < 1.0
+        ):
+            regridded_ds[ds.name] = weights.regridder(
+                ds,
+                skipna=True,
+                na_thres=adaptive_masking_threshold,
+                keep_attrs=True,
+            )
+        else:
+            regridded_ds[ds.name] = weights.regridder(ds, skipna=False, keep_attrs=True)
+        return regridded_ds[ds.name]
 
 
 class Weights:
@@ -327,18 +345,8 @@ class Grid:
         # Get a permanent mask if there is
         # self.mask = self.detect_mask()
 
-        # Temporary fix for cf_xarray bug that identifies lat_bnds/lon_bnds as latitude/longitude
-        #  if lat_bnds and lon_bnds are registered as coordinates of the xarray.Dataset
-        # https://github.com/xarray-contrib/cf-xarray/issues/191
-        # ! No longer required from cfxarray 0.6.0 !
-        # if self.lat_bnds and self.lon_bnds:
-        #    if self.lat_bnds in self.ds.coords and self.lon_bnds in self.ds.coords:
-        #        self.ds = self.ds.reset_coords(
-        #            [self.lat_bnds, self.lon_bnds], drop=False
-        #        )
-
         # Clean coordinate variables out of data_vars
-        self._clean_data_vars()
+        self._set_data_vars_and_coords()
 
         # TODO: possible step to use np.around(in_array, decimals [, out_array])
         # 6 decimals corresponds to precision of ~ 0.1m (deg), 6m (rad)
@@ -415,6 +423,9 @@ class Grid:
             # One could distribute the number of grid cells to nlat and nlon,
             # in proportion to extent in latitudinal and longitudinal direction
         else:
+            # todo: filter out missing values is done by xarray if
+            # attribute is set, if not, should the attribute be set
+            # or let dachar/daops deal with this?
             xsize = grid_tmp.nlon
             ysize = grid_tmp.nlat
             xfirst = float(grid_tmp.ds[grid_tmp.lon].min())
@@ -423,6 +434,15 @@ class Grid:
             ylast = float(grid_tmp.ds[grid_tmp.lat].max())
             xinc = (xlast - xfirst) / (xsize - 1)
             yinc = (ylast - yfirst) / (ysize - 1)
+            xrange = [0.0, 360.0] if xlast > 180 else [-180.0, 180.0]
+            xfirst = xfirst - xinc / 2.0
+            xlast = xlast + xinc / 2.0
+            xfirst = xfirst if xfirst > xrange[0] else xrange[0]
+            xlast = xlast if xlast < xrange[1] else xrange[1]
+            yfirst = yfirst - yinc / 2.0
+            ylast = ylast + yinc / 2.0
+            yfirst = yfirst if yfirst > -90.0 else -90.0
+            ylast = ylast if ylast < 90.0 else 90.0
             self.grid_from_instructor((xfirst, xlast, xinc, yfirst, ylast, yinc))
 
     def grid_store(self, grid_format):
@@ -1039,7 +1059,6 @@ class Grid:
             ylast = float(self.ds[self.lat].max())
             xinc = (xlast - xfirst) / (xsize - 1)
             yinc = (ylast - yfirst) / (ysize - 1)
-            self.grid_from_instructor((xfirst, xlast, xinc, yfirst, ylast, yinc))
             approx_xres = (xinc + yinc) / 2.0
         elif self.ds[self.lon].ndim == 1:
             if self.type == "irregular":
@@ -1066,15 +1085,15 @@ class Grid:
             min_range, max_range = (-180.0, 180.0)
         elif lon_min > -atol and lon_max < 360.0 + atol:
             min_range, max_range = (0.0, 360.0)
-        elif lon_min < -720.0 or lon_max > 720.0:
-            raise Exception(
-                "The longitude values have to be within the range (-180, 360)!"
-            )
-        elif lon_max - lon_min > 360.0 - atol and lon_max - lon_min < 360.0 + atol:
-            min_range, max_range = (
-                lon_min - approx_xres / 2.0,
-                lon_max + approx_xres / 2.0,
-            )
+        # elif lon_min < -180.0 - atol or lon_max > 360.0 + atol:
+        #    raise Exception(
+        #        "The longitude values have to be within the range (-180, 360)!"
+        #    )
+        # elif lon_max - lon_min > 360.0 - atol and lon_max - lon_min < 360.0 + atol:
+        #    min_range, max_range = (
+        #        lon_min - approx_xres / 2.0,
+        #        lon_max + approx_xres / 2.0,
+        #    )
         else:
             raise Exception(
                 "The longitude values have to be within the range (-180, 360)!"
@@ -1104,7 +1123,7 @@ class Grid:
         # If self.format=="CF": An extra variable mask could be generated from missing values?
         # This could be an extra function of the reformatter with target format xESMF/SCRIP/...
         # For CF as target format, this mask could be applied to mask the data for all variables that
-        # are not coordinate or auxilliary variables (infer from attributes if possible).
+        # are not coordinate or auxiliary variables (infer from attributes if possible).
         # If a vertical dimension is present, this should not be done.
         # In general one might be better off with the adaptive masking and this would be
         # just a nice to have thing in case of reformatting and storing the grid on disk.
@@ -1149,24 +1168,13 @@ class Grid:
         roocs_utils.xarray_utils.xarray_utils.get_coord_by_type(ds, coord_type, ignore_aux_coords=True)
         """
         # coordinates = self.ds.cf[coordinate].name
-        #    coordinates = get_coord_by_attr(self.ds, "standard_name", coordinate).name
         coord = get_coord_by_type(self.ds, coord_type, ignore_aux_coords=False)
-        return coord.name
-        """
-        coordinates = cfxr.accessor._get_with_standard_name(self.ds, coordinate)
-
-        if coordinates == []:
+        try:
+            return coord.name
+        except AttributeError:
             raise Exception(
-                "A %s coordinate cannot be identified in the dataset!" % coordinate
+                "A %s coordinate cannot be identified in the dataset!" % coord_type
             )
-        elif len(coordinates) > 1:
-            raise Exception(
-                "More than one %s coordinate has been identified in the dataset!"
-                % coordinate
-            )
-        else:
-            return coordinates[0]
-        """
 
     def set_standard_name(self, coord_type):
         coord = get_coord_by_type(self.ds, coord_type, ignore_aux_coords=False)
@@ -1175,12 +1183,10 @@ class Grid:
     def detect_bounds(self, coordinate):
         "The coordinate variable must have a 'bounds' attribute."
         try:
-            # return self.ds.cf.get_bounds(coordinate).name
-            return self.ds[coordinate].attrs["bounds"]
+            return self.ds.cf.bounds[coordinate][0]
         except KeyError:
             warnings.warn(
-                "The coordinate variable '%s' does not have a 'bounds' attribute."
-                % coordinate
+                "For coordinate variable '%s' no bounds can be identified." % coordinate
             )
             return
 
@@ -1199,56 +1205,71 @@ class Grid:
         grid_tmp = Grid(ds=ds)
         return grid_tmp.hash == self.hash
 
-    def _clean_data_vars(self):
+    def _set_data_vars_and_coords(self):
         "Set all non data vars as coordinates."
-        coord_arr = ["time", "time_bnds"]
-        coord_substr_arr = ["vertice", "bnds", "bounds"]
-        to_clean = []
-        # Check by horizontal shape
+        to_coord = []
+        to_datavar = []
+
+        # Set as coord for auxiliary coord. variables not supposed to be remapped
         if self.ds[self.lat].ndim == 2:
-            for data_var in self.ds.data_vars:
-                if self.ds[data_var].ndim < 2:
-                    to_clean.append(data_var)
-                elif self.ds[data_var].shape[-2:] != self.ds[self.lat].shape:
-                    to_clean.append(data_var)
+            for var in self.ds.data_vars:
+                if self.ds[var].ndim < 2:
+                    to_coord.append(var)
+                elif self.ds[var].shape[-2:] != self.ds[self.lat].shape:
+                    to_coord.append(var)
         elif self.ds[self.lat].ndim == 1:
-            for data_var in self.ds.data_vars:
+            for var in self.ds.data_vars:
                 if self.type == "irregular":
-                    if self.ds[data_var].shape[-1] != self.ds[self.lat].shape:
-                        to_clean.append(data_var)
+                    if (
+                        len(self.ds[var].shape) > 0
+                        and (self.ds[var].shape[-1],) != self.ds[self.lat].shape
+                    ):
+                        to_coord.append(var)
                 else:
                     if not (
-                        self.ds[data_var].shape[-2:] == (self.nlat, self.nlon)
-                        or self.ds[data_var].shape[-2:] == (self.nlon, self.nlat)
+                        self.ds[var].shape[-2:] == (self.nlat, self.nlon)
+                        or self.ds[var].shape[-2:] == (self.nlon, self.nlat)
                     ):
-                        to_clean.append(data_var)
-        print(to_clean)
-        # Check by attributes and names
-        for coord in self.ds.coords:
-            try:
-                bnds = self.ds[coord].attrs["bounds"]
-                if bnds in self.ds.data_vars:
-                    to_clean.append(bnds)
-            except KeyError:
-                pass
-        for data_var in self.ds.data_vars:
-            if (
-                any([string in data_var for string in coord_substr_arr])
-                or data_var in coord_arr
-            ):
-                to_clean.append(data_var)
-            else:
-                try:
-                    bnds = self.ds[data_var].attrs["bounds"]
-                    if bnds in self.ds.data_vars:
-                        to_clean.append(bnds)
-                except KeyError:
-                    pass
-        print(to_clean)
-        print(self.ds.data_vars, "\n", self.ds.coords)
-        if to_clean:
-            self.ds = self.ds.set_coords(list(set(to_clean)))
-        print(self.ds.data_vars, "\n", self.ds.coords)
+                        to_coord.append(var)
+
+        # Set bound variables to coord
+        for var in [bnd for bnds in self.ds.cf.bounds.values() for bnd in bnds]:
+            if var in self.ds.data_vars:
+                to_coord.append(var)
+
+        # Reset coords for variables supposed to be remapped (eg. ps)
+        for var in self.ds.coords:
+            if var not in [self.lat, self.lon] + [
+                bnd for bnds in self.ds.cf.bounds.values() for bnd in bnds
+            ]:
+                if self.type == "irregular":
+                    if len(self.ds[var].shape) > 0 and (
+                        self.ds[var].shape[-1] == self.ncells
+                        and self.ds[var].dims[-1] in self.ds[self.lat].dims
+                        and var not in self.ds.dims
+                    ):
+                        to_datavar.append(var)
+                else:
+                    if (
+                        len(self.ds[var].shape) > 0
+                        and (
+                            self.ds[var].shape[-2:] == (self.nlat, self.nlon)
+                            or self.ds[var].shape[-2:] == (self.nlon, self.nlat)
+                        )
+                        and all(
+                            [
+                                dim in self.ds[var].dims
+                                for dim in list(self.ds[self.lat].dims)
+                                + list(self.ds[self.lon].dims)
+                            ]
+                        )
+                    ):
+                        to_datavar.append(var)
+
+        if to_coord:
+            self.ds = self.ds.set_coords(list(set(to_coord)))
+        if to_datavar:
+            self.ds = self.ds.reset_coords(list(set(to_datavar)))
 
     def compute_bounds(self):
         # TODO

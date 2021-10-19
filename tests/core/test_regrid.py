@@ -363,11 +363,11 @@ class TestRegrid:
     def test_adaptive_masking(self, load_esgf_test_data):
         self._setup()
         w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="conservative")
-        r = regrid(self.ds, w.regridder, adaptive_masking_threshold=0.7)
+        r = regrid(self.grid_in.ds, self.grid_out, w, adaptive_masking_threshold=0.7)
         print(r)
 
     def test_no_adaptive_masking(self, load_esgf_test_data):
         self._setup()
         w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="bilinear")
-        r = regrid(self.ds.tas, w.regridder)
+        r = regrid(self.ds.tas, self.grid_out, w, adaptive_masking_threshold=-1.0)
         print(r)
