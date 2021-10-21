@@ -918,6 +918,7 @@ def subset_bbox(
       A list of datetime strings to subset.
     level_values: Optional[Union[Sequence[float], Sequence[int]]]
       A list of level values to select.
+
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
