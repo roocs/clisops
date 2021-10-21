@@ -1,20 +1,25 @@
-from pathlib import Path
 import random
+from pathlib import Path
 
 import numpy as np
 import pytest
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue, MissingParameterValue
 from roocs_utils.parameter import area_parameter, time_parameter
+from roocs_utils.parameter.param_utils import (
+    level_interval,
+    level_series,
+    time_components,
+    time_interval,
+    time_series,
+)
 
 from clisops import CONFIG
-from clisops.ops.subset import (Subset, subset, time_interval, time_series,
-                                level_interval, level_series, time_components)
+from clisops.ops.subset import Subset, subset
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import _format_time
 
 from .._common import (
-    assert_vars_equal,
     C3S_CMIP5_TOS,
     C3S_CMIP5_TSICE,
     CMIP5_RH,
@@ -28,6 +33,7 @@ from .._common import (
     CMIP6_TA,
     CMIP6_TOS,
     CMIP6_TOS_ONE_TIME_STEP,
+    assert_vars_equal,
 )
 
 
@@ -72,7 +78,9 @@ def test_subset_args_as_parameter_classes(cmip5_tas_file, tmpdir):
     """Tests clisops subset function with a time subset
     with the arguments as parameter classes from roocs-utils."""
 
-    time = time_parameter.TimeParameter(time_interval("2000-01-01T00:00:00", "2020-12-30T00:00:00"))
+    time = time_parameter.TimeParameter(
+        time_interval("2000-01-01T00:00:00", "2020-12-30T00:00:00")
+    )
     area = area_parameter.AreaParameter((0, -90.0, 360.0, 90.0))
 
     result = subset(
@@ -456,7 +464,9 @@ def test_subset_level(cmip6_o3):
     # Levels are: 100000, ..., 100
     ds = _load_ds(cmip6_o3)
 
-    result1 = subset(ds=cmip6_o3, level=level_interval("100000/100"), output_type="xarray")
+    result1 = subset(
+        ds=cmip6_o3, level=level_interval("100000/100"), output_type="xarray"
+    )
 
     np.testing.assert_array_equal(result1[0].o3.values, ds.o3.values)
 
@@ -464,7 +474,9 @@ def test_subset_level(cmip6_o3):
 
     np.testing.assert_array_equal(result2[0].o3.shape, (1200, 1, 2, 3))
 
-    result3 = subset(ds=cmip6_o3, level=level_interval("101/-23.234"), output_type="xarray")
+    result3 = subset(
+        ds=cmip6_o3, level=level_interval("101/-23.234"), output_type="xarray"
+    )
 
     np.testing.assert_array_equal(result3[0].o3.values, result2[0].o3.values)
 
@@ -848,10 +860,12 @@ class TestSubset:
 
     def test_resolve_params_time(self, cmip5_tas_file):
         s = Subset(
-            ds=cmip5_tas_file, time=time_interval("1999-01-01", "2100-12"), area=(0, -90, 360, 90)
+            ds=cmip5_tas_file,
+            time=time_interval("1999-01-01", "2100-12"),
+            area=(0, -90, 360, 90),
         )
         assert s.params["start_date"] == "1999-01-01T00:00:00"
-        assert s.params["end_date"] == "2100-12-30T00:00:00"
+        assert s.params["end_date"] == "2100-12-31T23:59:59"
 
     def test_resolve_params_invalid_time(self, cmip5_tas_file):
         with pytest.raises(InvalidParameterValue):
@@ -861,7 +875,11 @@ class TestSubset:
                 area=(0, -90, 360, 90),
             )
         with pytest.raises(InvalidParameterValue):
-            Subset(ds=cmip5_tas_file, time=time_interval("", "2100"), area=(0, -90, 360, 90))
+            Subset(
+                ds=cmip5_tas_file,
+                time=time_interval("", "2100"),
+                area=(0, -90, 360, 90),
+            )
 
     def test_resolve_params_area(self, cmip5_tas_file):
         s = Subset(
@@ -1321,53 +1339,71 @@ class TestReverseBounds:
         )
 
 
-def _shuffle(l):
-    l_copy = l[:]
+def _shuffle(lst):
+    l_copy = lst[:]
     random.shuffle(l_copy)
     return l_copy
 
 
 def test_subset_level_by_values_all(tmpdir, load_esgf_test_data):
-    all_levels = [100000, 92500, 85000, 70000, 60000, 50000, 40000, 30000, 25000,
-                  20000, 15000, 10000, 7000, 5000, 3000, 2000, 1000, 500, 100]
+    all_levels = [
+        100000,
+        92500,
+        85000,
+        70000,
+        60000,
+        50000,
+        40000,
+        30000,
+        25000,
+        20000,
+        15000,
+        10000,
+        7000,
+        5000,
+        3000,
+        2000,
+        1000,
+        500,
+        100,
+    ]
 
     shuffled_1 = _shuffle(all_levels)
     shuffled_2 = _shuffle(all_levels)
 
     # Get various outputs and compare they are the same
-    ds_list = [subset(
-        ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray",
-        level=level
-    )[0] for level in [
-        None,
-        level_series(all_levels),
-        level_interval(all_levels[0], all_levels[-1]),
-        level_series(list(reversed(all_levels))),
-        level_series(shuffled_1),
-        level_series(shuffled_2)
-    ]]
+    ds_list = [
+        subset(ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray", level=level)[0]
+        for level in [
+            None,
+            level_series(all_levels),
+            level_interval(all_levels[0], all_levels[-1]),
+            level_series(list(reversed(all_levels))),
+            level_series(shuffled_1),
+            level_series(shuffled_2),
+        ]
+    ]
 
     assert_vars_equal("plev", *ds_list)
 
 
 def test_subset_level_by_values_partial(tmpdir, load_esgf_test_data):
-    some_levels = [60000, 50000, 40000, 30000, 25000,
-                   20000, 15000, 10000, 7000, 5000]
+    some_levels = [60000, 50000, 40000, 30000, 25000, 20000, 15000, 10000, 7000, 5000]
 
     shuffled_1 = _shuffle(some_levels)
     shuffled_2 = _shuffle(some_levels)
 
     # Get various outputs and compare they are the same
-    ds_list = [subset(
-        ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray",
-        level=level
-    )[0] for level in [
-        level_series(some_levels),
-        level_interval(some_levels[0], some_levels[-1]),
-        level_series(list(reversed(some_levels))),
-        level_series(shuffled_1),
-        level_series(shuffled_2)
-    ]]
+    ds_list = [
+        subset(ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray", level=level)[0]
+        for level in [
+            level_series(some_levels),
+            level_interval(some_levels[0], some_levels[-1]),
+            level_series(list(reversed(some_levels))),
+            level_series(shuffled_1),
+            level_series(shuffled_2),
+        ]
+    ]
 
     assert_vars_equal("plev", *ds_list)
 
@@ -1379,15 +1415,15 @@ def test_subset_level_by_values_with_gaps(tmpdir, load_esgf_test_data):
     shuffled_2 = _shuffle(picked_levels)
 
     # Get various outputs and compare they are the same
-    ds_list = [subset(
-        ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray",
-        level=level
-    )[0] for level in [
-        level_series(picked_levels),
-        level_series(list(reversed(picked_levels))),
-        level_series(shuffled_1),
-        level_series(shuffled_2)
-    ]]
+    ds_list = [
+        subset(ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray", level=level)[0]
+        for level in [
+            level_series(picked_levels),
+            level_series(list(reversed(picked_levels))),
+            level_series(shuffled_1),
+            level_series(shuffled_2),
+        ]
+    ]
 
     assert_vars_equal("plev", *ds_list)
 
@@ -1399,17 +1435,17 @@ def test_subset_time_by_values_all(tmpdir, load_esgf_test_data):
     shuffled_2 = _shuffle(all_times)
 
     # Get various outputs and compare they are the same
-    ds_list = [subset(
-        ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray",
-        time=times
-    )[0] for times in [
-        None,
-        time_series(all_times),
-        time_interval(all_times[0], all_times[-1]),
-        time_series(list(reversed(all_times))),
-        time_series(shuffled_1),
-        time_series(shuffled_2)
-    ]]
+    ds_list = [
+        subset(ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray", time=times)[0]
+        for times in [
+            None,
+            time_series(all_times),
+            time_interval(all_times[0], all_times[-1]),
+            time_series(list(reversed(all_times))),
+            time_series(shuffled_1),
+            time_series(shuffled_2),
+        ]
+    ]
 
     assert_vars_equal("time", *ds_list)
 
@@ -1422,35 +1458,41 @@ def test_subset_time_by_values_partial(tmpdir, load_esgf_test_data):
     shuffled_2 = _shuffle(some_times)
 
     # Get various outputs and compare they are the same
-    ds_list = [subset(
-        ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray",
-        time=times
-    )[0] for times in [
-        time_interval(some_times[0], some_times[-1]),
-        time_series(list(reversed(some_times))),
-        time_series(shuffled_1),
-        time_series(shuffled_2)
-    ]]
+    ds_list = [
+        subset(ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray", time=times)[0]
+        for times in [
+            time_interval(some_times[0], some_times[-1]),
+            time_series(list(reversed(some_times))),
+            time_series(shuffled_1),
+            time_series(shuffled_2),
+        ]
+    ]
 
     assert_vars_equal("time", *ds_list)
 
 
 def test_subset_time_by_values_with_gaps(tmpdir, load_esgf_test_data):
-    t = all_times = [str(tm) for tm in xr.open_dataset(CMIP6_TA).time.values]
-    some_times = [t[0], t[100], t[4], t[33], t[9]]
+    all_times = [str(tm) for tm in xr.open_dataset(CMIP6_TA).time.values]
+    some_times = [
+        all_times[0],
+        all_times[100],
+        all_times[4],
+        all_times[33],
+        all_times[9],
+    ]
 
     shuffled_1 = _shuffle(some_times)
     shuffled_2 = _shuffle(some_times)
 
     # Get various outputs and compare they are the same
-    ds_list = [subset(
-        ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray",
-        time=times
-    )[0] for times in [
-        time_series(list(reversed(some_times))),
-        time_series(shuffled_1),
-        time_series(shuffled_2)
-    ]]
+    ds_list = [
+        subset(ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray", time=times)[0]
+        for times in [
+            time_series(list(reversed(some_times))),
+            time_series(shuffled_1),
+            time_series(shuffled_2),
+        ]
+    ]
 
     assert_vars_equal("time", *ds_list)
 
@@ -1511,8 +1553,11 @@ def test_subset_by_time_interval_and_components_month_day(tmpdir, load_esgf_test
 def test_subset_by_time_series_and_components_month_day(tmpdir, load_esgf_test_data):
     # CMIP6_SICONC_DAY: 18500101-20141231 ;  n_times = 60225
     ys, ye = 1850, 1869
-    req_times = [tm.isoformat() for tm in xr.open_dataset(CMIP6_SICONC_DAY).time.values
-                 if ys <= tm.year <= ye]
+    req_times = [
+        tm.isoformat()
+        for tm in xr.open_dataset(CMIP6_SICONC_DAY).time.values
+        if ys <= tm.year <= ye
+    ]
 
     ts = time_series(req_times)
     months = [3, 4, 5]
