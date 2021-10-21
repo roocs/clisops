@@ -1,11 +1,10 @@
 """Subset module."""
-import logging
 import numbers
-import warnings
 import re
+import warnings
 from functools import wraps
 from pathlib import Path
-from typing import Optional, Sequence, Tuple, Union, Dict
+from typing import Dict, Optional, Sequence, Tuple, Union
 
 import cf_xarray  # noqa
 import geopandas as gpd
@@ -40,7 +39,7 @@ __all__ = [
     "subset_time_by_values",
     "subset_time_by_components",
     "subset_level",
-    "subset_level_by_values"
+    "subset_level_by_values",
 ]
 
 
@@ -278,9 +277,9 @@ def check_levels_exist(func):
         Check the requested levels exist in the input Dataset/DataArray.
         If not: raise an Exception.
 
-        if the requested levels are not sorted in the order of the actual array then 
+        if the requested levels are not sorted in the order of the actual array then
         re-sort them to match the array in the input data.
-        
+
         Modifies the "level_values" list in `kwargs` in place, if required.
         """
         da = args[0]
@@ -291,8 +290,10 @@ def check_levels_exist(func):
 
         if not req_levels.issubset(levels):
             mismatch_levels = req_levels.difference(levels)
-            raise ValueError(f"Requested levels include some not found in "
-                             f"the dataset: {mismatch_levels}")
+            raise ValueError(
+                f"Requested levels include some not found in "
+                f"the dataset: {mismatch_levels}"
+            )
 
         # Now re-order the requested levels in case they do not match the data order
         req_levels = sorted(req_levels)
@@ -314,9 +315,9 @@ def check_datetimes_exist(func):
         Check the requested datetimes exist in the input Dataset/DataArray.
         If not: raise an Exception.
 
-        if the requested datetimes are not sorted in the order of the actual array then 
+        if the requested datetimes are not sorted in the order of the actual array then
         re-sort them to match the array in the input data.
-        
+
         Modifies the "time_values" list in `kwargs` in place, if required.
         """
         da = args[0]
@@ -326,13 +327,17 @@ def check_datetimes_exist(func):
         times = {tm for tm in da_times.values}
 
         # Convert time values to required format/type
-        req_times = {tm_class(*[int(i) for i in re.split("[-:T ]", tm)]) 
-                    for tm in kwargs.get("time_values", [])}
+        req_times = {
+            tm_class(*[int(i) for i in re.split("[-:T ]", tm)])
+            for tm in kwargs.get("time_values", [])
+        }
 
         if not req_times.issubset(times):
             mismatch_times = req_times.difference(times)
-            raise ValueError(f"Requested datetimes include some not found in "
-                             f"the dataset: {mismatch_times}")
+            raise ValueError(
+                f"Requested datetimes include some not found in "
+                f"the dataset: {mismatch_times}"
+            )
 
         # Now re-order the requested times in case they do not match the data order
         req_times = sorted(req_times)
@@ -875,7 +880,7 @@ def subset_bbox(
     first_level: Optional[Union[float, int]] = None,
     last_level: Optional[Union[float, int]] = None,
     time_values: Optional[Sequence[str]] = None,
-    level_values: Optional[Union[Sequence[float], Sequence[int]]] = None
+    level_values: Optional[Union[Sequence[float], Sequence[int]]] = None,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
     """Subset a DataArray or Dataset spatially (and temporally) using a lat lon bounding box and date selection.
 
@@ -1343,7 +1348,7 @@ def subset_time_by_values(
     Notes
     -----
     If any datetimes are not found, a ValueError will be raised.
-    The requested datetimes will automatically be re-ordered to match the order in the 
+    The requested datetimes will automatically be re-ordered to match the order in the
     input dataset.
     """
     return da.sel(time=time_values)
@@ -1352,7 +1357,7 @@ def subset_time_by_values(
 def subset_time_by_components(
     da: Union[xarray.DataArray, xarray.Dataset],
     *,
-    time_components: Union[Dict, None] = None
+    time_components: Union[Dict, None] = None,
 ):
     """Subsets by one or more time components (year, month, day etc).
 
@@ -1387,9 +1392,10 @@ def subset_time_by_components(
             continue
 
         t_comp_indices = da.groupby(f"time.{t_comp}").groups
-        req_indices = req_indices.intersection({idx for tc in req_t_comp
-                                                for idx in t_comp_indices[tc]})
-        
+        req_indices = req_indices.intersection(
+            {idx for tc in req_t_comp for idx in t_comp_indices[tc]}
+        )
+
     return da.isel(time=sorted(req_indices))
 
 
@@ -1484,7 +1490,7 @@ def subset_level_by_values(
     Notes
     -----
     If any levels are not found, a ValueError will be raised.
-    The requested levels will automatically be re-ordered to match the order in the 
+    The requested levels will automatically be re-ordered to match the order in the
     input dataset.
     """
     level = xu.get_coord_by_type(da, "level")
@@ -1540,5 +1546,3 @@ def distance(
     )
     out.attrs["units"] = "m"
     return out
-
-
