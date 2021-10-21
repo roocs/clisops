@@ -8,6 +8,7 @@ Breaking Changes
 ^^^^^^^^^^^^^^^^
 * ``time`` input for ``time`` in ``ops.subset.subset`` but now be one of [<class 'roocs_utils.parameter.param_utils.Interval'>, <class 'roocs_utils.parameter.param_utils.Series'>, <class 'NoneType'>, <class 'str'>].
 * ``level`` input for ``level`` in ``ops.subset.subset`` but now be one of [<class 'roocs_utils.parameter.param_utils.Interval'>, <class 'roocs_utils.parameter.param_utils.Series'>, <class 'NoneType'>, <class 'str'>].
+* ``roocs-utils``>= 0.5.0 required.
 
 New Features
 ^^^^^^^^^^^^
