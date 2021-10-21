@@ -1,6 +1,27 @@
 Version History
 ===============
 
+v0.7.0 (2021-10-26)
+-------------------
+
+Breaking Changes
+^^^^^^^^^^^^^^^^
+* ``time`` input for ``time`` in ``ops.subset.subset`` but now be one of [<class 'roocs_utils.parameter.param_utils.Interval'>, <class 'roocs_utils.parameter.param_utils.Series'>, <class 'NoneType'>, <class 'str'>].
+* ``level`` input for ``level`` in ``ops.subset.subset`` but now be one of [<class 'roocs_utils.parameter.param_utils.Interval'>, <class 'roocs_utils.parameter.param_utils.Series'>, <class 'NoneType'>, <class 'str'>].
+
+New Features
+^^^^^^^^^^^^
+* ``time_values`` and ``level_values`` arguments added to ``core.subset.subset_bbox`` which allows the user to provide a list of time/level values to select.
+* ``subset_time_by_values`` and ``subset_level_by_values`` added to ``core.subset.subset_bbox``. These allow subsetting on sequence of datetimes or levels.
+* ``subset_time_by_components`` added to ``core.subset.subset_bbox``. This allows subsetting by time components - year, month,  day etc.
+* ``check_levels_exist`` and ``check_datetimes_exist`` function checkers added in ``core.subset`` to check requested levels and datetimes exist. An exception is raised if they do not exist in the dataset.
+* ``time_components`` argument added to ``ops.subset`` to allowing subsetting by time components such as year, month, day etc.
+
+Other Changes
+^^^^^^^^^^^^^
+* Python 3.6 no longer tested in GitHub actions.
+
+
 v0.6.5 (2021-06-10)
 -------------------
 
