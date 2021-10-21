@@ -4,7 +4,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray as xr
-from roocs_utils.exceptions import InvalidParameterValue, MissingParameterValue
+from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.parameter import area_parameter, time_parameter
 from roocs_utils.parameter.param_utils import (
     level_interval,
@@ -16,7 +16,6 @@ from roocs_utils.parameter.param_utils import (
 
 from clisops import CONFIG
 from clisops.ops.subset import Subset, subset
-from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import _format_time
 
 from .._common import (
@@ -1571,6 +1570,30 @@ def test_subset_by_time_series_and_components_month_day(tmpdir, load_esgf_test_d
 
     for tc in (tc1, tc2):
         ds = subset(ds_ta, time=ts, time_components=tc, **kwargs)[0]
+
+        assert set(ds.time.dt.month.values) == set(months)
+        assert set(ds.time.dt.day.values) == set(days)
+        assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
+
+
+def test_subset_by_area_and_components_month_day(tmpdir, load_esgf_test_data):
+    # CMIP6_SICONC_DAY: 18500101-20141231 ;  n_times = 60225
+    ys, ye = 1850, 1869
+    ti = time_interval(f"{ys}-01-01T00:00:00", f"{ye}-12-31T23:59:59")
+
+    months = [3, 4, 5]
+    days = [5, 6]
+
+    tc1 = time_components(month=["mar", "apr", "may"], day=days)
+    tc2 = time_components(month=months, day=days)
+
+    area = area_parameter.AreaParameter((20, 30.0, 150, 70.0))
+
+    ds_ta = CMIP6_SICONC_DAY
+    kwargs = {"output_dir": tmpdir, "output_type": "xarray"}
+
+    for tc in (tc1, tc2):
+        ds = subset(ds_ta, time=ti, time_components=tc, area=area, **kwargs)[0]
 
         assert set(ds.time.dt.month.values) == set(months)
         assert set(ds.time.dt.day.values) == set(days)
