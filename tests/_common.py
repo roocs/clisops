@@ -17,6 +17,32 @@ DEFAULT_CMIP6_ARCHIVE_BASE = Path(
     TESTS_HOME, "mini-esgf-data/test_data/badc/cmip6/data"
 ).as_posix()
 
+
+def assert_vars_equal(var_id, *ds_list, extras=None):
+    """Extract variable/DataArray `var_id` from each Dataset in the `ds_list`.
+    Check they are all the same by comparing the arrays and common attributes.
+    `extras` is an optional list of extra attributes to check.
+    """
+    if not extras:
+        extras = []
+
+    if len(ds_list) == 1:
+        raise Exception("Only one Dataset passed to: _ds_var_check()")
+
+    das = [ds[var_id] for ds in ds_list]
+    ref_da = das[0]
+
+    # Create a list of attributes to compare
+    attrs = ["standard_name", "long_name", "units", "cell_methods"] + extras
+
+    for da in das[1:]:
+        assert da.values.tolist() == ref_da.values.tolist()
+
+        for attr in attrs:
+            if attr in ref_da.attrs:
+                assert ref_da.attrs[attr] == da.attrs.get(attr)
+
+
 # This is now only required for json files
 XCLIM_TESTS_DATA = Path(TESTS_HOME, "xclim-testdata/testdata").as_posix()
 MINI_ESGF_CACHE_DIR = Path.home() / ".mini-esgf-data"
