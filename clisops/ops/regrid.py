@@ -71,11 +71,6 @@ class Regrid(Operation):
 
         grid_in = self._get_grid_in(self.ds)
         grid_out = self._get_grid_out(grid)
-        if grid_in.hash == grid_out.hash:
-            raise Exception(
-                "The selected source and target grids are the same. "
-                "No regridding operation required."
-            )
         weights = self._get_weights(grid_in=grid_in, grid_out=grid_out, method=method)
 
         self.params = {

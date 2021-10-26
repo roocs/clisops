@@ -2,6 +2,7 @@
 # from pathlib import Path
 # from typing import Tuple, Union
 import functools
+import json
 import os
 import warnings
 from hashlib import md5
@@ -28,10 +29,20 @@ except Exception:
 # from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils.xarray_utils import get_coord_by_attr, get_coord_by_type
 
+# from daops import functions to load and save weights from/to a central weight store
+try:
+    from daops.regrid import weights_load, weights_save
+except Exception:
+    # Use local weight store
+    weights_save = None
+    weights_load = None
+
 # from clisops.utils import dataset_utils
 from clisops import CONFIG
 
 weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
+weights_svc = CONFIG["clisops:grid_weights"]["remote_weights_svc"]
+coord_precision_hor = int(CONFIG["clisops:coordinate_precision"]["hor_coord_decimals"])
 
 
 def require_xesmf(func):
@@ -61,6 +72,13 @@ def check_dir(func, dr):
 
 
 check_weights_dir = functools.partial(check_dir, dr=weights_dir)
+
+# Initialize weights_dic (local weights storage)
+try:
+    with open(weights_dir + "/weights.json") as weights_dic_path:
+        weights_dic = json.load(weights_dic_path)
+except FileNotFoundError:
+    weights_dic = {}
 
 
 @require_xesmf
@@ -131,18 +149,25 @@ class Weights:
     # - Reformat to other weight-file formats when loading/saving from disk
 
     @require_xesmf
-    def __init__(
-        self, grid_in=None, grid_out=None, from_id=None, from_disk=None, method=None
-    ):
+    def __init__(self, grid_in, grid_out, from_disk=None, method=None, format="xESMF"):
         """
-        Generate weights for grid_in, grid_out for method or
-        read weights from cache (from_id) or
+        Generate weights / read from cache (if present locally or retreivable from central
+        regrid weight store) for grid_in, grid_out for method or alternatively
         read weights from disk (from_disk, method).
         In the latter case, the weight file format has to be detected and supported,
         to reformat it to xESMF format.
         """
+        if not isinstance(grid_in, Grid) or not isinstance(grid_out, Grid):
+            raise Exception(
+                "Input and output grids have to be instances of clisops.core.Grid!"
+            )
         self.grid_in = grid_in
         self.grid_out = grid_out
+        if grid_in.hash == grid_out.hash:
+            raise Exception(
+                "The selected source and target grids are the same. "
+                "No regridding operation required."
+            )
         self.method = method
         # ToDo: properly test / check the periodic attribute of the xESMF Regridder.
         #  The grid.extent check done here might not be suitable to set the periodic att.
@@ -160,8 +185,9 @@ class Weights:
                 )
         # ToDo: Determine ignore_degenerate by checking the collapsed cells status in grid_in
         self.ignore_degenerate = None
+
         self.id = self._generate_id()
-        self.tool = "xESMF_v" + xe.__version__
+        self.filename = self.id + ".nc"
 
         # ToDo:
         # - Load weights from disk
@@ -175,27 +201,24 @@ class Weights:
         #   +if not file: generate and store locally
         #   +make sure format is xESMF
         #   (+at some point generated weights will be added to central DB)
-        # if not grid_in and not grid_out:
-        #    if from_id:
-        #        self.id = from_id
-        #        self.regridder, self.method = self.load_from_cache(self.id)
-        #    elif from_disk and method:
-        #        self.regridder = self.load_from_disk(from_disk)
-        #    else:
-        #        raise Exception(
-        #            "Not all necessary input parameters have been specified."
-        #        )
-        # else:
-        #    # Might allow datasets as well, then they can either be used to create Grid objects
-        #    #  or they can be passed on to xesmf.Regridder without any further checking.
-        #    if not isinstance(grid_in, Grid) and not isinstance(grid_out, Grid):
-        #        raise Exception(
-        #            "Input and output grids have to be instances of clisops.core.Grid!"
-        #        )
-        #    self.id = self.generate_id()
-        self.regridder = self.load_from_cache(self.id)
-        if not self.regridder:
+
+        if from_disk:
+            if not method:
+                raise Exception(
+                    "'method' has to be specified when reading weights from disk!"
+                )
+        else:
+            self.load_from_cache()
+            self.tool = "xESMF_v" + xe.__version__
             self.regridder = self.compute()
+
+        if self.tool.startswith("xESMF"):
+            self.format = "xESMF"
+            self.save_to_cache()
+        else:
+            self.format = self._detect_format()
+            self._reformat("xESMF")
+        self.regridder.filename = self.regridder._get_default_filename()
 
     def compute(self, ignore_degenerate=None):
         """
@@ -204,14 +227,24 @@ class Weights:
         there is the ignore_degenerate option.
         """
         # Call xesmf.Regridder
+        if os.path.isfile(weights_dir + "/" + self.filename):
+            reuse_weights = True
+        else:
+            reuse_weights = False
         return xe.Regridder(
             self.grid_in.ds,
             self.grid_out.ds,
             self.method,
             periodic=self.periodic,
-            ignore_degenerate=ignore_degenerate,
+            ignore_degenerate=self.ignore_degenerate,
             unmapped_to_nan=True,
+            filename=weights_dir + "/" + self.filename,
+            reuse_weights=reuse_weights,
         )
+        # The default filename is important for later use, so reset it.
+        # xESMF writes weights to disk when filename is given and reuse_weights=False
+        # (latter is default) else it will create a default filename and weights can be manually
+        # written to disk with Regridder.to_netcdf(filename)
 
     def _reformat(self, format_from, format_to):
         raise NotImplementedError
@@ -239,18 +272,61 @@ class Weights:
         # Create folder dependent on id
         # Store weight file in xESMF-format
         # Further information will be stored in a json file in the same folder
-        # weightfile=regridderHR.to_netcdf(regridder.filename)
-        raise NotImplementedError
+        # TODO: parallel write mechanism to json file and weights file?
+        # TODO: store the horizontal input and output grid in an extra netcdf file?
+        if self.id not in weights_dic:
+            self.regridder.to_netcdf(weights_dir + "/" + self.filename)
+            weights_dic.update(
+                {
+                    self.id: {
+                        "source_uid": self.grid_in.hash,
+                        "target_uid": self.grid_out.hash,
+                        "source_lat": self.grid_in.lat,
+                        "source_lon": self.grid_in.lon,
+                        "source_lat_bnds": self.grid_in.lat_bnds,
+                        "source_lon_bnds": self.grid_in.lon_bnds,
+                        "source_nlat": self.grid_in.nlat,
+                        "source_nlon": self.grid_in.nlon,
+                        "source_ncells": self.grid_in.ncells,
+                        "source_type": self.grid_in.type,
+                        "source_format": self.grid_in.format,
+                        "source_extent": self.grid_in.extent,
+                        "target_lat": self.grid_out.lat,
+                        "target_lon": self.grid_out.lon,
+                        "target_lat_bnds": self.grid_out.lat_bnds,
+                        "target_lon_bnds": self.grid_out.lon_bnds,
+                        "target_nlat": self.grid_out.nlat,
+                        "target_nlon": self.grid_out.nlon,
+                        "target_ncells": self.grid_out.ncells,
+                        "target_type": self.grid_out.type,
+                        "target_format": self.grid_out.format,
+                        "target_extent": self.grid_out.extent,
+                        "format": self.format,
+                        "ignore_degenerate": str(self.ignore_degenerate),
+                        "periodic": str(self.periodic),
+                        "method": self.method,
+                        "uid": self.id,
+                        "filename": self.filename,
+                        "def_filename": self.regridder.filename,
+                        "tool": self.tool,
+                    }
+                }
+            )
+            with open(weights_dir + "/weights.json", "w") as weights_dic_path:
+                json.dump(weights_dic, weights_dic_path, sort_keys=True, indent=4)
 
     @check_weights_dir
-    def load_from_cache(self, id):
-        # Identify folder by id
-        # Load weightfile with xesmf.Regridder
+    def load_from_cache(self):
         # Load additional info from the json file: setattr(self, key, initial_data[key])
-        # self.regridder = xe.Regridder(method=method, reuse_weights=True, weights=filename)
-        return
+        if self.id not in weights_dic:
+            if weights_load and weights_svc:
+                weights_load(
+                    weights_svc, weights_dir, weights_dic, self.id, self.filename
+                )
+        if self.id in weights_dic:
+            self.tool = weights_dic[self.id]["tool"]
 
-    def save_to_disk(self, filename=None, format="xESMF"):
+    def save_to_disk(self, filename=None, wformat="xESMF"):
         raise NotImplementedError
 
     def load_from_disk(self, filename=None, format=None):
@@ -267,6 +343,8 @@ class Grid:
         "Initialise the Grid object. Supporting only 2D horizontal grids."
 
         # TODO: Doc-Strings
+
+        # TODO: DataArrays cannot have bounds?! Therefore not allow DataArrays?
 
         # Some of the methods might be useful outside clisops.core.regrid?
         # -> @staticmethod?
@@ -350,6 +428,7 @@ class Grid:
 
         # TODO: possible step to use np.around(in_array, decimals [, out_array])
         # 6 decimals corresponds to precision of ~ 0.1m (deg), 6m (rad)
+        self._cap_precision(coord_precision_hor)
 
         # Create md5 hash of the coordinate variable arrays
         # Takes into account lat/lon + bnds + mask (if defined)
@@ -462,6 +541,11 @@ class Grid:
         #      If CF and self.type=="regular_lat_lon":
         #        assure lat/lon are 1D each and bounds are nlat,2 and nlon,2
         #      -> that might have to be executed after the regridding
+        # TODO: When 2D coordinates will be changed to 1D index coordinates
+        #       xarray.assign_coords might be necessary, or alternatively,
+        #       define a new Dataset and move all data_vars and aux. coords across.
+        #       Might introduce drop_vars=True/False to get rid of other than horizonal
+        #       coordinate variables if required.
         #####################
         # Plan: Start with if-else-tree and later switch to a dictionary
         ###################################
@@ -1190,6 +1274,32 @@ class Grid:
             )
             return
 
+    def _cap_precision(self, decimals):
+        # TODO: extend for vertical axis for vertical interpolation usecase
+        # 6 decimals corresponds to hor. precision of ~ 0.1m (deg), 6m (rad)
+        coord_dict = {}
+        attr_dict = {}
+        encoding_dict = {}
+        for coord in [self.lat_bnds, self.lon_bnds, self.lat, self.lon]:
+            if coord:
+                attr_dict.update({coord: self.ds[coord].attrs})
+                encoding_dict.update({coord: self.ds[coord].encoding})
+                coord_dict.update(
+                    {
+                        coord: (
+                            self.ds[coord].dims,
+                            np.around(self.ds[coord].data, decimals),
+                        )
+                    }
+                )
+        if coord_dict:
+            self.ds = self.ds.assign_coords(coord_dict)
+            # Restore attrs and encoding - is there a proper way to do this?? (TODO)
+            for coord in [self.lat_bnds, self.lon_bnds, self.lat, self.lon]:
+                if coord:
+                    self.ds[coord].attrs = attr_dict[coord]
+                    self.ds[coord].encoding = encoding_dict[coord]
+
     def compute_hash(self):
         hash_arr = list()
         for cvar in [self.lat, self.lon, self.lat_bnds, self.lon_bnds, self.mask]:
@@ -1201,8 +1311,15 @@ class Grid:
             #    hash_arr.append(md5("undefined".encode('utf-8')).hexdigest())
             return md5("".join(hash_arr).encode("utf-8")).hexdigest()
 
-    def compare_grid(self, ds):
-        grid_tmp = Grid(ds=ds)
+    def compare_grid(self, ds_or_Grid):
+        if isinstance(ds_or_Grid, xr.Dataset) or isinstance(ds_or_Grid, xr.DataArray):
+            grid_tmp = Grid(ds=ds_or_Grid)
+        elif isinstance(ds_or_Grid, Grid):
+            grid_tmp = ds_or_Grid
+        else:
+            raise TypeError(
+                "The provided input has to be of one of the types [xarray.DataArray, xarray.Dataset, clisops.core.Grid]!"
+            )
         return grid_tmp.hash == self.hash
 
     def _set_data_vars_and_coords(self):
@@ -1282,6 +1399,9 @@ class Grid:
         #
         # Computation may fail, in this case, raise Warning
         # Without bounds, regrid method 'conservative' cannot be used
+        #
+        # ! Duplicated cells should be removed before computing bounds
+        #   or the possiblity of duplicated cells has to be considered
         #
         if self.format == "CF":
             if self.type == "regular_lat_lon":
@@ -1365,32 +1485,6 @@ class Grid:
 #be useful at some point in setting this up.
 
 
-def _reravel(vertex_bounds, bounds, M, N):
-
-    Helper function to go from the M+1, N+1 style to
-    the vertex style M, N, 4 of lat/lon bounds.
-
-    Basically inverted _unravel as found on
-    https://nbviewer.jupyter.org/gist/bradyrx/421627385666eefdb0a20567c2da9976
-    Using cf_xarray.vertices_to_bounds instead,
-    the following solution yet leaves out gridpoints
-
-    vertex_bounds[:, :, 0] = bounds[0:N, 0:M]
-
-    # fill in missing row
-    vertex_bounds[N - 1, :, 1] = bounds[N, 0:M]
-    # fill in missing column
-    vertex_bounds[:, M - 1, 2] = bounds[0:N, M]
-    # fill in remaining element
-    vertex_bounds[N - 1, M - 1, 3] = bounds[N, M]
-    return vertex_bounds
-
-
-
-
-
-
-
 # Calculate the bounds of the target grid
 # The bnds cannot be in CF format, as xESMF conservative regridding requires
 #    certain format of the bnds. See eg.:
@@ -1435,10 +1529,6 @@ lon_attrs={"bounds":"lon_b",
 
 ds_out["lat"].attrs=lat_attrs
 ds_out["lon"].attrs=lon_attrs
-
-
-
-
 
 
 def SCRIP_to_xESMF_lat_lon(ds):
@@ -1523,210 +1613,8 @@ def SCRIP_to_xESMF_lat_lon(ds):
 
     return ds_out
 
-
-
-
-
-
-
-
-
-
-
-def translate_cf_reglatlon_for_xESMF(ds,
-                                     lat_name="lat",
-                                     lon_name="lon",
-                                     lat_vert_name="lat_bnds",
-                                     lon_vert_name="lon_bnds"):
-
-    Return bounds in xESMF interpretable format (bounds with shape (nlat+1) instead of (nlat,2).
-
-    Parameters
-    ----------
-    ds : xarray.Dataset or xarray.DataArray
-        Dataset with CF conformal regular lat/lon Grid incl. bounds.
-    lat_name : string, optional
-        Name of the latitude coordinate array. The default is "lat".
-    lon_name : string, optional
-        Name of the longitude coordinate array. The default is "lon".
-    lat_vert_name : string, optional
-        Name of the latitude bounds coordinate array. The default is "lat_bnds".
-    lon_vert_name : string, optional
-        Name of the longitude bounds coordinate array. The default is "lon_bnds".
-
-    Returns
-    -------
-    xarray.Dataset
-        containing the coordinate variables lat, lon, lat_bnds, lon_bnds.
-
-    # Specify lat_b(nlat+1) and lon_b(nlat+1) from lat_bnds(nlat,2)
-    # and lon_bnds(nlon+2) required by ESMF for conservative regridding.
-    # Following:
-    # https://github.com/JiaweiZhuang/xESMF/issues/74
-    # https://github.com/JiaweiZhuang/xESMF/issues/14#issuecomment-369686779
-    # Renaming alone is not sufficient
-    #rename_dict={"lat_bnds": "lat_b", "lon_bnds": "lon_b"}
-    #ds=ds.rename(rename_dict)
-
-    # Reshape vertices from (n,2) to (n+1) for lat and lon axis
-    lat_b=np.zeros(ds[lat_vert_name].shape[0]+1, dtype="double")
-    lat_b[:-1]=ds[lat_vert_name][:,0].values
-    lat_b[-1]=ds[lat_vert_name][-1,1].values
-    lon_b=np.zeros(ds[lon_vert_name].shape[0]+1, dtype="double")
-    lon_b[:-1]=ds[lon_vert_name][:,0].values
-    lon_b[-1]=ds[lon_vert_name][-1,1].values
-
-    ds_xesmf=xr.Dataset(data_vars={"lat_b":(["y1","x1"], lat_b),
-                                   "lon_b":(["y1","x1"], lon_b)},
-                        coords={"lat":(["y","x"], ds[lat_name].values),
-                                "lon":(["y","x"], ds[lon_name].values)})
-    ds_xesmf["lat"].attrs={"bounds":"lat_b",
-                           "units":"degrees_north",
-                           "long_name":"latitude",
-                           "standard_name":"latitude",
-                           "axis":"Y"}
-    ds_xesmf["lon"].attrs={"bounds":"lon_b",
-                           "units":"degrees_east",
-                           "long_name":"longitude",
-                           "standard_name":"longitude",
-                           "axis":"X"}
-    ds_xesmf["lat_b"].attrs={"long_name":"latitude_bounds",
-                             "units":"degrees_north"}
-    ds_xesmf["lon_b"].attrs={"long_name":"longitude_bounds",
-                             "units":"degrees_east"}
-    return ds_xesmf
-
-
-
-
-
-
-
-
-# 1st option
-def translate_cf_curvilinear_for_xESMF(ds,
-                                       lat_name="latitude",
-                                       lon_name="longitude",
-                                       lat_vert_name="vertices_latitude",
-                                       lon_vert_name="vertices_longitude"):
-
-    Reshapes vertices from (nlat,nlon,4) to (nlat+1,nlon+1).
-    Returns xarray.dataset.
-
-    # Calculate bounds for input grid (assumes variables vertices_latitude, vertices_longitude)
-    # reshape from (nlat,nlon,4) to (nlat+1,nlon+1)
-    lat_bnds=np.zeros(tuple([el+1 for el in list(ds[lat_name].shape)]), dtype="double")
-    lat_bnds[:-1, :-1]=ds[lat_vert_name][:,:,3]
-    lat_bnds[-1, :-1]=ds[lat_vert_name][-1,:,2]
-    lat_bnds[:-1, -1]=ds[lat_vert_name][:,-1,1]
-    lat_bnds[-1, -1]=ds[lat_vert_name][-1,-1,0]
-
-    lon_bnds=np.zeros(tuple([el+1 for el in list(ds[lon_name].shape)]), dtype="double")
-    lon_bnds[:-1, :-1]=ds[lon_vert_name][:,:,3]
-    lon_bnds[-1, :-1]=ds[lon_vert_name][-1,:,2]
-    lon_bnds[:-1, -1]=ds[lon_vert_name][:,-1,1]
-    lon_bnds[-1, -1]=ds[lon_vert_name][-1,-1,0]
-
-    ds_xesmf=xr.Dataset(data_vars={"lat_b":(["y1","x1"], lat_bnds),
-                                   "lon_b":(["y1","x1"], lon_bnds)},
-                        coords={"lat":(["y","x"], ds[lat_name].values),
-                                "lon":(["y","x"], ds[lon_name].values)})
-    return ds_xesmf
-
-
-
-# 2nd option
-def compress_vertices(ds,
-                      lat_name="latitude",
-                      lon_name="longitude",
-                      lat_bnds_name='vertices_latitude',
-                      lon_bnds_name='vertices_longitude'):
-
-    Converts (M, N, 4) (lat/lon/vertex) bounds to
-    (M+1, N+1) bounds for xESMF.
-
-    # Calculate corners
-    # reshape from (nlat,nlon,4) to (nlat+1,nlon+1)
-    #
-    # Altered from
-    # https://nbviewer.jupyter.org/gist/bradyrx/421627385666eefdb0a20567c2da9976
-    #
-    M = ds[lat_name].shape[1] # i - x - 1st dimension size
-    N = ds[lat_name].shape[0] # j - y - 2nd dimension size
-
-    # create arrays for 2D bounds info
-    lat_b = np.zeros((N+1, M+1))
-    lon_b = np.zeros((N+1, M+1))
-
-    # unravel nvertices to 2D style
-    lat_b = _unravel(lat_b, ds[lat_bnds_name], M, N)
-    lon_b = _unravel(lon_b, ds[lon_bnds_name], M, N)
-
-    # get rid of old coordinates
-    del ds[lat_bnds_name], ds[lon_bnds_name]
-    ds=ds.rename({lat_name:"lat", lon_name:"lon"})
-    ds["lat"].attrs["bounds"]=lat_bnds_name
-    ds["lon"].attrs["bounds"]=lon_bnds_name
-    ds = ds.squeeze()
-
-    # assign new coordinates
-    ds.coords['lat_b'] = (('y_b', 'x_b'), lat_b)
-    ds.coords['lon_b'] = (('y_b', 'x_b'), lon_b)
-    return ds
-def _unravel(new_bounds, vertex_bounds, M, N):
-
-    Helper function to go from the vertex style to
-    the M+1, N+1 style of lat/lon bounds.
-
-    new_bounds[0:N, 0:M] = vertex_bounds[:, :, 0]
-
-    # fill in missing row
-    new_bounds[N, 0:M] = vertex_bounds[N-1, :, 1]
-    # fill in missing column
-    new_bounds[0:N, M] = vertex_bounds[:, M-1, 2]
-    # fill in remaining element
-    new_bounds[N, M] = vertex_bounds[N-1, M-1, 3]
-    return new_bounds
-
 # In case of problems, activate ESMF verbose mode
 import ESMF
 ESMF.Manager(debug=True)
-
-def add_matrix_NaNs(regridder):
-    Add Nans to matrices, which makes any output cell with a weight from a NaN input cell = NaN
-    X = regridder.weights
-    M = scipy.sparse.csr_matrix(X)
-    # indptr: https://stackoverflow.com/questions/52299420/scipy-csr-matrix-understand-indptr
-    # Creates array with length nrows+1 with information about non-zero values,
-    #  with np.diff calculating how many non-zero elements there are in each row
-    num_nonzeros = np.diff(M.indptr)
-    # Setting rows with only zeros to NaN
-    M[num_nonzeros == 0, 0] = np.NaN
-    regridder.weights = scipy.sparse.coo_matrix(M)
-    return regridder
-
-def adaptive_masking(ds_in, regridder, min_norm_contribution=1):
-    Performs regridding incl. renormalization for conservative weights
-    validi = ds_in.notnull().astype('d')
-    valido = regridder(validi)
-    tempi0 = ds_in.fillna(0)
-    tempo0 = regridder(tempi0)
-    # min_norm_contribution factor could prevent values for cells that should be masked.
-    # It prevents the renormalization for cells that get less than min_norm_contribution
-    #  from source cells. If the factor==0.66 it means that at most one third of the source cells' area
-    #  contributing to the target cell is masked. This factor has however to be tweaked manually for each
-    #  pair of source and destination grid.
-    if min_norm_contribution<1:
-        valido = xr.where(valido < min_norm_contribution, np.nan, valido)
-    ds_out = xr.where(valido != 0, tempo0 / valido, np.nan)
-    return ds_out
-
-
-
-# Function to generate the weights
-#   If grids have problems of degenerated cells near the poles there is the ignore_degenerate option
-def regrid(ds_in, ds_out, method, periodic, ignore_degenerate=None):
-    Convenience function for calculating regridding weights
-    return xe.Regridder(ds_in, ds_out, method, periodic=periodic, ignore_degenerate=ignore_degenerate)
 
 """
