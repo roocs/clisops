@@ -174,15 +174,21 @@ def average_over_dims(
     for dim in dims:
         dims_to_average.append(found_dims[dim])
 
+
     # The mean will be carried out on a Dataset or DataArray
     # Calculate the mean, skip missing values and retain original attributes
 
     # Short-term solution to error: "NotImplementedError: Computing the mean of an " ...
     #    "array containing cftime.datetime objects is not yet implemented on dask arrays."
     # See GITHUB ISSUE: https://github.com/roocs/clisops/issues/185
-    # The fix is simply to force `ds.load()` before processing
-    ds_averaged_over_dims = ds.load().mean(
+    if isinstance(ds, xr.Dataset):
+        untouched_ds = ds.drop_dims(dims_to_average)
+        ds = ds.drop_vars(untouched_ds.data_vars.keys())
+
+    ds_averaged_over_dims = ds.mean(
         dim=dims_to_average, skipna=True, keep_attrs=True
     )
 
+    if isinstance(ds, xr.Dataset):
+        return xr.merge((ds_averaged_over_dims, untouched_ds))
     return ds_averaged_over_dims
