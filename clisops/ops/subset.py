@@ -91,7 +91,20 @@ class Subset(Operation):
             # bounds are always ascending, so if lon is descending rolling will not work.
             ds = check_lon_alignment(self.ds, self.params.get("lon_bnds"))
             try:
-                result = subset_bbox(ds, **self.params)
+                kwargs = {}
+                valid_args = [
+                    "lon_bnds",
+                    "lat_bnds",
+                    "start_date",
+                    "end_date",
+                    "first_level",
+                    "last_level",
+                    "time_values",
+                    "level_values",
+                ]
+                for arg in valid_args:
+                    kwargs.setdefault(arg, self.params.get(arg, None))
+                result = subset_bbox(ds, **kwargs)
             except NotImplementedError:
                 lon_min, lon_max = lon.values.min(), lon.values.max()
                 raise Exception(
