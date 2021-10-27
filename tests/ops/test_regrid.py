@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 import xarray as xr
-from roocs_grids import grid_dict
+from roocs_grids import get_grid_file, grid_dict
 
 import clisops
 from clisops import CONFIG
@@ -12,7 +12,6 @@ from clisops.core.regrid import xe
 from clisops.ops.regrid import regrid
 
 from .._common import CMIP5_MRSOS_ONE_TIME_STEP
-
 
 XESMF_IMPORT_MSG = "xESMF >= 0.6.0 is needed for regridding functionalities."
 
@@ -93,3 +92,22 @@ def test_regrid_regular_grid_to_all_roocs_grids(tmpdir, load_esgf_test_data, gri
     ds = xr.open_dataset(nc_file)
     assert "mrsos" in ds
     assert ds.mrsos.size > 100
+
+
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+def test_regrid_same_grid_exception(tmpdir):
+    "Test that an exception is raised when source and target grid are the same."
+    fpath = get_grid_file("0pt25deg_era5")
+
+    with pytest.raises(
+        Exception,
+        match="The selected source and target grids are the same. No regridding operation required.",
+    ):
+        regrid(
+            fpath,
+            adaptive_masking_threshold=0.5,
+            grid="0pt25deg_era5_lsm",
+            output_dir=tmpdir,
+            output_type="netcdf",
+            file_namer="standard",
+        )

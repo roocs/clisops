@@ -11,7 +11,6 @@ import cf_xarray as cfxr
 import numpy as np
 import roocs_grids
 
-# import scipy
 import xarray as xr
 from pkg_resources import parse_version
 
@@ -82,16 +81,22 @@ except FileNotFoundError:
 
 
 @require_xesmf
-def regrid(ds, grid_out, weights, adaptive_masking_threshold=0.5):
+def regrid(grid_in, grid_out, weights, adaptive_masking_threshold=0.5):
     # if adaptive_masking_threshold>1. or adaptive_masking_thresold<0.:
     #    adaptive_masking_threshold=False
     # ds_out=Regridder(ds,
     #                 adaptive_masking_threshold=adaptive_masking_threshold,
     #                 keep_attrs=True)
+    if not isinstance(grid_out.ds, xr.Dataset):
+        raise Exception("The target Grid object 'grid_out' has to be built from an xarray.Dataset"
+                        " and not an xarray.DataArray!")
+    grid_out._drop_vars()  # Remove all unnecessary coords and data_vars
+    if isinstance(grid_in.ds, xr.Dataset):
+        grid_out._transfer_coords(grid_in)
     regridded_ds = grid_out.ds
 
     # Copy attrs
-    regridded_ds.attrs.update(ds.attrs)
+    regridded_ds.attrs.update(grid_in.ds.attrs)  # todo: or overwrite them completely
     regridded_ds.attrs.update(
         {
             "regrid_operation": weights.regridder.filename.split(".")[0],
@@ -104,8 +109,8 @@ def regrid(ds, grid_out, weights, adaptive_masking_threshold=0.5):
     #  set correctly and let xesmf handle it. But then we might not allow it
     #  the bilinear method, as the results do not look too great and I am still
     #  not sure/convinced adaptive_masking makes sense for this method.
-    if isinstance(ds, xr.Dataset):
-        for data_var in ds.data_vars:
+    if isinstance(grid_in.ds, xr.Dataset):
+        for data_var in grid_in.ds.data_vars:
             if (
                 weights.regridder.method
                 in ["conservative", "conservative_normed", "patch"]
@@ -113,14 +118,14 @@ def regrid(ds, grid_out, weights, adaptive_masking_threshold=0.5):
                 and adaptive_masking_threshold < 1.0
             ):
                 regridded_ds[data_var] = weights.regridder(
-                    ds[data_var],
+                    grid_in.ds[data_var],
                     skipna=True,
                     na_thres=adaptive_masking_threshold,
                     keep_attrs=True,
                 )
             else:
                 regridded_ds[data_var] = weights.regridder(
-                    ds[data_var], skipna=False, keep_attrs=True
+                    grid_in.ds[data_var], skipna=False, keep_attrs=True
                 )
         return regridded_ds
     else:
@@ -129,19 +134,21 @@ def regrid(ds, grid_out, weights, adaptive_masking_threshold=0.5):
             and adaptive_masking_threshold >= 0.0
             and adaptive_masking_threshold < 1.0
         ):
-            regridded_ds[ds.name] = weights.regridder(
-                ds,
+            regridded_ds[grid_in.ds.name] = weights.regridder(
+                grid_in.ds,
                 skipna=True,
                 na_thres=adaptive_masking_threshold,
                 keep_attrs=True,
             )
         else:
-            regridded_ds[ds.name] = weights.regridder(ds, skipna=False, keep_attrs=True)
-        return regridded_ds[ds.name]
+            regridded_ds[grid_in.ds.name] = weights.regridder(
+                grid_in.ds, skipna=False, keep_attrs=True
+            )
+        return regridded_ds[grid_in.ds.name]
 
 
 class Weights:
-    # ToDo:
+    # todo:
     # - Doc-Strings
     # - Think about whether to extend xesmf.Regridder class?
     # - Load weight file from cache or disk
@@ -169,7 +176,7 @@ class Weights:
                 "No regridding operation required."
             )
         self.method = method
-        # ToDo: properly test / check the periodic attribute of the xESMF Regridder.
+        # todo: properly test / check the periodic attribute of the xESMF Regridder.
         #  The grid.extent check done here might not be suitable to set the periodic att.
         # Is grid periodic in longitude
         self.periodic = False
@@ -183,13 +190,13 @@ class Weights:
                     "The grid extent could not be accessed. "
                     "It will be assumed that the input grid is not periodic in longitude."
                 )
-        # ToDo: Determine ignore_degenerate by checking the collapsed cells status in grid_in
+        # todo: Determine ignore_degenerate by checking the collapsed cells status in grid_in
         self.ignore_degenerate = None
 
         self.id = self._generate_id()
         self.filename = self.id + ".nc"
 
-        # ToDo:
+        # todo:
         # - Load weights from disk
         #   + read
         #   + detect format & reformat to xESMF
@@ -272,8 +279,8 @@ class Weights:
         # Create folder dependent on id
         # Store weight file in xESMF-format
         # Further information will be stored in a json file in the same folder
-        # TODO: parallel write mechanism to json file and weights file?
-        # TODO: store the horizontal input and output grid in an extra netcdf file?
+        # todo: parallel write mechanism to json file and weights file?
+        # todo: store the horizontal input and output grid in an extra netcdf file?
         if self.id not in weights_dic:
             self.regridder.to_netcdf(weights_dir + "/" + self.filename)
             weights_dic.update(
@@ -338,13 +345,12 @@ class Weights:
 
 
 class Grid:
-    @require_xesmf
     def __init__(self, ds=None, grid_id=None, grid_instructor=None):
         "Initialise the Grid object. Supporting only 2D horizontal grids."
 
-        # TODO: Doc-Strings
+        # todo: Doc-Strings
 
-        # TODO: DataArrays cannot have bounds?! Therefore not allow DataArrays?
+        # todo: DataArrays cannot have bounds?! Therefore not allow DataArrays?
 
         # Some of the methods might be useful outside clisops.core.regrid?
         # -> @staticmethod?
@@ -414,7 +420,8 @@ class Grid:
 
         # Compute bounds if not specified and if possible
         if not self.lat_bnds or not self.lon_bnds:
-            self.compute_bounds()
+            if isinstance(self.ds, xr.Dataset):
+                self.compute_bounds()
 
         # Extent of the grid (global or regional)
         if not self.extent:
@@ -424,9 +431,10 @@ class Grid:
         # self.mask = self.detect_mask()
 
         # Clean coordinate variables out of data_vars
-        self._set_data_vars_and_coords()
+        if isinstance(self.ds, xr.Dataset):
+            self._set_data_vars_and_coords()
 
-        # TODO: possible step to use np.around(in_array, decimals [, out_array])
+        # todo: possible step to use np.around(in_array, decimals [, out_array])
         # 6 decimals corresponds to precision of ~ 0.1m (deg), 6m (rad)
         self._cap_precision(coord_precision_hor)
 
@@ -474,6 +482,7 @@ class Grid:
         self.type = "regular_lat_lon"
         self.format = self.detect_format()
 
+    @require_xesmf
     def grid_from_instructor(self, grid_instructor):
         if len(grid_instructor) not in [1, 2, 3, 6]:
             raise Exception(
@@ -495,6 +504,7 @@ class Grid:
         self.type = "regular_lat_lon"
         self.format = "xESMF"
 
+    @require_xesmf
     def grid_from_ds_adaptive(self, ds):
         grid_tmp = Grid(ds=ds)
         if grid_tmp.type == "irregular":
@@ -516,8 +526,8 @@ class Grid:
             xrange = [0.0, 360.0] if xlast > 180 else [-180.0, 180.0]
             xfirst = xfirst - xinc / 2.0
             xlast = xlast + xinc / 2.0
-            xfirst = xfirst if xfirst > xrange[0] else xrange[0]
-            xlast = xlast if xlast < xrange[1] else xrange[1]
+            xfirst = xfirst if xfirst > xrange[0] - xinc / 2.0 else xrange[0]
+            xlast = xlast if xlast < xrange[1] + xinc / 2.0 else xrange[1]
             yfirst = yfirst - yinc / 2.0
             ylast = ylast + yinc / 2.0
             yfirst = yfirst if yfirst > -90.0 else -90.0
@@ -528,7 +538,7 @@ class Grid:
         if self.format != grid_format:
             self.reformat(grid_format)
 
-        # TODO: Use filenamer? Use a hash or date? Output-Folder?
+        # todo: Use filenamer? Use a hash or date? Output-Folder?
         filename = (
             self.source + "_" + "x".join([str(self.nlat), str(self.nlon)])
             if self.type != "irregular"
@@ -537,11 +547,11 @@ class Grid:
         self.ds.to_netcdf(filename)
 
     def grid_reformat(self, grid_format):
-        # TODO: Extend for formats CF, xESMF, ESMF, UGRID, SCRIP
+        # todo: Extend for formats CF, xESMF, ESMF, UGRID, SCRIP
         #      If CF and self.type=="regular_lat_lon":
         #        assure lat/lon are 1D each and bounds are nlat,2 and nlon,2
         #      -> that might have to be executed after the regridding
-        # TODO: When 2D coordinates will be changed to 1D index coordinates
+        # todo: When 2D coordinates will be changed to 1D index coordinates
         #       xarray.assign_coords might be necessary, or alternatively,
         #       define a new Dataset and move all data_vars and aux. coords across.
         #       Might introduce drop_vars=True/False to get rid of other than horizonal
@@ -569,6 +579,10 @@ class Grid:
             "grid_imask",
         ]
 
+        if not isinstance(self.ds, xr.Dataset):
+            raise Exception("Reformat is only possible for Datasets."
+                            " DataArrays have to be CF conformal coordinate variables defined.")
+
         if self.format == "SCRIP":
             if not (
                 all([var in SCRIP_vars for var in self.ds.data_vars])
@@ -581,10 +595,10 @@ class Grid:
             if grid_format == "CF":
                 lat = self.ds.grid_center_lat.values.reshape(
                     (self.ds.grid_dims.values[1], self.ds.grid_dims.values[0])
-                )
+                ).astype(np.float32)
                 lon = self.ds.grid_center_lon.values.reshape(
                     (self.ds.grid_dims.values[1], self.ds.grid_dims.values[0])
-                )
+                ).astype(np.float32)
 
                 if all(
                     [
@@ -607,19 +621,19 @@ class Grid:
                             self.ds.grid_dims.values[0],
                             self.ds.dims["grid_corners"],
                         )
-                    )
+                    ).astype(np.float32)
                     lon_b = self.ds.grid_corner_lon.values.reshape(
                         (
                             self.ds.grid_dims.values[1],
                             self.ds.grid_dims.values[0],
                             self.ds.dims["grid_corners"],
                         )
-                    )
+                    ).astype(np.float32)
                     lat_bnds = np.zeros(
-                        (self.ds.grid_dims.values[1], 2), dtype="double"
+                        (self.ds.grid_dims.values[1], 2), dtype=np.float32
                     )
                     lon_bnds = np.zeros(
-                        (self.ds.grid_dims.values[0], 2), dtype="double"
+                        (self.ds.grid_dims.values[0], 2), dtype=np.float32
                     )
                     lat_bnds[:, 0] = np.min(lat_b[:, 0, :], axis=1)
                     lat_bnds[:, 1] = np.max(lat_b[:, 0, :], axis=1)
@@ -634,9 +648,9 @@ class Grid:
                             "lon_bnds": (["lon", "bnds"], lon_bnds),
                         },
                     )
-                    # ToDo: Case of other units (rad)
-                    # ToDo: Reformat data variables if in ds, apply imask on data variables
-                    # ToDo: vertical axis, time axis, ... ?!
+                    # todo: Case of other units (rad)
+                    # todo: Reformat data variables if in ds, apply imask on data variables
+                    # todo: vertical axis, time axis, ... ?!
                     ds_ref["lat"].attrs = {
                         "bounds": "lat_bnds",
                         "units": "degrees_north",
@@ -675,12 +689,12 @@ class Grid:
 
         elif self.format == "xESMF":
             if grid_format == "CF":
-                # ToDo: Check if it is regular_lat_lon, Check dimension sizes
+                # todo: Check if it is regular_lat_lon, Check dimension sizes
                 # Define lat, lon, lat_bnds, lon_bnds
                 lat = self.ds.lat[:, 0]
                 lon = self.ds.lon[0, :]
-                lat_bnds = np.zeros((lat.shape[0], 2), dtype="double")
-                lon_bnds = np.zeros((lon.shape[0], 2), dtype="double")
+                lat_bnds = np.zeros((lat.shape[0], 2), dtype=np.float32)
+                lon_bnds = np.zeros((lon.shape[0], 2), dtype=np.float32)
 
                 # From (N+1, M+1) shaped bounds to (N, M, 4) shaped vertices
                 lat_vertices = cfxr.vertices_to_bounds(
@@ -710,9 +724,9 @@ class Grid:
                     },
                 )
 
-                # ToDo: Case of other units (rad)
-                # ToDo: Reformat data variables if in ds, apply imask on data variables
-                # ToDo: vertical axis, time axis, ... ?!
+                # todo: Case of other units (rad)
+                # todo: Reformat data variables if in ds, apply imask on data variables
+                # todo: vertical axis, time axis, ... ?!
                 # Add variable attributes to the coordinate variables
                 ds_ref["lat"].attrs = {
                     "bounds": "lat_bnds",
@@ -751,7 +765,7 @@ class Grid:
             )
 
     def grid_unstagger(self):
-        # TODO
+        # todo
         # Plan:
         # Check if it is vectoral and not scalar data (eg. by variable name? No other idea yet.)
         # Unstagger if needed.
@@ -766,7 +780,7 @@ class Grid:
         pass
 
     def grid_remove_halo(self):
-        # TODO
+        # todo
         # If dimension is not named after the coordinate variable, get dimension name and then isel.
         # Always assuming for 2D coordinate variables, the first dimension is latitude, the second longitude
         # Plan:
@@ -795,7 +809,7 @@ class Grid:
                         self.ds[self.lon].values.ravel(),
                     )
                 ),
-                dtype=("double,double"),
+                dtype=("float32,float32"),
             ).reshape(self.ds[self.lon].values.shape)
         else:
             latlon_halo = list()
@@ -959,7 +973,7 @@ class Grid:
             )
 
     def detect_format(self):
-        # TODO: Extend for formats CF, xESMF, ESMF, UGRID, SCRIP
+        # todo: Extend for formats CF, xESMF, ESMF, UGRID, SCRIP
         # Add more conditions (dimension sizes, ...)
         SCRIP_vars = [
             "grid_center_lat",
@@ -1006,7 +1020,7 @@ class Grid:
             raise Exception("The grid format is not supported.")
 
     def detect_type(self):
-        # TODO: Extend for other formats for regular_lat_lon, curvilinear / rotated_pole, irregular
+        # todo: Extend for other formats for regular_lat_lon, curvilinear / rotated_pole, irregular
         if self.format == "CF":
 
             if self.ds[self.lat].ndim == 1 and self.ds[self.lon].ndim == 1:
@@ -1059,7 +1073,7 @@ class Grid:
                 #    raise Exception("The grid type is not supported.")
             elif self.ds[self.lat].ndim == 2 and self.ds[self.lon].ndim == 2:
                 # Test for curvilinear or restructure lat/lon coordinate variables
-                # ToDo: Check if regular_lat_lon despite 2D
+                # todo: Check if regular_lat_lon despite 2D
                 #  - requires additional function checking
                 #      lat[:,i]==lat[:,j] for all i,j
                 #      lon[i,:]==lon[j,:] for all i,j
@@ -1097,7 +1111,7 @@ class Grid:
 
     def detect_extent(self):
         "Determine if grid is global in terms of its latitudinal/east-west extent."
-        # TODO
+        # todo
         # Plan:
         # Check lat/lon_bnds or lat/lon if not available
         # Consider different longitude ranges like 0,360 -180,180
@@ -1119,22 +1133,6 @@ class Grid:
 
         # Approximate the resolution in x direction
         if self.ds[self.lon].ndim == 2:
-            # approx_xres = np.amax(
-            #    [
-            #        np.average(
-            #            np.absolute(
-            #                self.ds[self.lon].values[:, 1:]
-            #                - self.ds[self.lon].values[:, :-1]
-            #            )
-            #        ),
-            #        np.average(
-            #            np.absolute(
-            #                self.ds[self.lon].values[1:, :]
-            #                - self.ds[self.lon].values[:-1, :]
-            #            )
-            #        ),
-            #    ]
-            # )
             xsize = self.nlon
             ysize = self.nlat
             xfirst = float(self.ds[self.lon].min())
@@ -1147,8 +1145,10 @@ class Grid:
         elif self.ds[self.lon].ndim == 1:
             if self.type == "irregular":
                 raise Exception("The grid type is not supported.")
-                # One could distribute the number of grid cells to nlat and nlon,
+                # todo: One could distribute the number of grid cells to nlat and nlon,
                 # in proportion to extent in latitudinal and longitudinal direction
+                # Alternatively one can use the kdtree method to calculate the approx. resolution
+                # once it is implemented here.
             else:
                 approx_xres = np.average(
                     np.absolute(
@@ -1161,7 +1161,6 @@ class Grid:
         # Generate a histogram with bins for zonal sections,
         #  width of the bins/sections dependent on the resolution in x-direction
         atol = 2.0 * approx_xres
-        print(approx_xres)
         # Check the range of the lon values
         lon_max = float(self.ds[self.lon].max())
         lon_min = float(self.ds[self.lon].min())
@@ -1169,6 +1168,7 @@ class Grid:
             min_range, max_range = (-180.0, 180.0)
         elif lon_min > -atol and lon_max < 360.0 + atol:
             min_range, max_range = (0.0, 360.0)
+        # todo: for shifted longitudes, eg. (-300,60)? I forgot what it was for but likely it is irrelevant
         # elif lon_min < -180.0 - atol or lon_max > 360.0 + atol:
         #    raise Exception(
         #        "The longitude values have to be within the range (-180, 360)!"
@@ -1201,7 +1201,7 @@ class Grid:
 
     def detect_mask(self):
         "Yet to be implemented, if at all necessary (eg. for reformating to SCRIP etc.)."
-        # TODO
+        # todo
         # Plan:
         # Depending on the format, the mask is stored as extra variable.
         # If self.format=="CF": An extra variable mask could be generated from missing values?
@@ -1268,14 +1268,14 @@ class Grid:
         "The coordinate variable must have a 'bounds' attribute."
         try:
             return self.ds.cf.bounds[coordinate][0]
-        except KeyError:
+        except (KeyError, AttributeError):
             warnings.warn(
                 "For coordinate variable '%s' no bounds can be identified." % coordinate
             )
             return
 
     def _cap_precision(self, decimals):
-        # TODO: extend for vertical axis for vertical interpolation usecase
+        # todo: extend for vertical axis for vertical interpolation usecase
         # 6 decimals corresponds to hor. precision of ~ 0.1m (deg), 6m (rad)
         coord_dict = {}
         attr_dict = {}
@@ -1288,13 +1288,13 @@ class Grid:
                     {
                         coord: (
                             self.ds[coord].dims,
-                            np.around(self.ds[coord].data, decimals),
+                            np.around(self.ds[coord].data.astype(np.float64), decimals),
                         )
                     }
                 )
         if coord_dict:
             self.ds = self.ds.assign_coords(coord_dict)
-            # Restore attrs and encoding - is there a proper way to do this?? (TODO)
+            # Restore attrs and encoding - is there a proper way to do this?? (todo)
             for coord in [self.lat_bnds, self.lon_bnds, self.lat, self.lon]:
                 if coord:
                     self.ds[coord].attrs = attr_dict[coord]
@@ -1309,7 +1309,8 @@ class Grid:
                 )
             # else:
             #    hash_arr.append(md5("undefined".encode('utf-8')).hexdigest())
-            return md5("".join(hash_arr).encode("utf-8")).hexdigest()
+        print(hash_arr)
+        return md5("".join(hash_arr).encode("utf-8")).hexdigest()
 
     def compare_grid(self, ds_or_Grid):
         if isinstance(ds_or_Grid, xr.Dataset) or isinstance(ds_or_Grid, xr.DataArray):
@@ -1321,6 +1322,36 @@ class Grid:
                 "The provided input has to be of one of the types [xarray.DataArray, xarray.Dataset, clisops.core.Grid]!"
             )
         return grid_tmp.hash == self.hash
+
+    def _drop_vars(self):
+        "Remove all non necessary (=non-horizontal) coords and data_vars"
+        to_keep = [
+            var for var in [self.lat, self.lon, self.lat_bnds, self.lon_bnds] if var
+        ]
+        to_drop = [
+            var
+            for var in list(self.ds.data_vars) + list(self.ds.coords)
+            if var not in to_keep
+        ]
+        self.ds = self.ds.drop(labels=to_drop)
+
+    def _transfer_coords(self, source_grid):
+        "Transfer all non-horizontal coordinates to a dataset"
+        to_skip = [
+            var
+            for var in [
+                source_grid.lat,
+                source_grid.lon,
+                source_grid.lat_bnds,
+                source_grid.lon_bnds,
+            ]
+            if var
+        ]
+        to_transfer = [var for var in list(source_grid.ds.coords) if var not in to_skip]
+        coord_dict = {}
+        for coord in to_transfer:
+            coord_dict.update({coord: source_grid.ds[coord]})
+        self.ds = self.ds.assign_coords(coord_dict)
 
     def _set_data_vars_and_coords(self):
         "Set all non data vars as coordinates."
@@ -1389,7 +1420,7 @@ class Grid:
             self.ds = self.ds.reset_coords(list(set(to_datavar)))
 
     def compute_bounds(self):
-        # TODO
+        # todo
         # Plan:
         # + xESMF / cf_xarray functions:
         #   - ds.cf.add_bounds([lon_name, lat_name]))
@@ -1419,32 +1450,64 @@ class Grid:
                     return
                 # Assuming lat / lon values are strong monotonically decreasing/increasing
                 # Latitude / Longitude bounds shaped (nlat, 2) / (nlon, 2)
-                lat_bnds = np.zeros((self.ds[self.lat].shape[0], 2), dtype="double")
-                lon_bnds = np.zeros((self.ds[self.lon].shape[0], 2), dtype="double")
+                lat_bnds = np.zeros((self.ds[self.lat].shape[0], 2), dtype=np.float32)
+                lon_bnds = np.zeros((self.ds[self.lon].shape[0], 2), dtype=np.float32)
                 # lat_bnds
-                lat_bnds[1:, 0] = (
-                    self.ds[self.lat].values[:-1] + self.ds[self.lat].values[1:]
-                ) / 2.0
-                lat_bnds[:-1, 1] = lat_bnds[1:, 0]
-                lat_bnds[0, 0] = self.ds[self.lat].values[0] - lat_bnds[1, 0]
-                lat_bnds[-1, 1] = (
-                    self.ds[self.lat].values[-1]
-                    - lat_bnds[-1, 0]
-                    + self.ds[self.lat].values[-1]
+                #  positive<0 for strong monotonically increasing
+                #  positive>0 for strong monotonically decreasing
+                positive = self.ds[self.lat].values[0] - self.ds[self.lat].values[1]
+                gspacingl = abs(positive)
+                gspacingu = abs(
+                    self.ds[self.lat].values[-1] - self.ds[self.lat].values[-2]
                 )
+                if positive < 0:
+                    lat_bnds[1:, 0] = (
+                        self.ds[self.lat].values[:-1] + self.ds[self.lat].values[1:]
+                    ) / 2.0
+                    lat_bnds[:-1, 1] = lat_bnds[1:, 0]
+                    lat_bnds[0, 0] = self.ds[self.lat].values[0] - gspacingl / 2.0
+                    lat_bnds[-1, 1] = self.ds[self.lat].values[-1] + gspacingu / 2.0
+                elif positive > 0:
+                    lat_bnds[1:, 1] = (
+                        self.ds[self.lat].values[:-1] + self.ds[self.lat].values[1:]
+                    ) / 2.0
+                    lat_bnds[:-1, 0] = lat_bnds[1:, 1]
+                    lat_bnds[0, 1] = self.ds[self.lat].values[0] + gspacingl / 2.0
+                    lat_bnds[-1, 0] = self.ds[self.lat].values[-1] - gspacingu / 2.0
+                else:
+                    warnings.warn(
+                        "The bounds could not be calculated since the latitude and/or longitude "
+                        "values are not strong monotonically decreasing/increasing."
+                    )
+                    return
                 lat_bnds = np.where(lat_bnds < -90.0, -90.0, lat_bnds)
                 lat_bnds = np.where(lat_bnds > 90.0, 90.0, lat_bnds)
                 # lon_bnds
-                lon_bnds[1:, 0] = (
-                    self.ds[self.lon].values[:-1] + self.ds[self.lon].values[1:]
-                ) / 2.0
-                lon_bnds[:-1, 1] = lon_bnds[1:, 0]
-                lon_bnds[0, 0] = self.ds[self.lon].values[0] - lon_bnds[1, 0]
-                lon_bnds[-1, 1] = (
-                    self.ds[self.lon].values[-1]
-                    - lon_bnds[-1, 0]
-                    + self.ds[self.lon].values[-1]
+                positive = self.ds[self.lon].values[0] - self.ds[self.lon].values[1]
+                gspacingl = abs(positive)
+                gspacingu = abs(
+                    self.ds[self.lon].values[-1] - self.ds[self.lon].values[-2]
                 )
+                if positive < 0:
+                    lon_bnds[1:, 0] = (
+                        self.ds[self.lon].values[:-1] + self.ds[self.lon].values[1:]
+                    ) / 2.0
+                    lon_bnds[:-1, 1] = lon_bnds[1:, 0]
+                    lon_bnds[0, 0] = self.ds[self.lon].values[0] - gspacingl / 2.0
+                    lon_bnds[-1, 1] = self.ds[self.lon].values[-1] + gspacingu / 2.0
+                elif positive > 0:
+                    lon_bnds[1:, 1] = (
+                        self.ds[self.lon].values[:-1] + self.ds[self.lon].values[1:]
+                    ) / 2.0
+                    lon_bnds[:-1, 0] = lon_bnds[1:, 1]
+                    lon_bnds[0, 1] = self.ds[self.lon].values[0] + gspacingl / 2.0
+                    lon_bnds[-1, 0] = self.ds[self.lon].values[-1] - gspacingu / 2.0
+                else:
+                    warnings.warn(
+                        "The bounds could not be calculated since the latitude and/or longitude "
+                        "values are not strong monotonically decreasing/increasing."
+                    )
+                    return
                 # Add to the dataset as coordinates and attach variable attributes
                 self.ds["lat_bnds"] = ((self.ds[self.lat].dims[0], "bnds"), lat_bnds)
                 self.ds["lon_bnds"] = ((self.ds[self.lon].dims[0], "bnds"), lon_bnds)
@@ -1470,12 +1533,12 @@ class Grid:
                 )
             else:
                 warnings.warn(
-                    "The bounds can not be calculated for grid_type '%s' and format '%s'."
+                    "The bounds cannot be calculated for grid_type '%s' and format '%s'."
                     % (self.type, self.format)
                 )
         else:
             warnings.warn(
-                "The bounds can not be calculated for grid_type '%s' and format '%s'."
+                "The bounds cannot be calculated for grid_type '%s' and format '%s'."
                 % (self.type, self.format)
             )
 

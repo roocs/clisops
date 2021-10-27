@@ -128,7 +128,7 @@ class Regrid(Operation):
         #  since else self.ds was used and contained both, input and output grid
         #  coordinate variables leading to inconsistencies
         regridded_ds = core_regrid(
-            self.ds,
+            self.params.get("grid_in", None),
             self.params.get("grid_out", None),
             self.params.get("weights", None),
             self.params.get("adaptive_masking_threshold", None),

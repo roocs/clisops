@@ -155,3 +155,60 @@ CMIP5_MRSOS_ONE_TIME_STEP = Path(
     MINI_ESGF_CACHE_DIR,
     "master/test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/day/land/day/r1i1p1/latest/mrsos/mrsos_day_HadGEM2-ES_rcp85_r1i1p1_20051201.nc",
 ).as_posix()
+
+CMIP6_TAS_PRECISION_A = Path(
+     MINI_ESGF_CACHE_DIR,
+     "master/test_data/badc/cmip6/data/CMIP6/CMIP/AWI/AWI-ESM-1-1-LR/1pctCO2/r1i1p1f1/Amon/tas/gn/v20200212/tas_Amon_AWI-ESM-1-1-LR_1pctCO2_r1i1p1f1_gn_185501.nc",
+).as_posix()
+
+CMIP6_TAS_PRECISION_B = Path(
+     MINI_ESGF_CACHE_DIR,
+     "master/test_data/badc/cmip6/data/CMIP6/CMIP/AWI/AWI-ESM-1-1-LR/1pctCO2/r1i1p1f1/Amon/tas/gn/v20200212/tas_Amon_AWI-ESM-1-1-LR_1pctCO2_r1i1p1f1_gn_209901.nc",
+).as_posix()
+
+CMIP6_ATM_VERT_ONE_TIMESTEP = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/AERmon/o3/gn/v20190710/o3_AERmon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
+).as_posix()
+
+CMIP6_OCE_HALO_CNRM = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/badc/cmip6/data/CMIP6/CMIP/CNRM-CERFACS/CNRM-CM6-1-HR/historical/r1i1p1f2/Omon/tos/gn/v20191021/tos_Omon_CNRM-CM6-1-HR_historical_r1i1p1f2_gn_185001.nc",
+).as_posix()
+
+CMIP6_UNSTR_FESOM_LR = Path(
+     MINI_ESGF_CACHE_DIR,
+     "master/test_data/badc/cmip6/data/CMIP6/CMIP/AWI/AWI-ESM-1-1-LR/historical/r1i1p1f1/Omon/tos/gn/v20200212/tos_Omon_AWI-ESM-1-1-LR_historical_r1i1p1f1_gn_185001.nc",
+).as_posix()
+
+CMIP6_UNSTR_ICON_A = Path(
+     MINI_ESGF_CACHE_DIR,
+     "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/ICON-ESM-LR/historical/r1i1p1f1/Amon/tas/gn/v20210215/tas_Amon_ICON-ESM-LR_historical_r1i1p1f1_gn_185001.nc",
+).as_posix()
+
+CMIP6_UNSTR_VERT_ICON_O = Path(
+     MINI_ESGF_CACHE_DIR,
+     "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/ICON-ESM-LR/historical/r1i1p1f1/Omon/thetao/gn/v20210215/thetao_Omon_ICON-ESM-LR_historical_r1i1p1f1_gn_185001.nc",
+).as_posix()
+
+CMIP6_UNTAGGED_MISSVALS = Path(
+     MINI_ESGF_CACHE_DIR,
+     "master/test_data/badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2-FV2/historical/r1i1p1f1/Omon/tos/gn/v20191120/tos_Omon_CESM2-FV2_historical_r1i1p1f1_gn_200001.nc",
+).as_posix()
+
+CMIP6_STAGGERED_UCOMP = Path(
+     MINI_ESGF_CACHE_DIR,
+     "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tauvo/gn/v20200909/tauuo_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
+).as_posix()
+
+CMIP6_STAGGERED_VCOMP = Path(
+     MINI_ESGF_CACHE_DIR,
+     "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tauvo/gn/v20190710/tauvo_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc ",
+).as_posix()
+
+
+
+
+
+
+
