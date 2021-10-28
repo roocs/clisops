@@ -1,6 +1,13 @@
 Version History
 ===============
 
+v0.8.0 (unreleased)
+-------------------
+
+Bug fixes
+---------
+* ``average_shape`` and ``create_weight_masks`` were adapted to work with xESMF 0.6.1, while maintaining compatibility with earlier versions.
+
 v0.7.0 (2021-10-26)
 -------------------
 
