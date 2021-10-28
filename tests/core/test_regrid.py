@@ -19,6 +19,7 @@ from clisops.ops.subset import subset
 
 from .._common import (
     CMIP6_ATM_VERT_ONE_TIMESTEP,
+    CMIP6_OCE_HALO_CNRM,
     CMIP6_TAS_ONE_TIME_STEP,
     CMIP6_TAS_PRECISION_A,
     CMIP6_TAS_PRECISION_B,
@@ -64,8 +65,8 @@ def test_grid_init_da_tas_regular(load_esgf_test_data):
     assert grid.lon == da.lon.name
     assert grid.type == "regular_lat_lon"
     assert grid.extent == "global"
-    assert grid.lat_bnds == None
-    assert grid.lon_bnds == None
+    assert grid.lat_bnds is None
+    assert grid.lon_bnds is None
     assert grid.nlat == 80
     assert grid.nlon == 180
     assert grid.ncells == 14400
@@ -313,7 +314,6 @@ def test_compare_grid_same_resolution():
 
 def test_compare_grid_diff_in_precision(load_esgf_test_data):
     "Test that the same grid stored with different precision is evaluated as the same grid"
-
     dsA = xr.open_dataset(CMIP6_TAS_PRECISION_A, use_cftime=True)
     dsB = xr.open_dataset(CMIP6_TAS_PRECISION_B, use_cftime=True)
 
@@ -321,6 +321,30 @@ def test_compare_grid_diff_in_precision(load_esgf_test_data):
     gB = Grid(ds=dsB)
 
     assert gA.compare_grid(gB)
+
+
+def test_detect_collapsing_weights(load_esgf_test_data):
+    "Test that collapsing cells are properly identified"
+    # todo: the used datasets might not be appropriate when the halo gets more properly removed
+    dsA = xr.open_dataset(CMIP6_OCE_HALO_CNRM, use_cftime=True)
+    dsB = xr.open_dataset(CMIP6_TOS_ONE_TIME_STEP, use_cftime=True)
+
+    gA = Grid(ds=dsA)
+    gB = Grid(ds=dsB)
+
+    assert gA.contains_collapsing_cells
+    assert not gB.contains_collapsing_cells
+
+
+def test_Weights_init_with_collapsing_cells(load_esgf_test_data):
+    "Test the creation of remapping weights for a grid containing collapsing cells"
+    # todo: the used dataset might not be appropriate if the halo gets more properly removed
+    # ValueError: ESMC_FieldRegridStore failed with rc = 506. Please check the log files (named "*ESMF_LogFile").
+    ds = xr.open_dataset(CMIP6_OCE_HALO_CNRM, use_cftime=True)
+
+    g = Grid(ds=ds)
+    g_out = Grid(grid_instructor=(10.0,))
+    Weights(g, g_out, method="bilinear")
 
 
 def test_subsetted_grid():

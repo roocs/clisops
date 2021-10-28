@@ -10,7 +10,6 @@ from hashlib import md5
 import cf_xarray as cfxr
 import numpy as np
 import roocs_grids
-
 import xarray as xr
 from pkg_resources import parse_version
 
@@ -88,8 +87,10 @@ def regrid(grid_in, grid_out, weights, adaptive_masking_threshold=0.5):
     #                 adaptive_masking_threshold=adaptive_masking_threshold,
     #                 keep_attrs=True)
     if not isinstance(grid_out.ds, xr.Dataset):
-        raise Exception("The target Grid object 'grid_out' has to be built from an xarray.Dataset"
-                        " and not an xarray.DataArray!")
+        raise Exception(
+            "The target Grid object 'grid_out' has to be built from an xarray.Dataset"
+            " and not an xarray.DataArray!"
+        )
     grid_out._drop_vars()  # Remove all unnecessary coords and data_vars
     if isinstance(grid_in.ds, xr.Dataset):
         grid_out._transfer_coords(grid_in)
@@ -156,7 +157,9 @@ class Weights:
     # - Reformat to other weight-file formats when loading/saving from disk
 
     @require_xesmf
-    def __init__(self, grid_in, grid_out, from_disk=None, method=None, format="xESMF"):
+    def __init__(
+        self, grid_in, grid_out, from_disk=None, method="nearest_s2d", format="xESMF"
+    ):
         """
         Generate weights / read from cache (if present locally or retreivable from central
         regrid weight store) for grid_in, grid_out for method or alternatively
@@ -190,8 +193,16 @@ class Weights:
                     "The grid extent could not be accessed. "
                     "It will be assumed that the input grid is not periodic in longitude."
                 )
-        # todo: Determine ignore_degenerate by checking the collapsed cells status in grid_in
-        self.ignore_degenerate = None
+
+        # activate ignore degenerate cells setting if collapsing cells are found within the grid
+        self.ignore_degenerate = (
+            True
+            if (
+                self.grid_in.contains_collapsing_cells
+                or self.grid_out.contains_collapsing_cells
+            )
+            else None
+        )
 
         self.id = self._generate_id()
         self.filename = self.id + ".nc"
@@ -442,6 +453,13 @@ class Grid:
         # Takes into account lat/lon + bnds + mask (if defined)
         self.hash = self.compute_hash()
 
+        # Detect collapsing grid cells
+        if self.lat_bnds and self.lon_bnds:
+            self.detect_collapsed_grid_cells()
+        else:
+            self.coll_mask = None
+            self.contains_collapsing_cells = None
+
     def __str__(self):
         if self.type == "irregular":
             grid_str = str(self.ncells) + "_cells_grid"
@@ -457,16 +475,17 @@ class Grid:
                 if self.type != "irregular"
                 else ""
             )
-            + "Gridcells:      {}\n".format(self.ncells)
-            + "Format:         {}\n".format(self.format)
-            + "Type:           {}\n".format(self.type)
-            + "Extent:         {}\n".format(self.extent)
-            + "Source:         {}\n".format(self.source)
-            + "Bounds?         {}\n".format(
+            + "Gridcells:        {}\n".format(self.ncells)
+            + "Format:           {}\n".format(self.format)
+            + "Type:             {}\n".format(self.type)
+            + "Extent:           {}\n".format(self.extent)
+            + "Source:           {}\n".format(self.source)
+            + "Bounds?           {}\n".format(
                 self.lat_bnds is not None and self.lon_bnds is not None
             )
-            + "Permanent Mask: {}\n".format(self.mask)
-            + "md5 hash: {}".format(self.hash)
+            + "Collapsing cells? {}\n".format(self.contains_collapsing_cells)
+            + "Permanent Mask:   {}\n".format(self.mask)
+            + "md5 hash:         {}".format(self.hash)
         )
         return info
 
@@ -580,8 +599,10 @@ class Grid:
         ]
 
         if not isinstance(self.ds, xr.Dataset):
-            raise Exception("Reformat is only possible for Datasets."
-                            " DataArrays have to be CF conformal coordinate variables defined.")
+            raise Exception(
+                "Reformat is only possible for Datasets."
+                " DataArrays have to be CF conformal coordinate variables defined."
+            )
 
         if self.format == "SCRIP":
             if not (
@@ -1273,6 +1294,29 @@ class Grid:
                 "For coordinate variable '%s' no bounds can be identified." % coordinate
             )
             return
+
+    def detect_collapsed_grid_cells(self):
+        "Detect collapsing grid cells. Requires defined bounds."
+        mask_lat = self._create_collapse_mask(self.ds[self.lat_bnds].data)
+        mask_lon = self._create_collapse_mask(self.ds[self.lon_bnds].data)
+        # for regular lat-lon grids, create 2D coordinate arrays
+        if (
+            mask_lat.shape != mask_lon.shape
+            and mask_lat.ndim == 1
+            and mask_lon.ndim == 1
+        ):
+            mask_lon, mask_lat = np.meshgrid(mask_lon, mask_lat)
+        self.coll_mask = mask_lat | mask_lon
+        self.contains_collapsing_cells = np.any(self.coll_mask)
+
+    def _create_collapse_mask(self, arr):
+        "Grid cells collapsing to lines or points"
+        orig_shape = arr.shape[:-1]  # [nlon, nlat, nbnds] -> [nlon, nlat]
+        arr_flat = arr.reshape(-1, arr.shape[-1])  # -> [nlon x nlat, nbnds]
+        arr_set = np.apply_along_axis(lambda x: len(set(x)), -1, arr_flat)
+        mask = np.zeros(arr_flat.shape[:-1], dtype=bool)
+        mask[arr_set == 1] = True
+        return mask.reshape(orig_shape)
 
     def _cap_precision(self, decimals):
         # todo: extend for vertical axis for vertical interpolation usecase
