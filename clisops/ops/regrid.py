@@ -33,7 +33,7 @@ class Regrid(Operation):
                 return Grid(ds=self.ds, grid_id=grid_desc)
             else:
                 return Grid(grid_id=grid_desc)
-        elif isinstance(grid_desc, tuple):
+        elif isinstance(grid_desc, (float, int, tuple)):
             return Grid(grid_instructor=grid_desc)
         elif isinstance(grid_desc, (xr.Dataset, xr.DataArray)):
             return Grid(ds=grid_desc)

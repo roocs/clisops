@@ -5,6 +5,7 @@ import functools
 import json
 import os
 import warnings
+from collections import OrderedDict
 from hashlib import md5
 
 import cf_xarray as cfxr
@@ -503,6 +504,8 @@ class Grid:
 
     @require_xesmf
     def grid_from_instructor(self, grid_instructor):
+        if isinstance(grid_instructor, (int, float)):
+            grid_instructor = (grid_instructor,)
         if len(grid_instructor) not in [1, 2, 3, 6]:
             raise Exception(
                 "The grid_instructor has to be a tuple of length 1, 2, 3 or 6!"
@@ -1345,18 +1348,25 @@ class Grid:
                     self.ds[coord].encoding = encoding_dict[coord]
 
     def compute_hash(self):
-        hash_arr = list()
-        for cvar in [self.lat, self.lon, self.lat_bnds, self.lon_bnds, self.mask]:
-            if cvar:
-                hash_arr.append(
-                    md5(str(self.ds[cvar].values.tobytes()).encode("utf-8")).hexdigest()
-                )
-            # else:
-            #    hash_arr.append(md5("undefined".encode('utf-8')).hexdigest())
-        print(hash_arr)
-        return md5("".join(hash_arr).encode("utf-8")).hexdigest()
+        self.hash_dict = OrderedDict()
+        for coord, coord_var in OrderedDict(
+            [
+                ("lat", self.lat),
+                ("lon", self.lon),
+                ("lat_bnds", self.lat_bnds),
+                ("lon_bnds", self.lon_bnds),
+                ("mask", self.mask),
+            ]
+        ).items():
+            if coord_var:
+                self.hash_dict[coord] = md5(
+                    str(self.ds[coord_var].values.tobytes()).encode("utf-8")
+                ).hexdigest()
+            else:
+                self.hash_dict[coord] = md5(b"undefined").hexdigest()
+        return md5("".join(self.hash_dict.values()).encode("utf-8")).hexdigest()
 
-    def compare_grid(self, ds_or_Grid):
+    def compare_grid(self, ds_or_Grid, verbose=False):
         if isinstance(ds_or_Grid, xr.Dataset) or isinstance(ds_or_Grid, xr.DataArray):
             grid_tmp = Grid(ds=ds_or_Grid)
         elif isinstance(ds_or_Grid, Grid):
@@ -1365,6 +1375,14 @@ class Grid:
             raise TypeError(
                 "The provided input has to be of one of the types [xarray.DataArray, xarray.Dataset, clisops.core.Grid]!"
             )
+        if verbose:
+            diff = [
+                coord_var
+                for coord_var in self.hash_dict
+                if self.hash_dict[coord_var] != grid_tmp.hash_dict[coord_var]
+            ]
+            if len(diff) > 0:
+                print(f"The two grids differ in their respective {', '.join(diff)}.")
         return grid_tmp.hash == self.hash
 
     def _drop_vars(self):

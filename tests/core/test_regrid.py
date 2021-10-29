@@ -323,6 +323,20 @@ def test_compare_grid_diff_in_precision(load_esgf_test_data):
     assert gA.compare_grid(gB)
 
 
+def test_compare_grid_hash_dict_and_verbose(capfd):
+    "Test Grid.hash_dict keys and Grid.compare_grid verbose option"
+    gA = Grid(grid_instructor=(1.0, 0.5))
+    gB = Grid(grid_instructor=(1.0,))
+    is_equal = gA.compare_grid(gB, verbose=True)
+    stdout, stderr = capfd.readouterr()
+
+    assert stderr == ""
+    assert stdout == "The two grids differ in their respective lat, lat_bnds.\n"
+    assert not is_equal
+    assert len(gA.hash_dict) == 5
+    assert list(gA.hash_dict.keys()) == ["lat", "lon", "lat_bnds", "lon_bnds", "mask"]
+
+
 def test_detect_collapsing_weights(load_esgf_test_data):
     "Test that collapsing cells are properly identified"
     # todo: the used datasets might not be appropriate when the halo gets more properly removed
@@ -398,7 +412,7 @@ class TestWeights:
         assert w.method == "bilinear"
         assert (
             w.id
-            == "fd3943b6c22982be62e2bb731ec5a760_a2a2ea3333c5c49211f770b494a27ae5_True_None_bilinear"
+            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_True_None_bilinear"
         )
         assert w.periodic
         assert w.id in w.filename
@@ -424,7 +438,7 @@ class TestWeights:
         assert w.method == "conservative"
         assert (
             w.id
-            == "fd3943b6c22982be62e2bb731ec5a760_a2a2ea3333c5c49211f770b494a27ae5_True_None_conservative"
+            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_True_None_conservative"
         )
         assert (
             w.periodic != w.regridder.periodic
