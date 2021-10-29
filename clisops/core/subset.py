@@ -635,8 +635,13 @@ def create_weight_masks(
     # Unpack weights to full size array, this increases memory use a lot.
     # polygons are along the "geom" dim
     # assign all other columns of poly as auxiliary coords.
+    weights = (
+        savg.weights.data.todense()
+        if isinstance(savg.weights, xarray.DataArray)
+        else savg.weights.toarray()
+    )
     masks = xarray.DataArray(
-        savg.weights.toarray().reshape(poly.geometry.size, *savg.shape_in),
+        weights.reshape(poly.geometry.size, *savg.shape_in),
         dims=("geom", *savg.in_horiz_dims),
         coords=dict(**poly_coords, **poly_coords.coords),
     )
