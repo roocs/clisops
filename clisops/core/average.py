@@ -80,7 +80,12 @@ def average_shape(
     ds_sub = ds_copy.isel(indexer)
 
     savger = SpatialAverager(ds_sub, poly.geometry)
-    if savger.weights.nnz == 0:
+    nonnull = (
+        savger.weights.data.nnz
+        if isinstance(savger.weights, xr.DataArray)
+        else savger.weights.nnz
+    )
+    if nonnull == 0:
         raise ValueError(
             "There were no valid data points found in the requested averaging region. Verify objects overlap."
         )
@@ -181,6 +186,16 @@ def average_over_dims(
 
     # The mean will be carried out on a Dataset or DataArray
     # Calculate the mean, skip missing values and retain original attributes
+
+    # Short-term solution to error: "NotImplementedError: Computing the mean of an " ...
+    #    "array containing cftime.datetime objects is not yet implemented on dask arrays."
+    # See GITHUB ISSUE: https://github.com/roocs/clisops/issues/185
+    if isinstance(ds, xr.Dataset):
+        untouched_ds = ds.drop_dims(dims_to_average)
+        ds = ds.drop_vars(untouched_ds.data_vars.keys())
+
     ds_averaged_over_dims = ds.mean(dim=dims_to_average, skipna=True, keep_attrs=True)
 
+    if isinstance(ds, xr.Dataset):
+        return xr.merge((ds_averaged_over_dims, untouched_ds))
     return ds_averaged_over_dims
