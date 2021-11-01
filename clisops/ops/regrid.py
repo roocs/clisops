@@ -132,6 +132,7 @@ class Regrid(Operation):
             self.params.get("grid_out", None),
             self.params.get("weights", None),
             self.params.get("adaptive_masking_threshold", None),
+            self.params.get("keep_attrs", None),
         )
 
         # The output ds might not yet be optimal
@@ -147,24 +148,26 @@ def regrid(
     *,
     method="nearest_s2d",  # do we want defaults for these values? Yes, but now I added them at _resolve as well. Where to get rid of them?
     adaptive_masking_threshold=0.5,
-    grid="adaptive",
+    grid: Optional[Union[xr.Dataset, int, float, tuple, str]] = "adaptive",
     output_dir: Optional[Union[str, Path]] = None,
     output_type="netcdf",
     split_method="time:auto",
     file_namer="standard",
+    keep_attrs=True,
 ) -> List[Union[xr.Dataset, str]]:
     """
 
     Parameters
     ----------
     ds: Union[xr.Dataset, str]
-    method="nn",
+    method="nearest_s2d",
     adaptive_masking_threshold=0.5,
-    grid,
+    grid="adaptive",
     output_dir: Optional[Union[str, Path]] = None
     output_type: {"netcdf", "nc", "zarr", "xarray"}
     split_method: {"time:auto"}
     file_namer: {"standard", "simple"}
+    keep_attrs: {True, False, "target"}
 
     Returns
     -------
@@ -175,13 +178,14 @@ def regrid(
     Examples
     --------
     | ds: xarray Dataset or "cmip5.output1.MOHC.HadGEM2-ES.rcp85.mon.atmos.Amon.r1i1p1.latest.tas"
-    | method:
+    | method: "nearest_s2d"
     | adaptive_masking_threshold:
-    | grid:
+    | grid: "1deg"
     | output_dir: "/cache/wps/procs/req0111"
     | output_type: "netcdf"
     | split_method: "time:auto"
     | file_namer: "standard"
+    | keep_attrs: True
 
     """
     op = Regrid(**locals())

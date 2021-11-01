@@ -391,6 +391,16 @@ def test_subsetted_grid():
     # assert self.mask
 
 
+def test_transfer_coords():
+    ds = xr.open_dataset(CMIP6_ATM_VERT_ONE_TIMESTEP)
+    g = Grid(ds=ds)
+    gt = Grid(grid_id="1deg")
+    gt._drop_vars()
+
+    gt._transfer_coords(g)
+    gt.ds
+
+
 # test all methods
 @pytest.mark.skipif(
     xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
@@ -412,7 +422,7 @@ class TestWeights:
         assert w.method == "bilinear"
         assert (
             w.id
-            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_True_None_bilinear"
+            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_bilinear"
         )
         assert w.periodic
         assert w.id in w.filename
@@ -438,7 +448,7 @@ class TestWeights:
         assert w.method == "conservative"
         assert (
             w.id
-            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_True_None_conservative"
+            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_conservative"
         )
         assert (
             w.periodic != w.regridder.periodic
@@ -499,7 +509,7 @@ def test_data_vars_coords_reset_and_cfxr(load_esgf_test_data):
             "data": np.ones(18432, dtype=np.float32).reshape((96, 192)),
         }
     )
-    dsA["areacella"] = areacella
+    dsA.update({"areacella": areacella})
     dsB = xr.decode_cf(dsA, decode_coords="all")
 
     # Grid._set_data_vars_and_coords should (re)set coords appropriately
