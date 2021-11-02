@@ -1505,7 +1505,7 @@ class Grid:
             self.ds.attrs = {}
         self.ds = self.ds.drop(labels=to_drop)
 
-    def _transfer_coords(self, source_grid, keep_attrs=False):
+    def _transfer_coords(self, source_grid, keep_attrs=True):
         "Transfer all non-horizontal coordinates to a dataset"
         # Skip all coords with horizontal dimensions or
         #  coords with no dimensions that are not listed
@@ -1659,19 +1659,112 @@ class Grid:
         #   or the possiblity of duplicated cells has to be considered
         #
         if self.format == "CF":
-            if self.type == "regular_lat_lon":
-                if (
-                    np.amin(self.ds[self.lat].values) < -90.0
-                    or np.amax(self.ds[self.lat].values) > 90.0
-                ):
-                    warnings.warn("At least one latitude value exceeds [-90,90].")
-                    return
-                if self.nlat < 3 or self.nlon < 3:
-                    warnings.warn(
-                        "The latitude and longitude axes need at least 3 entries"
-                        " to be able to calculate the bounds."
-                    )
-                    return
+            if (
+                np.amin(self.ds[self.lat].values) < -90.0
+                or np.amax(self.ds[self.lat].values) > 90.0
+            ):
+                warnings.warn("At least one latitude value exceeds [-90,90].")
+                return
+            if self.ncells < 3:
+                warnings.warn(
+                    "The latitude and longitude axes need at least 3 entries"
+                    " to be able to calculate the bounds."
+                )
+                return
+            if self.type == "curvilinear":
+                # The bounds creation for curvilinear grids has been adapted from
+                # https://github.com/SantanderMetGroup/ATLAS/blob/mai-devel/scripts/ATLAS-data/ \
+                #  bash-interpolation-scripts/AtlasCDOremappeR_CORDEX/grid_bounds_calc.py
+                # It is no longer available there.
+
+                # Rearrange lat/lons
+                lons_row = self.ds[self.lon].data.flatten()
+                lats_row = self.ds[self.lat].data.flatten()
+
+                # Allocate lat/lon corners
+                lons_cor = np.zeros(lons_row.size * 4)
+                lats_cor = np.zeros(lats_row.size * 4)
+
+                lons_crnr = np.empty(
+                    (self.ds[self.lon].shape[0] + 1, self.ds[self.lon].shape[1] + 1)
+                )
+                lons_crnr[:] = np.nan
+                lats_crnr = np.empty(
+                    (self.ds[self.lat].shape[0] + 1, self.ds[self.lat].shape[1] + 1)
+                )
+                lats_crnr[:] = np.nan
+
+                # -------- Calculating corners --------- #
+
+                # Loop through all grid points except at the boundaries
+                for lat in range(1, self.ds[self.lon].shape[0]):
+                    for lon in range(1, self.ds[self.lon].shape[1]):
+                        # SW corner for each lat/lon index is calculated
+                        lons_crnr[lat, lon] = (
+                            self.ds[self.lon][lat - 1, lon - 1]
+                            + self.ds[self.lon][lat, lon - 1]
+                            + self.ds[self.lon][lat - 1, lon]
+                            + self.ds[self.lon][lat, lon]
+                        ) / 4.0
+                        lats_crnr[lat, lon] = (
+                            self.ds[self.lat][lat - 1, lon - 1]
+                            + self.ds[self.lat][lat, lon - 1]
+                            + self.ds[self.lat][lat - 1, lon]
+                            + self.ds[self.lat][lat, lon]
+                        ) / 4.0
+
+                # Grid points at boundaries
+                lons_crnr[0, :] = lons_crnr[1, :] - (lons_crnr[2, :] - lons_crnr[1, :])
+                lons_crnr[-1, :] = lons_crnr[-2, :] + (
+                    lons_crnr[-2, :] - lons_crnr[-3, :]
+                )
+                lons_crnr[:, 0] = lons_crnr[:, 1] + (lons_crnr[:, 1] - lons_crnr[:, 2])
+                lons_crnr[:, -1] = lons_crnr[:, -2] + (
+                    lons_crnr[:, -2] - lons_crnr[:, -3]
+                )
+
+                lats_crnr[0, :] = lats_crnr[1, :] - (lats_crnr[2, :] - lats_crnr[1, :])
+                lats_crnr[-1, :] = lats_crnr[-2, :] + (
+                    lats_crnr[-2, :] - lats_crnr[-3, :]
+                )
+                lats_crnr[:, 0] = lats_crnr[:, 1] - (lats_crnr[:, 1] - lats_crnr[:, 2])
+                lats_crnr[:, -1] = lats_crnr[:, -2] + (
+                    lats_crnr[:, -2] - lats_crnr[:, -3]
+                )
+
+                # ------------ DONE ------------- #
+
+                # Fill in counterclockwise and rearrange
+                count = 0
+                for lat in range(self.ds[self.lon].shape[0]):
+                    for lon in range(self.ds[self.lon].shape[1]):
+
+                        lons_cor[count] = lons_crnr[lat, lon]
+                        lons_cor[count + 1] = lons_crnr[lat, lon + 1]
+                        lons_cor[count + 2] = lons_crnr[lat + 1, lon + 1]
+                        lons_cor[count + 3] = lons_crnr[lat + 1, lon]
+
+                        lats_cor[count] = lats_crnr[lat, lon]
+                        lats_cor[count + 1] = lats_crnr[lat, lon + 1]
+                        lats_cor[count + 2] = lats_crnr[lat + 1, lon + 1]
+                        lats_cor[count + 3] = lats_crnr[lat + 1, lon]
+
+                        count += 4
+
+                        lon_bnds = lons_cor.reshape(self.nlat, self.nlon, 4)
+                        lat_bnds = lats_cor.reshape(self.nlat, self.nlon, 4)
+
+                # Add to the dataset
+                self.ds["lat_bnds"] = (
+                    (self.ds[self.lat].dims[0], self.ds[self.lat].dims[1], "vertices"),
+                    lat_bnds,
+                )
+                self.ds["lon_bnds"] = (
+                    (self.ds[self.lon].dims[0], self.ds[self.lon].dims[1], "vertices"),
+                    lon_bnds,
+                )
+
+            elif self.type == "regular_lat_lon":
                 # Assuming lat / lon values are strong monotonically decreasing/increasing
                 # Latitude / Longitude bounds shaped (nlat, 2) / (nlon, 2)
                 lat_bnds = np.zeros((self.ds[self.lat].shape[0], 2), dtype=np.float32)
@@ -1732,39 +1825,43 @@ class Grid:
                         "values are not strong monotonically decreasing/increasing."
                     )
                     return
-                # Add to the dataset as coordinates and attach variable attributes
+                # Add to the dataset
                 self.ds["lat_bnds"] = ((self.ds[self.lat].dims[0], "bnds"), lat_bnds)
                 self.ds["lon_bnds"] = ((self.ds[self.lon].dims[0], "bnds"), lon_bnds)
-                self.ds = self.ds.set_coords(["lat_bnds", "lon_bnds"])
-                self.ds[self.lat].attrs["bounds"] = "lat_bnds"
-                self.ds[self.lon].attrs["bounds"] = "lon_bnds"
-                self.ds["lat_bnds"].attrs = {
-                    "long_name": "latitude_bounds",
-                    "units": "degrees_north",
-                }
-                self.ds["lon_bnds"].attrs = {
-                    "long_name": "longitude_bounds",
-                    "units": "degrees_east",
-                }
-                # Set the Class attributes
-                self.lat_bnds = "lat_bnds"
-                self.lon_bnds = "lon_bnds"
-                # Issue warning
-                warnings.warn(
-                    "Successfully calculated a set of latitude and longitude bounds."
-                    " They might, however, differ from the actual bounds"
-                    " of the model grid!"
-                )
             else:
                 warnings.warn(
                     "The bounds cannot be calculated for grid_type '%s' and format '%s'."
                     % (self.type, self.format)
                 )
+                return
+
+            # Add common set of attributes and set as coordinates
+            self.ds = self.ds.set_coords(["lat_bnds", "lon_bnds"])
+            self.ds[self.lat].attrs["bounds"] = "lat_bnds"
+            self.ds[self.lon].attrs["bounds"] = "lon_bnds"
+            self.ds["lat_bnds"].attrs = {
+                "long_name": "latitude_bounds",
+                "units": "degrees_north",
+            }
+            self.ds["lon_bnds"].attrs = {
+                "long_name": "longitude_bounds",
+                "units": "degrees_east",
+            }
+            # Set the Class attributes
+            self.lat_bnds = "lat_bnds"
+            self.lon_bnds = "lon_bnds"
+            # Issue warning
+            warnings.warn(
+                "Successfully calculated a set of latitude and longitude bounds."
+                " They might, however, differ from the actual bounds"
+                " of the model grid!"
+            )
         else:
             warnings.warn(
                 "The bounds cannot be calculated for grid_type '%s' and format '%s'."
                 % (self.type, self.format)
             )
+            return
 
 
 """

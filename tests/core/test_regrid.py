@@ -24,6 +24,7 @@ from .._common import (
     CMIP6_TAS_PRECISION_A,
     CMIP6_TAS_PRECISION_B,
     CMIP6_TOS_ONE_TIME_STEP,
+    CORDEX_TAS_NO_BOUNDS,
 )
 
 # test from grid_id --predetermined
@@ -361,7 +362,7 @@ def test_Weights_init_with_collapsing_cells(load_esgf_test_data):
     Weights(g, g_out, method="bilinear")
 
 
-def test_subsetted_grid():
+def test_subsetted_grid(load_esgf_test_data):
     ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
 
     area = (0.0, 10.0, 175.0, 90.0)
@@ -391,14 +392,49 @@ def test_subsetted_grid():
     # assert self.mask
 
 
-def test_transfer_coords():
+def test_drop_vars_transfer_coords(load_esgf_test_data):
+    "Test for Grid methods _drop_vars ad _transfer_coords"
     ds = xr.open_dataset(CMIP6_ATM_VERT_ONE_TIMESTEP)
     g = Grid(ds=ds)
-    gt = Grid(grid_id="1deg")
+    gt = Grid(grid_id="0pt25deg_era5_lsm")
+    assert sorted(list(g.ds.data_vars.keys())) == ["o3", "ps"]
+    assert list(gt.ds.data_vars.keys()) != []
+
     gt._drop_vars()
+    assert gt.ds.attrs == {}
+    assert sorted(list(gt.ds.coords.keys())) == [
+        "lat_bnds",
+        "latitude",
+        "lon_bnds",
+        "longitude",
+    ]
 
     gt._transfer_coords(g)
-    gt.ds
+    assert gt.ds.attrs["institution"] == "Max Planck Institute for Meteorology"
+    assert gt.ds.attrs["activity_id"] == "CMIP"
+    assert sorted(list(gt.ds.coords.keys())) == [
+        "ap",
+        "ap_bnds",
+        "b",
+        "b_bnds",
+        "lat_bnds",
+        "latitude",
+        "lev",
+        "lev_bnds",
+        "lon_bnds",
+        "longitude",
+        "time",
+        "time_bnds",
+    ]
+    assert list(gt.ds.data_vars.keys()) == []
+
+
+def test_calculate_bounds_curvilinear(load_esgf_test_data):
+    "Test for bounds calculation for curvilinear grid"
+    ds = xr.open_dataset(CORDEX_TAS_NO_BOUNDS)
+    g = Grid(ds=ds)
+    assert g.lat_bnds is not None
+    assert g.lon_bnds is not None
 
 
 # test all methods
