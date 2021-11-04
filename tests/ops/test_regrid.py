@@ -105,6 +105,7 @@ def test_regrid_same_grid_exception(tmpdir):
     ):
         regrid(
             fpath,
+            method="conservative",
             adaptive_masking_threshold=0.5,
             grid="0pt25deg_era5_lsm",
             output_dir=tmpdir,

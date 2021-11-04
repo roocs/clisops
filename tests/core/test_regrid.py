@@ -305,8 +305,8 @@ def test_grid_from_ds_adaptive_reproducibility():
 def test_compare_grid_same_resolution():
     "Test that two grids of same resolution from different sources evaluate as the same grid"
     ds025 = xr.open_dataset(get_grid_file("0pt25deg_era5"))
-    g025 = Grid(grid_id="0pt25deg_era5")
-    g025_lsm = Grid(grid_id="0pt25deg_era5_lsm")
+    g025 = Grid(grid_id="0pt25deg_era5", compute_bounds=True)
+    g025_lsm = Grid(grid_id="0pt25deg_era5_lsm", compute_bounds=True)
 
     assert g025.compare_grid(g025_lsm)
     assert g025.compare_grid(ds025)
@@ -324,6 +324,9 @@ def test_compare_grid_diff_in_precision(load_esgf_test_data):
     assert gA.compare_grid(gB)
 
 
+@pytest.mark.skipif(
+    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
+)
 def test_compare_grid_hash_dict_and_verbose(capfd):
     "Test Grid.hash_dict keys and Grid.compare_grid verbose option"
     gA = Grid(grid_instructor=(1.0, 0.5))
@@ -338,7 +341,7 @@ def test_compare_grid_hash_dict_and_verbose(capfd):
     assert list(gA.hash_dict.keys()) == ["lat", "lon", "lat_bnds", "lon_bnds", "mask"]
 
 
-def test_detect_collapsing_weights(load_esgf_test_data):
+def test_detect_collapsing_cells(load_esgf_test_data):
     "Test that collapsing cells are properly identified"
     # todo: the used datasets might not be appropriate when the halo gets more properly removed
     dsA = xr.open_dataset(CMIP6_OCE_HALO_CNRM, use_cftime=True)
@@ -351,6 +354,9 @@ def test_detect_collapsing_weights(load_esgf_test_data):
     assert not gB.contains_collapsing_cells
 
 
+@pytest.mark.skipif(
+    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
+)
 def test_Weights_init_with_collapsing_cells(load_esgf_test_data):
     "Test the creation of remapping weights for a grid containing collapsing cells"
     # todo: the used dataset might not be appropriate if the halo gets more properly removed
@@ -396,7 +402,7 @@ def test_drop_vars_transfer_coords(load_esgf_test_data):
     "Test for Grid methods _drop_vars ad _transfer_coords"
     ds = xr.open_dataset(CMIP6_ATM_VERT_ONE_TIMESTEP)
     g = Grid(ds=ds)
-    gt = Grid(grid_id="0pt25deg_era5_lsm")
+    gt = Grid(grid_id="0pt25deg_era5_lsm", compute_bounds=True)
     assert sorted(list(g.ds.data_vars.keys())) == ["o3", "ps"]
     assert list(gt.ds.data_vars.keys()) != []
 
@@ -431,10 +437,86 @@ def test_drop_vars_transfer_coords(load_esgf_test_data):
 
 def test_calculate_bounds_curvilinear(load_esgf_test_data):
     "Test for bounds calculation for curvilinear grid"
-    ds = xr.open_dataset(CORDEX_TAS_NO_BOUNDS)
-    g = Grid(ds=ds)
+    ds = xr.open_dataset(CORDEX_TAS_NO_BOUNDS).isel(
+        {"rlat": range(10), "rlon": range(10)}
+    )
+    g = Grid(ds=ds, compute_bounds=True)
     assert g.lat_bnds is not None
     assert g.lon_bnds is not None
+
+
+def test_centers_within_bounds_curvilinear(load_esgf_test_data):
+    "Test for bounds calculation for curvilinear grid"
+    ds = xr.open_dataset(CORDEX_TAS_NO_BOUNDS).isel(
+        {"rlat": range(10), "rlon": range(10)}
+    )
+    g = Grid(ds=ds, compute_bounds=True)
+    assert g.lat_bnds is not None
+    assert g.lon_bnds is not None
+    assert bool(g.contains_collapsing_cells) is False
+
+    # Check that there are bounds values smaller and greater than the cell center values
+    ones = np.ones((g.nlat, g.nlon), dtype=int)
+    assert np.all(
+        ones
+        == xr.where(
+            np.sum(xr.where(g.ds[g.lat] >= g.ds[g.lat_bnds], 1, 0), -1) > 0, 1, 0
+        )
+    )
+    assert np.all(
+        ones
+        == xr.where(
+            np.sum(xr.where(g.ds[g.lat] <= g.ds[g.lat_bnds], 1, 0), -1) > 0, 1, 0
+        )
+    )
+    assert np.all(
+        ones
+        == xr.where(
+            np.sum(xr.where(g.ds[g.lon] >= g.ds[g.lon_bnds], 1, 0), -1) > 0, 1, 0
+        )
+    )
+    assert np.all(
+        ones
+        == xr.where(
+            np.sum(xr.where(g.ds[g.lon] <= g.ds[g.lon_bnds], 1, 0), -1) > 0, 1, 0
+        )
+    )
+
+
+def test_centers_within_bounds_regular_lat_lon():
+    "Test for bounds calculation of regular lat lon grid"
+    g = Grid(grid_id="0pt25deg_era5_lsm", compute_bounds=True)
+    assert g.lat_bnds is not None
+    assert g.lon_bnds is not None
+    assert bool(g.contains_collapsing_cells) is False
+
+    # Check that there are bounds values smaller and greater than the cell center values
+    ones_lat = np.ones((g.nlat,), dtype=int)
+    ones_lon = np.ones((g.nlon,), dtype=int)
+    assert np.all(
+        ones_lat
+        == xr.where(
+            np.sum(xr.where(g.ds[g.lat] >= g.ds[g.lat_bnds], 1, 0), -1) > 0, 1, 0
+        )
+    )
+    assert np.all(
+        ones_lat
+        == xr.where(
+            np.sum(xr.where(g.ds[g.lat] <= g.ds[g.lat_bnds], 1, 0), -1) > 0, 1, 0
+        )
+    )
+    assert np.all(
+        ones_lon
+        == xr.where(
+            np.sum(xr.where(g.ds[g.lon] >= g.ds[g.lon_bnds], 1, 0), -1) > 0, 1, 0
+        )
+    )
+    assert np.all(
+        ones_lon
+        == xr.where(
+            np.sum(xr.where(g.ds[g.lon] <= g.ds[g.lon_bnds], 1, 0), -1) > 0, 1, 0
+        )
+    )
 
 
 # test all methods
@@ -501,6 +583,23 @@ class TestWeights:
 
     def test_from_disk(self):
         pass
+
+    def test_conservative_no_bnds(self):
+        "Test whether exception is raised when no bounds present for conservative remapping."
+        ds = xr.open_dataset(CORDEX_TAS_NO_BOUNDS)
+        gi = Grid(ds=ds)
+        go = Grid(grid_id="1deg", compute_bounds=True)
+
+        assert gi.lat_bnds is None
+        assert gi.lon_bnds is None
+        assert go.lat_bnds is not None
+        assert go.lon_bnds is not None
+
+        with pytest.raises(
+            Exception,
+            match="For conservative remapping, horizontal grid bounds have to be defined for the input and output grid!",
+        ):
+            Weights(grid_in=gi, grid_out=go, method="conservative")
 
 
 @pytest.mark.skipif(

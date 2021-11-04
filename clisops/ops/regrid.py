@@ -20,23 +20,25 @@ supported_regridding_methods = ["conservative", "patch", "nearest_s2d", "bilinea
 
 
 class Regrid(Operation):
-    def _get_grid_in(self, grid_desc):
+    def _get_grid_in(self, grid_desc, compute_bounds):
         if isinstance(grid_desc, (xr.Dataset, xr.DataArray)):
-            return Grid(ds=grid_desc)
+            return Grid(ds=grid_desc, compute_bounds=compute_bounds)
         raise Exception(
             "An xarray.Dataset or xarray.DataArray has to be provided as input."
         )
 
-    def _get_grid_out(self, grid_desc):
+    def _get_grid_out(self, grid_desc, compute_bounds):
         if isinstance(grid_desc, str):
             if grid_desc in ["auto", "adaptive"]:
-                return Grid(ds=self.ds, grid_id=grid_desc)
+                return Grid(
+                    ds=self.ds, grid_id=grid_desc, compute_bounds=compute_bounds
+                )
             else:
-                return Grid(grid_id=grid_desc)
+                return Grid(grid_id=grid_desc, compute_bounds=compute_bounds)
         elif isinstance(grid_desc, (float, int, tuple)):
-            return Grid(grid_instructor=grid_desc)
+            return Grid(grid_instructor=grid_desc, compute_bounds=compute_bounds)
         elif isinstance(grid_desc, (xr.Dataset, xr.DataArray)):
-            return Grid(ds=grid_desc)
+            return Grid(ds=grid_desc, compute_bounds=compute_bounds)
         else:
             return Grid()
 
@@ -69,8 +71,9 @@ class Regrid(Operation):
             f"Input parameters: method: {method}, grid: {grid}, adaptive_masking: {adaptive_masking_threshold}"
         )
 
-        grid_in = self._get_grid_in(self.ds)
-        grid_out = self._get_grid_out(grid)
+        compute_bounds = "conservative" in method
+        grid_in = self._get_grid_in(self.ds, compute_bounds)
+        grid_out = self._get_grid_out(grid, compute_bounds)
         weights = self._get_weights(grid_in=grid_in, grid_out=grid_out, method=method)
 
         self.params = {

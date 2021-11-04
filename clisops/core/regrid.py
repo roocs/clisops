@@ -316,6 +316,17 @@ class Weights:
         If grids have problems of degenerated cells near the poles
         there is the ignore_degenerate option.
         """
+        # Check if bounds are present in case of conservative remapping
+        if self.method in ["conservative", "conservative_normed"] and (
+            not self.grid_in.lat_bnds
+            or not self.grid_in.lon_bnds
+            or not self.grid_out.lat_bnds
+            or not self.grid_out.lon_bnds
+        ):
+            raise Exception(
+                "For conservative remapping, horizontal grid bounds have to be defined for the input and output grid!"
+            )
+
         # Call xesmf.Regridder
         if os.path.isfile(Path(weights_dir, self.filename).as_posix()):
             reuse_weights = True
@@ -435,7 +446,9 @@ class Weights:
 
 
 class Grid:
-    def __init__(self, ds=None, grid_id=None, grid_instructor=None):
+    def __init__(
+        self, ds=None, grid_id=None, grid_instructor=None, compute_bounds=False
+    ):
         "Initialise the Grid object. Supporting only 2D horizontal grids."
 
         # todo: Doc-Strings
@@ -511,8 +524,12 @@ class Grid:
         self.nlat, self.nlon, self.ncells = self.detect_shape()
 
         # Compute bounds if not specified and if possible
-        if not self.lat_bnds or not self.lon_bnds:
-            if isinstance(self.ds, xr.Dataset):
+        if (not self.lat_bnds or not self.lon_bnds) and compute_bounds:
+            if not isinstance(self.ds, xr.Dataset):
+                raise Exception(
+                    "Bounds can only be attached to xarray.Datasets, not to xarray.DataArrays."
+                )
+            else:
                 self.compute_bounds()
 
         # Extent of the grid (global or regional)
