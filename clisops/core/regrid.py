@@ -8,6 +8,7 @@ import warnings
 from collections import ChainMap, OrderedDict
 from glob import glob
 from hashlib import md5
+from math import sqrt
 from pathlib import Path
 
 import cf_xarray as cfxr
@@ -663,40 +664,45 @@ class Grid:
 
     @require_xesmf
     def grid_from_ds_adaptive(self, ds):
+        # todo: dachar/daops to deal with missing values
+        #  when _FillValue/missing_value attribute is not set
         grid_tmp = Grid(ds=ds)
-        if grid_tmp.type == "irregular":
-            raise Exception("The grid type is not supported.")
-            # One could distribute the number of grid cells to nlat and nlon,
-            # in proportion to extent in latitudinal and longitudinal direction
-        else:
-            # todo: filter out missing values is done by xarray if
-            # attribute is set, if not, should the attribute be set
-            # or let dachar/daops deal with this?
-            xsize = grid_tmp.nlon
-            ysize = grid_tmp.nlat
+        xfirst = float(grid_tmp.ds[grid_tmp.lon].min())
+        xlast = float(grid_tmp.ds[grid_tmp.lon].max())
+        yfirst = float(grid_tmp.ds[grid_tmp.lat].min())
+        ylast = float(grid_tmp.ds[grid_tmp.lat].max())
+        # fix for regional grids that wrap around the Greenwich meridian
+        if grid_tmp.extent == "regional" and (xfirst > 180 or xlast > 180):
+            grid_tmp.ds.lon.data = grid_tmp.ds.lon.where(
+                grid_tmp.ds.lon <= 180, grid_tmp.ds.lon - 360.0
+            )
             xfirst = float(grid_tmp.ds[grid_tmp.lon].min())
             xlast = float(grid_tmp.ds[grid_tmp.lon].max())
-            # fix for regional grids that wrap around the Greenwich meridian
-            if grid_tmp.extent == "regional" and (xfirst > 180 or xlast > 180):
-                grid_tmp.ds.lon.data = grid_tmp.ds.lon.where(
-                    grid_tmp.ds.lon <= 180, grid_tmp.ds.lon - 360.0
-                )
-                xfirst = float(grid_tmp.ds[grid_tmp.lon].min())
-                xlast = float(grid_tmp.ds[grid_tmp.lon].max())
-            yfirst = float(grid_tmp.ds[grid_tmp.lat].min())
-            ylast = float(grid_tmp.ds[grid_tmp.lat].max())
-            xinc = (xlast - xfirst) / (xsize - 1)
-            yinc = (ylast - yfirst) / (ysize - 1)
-            xrange = [0.0, 360.0] if xlast > 180 else [-180.0, 180.0]
-            xfirst = xfirst - xinc / 2.0
-            xlast = xlast + xinc / 2.0
-            xfirst = xfirst if xfirst > xrange[0] - xinc / 2.0 else xrange[0]
-            xlast = xlast if xlast < xrange[1] + xinc / 2.0 else xrange[1]
-            yfirst = yfirst - yinc / 2.0
-            ylast = ylast + yinc / 2.0
-            yfirst = yfirst if yfirst > -90.0 else -90.0
-            ylast = ylast if ylast < 90.0 else 90.0
-            self.grid_from_instructor((xfirst, xlast, xinc, yfirst, ylast, yinc))
+        if grid_tmp.type == "irregular":
+            # Distribute the number of grid cells to nlat and nlon,
+            # in proportion to extent in latitudinal and longitudinal direction
+            xsize = int(
+                sqrt(abs(xlast - xfirst) / abs(ylast - yfirst) * grid_tmp.ncells)
+            )
+            ysize = int(
+                sqrt(abs(ylast - yfirst) / abs(xlast - xfirst) * grid_tmp.ncells)
+            )
+            # raise Exception("The grid type is not supported.")
+        else:
+            xsize = grid_tmp.nlon
+            ysize = grid_tmp.nlat
+        xinc = (xlast - xfirst) / (xsize - 1)
+        yinc = (ylast - yfirst) / (ysize - 1)
+        xrange = [0.0, 360.0] if xlast > 180 else [-180.0, 180.0]
+        xfirst = xfirst - xinc / 2.0
+        xlast = xlast + xinc / 2.0
+        xfirst = xfirst if xfirst > xrange[0] - xinc / 2.0 else xrange[0]
+        xlast = xlast if xlast < xrange[1] + xinc / 2.0 else xrange[1]
+        yfirst = yfirst - yinc / 2.0
+        ylast = ylast + yinc / 2.0
+        yfirst = yfirst if yfirst > -90.0 else -90.0
+        ylast = ylast if ylast < 90.0 else 90.0
+        self.grid_from_instructor((xfirst, xlast, xinc, yfirst, ylast, yinc))
 
     def to_netcdf(self, grid_format="CF", folder="./"):
         # Create a copy and reformat etc, then save to disk
@@ -1031,7 +1037,7 @@ class Grid:
         elif self.type == "irregular" and self.ds[self.lon].ndim == 1:
             mask_duplicates = self._create_duplicate_mask(latlon_halo)
             dup_cells = np.where(mask_duplicates is True)[0]
-            if dup_cells != []:
+            if dup_cells.size > 0:
                 # ncells dimension name:
                 ncells_dim = self.ds[self.lon].dims[0]
                 self.ds = self.ds.isel(
@@ -1299,25 +1305,33 @@ class Grid:
         # - Grids that range for example from (-1. , 359.)
         # - Grids that are totally out of range, like GFDL (-300, 60)
         # ds=dataset_utils.check_lon_alignment(ds, (0,360)) # does not work yet for this purpose
-
+        xfirst = float(self.ds[self.lon].min())
+        xlast = float(self.ds[self.lon].max())
+        yfirst = float(self.ds[self.lat].min())
+        ylast = float(self.ds[self.lat].max())
         # Approximate the resolution in x direction
         if self.ds[self.lon].ndim == 2:
             xsize = self.nlon
             ysize = self.nlat
-            xfirst = float(self.ds[self.lon].min())
-            yfirst = float(self.ds[self.lat].min())
-            xlast = float(self.ds[self.lon].max())
-            ylast = float(self.ds[self.lat].max())
             xinc = (xlast - xfirst) / (xsize - 1)
             yinc = (ylast - yfirst) / (ysize - 1)
             approx_xres = (xinc + yinc) / 2.0
         elif self.ds[self.lon].ndim == 1:
             if self.type == "irregular":
-                raise Exception("The grid type is not supported.")
-                # todo: One could distribute the number of grid cells to nlat and nlon,
+                # Distribute the number of grid cells to nlat and nlon,
                 # in proportion to extent in latitudinal and longitudinal direction
-                # Alternatively one can use the kdtree method to calculate the approx. resolution
-                # once it is implemented here.
+                # todo: Alternatively one can use the kdtree method to calculate the approx. resolution
+                # once it is implemented here
+                xsize = int(
+                    sqrt(abs(xlast - xfirst) / abs(ylast - yfirst) * self.ncells)
+                )
+                ysize = int(
+                    sqrt(abs(ylast - yfirst) / abs(xlast - xfirst) * self.ncells)
+                )
+                xinc = (xlast - xfirst) / (xsize - 1)
+                yinc = (ylast - yfirst) / (ysize - 1)
+                approx_xres = (xinc + yinc) / 2.0
+                # raise Exception("The grid type is not supported.")
             else:
                 approx_xres = np.average(
                     np.absolute(
@@ -1452,7 +1466,7 @@ class Grid:
         ):
             mask_lon, mask_lat = np.meshgrid(mask_lon, mask_lat)
         self.coll_mask = mask_lat | mask_lon
-        self.contains_collapsing_cells = np.any(self.coll_mask)
+        self.contains_collapsing_cells = bool(np.any(self.coll_mask))
 
     def _create_collapse_mask(self, arr):
         "Grid cells collapsing to lines or points"

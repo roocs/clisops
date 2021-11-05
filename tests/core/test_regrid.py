@@ -34,6 +34,7 @@ from .._common import (
     CMIP6_TAS_PRECISION_A,
     CMIP6_TAS_PRECISION_B,
     CMIP6_TOS_ONE_TIME_STEP,
+    CMIP6_UNSTR_ICON_A,
     CORDEX_TAS_NO_BOUNDS,
 )
 
@@ -98,6 +99,25 @@ def test_grid_init_ds_tos_curvilinear(load_esgf_test_data):
     assert grid.nlat == 402  # 404 incl halo  # this is number of 'j's
     assert grid.nlon == 800  # 802 incl halo  # this is the number of 'i's
     assert grid.ncells == 321600  # 324008 incl halo
+
+    # not implemented yet
+    # assert self.mask
+
+
+def test_grid_init_ds_tas_irregular(load_esgf_test_data):
+    ds = xr.open_dataset(CMIP6_UNSTR_ICON_A, use_cftime=True)
+    grid = Grid(ds=ds)
+
+    assert grid.format == "CF"
+    assert grid.source == "Dataset"
+    assert grid.lat == ds.latitude.name
+    assert grid.lon == ds.longitude.name
+    assert grid.type == "irregular"
+    assert grid.extent == "global"
+    assert grid.lat_bnds == "latitude_bnds"
+    assert grid.lon_bnds == "longitude_bnds"
+    assert grid.ncells == 20480
+    print(grid.contains_collapsing_cells)
 
     # not implemented yet
     # assert self.mask
@@ -270,16 +290,21 @@ def test_grid_from_ds_adaptive_extent(load_esgf_test_data):
     "Test that the extent is evaluated as global for original and derived adaptive grid."
     dsA = xr.open_dataset(CMIP6_TOS_ONE_TIME_STEP, use_cftime=True)
     dsB = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+    dsC = xr.open_dataset(CMIP6_UNSTR_ICON_A, use_cftime=True)
 
     gA = Grid(ds=dsA)
     gB = Grid(ds=dsB)
+    gC = Grid(ds=dsC)
     gAa = Grid(ds=dsA, grid_id="adaptive")
     gBa = Grid(ds=dsB, grid_id="adaptive")
+    gCa = Grid(ds=dsC, grid_id="auto")
 
     assert gA.extent == "global"
     assert gB.extent == "global"
+    assert gC.extent == "global"
     assert gAa.extent == "global"
     assert gBa.extent == "global"
+    assert gCa.extent == "global"
 
 
 @pytest.mark.skipif(
@@ -465,7 +490,7 @@ def test_centers_within_bounds_curvilinear(load_esgf_test_data):
     g = Grid(ds=ds, compute_bounds=True)
     assert g.lat_bnds is not None
     assert g.lon_bnds is not None
-    assert bool(g.contains_collapsing_cells) is False
+    assert g.contains_collapsing_cells is False
 
     # Check that there are bounds values smaller and greater than the cell center values
     ones = np.ones((g.nlat, g.nlon), dtype=int)
