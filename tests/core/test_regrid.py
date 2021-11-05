@@ -367,7 +367,7 @@ def test_detect_collapsing_cells(load_esgf_test_data):
 @pytest.mark.skipif(
     xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
 )
-def test_Weights_init_with_collapsing_cells(load_esgf_test_data):
+def test_Weights_init_with_collapsing_cells(tmp_path, load_esgf_test_data):
     "Test the creation of remapping weights for a grid containing collapsing cells"
     # todo: the used dataset might not be appropriate if the halo gets more properly removed
     # ValueError: ESMC_FieldRegridStore failed with rc = 506. Please check the log files (named "*ESMF_LogFile").
@@ -375,6 +375,8 @@ def test_Weights_init_with_collapsing_cells(load_esgf_test_data):
 
     g = Grid(ds=ds)
     g_out = Grid(grid_instructor=(10.0,))
+
+    weights_cache_init(Path(tmp_path, "weights"))
     Weights(g, g_out, method="bilinear")
 
 
@@ -534,7 +536,7 @@ def test_centers_within_bounds_regular_lat_lon():
     xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
 )
 class TestWeights:
-    def test_grids_in_and_out_bilinear(self):
+    def test_grids_in_and_out_bilinear(self, tmp_path):
         ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
         grid_in = Grid(ds=ds)
 
@@ -545,6 +547,7 @@ class TestWeights:
 
         assert grid_out.extent == "global"
 
+        weights_cache_init(Path(tmp_path, "weights"))
         w = Weights(grid_in=grid_in, grid_out=grid_out, method="bilinear")
 
         assert w.method == "bilinear"
@@ -560,7 +563,7 @@ class TestWeights:
         # default file_name = method_inputgrid_outputgrid_periodic"
         assert w.regridder.filename == "bilinear_80x180_120x240_peri.nc"
 
-    def test_grids_in_and_out_conservative(self):
+    def test_grids_in_and_out_conservative(self, tmp_path):
         ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
         grid_in = Grid(ds=ds)
 
@@ -571,6 +574,7 @@ class TestWeights:
 
         assert grid_out.extent == "global"
 
+        weights_cache_init(Path(tmp_path, "weights"))
         w = Weights(grid_in=grid_in, grid_out=grid_out, method="conservative")
 
         assert w.method == "conservative"
@@ -594,7 +598,7 @@ class TestWeights:
     def test_from_disk(self):
         pass
 
-    def test_conservative_no_bnds(self):
+    def test_conservative_no_bnds(self, load_esgf_test_data, tmp_path):
         "Test whether exception is raised when no bounds present for conservative remapping."
         ds = xr.open_dataset(CORDEX_TAS_NO_BOUNDS)
         gi = Grid(ds=ds)
@@ -609,6 +613,7 @@ class TestWeights:
             Exception,
             match="For conservative remapping, horizontal grid bounds have to be defined for the input and output grid!",
         ):
+            weights_cache_init(Path(tmp_path, "weights"))
             Weights(grid_in=gi, grid_out=go, method="conservative")
 
 
@@ -627,14 +632,16 @@ class TestRegrid:
         self.grid_out = Grid(grid_instructor=self.grid_instructor_out)
         self.setup_done = True
 
-    def test_adaptive_masking(self, load_esgf_test_data):
+    def test_adaptive_masking(self, load_esgf_test_data, tmp_path):
         self._setup()
+        weights_cache_init(Path(tmp_path, "weights"))
         w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="conservative")
         r = regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.7)
         print(r)
 
-    def test_no_adaptive_masking(self, load_esgf_test_data):
+    def test_no_adaptive_masking(self, load_esgf_test_data, tmp_path):
         self._setup()
+        weights_cache_init(Path(tmp_path, "weights"))
         w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="bilinear")
         r = regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=-1.0)
         print(r)

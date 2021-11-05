@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -8,7 +9,7 @@ from roocs_grids import get_grid_file, grid_dict
 
 import clisops
 from clisops import CONFIG
-from clisops.core.regrid import xe
+from clisops.core.regrid import weights_cache_init, xe
 from clisops.ops.regrid import regrid
 
 from .._common import CMIP5_MRSOS_ONE_TIME_STEP
@@ -25,11 +26,13 @@ def _load_ds(fpath):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_basic(tmpdir, load_esgf_test_data):
+def test_regrid_basic(tmpdir, load_esgf_test_data, tmp_path):
     "Test a basic regridding operation."
     fpath = CMIP5_MRSOS_ONE_TIME_STEP
     basename = os.path.splitext(os.path.basename(fpath))[0]
     method = "nearest_s2d"
+
+    weights_cache_init(Path(tmp_path, "weights"))
 
     result = regrid(
         fpath,
@@ -47,12 +50,14 @@ def test_regrid_basic(tmpdir, load_esgf_test_data):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_grid_as_none(tmpdir, load_esgf_test_data):
+def test_regrid_grid_as_none(tmpdir, load_esgf_test_data, tmp_path):
     """
     Test behaviour when none passed as method and grid -
     should use the default regridding.
     """
     fpath = CMIP5_MRSOS_ONE_TIME_STEP
+
+    weights_cache_init(Path(tmp_path, "weights"))
 
     with pytest.raises(
         Exception,
@@ -69,11 +74,15 @@ def test_regrid_grid_as_none(tmpdir, load_esgf_test_data):
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 @pytest.mark.parametrize("grid_id", sorted(grid_dict))
-def test_regrid_regular_grid_to_all_roocs_grids(tmpdir, load_esgf_test_data, grid_id):
+def test_regrid_regular_grid_to_all_roocs_grids(
+    tmpdir, load_esgf_test_data, grid_id, tmp_path
+):
     "Test regridded a regular lat/lon field to all roocs grid types."
     fpath = CMIP5_MRSOS_ONE_TIME_STEP
     basename = os.path.splitext(os.path.basename(fpath))[0]
     method = "nearest_s2d"
+
+    weights_cache_init(Path(tmp_path, "weights"))
 
     result = regrid(
         fpath,
@@ -95,9 +104,11 @@ def test_regrid_regular_grid_to_all_roocs_grids(tmpdir, load_esgf_test_data, gri
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_same_grid_exception(tmpdir):
+def test_regrid_same_grid_exception(tmpdir, tmp_path):
     "Test that an exception is raised when source and target grid are the same."
     fpath = get_grid_file("0pt25deg_era5")
+
+    weights_cache_init(Path(tmp_path, "weights"))
 
     with pytest.raises(
         Exception,

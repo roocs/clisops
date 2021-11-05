@@ -381,22 +381,21 @@ class Weights:
         # todo: parallel write mechanism to json file and weights file?
         # todo: store the horizontal input and output grid in an extra netcdf file?
         if self.id not in weights_dic:
-            self.regridder.to_netcdf(Path(weights_dir, self.filename).as_posix())
             try:
                 grid_in_source = self.grid_in.ds.encoding["source"]
-            except AttributeError:
+            except KeyError:
                 grid_in_source = ""
             try:
                 grid_out_source = self.grid_out.ds.encoding["source"]
-            except AttributeError:
+            except KeyError:
                 grid_out_source = ""
             try:
-                grid_in_tracking_id = self.grid_in.attrs["tracking_id"]
-            except AttributeError:
+                grid_in_tracking_id = self.grid_in.ds.attrs["tracking_id"]
+            except KeyError:
                 grid_in_tracking_id = ""
             try:
-                grid_out_tracking_id = self.grid_out.attrs["tracking_id"]
-            except AttributeError:
+                grid_out_tracking_id = self.grid_out.ds.attrs["tracking_id"]
+            except KeyError:
                 grid_out_tracking_id = ""
 
             weights_dic.update(
@@ -441,6 +440,7 @@ class Weights:
             )
             self.grid_in.to_netcdf(folder=weights_dir)
             self.grid_out.to_netcdf(folder=weights_dir)
+            self.regridder.to_netcdf(Path(weights_dir, self.filename).as_posix())
             with open(Path(weights_dir, "weights.json"), "w") as weights_dic_path:
                 json.dump(weights_dic, weights_dic_path, sort_keys=True, indent=4)
 
@@ -623,7 +623,7 @@ class Grid:
             if self.type != "irregular":
                 return f"{self.extent} {self.type} {self.nlat}x{self.nlon} ({self.ncells} cells) grid."
             else:
-                return f"{self.extent} {self.type} {self.nlat}x{self.nlon} ({self.ncells} cells) grid."
+                return f"{self.extent} {self.type} {self.ncells} cells grid."
 
     def grid_from_id(self, grid_id):
         try:
