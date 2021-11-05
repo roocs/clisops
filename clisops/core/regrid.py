@@ -382,6 +382,23 @@ class Weights:
         # todo: store the horizontal input and output grid in an extra netcdf file?
         if self.id not in weights_dic:
             self.regridder.to_netcdf(Path(weights_dir, self.filename).as_posix())
+            try:
+                grid_in_source = self.grid_in.ds.encoding["source"]
+            except AttributeError:
+                grid_in_source = ""
+            try:
+                grid_out_source = self.grid_out.ds.encoding["source"]
+            except AttributeError:
+                grid_out_source = ""
+            try:
+                grid_in_tracking_id = self.grid_in.attrs["tracking_id"]
+            except AttributeError:
+                grid_in_tracking_id = ""
+            try:
+                grid_out_tracking_id = self.grid_out.attrs["tracking_id"]
+            except AttributeError:
+                grid_out_tracking_id = ""
+
             weights_dic.update(
                 {
                     self.id: {
@@ -397,6 +414,8 @@ class Weights:
                         "source_type": self.grid_in.type,
                         "source_format": self.grid_in.format,
                         "source_extent": self.grid_in.extent,
+                        "source_source": grid_in_source,
+                        "source_tracking_id": grid_in_tracking_id,
                         "target_lat": self.grid_out.lat,
                         "target_lon": self.grid_out.lon,
                         "target_lat_bnds": self.grid_out.lat_bnds,
@@ -407,6 +426,8 @@ class Weights:
                         "target_type": self.grid_out.type,
                         "target_format": self.grid_out.format,
                         "target_extent": self.grid_out.extent,
+                        "target_source": grid_out_source,
+                        "target_tracking_id": grid_out_tracking_id,
                         "format": self.format,
                         "ignore_degenerate": str(self.ignore_degenerate),
                         "periodic": str(self.periodic),
