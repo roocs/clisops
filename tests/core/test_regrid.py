@@ -8,13 +8,23 @@ try:
 except ImportError:
     xesmf = None
 
+import os
+from glob import glob
+from pathlib import Path
+
 import cf_xarray as cfxr
 import numpy as np
 import pytest
 import xarray as xr
 from roocs_grids import get_grid_file
 
-from clisops.core.regrid import Grid, Weights, regrid
+from clisops.core.regrid import (
+    Grid,
+    Weights,
+    regrid,
+    weights_cache_flush,
+    weights_cache_init,
+)
 from clisops.ops.subset import subset
 
 from .._common import (
@@ -628,6 +638,29 @@ class TestRegrid:
         w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="bilinear")
         r = regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=-1.0)
         print(r)
+
+
+def test_cache_init_and_flush(tmp_path):
+    "Test of the cache init and flush functionalities"
+
+    weights_dir = Path(tmp_path, "clisops_weights")
+    weights_cache_init(weights_dir)
+
+    gi = Grid(grid_instructor=20)
+    go = Grid(grid_instructor=10)
+    Weights(grid_in=gi, grid_out=go, method="nearest_s2d")
+
+    assert os.path.isfile(Path(weights_dir, "weights.json"))
+    flist = sorted(os.path.basename(f) for f in glob(f"{weights_dir}/*.nc"))
+    flist_ref = [
+        "grid_4d324aecaa8302ab0f2f212e9821b00f.nc",
+        "grid_96395935b4e81f2a5b55970bd920d82c.nc",
+        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_nearest_s2d.nc",
+    ]
+    assert flist == flist_ref
+
+    weights_cache_flush()
+    assert glob(f"{weights_dir}/*") == []
 
 
 def test_data_vars_coords_reset_and_cfxr(load_esgf_test_data):
