@@ -327,6 +327,13 @@ class Weights:
             raise Exception(
                 "For conservative remapping, horizontal grid bounds have to be defined for the input and output grid!"
             )
+        # Locstream for unstructured grids
+        locstream_in = False
+        locstream_out = False
+        if self.grid_in.type == "irregular":
+            locstream_in = True
+        if self.grid_out.type == "irregular":
+            locstream_out = True
 
         # Call xesmf.Regridder
         if os.path.isfile(Path(weights_dir, self.filename).as_posix()):
@@ -338,6 +345,8 @@ class Weights:
             self.grid_out.ds,
             self.method,
             periodic=self.periodic,
+            locstream_in=locstream_in,
+            locstream_out=locstream_out,
             ignore_degenerate=self.ignore_degenerate,
             unmapped_to_nan=True,
             filename=Path(weights_dir, self.filename).as_posix(),
