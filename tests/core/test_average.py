@@ -80,7 +80,7 @@ class TestAverageShape:
         regions = gpd.read_file(self.multi_regions_geojson).set_index("id")
         avg = average.average_shape(ds.tas, shape=regions)
         np.testing.assert_array_almost_equal(
-            avg.isel(time=0), [268.30972367, 277.23981999, 277.58614891]
+            avg.isel(time=0), [268.30972367, 277.23981999, 277.58614891], decimal=5
         )
         np.testing.assert_array_equal(avg.geom, ["Québec", "Europe", "Newfoundland"])
 
