@@ -4,9 +4,17 @@ Version History
 v0.8.0 (unreleased)
 -------------------
 
+New Features
+^^^^^^^^^^^^
+
 Bug fixes
----------
+^^^^^^^^^
 * ``average_shape`` and ``create_weight_masks`` were adapted to work with xESMF 0.6.1, while maintaining compatibility with earlier versions.
+
+Other Changes
+^^^^^^^^^^^^^
+* ``average_shape`` performs an initial subset over the averaging region, before computing the weights, to reduce memory usage.
+
 
 v0.7.0 (2021-10-26)
 -------------------
