@@ -80,7 +80,6 @@ def average_shape(
     ds_sub = ds_copy.isel(indexer)
 
     savger = SpatialAverager(ds_sub, poly.geometry)
-
     nonnull = (
         savger.weights.data.nnz
         if isinstance(savger.weights, xr.DataArray)
