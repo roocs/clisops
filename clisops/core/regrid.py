@@ -206,6 +206,8 @@ def regrid(grid_in, grid_out, weights, adaptive_masking_threshold=0.5, keep_attr
                 regridded_ds[data_var] = weights.regridder(
                     grid_in.ds[data_var], skipna=False
                 )
+            if keep_attrs:
+                regridded_ds[data_var].attrs.update(grid_in.ds[data_var].attrs)
         return regridded_ds
     else:
         if (
@@ -218,6 +220,8 @@ def regrid(grid_in, grid_out, weights, adaptive_masking_threshold=0.5, keep_attr
             )
         else:
             regridded_ds[grid_in.ds.name] = weights.regridder(grid_in.ds, skipna=False)
+        if keep_attrs:
+            regridded_ds[data_var].attrs.update(grid_in.ds[data_var].attrs)
         return regridded_ds  # [grid_in.ds.name] #always return a dataset
 
 
