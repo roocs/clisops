@@ -40,6 +40,9 @@ class TestAverageShape:
         # xESMF has a problem with averaging over dataset when non-averaged variables are present...
         avg = average.average_shape(ds.tas, self.meridian_geojson)
 
+        # Check attributes are copied
+        assert avg.attrs["units"] == ds.tas.attrs["units"]
+
         # No time subsetting should occur.
         assert len(avg.time) == 12
 
