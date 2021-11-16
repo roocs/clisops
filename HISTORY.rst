@@ -6,6 +6,7 @@ v0.8.0 (unreleased)
 
 New Features
 ^^^^^^^^^^^^
+* ``clisops.core.average.average_shape`` copies the global and variable attributes from the input data to the results.
 
 Bug fixes
 ^^^^^^^^^

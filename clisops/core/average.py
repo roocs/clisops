@@ -80,6 +80,8 @@ def average_shape(
     ds_sub = ds_copy.isel(indexer)
 
     savger = SpatialAverager(ds_sub, poly.geometry)
+
+    # Compute the weights
     nonnull = (
         savger.weights.data.nnz
         if isinstance(savger.weights, xr.DataArray)
@@ -89,7 +91,10 @@ def average_shape(
         raise ValueError(
             "There were no valid data points found in the requested averaging region. Verify objects overlap."
         )
-    ds_out = savger(ds_sub)
+
+    # Apply the weights to the actual data -> spatial average
+    # We transfer the global and variable attributes of the input to the output
+    ds_out = savger(ds_sub, keep_attrs=True)
 
     # Set geom coords to poly's index
     ds_out["geom"] = poly.index

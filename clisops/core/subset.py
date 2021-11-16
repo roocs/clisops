@@ -692,6 +692,7 @@ def shape_bbox_indexer(ds, poly):
     ind = {ds.cf["longitude"].name: elon[:-1], ds.cf["latitude"].name: elat[:-1]}
 
     # Find indices nearest the rectangle' corners
+    # Note that the nearest indices might be inside the shape, so we'll need to add a *halo* around those indices.
     if rectilinear:
         native_ind, _ = xarray.core.coordinates.remap_label_indexers(
             ds, ind, method="nearest"
@@ -701,6 +702,7 @@ def shape_bbox_indexer(ds, poly):
         # For curvilinear grids, finding the closest points require a bit more work.
         from scipy.spatial import cKDTree
 
+        # These are going to be 2D grids.
         lon, lat = ds.cf["longitude"], ds.cf["latitude"]
         # Create KDTree to speed up search
         tree = cKDTree(np.vstack([lon.data.ravel(), lat.data.ravel()]).T)
