@@ -100,6 +100,9 @@ def test_xarray_da_mean_skipna_false_datetime():
     # result is nat
 
 
+@pytest.mark.xfail(
+    reason="Computing the mean of an array containing cftime.datetime objects is not yet implemented on dask arrays."
+)
 def test_xarray_da_mean_keep_attrs_true(load_esgf_test_data):
     ds = xr.open_mfdataset(
         CMIP5_TAS,

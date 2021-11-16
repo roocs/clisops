@@ -49,6 +49,10 @@ MINI_ESGF_CACHE_DIR = Path.home() / ".mini-esgf-data"
 MINI_ESGF_MASTER_DIR = os.path.join(MINI_ESGF_CACHE_DIR, "master")
 
 
+def _check_output_nc(result, fname="output_001.nc"):
+    assert fname in [Path(_).name for _ in result]
+
+
 def write_roocs_cfg():
     cfg_templ = """
     [project:cmip5]
@@ -67,7 +71,7 @@ def write_roocs_cfg():
     base_dir = {{ base_dir }}/test_data/badc/cmip6/data/CMIP6
 
     [project:c3s-cordex]
-    base_dir = {{ base_dir }}/test_data/gws/nopw/j04/cp4cds1_vol1/data/c3s-cordex
+    base_dir = {{ base_dir }}/test_data/pool/data/CORDEX/data/cordex
     """
     cfg = Template(cfg_templ).render(base_dir=MINI_ESGF_MASTER_DIR)
     with open(ROOCS_CFG, "w") as fp:
@@ -139,9 +143,14 @@ CMIP6_TA = Path(
     "master/test_data/badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/Amon/ta/gn/files/d20190807/ta_Amon_MIROC6_ssp119_r1i1p1f1_gn_201501-202412.nc",
 ).as_posix()
 
-C3S_CORDEX_PSL = Path(
+C3S_CORDEX_AFR_TAS = Path(
     MINI_ESGF_CACHE_DIR,
-    "master/test_data/group_workspaces/jasmin2/cp4cds1/vol1/data/c3s-cordex/output/EUR-11/IPSL/MOHC-HadGEM2-ES/rcp85/r1i1p1/IPSL-WRF381P/v1/day/psl/v20190212/*.nc",
+    "master/test_data/pool/data/CORDEX/data/cordex/output/AFR-22/GERICS/MPI-M-MPI-ESM-LR/historical/r1i1p1/GERICS-REMO2015/v1/day/tas/v20201015/*.nc",
+).as_posix()
+
+C3S_CORDEX_NAM_PR = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/pool/data/CORDEX/data/cordex/output/NAM-22/OURANOS/NOAA-GFDL-GFDL-ESM2M/rcp45/r1i1p1/OURANOS-CRCM5/v1/day/pr/v20200831/*.nc",
 ).as_posix()
 
 C3S_CMIP5_TSICE = Path(
