@@ -5,7 +5,7 @@ from roocs_utils.parameter.param_utils import time_interval
 from clisops import CONFIG
 from clisops.ops.subset import subset
 from clisops.utils.file_namers import get_file_namer
-from tests._common import C3S_CORDEX_PSL, CMIP5_TAS, CMIP6_SICONC
+from tests._common import C3S_CORDEX_NAM_PR, CMIP5_TAS, CMIP6_SICONC
 
 
 def test_SimpleFileNamer():
@@ -145,7 +145,7 @@ def test_StandardFileNamer_c3s_cordex(load_esgf_test_data):
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        C3S_CORDEX_PSL,
+        C3S_CORDEX_NAM_PR,
         use_cftime=True,
         combine="by_coords",
     )
@@ -153,7 +153,7 @@ def test_StandardFileNamer_c3s_cordex(load_esgf_test_data):
     checks = [
         (
             _ds,
-            "psl_EUR-11_MOHC-HadGEM2-ES_rcp85_r1i1p1_IPSL-WRF381P_v1_day_20060101-20991201.nc",
+            "pr_NAM-22_NOAA-GFDL-GFDL-ESM2M_rcp45_r1i1p1_OURANOS-CRCM5_v1_day_20510101-20601231.nc",
         )
     ]
 
@@ -170,7 +170,7 @@ def test_StandardFileNamer_c3s_cordex_use_default_attr_names(load_esgf_test_data
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
-        C3S_CORDEX_PSL,
+        C3S_CORDEX_NAM_PR,
         use_cftime=True,
         combine="by_coords",
     )
@@ -178,7 +178,7 @@ def test_StandardFileNamer_c3s_cordex_use_default_attr_names(load_esgf_test_data
     checks = [
         (
             _ds,
-            "psl_no-domain_MOHC-HadGEM2-ES_rcp85_rXiXpX_IPSL-WRF381P_v1_day_20060101-20991201.nc",
+            "pr_no-domain_NOAA-GFDL-GFDL-ESM2M_rcp45_rXiXpX_OURANOS-CRCM5_v1_day_20510101-20601231.nc",
         )
     ]
     del _ds.attrs["CORDEX_domain"]
