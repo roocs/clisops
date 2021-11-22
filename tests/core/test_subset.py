@@ -1008,6 +1008,7 @@ class TestSubsetLevel:
 
 class TestGridPolygon():
     def test_rectilinear(self):
+        pytest.importorskip("xesmf", "0.6.2")
         # CF-Compliant with bounds
         ds = xesmf.util.cf_grid_2d(-200, -100, 20, -60, 60, 10)
         poly = subset._rectilinear_grid_exterior_polygon(ds)
@@ -1043,6 +1044,7 @@ class TestGridPolygon():
 class TestShapeBboxIndexer():
     def test_rectilinear(self):
         # Create small polygon fitting in one cell.
+        pytest.importorskip("xesmf", "0.6.2")
         x, y = -150, 35
         p = Point(x, y)
         ds = xesmf.util.cf_grid_2d(-200, 0, 20, -60, 60, 10)
