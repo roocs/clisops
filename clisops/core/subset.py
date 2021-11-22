@@ -595,13 +595,26 @@ def _rectilinear_grid_exterior_polygon(ds):
     """
 
     # Add bounds if not present
-    if 'longitude' not in ds.cf.bounds:
-        ds = ds.cf.add_bounds("longitude")
-    if 'latitude' not in ds.cf.bounds:
-        ds = ds.cf.add_bounds("latitude")
+    # Note: with cf-xarray <= 0.6.2, the fact that `longitude` is in bounds does not mean it really is...
+    # See https://github.com/xarray-contrib/cf-xarray/issues/254
+    # So the commented code below does not work.
+    # if 'longitude' not in ds.cf.bounds:
+    #     ds = ds.cf.add_bounds("longitude")
+    # if 'latitude' not in ds.cf.bounds:
+    #     ds = ds.cf.add_bounds("latitude")
+    #
+    # x = ds.cf.get_bounds("longitude")  # lon_bnds
+    # y = ds.cf.get_bounds("latitude")  # lat_bnds
 
-    x = ds.cf.get_bounds("longitude")  # lon_bnds
-    y = ds.cf.get_bounds("latitude")  # lat_bnds
+    # This is the alternative for now.
+    try:
+        x = ds.cf.get_bounds("longitude")  # lon_bnds
+        y = ds.cf.get_bounds("latitude")  # lat_bnds
+    except KeyError:
+        ds = ds.cf.add_bounds("longitude")
+        ds = ds.cf.add_bounds("latitude")
+        x = ds.cf.get_bounds("longitude")  # lon_bnds
+        y = ds.cf.get_bounds("latitude")  # lat_bnds
 
     # Take the grid corner coordinates
     xmin = x[0, 0]

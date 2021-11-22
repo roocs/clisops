@@ -81,9 +81,8 @@ def average_shape(
         poly = poly.to_crs(4326)
 
     # First subset to bounding box to reduce memory usage.
-    #indexer = shape_bbox_indexer(ds_copy, poly)
-    #ds_sub = ds_copy.isel(indexer)
-    ds_sub = ds_copy
+    indexer = shape_bbox_indexer(ds_copy, poly)
+    ds_sub = ds_copy.isel(indexer)
 
     # Compute the weights
     savger = SpatialAverager(ds_sub, poly.geometry)

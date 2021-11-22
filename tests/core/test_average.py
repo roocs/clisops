@@ -49,6 +49,11 @@ class TestAverageShape:
         # Average temperature at surface for region in January (time=0)
         np.testing.assert_array_almost_equal(avg.isel(time=0), 284.98243933)
 
+        # Test with Dataset input
+        davg = average.average_shape(ds, self.meridian_geojson).tas
+        xr.testing.assert_equal(davg, avg)
+
+        # With multiple polygons
         poly = gpd.read_file(self.meridian_multi_geojson)
         avg = average.average_shape(ds, poly).tas
         np.testing.assert_array_almost_equal(avg.isel(time=0), 280.67990737)
