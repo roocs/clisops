@@ -1006,7 +1006,7 @@ class TestSubsetLevel:
         np.testing.assert_array_equal(out.plev.values[:], da.plev.values[6:8])
 
 
-class TestGridPolygon():
+class TestGridPolygon:
     def test_rectilinear(self):
         pytest.importorskip("xesmf", "0.6.2")
         # CF-Compliant with bounds
@@ -1031,6 +1031,7 @@ class TestGridPolygon():
         [357.  73. 356. 356.]
         """
         from shapely.geometry import MultiPoint, Point
+
         fn = get_file("cmip6/sic_SImon_CCCma-CanESM5_ssp245_r13i1p2f1_2020.nc")
         ds = xr.open_dataset(fn)
 
@@ -1041,7 +1042,7 @@ class TestGridPolygon():
         assert MultiPoint(pts).within(poly)
 
 
-class TestShapeBboxIndexer():
+class TestShapeBboxIndexer:
     def test_rectilinear(self):
         # Create small polygon fitting in one cell.
         pytest.importorskip("xesmf", "0.6.2")
@@ -1082,11 +1083,10 @@ def rotated_grid_2d(lon0_b, lon1_b, d_lon, lat0_b, lat1_b, d_lat, angle):
     c, s = np.cos(theta), np.sin(theta)
     r = np.array(((c, -s), (s, c)))
 
-    fds = ds.stack(z=('x', 'y'), z_b=('x_b', 'y_b'))
+    fds = ds.stack(z=("x", "y"), z_b=("x_b", "y_b"))
     fds.lon[:], fds.lat[:] = np.matmul(r, xr.concat([fds.lon, fds.lat], dim="c").data)
-    fds.lon_b[:], fds.lat_b[:] = np.matmul(r, xr.concat([fds.lon_b, fds.lat_b], dim="c").data)
+    fds.lon_b[:], fds.lat_b[:] = np.matmul(
+        r, xr.concat([fds.lon_b, fds.lat_b], dim="c").data
+    )
 
-    return fds.unstack(('z', 'z_b'))
-
-
-
+    return fds.unstack(("z", "z_b"))

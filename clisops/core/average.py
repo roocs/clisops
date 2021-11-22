@@ -67,7 +67,9 @@ def average_shape(
         raise ValueError("Package xesmf >= 0.5.0 is required to use average_shape")
 
     if isinstance(ds, xr.DataArray):
-        warnings.warn("Pass a Dataset object instead of a DataArray.", DeprecationWarning)
+        warnings.warn(
+            "Pass a Dataset object instead of a DataArray.", DeprecationWarning
+        )
         ds_copy = ds.to_dataset(name=ds.name)
     else:
         ds_copy = ds.copy()

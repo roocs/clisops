@@ -694,7 +694,7 @@ def _curvilinear_grid_exterior_polygon(ds, mode="bbox"):
         polys = [Polygon(zip(lx, ly)) for lx, ly in zip(x.data.T, y.data.T)]
 
         # Exterior of all these polygons
-        pts = unary_union(polys).simplify(.1).buffer(.1).exterior
+        pts = unary_union(polys).simplify(0.1).buffer(0.1).exterior
         x, y = np.around(pts.xy, 1)
         y = np.clip(y, -90, 90)
         pts = zip(x, y)
