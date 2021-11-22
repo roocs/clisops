@@ -50,7 +50,7 @@ class TestAverageShape:
         np.testing.assert_array_almost_equal(avg.isel(time=0), 284.98243933)
 
         poly = gpd.read_file(self.meridian_multi_geojson)
-        avg = average.average_shape(ds.tas, poly)
+        avg = average.average_shape(ds, poly).tas
         np.testing.assert_array_almost_equal(avg.isel(time=0), 280.67990737)
 
     def test_no_wraps(self, tmp_netcdf_filename):

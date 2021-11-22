@@ -14,6 +14,7 @@ Bug fixes
 
 Other Changes
 ^^^^^^^^^^^^^
+* Passing ``DataArray`` objects to ``clisops.core.average.average_shape`` is now deprecated. Averaging requires grid cell boundaries, which are not ``DataArray`` coordinates, but independent ``Dataset`` variables. Please pass ``Dataset`` objects and an optional list of variables to average.
 * ``average_shape`` performs an initial subset over the averaging region, before computing the weights, to reduce memory usage.
 
 
