@@ -74,4 +74,4 @@ jobs:
         run: |
             source activate clisops
             pytest --cov tests
-        continue-on-error: true
+        continue-on-error: false
