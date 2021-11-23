@@ -11,6 +11,7 @@ New Features
 Bug fixes
 ---------
 * ``average_shape`` and ``create_weight_masks`` were adapted to work with xESMF 0.6.1, while maintaining compatibility with earlier versions.
+* Fix added to remove ``_FillValue`` added to coordinate variables and bounds by xarray when outputting to netCDF.
 
 v0.7.0 (2021-10-26)
 -------------------
