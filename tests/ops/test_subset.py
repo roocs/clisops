@@ -1598,3 +1598,35 @@ def test_subset_by_area_and_components_month_day(tmpdir, load_esgf_test_data):
         assert set(ds.time.dt.month.values) == set(months)
         assert set(ds.time.dt.day.values) == set(days)
         assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
+
+
+def test_subset_nc_no_fill_value(cmip5_tas_file, tmpdir):
+    """Tests clisops subset function with a time subset."""
+    result = subset(
+        ds=CMIP5_TAS,
+        time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+
+    # check that with just opening the file with xarray, saving to netcdf, then opening again, these fill values get added
+    ds = _load_ds(CMIP5_TAS)
+    ds.to_netcdf(f"{tmpdir}/test_fill_values.nc")
+    ds = _load_ds(f"{tmpdir}/test_fill_values.nc")
+
+    assert np.isnan(float(ds.lat.encoding.get("_FillValue")))
+    assert np.isnan(float(ds.lon.encoding.get("_FillValue")))
+
+    assert np.isnan(float(ds.lat_bnds.encoding.get("_FillValue")))
+    assert np.isnan(float(ds.lon_bnds.encoding.get("_FillValue")))
+    assert np.isnan(float(ds.time_bnds.encoding.get("_FillValue")))
+
+    # check that there is no fill value in encoding for coordinate variables and bounds
+    res = _load_ds(result)
+    assert "_FillValue" not in res.lat.encoding
+    assert "_FillValue" not in res.lon.encoding
+
+    assert "_FillValue" not in res.lat_bnds.encoding
+    assert "_FillValue" not in res.lon_bnds.encoding
+    assert "_FillValue" not in res.time_bnds.encoding
