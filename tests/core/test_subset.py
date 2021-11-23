@@ -1056,7 +1056,6 @@ class TestShapeBboxIndexer:
             inds = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=[pb]))
             assert pb.within(subset.grid_exterior_polygon(ds.isel(inds)))
 
-    @pytest.mark.skip
     def test_curvilinear(self):
         """This checks that a grid along lon/lat and a rotated grid are indexed identically for a geometry and a
         rotated geometry."""
