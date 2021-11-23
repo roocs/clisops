@@ -12,6 +12,10 @@ Bug fixes
 ---------
 * ``average_shape`` and ``create_weight_masks`` were adapted to work with xESMF 0.6.1, while maintaining compatibility with earlier versions.
 
+Other Changes
+^^^^^^^^^^^^^
+* Minimum xesmf version set to 0.6.2.
+
 v0.7.0 (2021-10-26)
 -------------------
 

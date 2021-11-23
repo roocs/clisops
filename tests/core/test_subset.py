@@ -838,7 +838,7 @@ class TestSubsetShape:
 
         np.testing.assert_allclose(masks.sum(["lat", "lon"]), [1, 1, 1])
         np.testing.assert_array_equal(masks.geom.values, regions.index)
-        np.testing.assert_allclose(masks.max("geom").sum(), 2.900397)
+        np.testing.assert_allclose(masks.max("geom").sum(), 2.900, 3)
 
     def test_subset_multiregions(self):
         ds = xr.open_dataset(self.nc_file)
