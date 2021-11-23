@@ -828,7 +828,7 @@ class TestSubsetShape:
         assert all(counts == [58, 250, 22])
 
     @pytest.mark.skipif(
-        xesmf is None, reason="xESMF >= 0.5.2 is needed for average_shape."
+        xesmf is None, reason="xESMF >= 0.6.2 is needed for average_shape."
     )
     def test_weight_masks_multiregions(self):
         # rename is due to a small limitation of xESMF 0.5.2

@@ -15,13 +15,13 @@ from .._common import XCLIM_TESTS_DATA as TESTS_DATA
 try:
     import xesmf
 
-    if parse_version(xesmf.__version__) < parse_version("0.5.2"):
+    if parse_version(xesmf.__version__) < parse_version("0.6.2"):
         raise ImportError
 except ImportError:
     xesmf = None
 
 
-@pytest.mark.skipif(xesmf is None, reason="xESMF >= 0.5.2 is needed for average_shape.")
+@pytest.mark.skipif(xesmf is None, reason="xESMF >= 0.6.2 is needed for average_shape.")
 class TestAverageShape:
     nc_file = get_file("cmip5/tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc")
     lons_2d_nc_file = get_file("cmip6/sic_SImon_CCCma-CanESM5_ssp245_r13i1p2f1_2020.nc")

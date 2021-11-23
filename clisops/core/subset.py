@@ -621,7 +621,7 @@ def create_weight_masks(
         from xesmf import SpatialAverager
     except ImportError:
         raise ValueError(
-            "Package xesmf >= 0.5.2 is required to use create_weight_masks"
+            "Package xesmf >= 0.6.2 is required to use create_weight_masks"
         )
 
     if poly.crs is not None:
