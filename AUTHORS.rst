@@ -19,3 +19,4 @@ Contributors
 ------------
 
 * Pascal Bourgault bourgault.pascal@ouranos.ca `@aulemahal <https://github.com/aulemahal>`_
+* David Huard huard.david@ouranos.ca `@huard <https://github.com/huard>`_
