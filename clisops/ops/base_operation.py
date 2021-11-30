@@ -69,7 +69,7 @@ class Operation(object):
         """
         raise NotImplementedError
 
-    def remove_fill_values(self, ds):
+    def _remove_redundant_fill_values(self, ds):
         """
         Get coordinate variables and remove fill values added by xarray (CF conventions say that coordinate variables cannot have missing values).
         Get bounds variables and remove fill values added by xarray.
@@ -109,7 +109,7 @@ class Operation(object):
         processed_ds = self._calculate()
 
         # remove fill values from lat/lon/time if required
-        processed_ds = self.remove_fill_values(processed_ds)
+        processed_ds = self._remove_redundant_fill_values(processed_ds)
 
         # Work out how many outputs should be created based on the size
         # of the array. Manage this as a list of time slices.
