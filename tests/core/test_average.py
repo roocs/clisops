@@ -15,13 +15,13 @@ from .._common import XCLIM_TESTS_DATA as TESTS_DATA
 try:
     import xesmf
 
-    if parse_version(xesmf.__version__) < parse_version("0.5.2"):
+    if parse_version(xesmf.__version__) < parse_version("0.6.2"):
         raise ImportError
 except ImportError:
     xesmf = None
 
 
-@pytest.mark.skipif(xesmf is None, reason="xESMF >= 0.5.2 is needed for average_shape.")
+@pytest.mark.skipif(xesmf is None, reason="xESMF >= 0.6.2 is needed for average_shape.")
 class TestAverageShape:
     nc_file = get_file("cmip5/tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc")
     lons_2d_nc_file = get_file("cmip6/sic_SImon_CCCma-CanESM5_ssp245_r13i1p2f1_2020.nc")
@@ -47,7 +47,7 @@ class TestAverageShape:
         assert len(avg.time) == 12
 
         # Average temperature at surface for region in January (time=0)
-        np.testing.assert_array_almost_equal(avg.isel(time=0), 284.98243933)
+        np.testing.assert_array_almost_equal(avg.isel(time=0), 285.533, 3)
 
         # Test with Dataset input
         davg = average.average_shape(ds, self.meridian_geojson).tas
@@ -55,8 +55,9 @@ class TestAverageShape:
 
         # With multiple polygons
         poly = gpd.read_file(self.meridian_multi_geojson)
+
         avg = average.average_shape(ds, poly).tas
-        np.testing.assert_array_almost_equal(avg.isel(time=0), 280.67990737)
+        np.testing.assert_array_almost_equal(avg.isel(time=0), 280.965, 3)
 
     def test_no_wraps(self, tmp_netcdf_filename):
         ds = xr.open_dataset(self.nc_file)
@@ -67,7 +68,7 @@ class TestAverageShape:
         assert len(avg.time) == 12
 
         # Average temperature at surface for region in January (time=0)
-        np.testing.assert_array_almost_equal(avg.isel(time=0), 276.17126511)
+        np.testing.assert_array_almost_equal(avg.isel(time=0), 276.152, 3)
 
     def test_all_neglons(self):
         ds = xr.open_dataset(self.nc_file_neglons)
@@ -75,7 +76,7 @@ class TestAverageShape:
         avg = average.average_shape(ds.tasmax, self.southern_qc_geojson)
 
         # Average temperature at surface for region in January (time=0)
-        np.testing.assert_array_almost_equal(avg.isel(time=0), 269.25454934)
+        np.testing.assert_array_almost_equal(avg.isel(time=0), 269.257, 3)
 
     # 2D lat/lon grids are buggy with current xesmf
     # def test_rotated_pole_with_time(self):
@@ -88,7 +89,7 @@ class TestAverageShape:
         regions = gpd.read_file(self.multi_regions_geojson).set_index("id")
         avg = average.average_shape(ds.tas, shape=regions)
         np.testing.assert_array_almost_equal(
-            avg.isel(time=0), [268.30972367, 277.23981999, 277.58614891], decimal=5
+            avg.isel(time=0), [268.620, 278.290, 277.863], decimal=3
         )
         np.testing.assert_array_equal(avg.geom, ["Québec", "Europe", "Newfoundland"])
 
