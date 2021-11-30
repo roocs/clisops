@@ -1059,6 +1059,7 @@ class TestShapeBboxIndexer:
     def test_curvilinear(self):
         """This checks that a grid along lon/lat and a rotated grid are indexed identically for a geometry and a
         rotated geometry."""
+        pytest.importorskip("xesmf", "0.6.2")
         from shapely.affinity import rotate
 
         ds = xesmf.util.grid_2d(0, 100, 10, 0, 60, 6)
