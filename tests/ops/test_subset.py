@@ -32,12 +32,9 @@ from .._common import (
     CMIP6_TA,
     CMIP6_TOS,
     CMIP6_TOS_ONE_TIME_STEP,
+    _check_output_nc,
     assert_vars_equal,
 )
-
-
-def _check_output_nc(result, fname="output_001.nc"):
-    assert fname in [Path(_).name for _ in result]
 
 
 def _load_ds(fpath):
