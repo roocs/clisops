@@ -828,7 +828,7 @@ class TestSubsetShape:
         assert all(counts == [58, 250, 22])
 
     @pytest.mark.skipif(
-        xesmf is None, reason="xESMF >= 0.5.2 is needed for average_shape."
+        xesmf is None, reason="xESMF >= 0.6.2 is needed for average_shape."
     )
     def test_weight_masks_multiregions(self):
         # rename is due to a small limitation of xESMF 0.5.2
@@ -838,7 +838,7 @@ class TestSubsetShape:
 
         np.testing.assert_allclose(masks.sum(["lat", "lon"]), [1, 1, 1])
         np.testing.assert_array_equal(masks.geom.values, regions.index)
-        np.testing.assert_allclose(masks.max("geom").sum(), 2.900397)
+        np.testing.assert_allclose(masks.max("geom").sum(), 2.900, 3)
 
     def test_subset_multiregions(self):
         ds = xr.open_dataset(self.nc_file)
