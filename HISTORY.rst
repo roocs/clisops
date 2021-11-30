@@ -15,6 +15,7 @@ Bug fixes
 Other Changes
 ^^^^^^^^^^^^^
 * Minimum xesmf version set to 0.6.2.
+* Replace ``cascaded_union`` by ``unary_union`` to anticipate a `shapely` deprecation.
 
 v0.7.0 (2021-10-26)
 -------------------
