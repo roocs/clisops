@@ -18,7 +18,7 @@ from roocs_utils.utils.time_utils import to_isoformat
 from roocs_utils.xarray_utils import xarray_utils as xu
 from shapely import vectorized
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
-from shapely.ops import cascaded_union, split
+from shapely.ops import unary_union, split
 from xarray.core.utils import get_temp_dimname
 
 from clisops.utils.dataset_utils import adjust_date_to_calendar
@@ -432,20 +432,20 @@ def wrap_lons_and_split_at_greenwich(func):
 
                     # Create a meridian line at Greenwich, split polygons at this line and erase a buffer line
                     if isinstance(feature.geometry, MultiPolygon):
-                        union = MultiPolygon(cascaded_union(feature.geometry))
+                        union = MultiPolygon(unary_union(feature.geometry))
                     else:
-                        union = Polygon(cascaded_union(feature.geometry))
+                        union = Polygon(unary_union(feature.geometry))
                     meridian = LineString([Point(0, 90), Point(0, -90)])
                     buffered = meridian.buffer(0.000000001)
                     split_polygons = split(union, meridian)
                     buffered_split_polygons = [
-                        feat.difference(buffered) for feat in split_polygons
+                        feat.difference(buffered) for feat in split_polygons.geoms
                     ]
 
                     # Cannot assign iterable with `at` (pydata/pandas#26333) so a small hack:
                     # Load split features into a new GeoDataFrame with WGS84 CRS
                     split_gdf = gpd.GeoDataFrame(
-                        geometry=[cascaded_union(buffered_split_polygons)],
+                        geometry=[unary_union(buffered_split_polygons)],
                         crs=CRS(4326),
                     )
                     poly.at[[index], "geometry"] = split_gdf.geometry.values

@@ -11,12 +11,14 @@ New Features
 Bug fixes
 ^^^^^^^^^
 * ``average_shape`` and ``create_weight_masks`` were adapted to work with xESMF 0.6.2, while maintaining compatibility with earlier versions.
+* Fix added to remove ``_FillValue`` added to coordinate variables and bounds by xarray when outputting to netCDF.
 
 Other Changes
 ^^^^^^^^^^^^^
 * Passing ``DataArray`` objects to ``clisops.core.average.average_shape`` is now deprecated. Averaging requires grid cell boundaries, which are not ``DataArray`` coordinates, but independent ``Dataset`` variables. Please pass ``Dataset`` objects and an optional list of variables to average.
 * ``average_shape`` performs an initial subset over the averaging region, before computing the weights, to reduce memory usage.
 * Minimum xesmf version set to 0.6.2.
+* Replace ``cascaded_union`` by ``unary_union`` to anticipate a `shapely` deprecation.
 
 
 v0.7.0 (2021-10-26)

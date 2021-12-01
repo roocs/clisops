@@ -1,6 +1,7 @@
 from pathlib import Path
 
-from roocs_utils.xarray_utils.xarray_utils import open_xr_dataset
+import xarray as xr
+from roocs_utils.xarray_utils.xarray_utils import get_main_variable, open_xr_dataset
 
 from clisops import logging, utils
 from clisops.utils.common import expand_wildcards
@@ -68,6 +69,25 @@ class Operation(object):
         """
         raise NotImplementedError
 
+    def _remove_redundant_fill_values(self, ds):
+        """
+        Get coordinate variables and remove fill values added by xarray (CF conventions say that coordinate variables cannot have missing values).
+        Get bounds variables and remove fill values added by xarray.
+        """
+        if isinstance(ds, xr.Dataset):
+            main_var = get_main_variable(ds)
+            for coord_id in ds[main_var].coords:
+                # remove fill value from coordinate variables
+                if ds.coords[coord_id].dims == (coord_id,):
+                    ds[coord_id].encoding["_FillValue"] = None
+                # remove fill value from bounds variables if they exist
+                try:
+                    bnd = ds.cf.get_bounds(coord_id).name
+                    ds[bnd].encoding["_FillValue"] = None
+                except KeyError:
+                    continue
+        return ds
+
     def process(self):
         """
         Main processing method used by all sub-classes.
@@ -87,6 +107,9 @@ class Operation(object):
         # Process the xarray Dataset - this will (usually) be lazily evaluated so
         # no actual data will be read
         processed_ds = self._calculate()
+
+        # remove fill values from lat/lon/time if required
+        processed_ds = self._remove_redundant_fill_values(processed_ds)
 
         # Work out how many outputs should be created based on the size
         # of the array. Manage this as a list of time slices.
