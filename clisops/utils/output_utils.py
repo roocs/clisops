@@ -168,7 +168,7 @@ def get_chunk_length(da):
     """
     Calculate the chunk length to use when chunking xarray datasets.
 
-    Based on memory limit provided in config and the size of th dataset.
+    Based on memory limit provided in config and the size of the dataset.
     """
     size = da.nbytes
     n_times = len(da.time.values)
@@ -191,7 +191,6 @@ def _get_chunked_dataset(ds):
     da = get_da(ds)
     chunk_length = get_chunk_length(da)
     chunked_ds = ds.chunk({"time": chunk_length})
-    da.unify_chunks()
     return chunked_ds
 
 

@@ -212,6 +212,11 @@ def test_tmp_dir_deleted():
 
 
 def test_unify_chunks_cmip5():
+    """
+    testing unify chunks with a cmip5 example:
+    da.unify_chunks() doesn't change da.chunks
+    ds = ds.unify_chunks() doesn't appear to change ds.chunks in our case
+    """
     # DataArray unify chunks method
     ds1 = _open(CMIP5_TAS)
     da = get_da(ds1)
@@ -220,16 +225,22 @@ def test_unify_chunks_cmip5():
     da.unify_chunks()
 
     # Dataset unify chunks method
-    ds2 = _open(CMIP5_TAS)
-    chunk_length = get_chunk_length(ds2)
+    chunk_length = get_chunk_length(da)
     chunked_ds2 = ds1.chunk({"time": chunk_length})
     chunked_ds2_unified = chunked_ds2.unify_chunks()
 
+    # test that da.unify_chunks hasn't changed ds.chunks
     assert chunked_ds1.chunks == chunked_ds2.chunks
+    # test that ds = ds.unify_chunks hasn't changed ds.chunks
     assert chunked_ds2.chunks == chunked_ds2_unified.chunks
 
 
 def test_unify_chunks_cmip6():
+    """
+    testing unify chunks with a cmip6 example:
+    da.unify_chunks() doesn't change da.chunks
+    ds = ds.unify_chunks() doesn't appear to change ds.chunks in our case
+    """
     # DataArray unify chunks method
     ds1 = _open(CMIP6_TOS)
     da = get_da(ds1)
@@ -238,10 +249,11 @@ def test_unify_chunks_cmip6():
     da.unify_chunks()
 
     # Dataset unify chunks method
-    ds2 = _open(CMIP6_TOS)
-    chunk_length = get_chunk_length(ds2)
+    chunk_length = get_chunk_length(da)
     chunked_ds2 = ds1.chunk({"time": chunk_length})
     chunked_ds2_unified = chunked_ds2.unify_chunks()
 
+    # test that da.unify_chunks hasn't changed ds.chunks
     assert chunked_ds1.chunks == chunked_ds2.chunks
+    # test that ds = ds.unify_chunks hasn't changed ds.chunks
     assert chunked_ds2.chunks == chunked_ds2_unified.chunks
