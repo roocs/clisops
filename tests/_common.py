@@ -2,10 +2,8 @@ import os
 import tempfile
 from pathlib import Path
 
-import pytest
+import xarray as xr
 from jinja2 import Template
-
-from clisops.utils import get_file
 
 ROOCS_CFG = Path(tempfile.gettempdir(), "roocs.ini").as_posix()
 TESTS_HOME = Path(__file__).parent.absolute().as_posix()
@@ -49,8 +47,12 @@ MINI_ESGF_CACHE_DIR = Path.home() / ".mini-esgf-data"
 MINI_ESGF_MASTER_DIR = os.path.join(MINI_ESGF_CACHE_DIR, "master")
 
 
-def _check_output_nc(result, fname="output_001.nc"):
+def _check_output_nc(result, fname="output_001.nc", time=None):
     assert fname in [Path(_).name for _ in result]
+    if time:
+        ds = xr.open_mfdataset(result, use_cftime=True, decode_timedelta=False)
+        time_ = f"{ds.time.values.min().isoformat()}/{ds.time.values.max().isoformat()}"
+        assert time == time_
 
 
 def write_roocs_cfg():
