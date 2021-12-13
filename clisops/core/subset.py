@@ -18,7 +18,7 @@ from roocs_utils.utils.time_utils import to_isoformat
 from roocs_utils.xarray_utils import xarray_utils as xu
 from shapely import vectorized
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
-from shapely.ops import unary_union, split
+from shapely.ops import split, unary_union
 from xarray.core.utils import get_temp_dimname
 
 from clisops.utils.dataset_utils import adjust_date_to_calendar
@@ -643,8 +643,9 @@ def _curvilinear_grid_exterior_polygon(ds, mode="bbox"):
     shapely.geometry.Polygon
       Grid cell boundary.
     """
-    from shapely.ops import unary_union
     import math
+
+    from shapely.ops import unary_union
 
     def round_up(x, decimal=1):
         f = 10 ** decimal
@@ -733,7 +734,7 @@ def grid_exterior_polygon(ds):
 
 def is_rectilinear(ds):
     """Return whether the grid is rectilinear or not."""
-    sdims = set([ds.cf["longitude"].name, ds.cf["latitude"].name])
+    sdims = {ds.cf["longitude"].name, ds.cf["latitude"].name}
     return sdims.issubset(ds.dims)
 
 
@@ -976,7 +977,7 @@ def subset_shape(
     )
 
     if isinstance(ds, xarray.DataArray):
-        ds_copy = ds._to_temp_dataset()
+        ds_copy = ds.to_dataset(name=ds.name or "subsetted")
     else:
         ds_copy = ds.copy()
 
@@ -1108,7 +1109,8 @@ def subset_shape(
             ds_copy[v].attrs["grid_mapping"] = "crs"
 
     if isinstance(ds, xarray.DataArray):
-        return ds._from_temp_dataset(ds_copy)
+        ds_copy = list(ds_copy.data_vars.values())[0]
+        ds_copy.name = ds.name
     return ds_copy
 
 
