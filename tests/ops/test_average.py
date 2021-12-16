@@ -8,7 +8,7 @@ from roocs_utils.exceptions import InvalidParameterValue
 
 import clisops
 from clisops import CONFIG
-from clisops.ops.average import average_over_dims
+from clisops.ops.average import average_over_dims, average_time
 
 from .._common import CMIP5_TAS
 
@@ -217,3 +217,24 @@ def test_aux_variables():
     )
 
     assert "do_i_get_written" in result[0].variables
+
+
+def test_average_over_years():
+    ds = _load_ds(CMIP5_TAS)  # monthly dataset
+
+    # check initial dataset
+    assert ds.time.shape == (3530,)
+    assert ds.time.values[0].isoformat() == "2005-12-16T00:00:00"
+    assert ds.time.values[-1].isoformat() == "2299-12-16T00:00:00"
+
+    result = average_time(
+        CMIP5_TAS,
+        freq="year",
+        output_type="xarray",
+    )
+
+    time_length = ds.time.values[-1].year - ds.time.values[0].year + 1
+
+    assert result[0].time.shape == (time_length,)
+    assert result[0].time.values[0].isoformat() == "2005-01-01T00:00:00"
+    assert result[0].time.values[-1].isoformat() == "2299-01-01T00:00:00"

@@ -5,9 +5,16 @@ from typing import Tuple, Union
 import geopandas as gpd
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
-from roocs_utils.xarray_utils.xarray_utils import get_coord_type, known_coord_types
+from roocs_utils.xarray_utils.xarray_utils import (
+    get_coord_by_type,
+    get_coord_type,
+    known_coord_types,
+)
 
-__all__ = ["average_over_dims", "average_shape"]
+__all__ = ["average_over_dims", "average_shape", "average_time"]
+
+# see https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
+freqs = {"month": "1MS", "year": "1AS"}
 
 
 def average_shape(
@@ -198,3 +205,58 @@ def average_over_dims(
     if isinstance(ds, xr.Dataset):
         return xr.merge((ds_averaged_over_dims, untouched_ds))
     return ds_averaged_over_dims
+
+
+def average_time(
+    ds: Union[xr.DataArray, xr.Dataset],
+    freq: str,
+) -> Union[xr.DataArray, xr.Dataset]:
+    """
+    Average a DataArray or Dataset over the time frequency specified.
+
+    Parameters
+    ----------
+    ds : Union[xr.DataArray, xr.Dataset]
+      Input values.
+    freq: str
+      The frequency to average over. One of "month", "year".
+
+    Returns
+    -------
+    Union[xr.DataArray, xr.Dataset]
+      New Dataset or DataArray object averaged over the indicated time frequency.
+
+    Examples
+    --------
+    >>> from clisops.core.average import average_time  # doctest: +SKIP
+    >>> pr = xr.open_dataset(path_to_pr_file).pr  # doctest: +SKIP
+    ...
+    # Average data array over each month
+    >>> prAvg = average_time(pr, freq='month')  # doctest: +SKIP
+    """
+
+    if not freq:
+        raise InvalidParameterValue(
+            "At least one frequency for averaging must be provided"
+        )
+
+    if freq not in list(freqs.keys()):
+        raise InvalidParameterValue(
+            f"Time frequency for averaging must be one of {list(freqs.keys())}"
+        )
+
+    # check time coordinate exists and get name
+    t = get_coord_by_type(ds, "time", ignore_aux_coords=False)
+
+    if t is None:
+        raise Exception("Time dimension could not be found")
+
+    # resample and average over time
+    ds_avg_over_time = ds.resample(indexer={t.name: freqs[freq]}).mean(dim=t.name)
+
+    return ds_avg_over_time
+
+    # questions:
+    # what do we want the label to be - start of the month/year/ end/ or the date that is already used e.g. 16th of the month for monthly datasets
+    # is MS/AS right or should we use A and M for datetime offsets
+    # look at other options in xarray resample - skipna?
