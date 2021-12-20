@@ -7,6 +7,7 @@ v0.8.0 (unreleased)
 New Features
 ^^^^^^^^^^^^
 * ``clisops.core.average.average_shape`` copies the global and variable attributes from the input data to the results.
+* ``clisops.ops.average.average_time`` and ``clisops.core.average.average_time`` added. Allowing averaging over time frequencies of day, month and year.
 
 Bug fixes
 ^^^^^^^^^

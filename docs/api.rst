@@ -29,8 +29,8 @@ Subset operation
    :show-inheritance:
 
 
-Average operation
-=================
+Average operations
+==================
 
 .. automodule:: clisops.ops.average
    :noindex:
