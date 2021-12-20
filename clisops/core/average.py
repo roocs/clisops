@@ -262,7 +262,7 @@ def average_time(
 
     if freq not in list(freqs.keys()):
         raise InvalidParameterValue(
-            "Time frequency for averaging must be one of 'month', 'year'."
+            f"Time frequency for averaging must be one of {list(freqs.keys())}."
         )
 
     # check time coordinate exists and get name

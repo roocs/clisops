@@ -209,7 +209,7 @@ class TestAverageTime:
             average.average_time(ds, freq="wrong")
         assert (
             str(exc.value)
-            == "Time frequency for averaging must be one of 'month', 'year'."
+            == "Time frequency for averaging must be one of ['day', 'month', 'year']."
         )
 
     def test_freq_wrong_format(self):

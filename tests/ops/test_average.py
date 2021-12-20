@@ -284,7 +284,8 @@ def test_average_time_incorrect_freq():
             output_type="xarray",
         )
     assert (
-        str(exc.value) == "Time frequency for averaging must be one of 'month', 'year'."
+        str(exc.value)
+        == "Time frequency for averaging must be one of ['day', 'month', 'year']."
     )
 
 

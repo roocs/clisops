@@ -109,7 +109,7 @@ class AverageTime(Operation):
 
         if freq not in list(average.freqs.keys()):
             raise InvalidParameterValue(
-                "Time frequency for averaging must be one of 'month', 'year'."
+                f"Time frequency for averaging must be one of {list(average.freqs.keys())}."
             )
 
         self.params = {"freq": freq}
