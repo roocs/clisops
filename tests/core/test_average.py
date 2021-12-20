@@ -6,10 +6,12 @@ import pytest
 import xarray as xr
 from pkg_resources import parse_version
 from roocs_utils.exceptions import InvalidParameterValue
+from roocs_utils.xarray_utils import xarray_utils as xu
 
 from clisops.core import average
 from clisops.utils import get_file
 
+from .._common import CMIP5_RH, CMIP6_SICONC_DAY
 from .._common import XCLIM_TESTS_DATA as TESTS_DATA
 
 try:
@@ -167,3 +169,54 @@ class TestAverageOverDims:
             str(exc.value)
             == "Dimensions for averaging must be one of ['time', 'level', 'latitude', 'longitude']"
         )
+
+
+class TestAverageTime:
+    month_ds = CMIP5_RH
+    day_ds = CMIP6_SICONC_DAY
+
+    def test_average_month(self):
+        ds = xu.open_xr_dataset(self.day_ds)
+        assert ds.time.shape == (60225,)
+
+        avg_ds = average.average_time(ds, freq="month")
+        assert avg_ds.time.shape == (1980,)
+
+    def test_average_year(self):
+        ds = xu.open_xr_dataset(self.month_ds)
+        assert ds.time.shape == (1752,)
+
+        avg_ds = average.average_time(ds, freq="year")
+        assert avg_ds.time.shape == (147,)
+
+    def test_no_freq(self):
+        ds = xu.open_xr_dataset(self.month_ds)
+
+        with pytest.raises(InvalidParameterValue) as exc:
+            average.average_time(ds, freq=None)
+        assert str(exc.value) == "At least one frequency for averaging must be provided"
+
+    def test_incorrect_freq(self):
+        ds = xu.open_xr_dataset(self.month_ds)
+
+        with pytest.raises(InvalidParameterValue) as exc:
+            average.average_time(ds, freq="wrong")
+        assert (
+            str(exc.value)
+            == "Time frequency for averaging must be one of 'month', 'year'."
+        )
+
+    def test_freq_wrong_format(self):
+        ds = xu.open_xr_dataset(self.month_ds)
+
+        with pytest.raises(InvalidParameterValue) as exc:
+            average.average_time(ds, freq=0)
+        assert str(exc.value) == "At least one frequency for averaging must be provided"
+
+    def test_no_time(self):
+        ds = xu.open_xr_dataset(self.month_ds)
+        ds = ds.drop_dims("time")
+
+        with pytest.raises(Exception) as exc:
+            average.average_time(ds, freq="year")
+        assert str(exc.value) == "Time dimension could not be found"

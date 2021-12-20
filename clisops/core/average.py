@@ -14,7 +14,7 @@ from roocs_utils.xarray_utils.xarray_utils import (
 __all__ = ["average_over_dims", "average_shape", "average_time"]
 
 # see https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
-freqs = {"month": "1MS", "year": "1AS"}
+freqs = {"day": "1D", "month": "1MS", "year": "1AS"}
 
 
 def average_shape(
@@ -242,7 +242,7 @@ def average_time(
 
     if freq not in list(freqs.keys()):
         raise InvalidParameterValue(
-            f"Time frequency for averaging must be one of {list(freqs.keys())}"
+            "Time frequency for averaging must be one of 'month', 'year'."
         )
 
     # check time coordinate exists and get name
@@ -252,11 +252,8 @@ def average_time(
         raise Exception("Time dimension could not be found")
 
     # resample and average over time
-    ds_avg_over_time = ds.resample(indexer={t.name: freqs[freq]}).mean(dim=t.name)
+    ds_avg_over_time = ds.resample(indexer={t.name: freqs[freq]}).mean(
+        dim=t.name, skipna=True, keep_attrs=True
+    )
 
     return ds_avg_over_time
-
-    # questions:
-    # what do we want the label to be - start of the month/year/ end/ or the date that is already used e.g. 16th of the month for monthly datasets
-    # is MS/AS right or should we use A and M for datetime offsets
-    # look at other options in xarray resample - skipna?

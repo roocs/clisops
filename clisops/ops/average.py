@@ -102,9 +102,14 @@ class AverageTime(Operation):
     def _resolve_params(self, **params):
         freq = params.get("freq", None)
 
+        if not freq:
+            raise InvalidParameterValue(
+                "At least one frequency for averaging must be provided"
+            )
+
         if freq not in list(average.freqs.keys()):
             raise InvalidParameterValue(
-                f"Time frequency for averaging must be one of {list(average.freqs.keys())}"
+                "Time frequency for averaging must be one of 'month', 'year'."
             )
 
         self.params = {"freq": freq}
