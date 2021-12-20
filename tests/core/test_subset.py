@@ -4,10 +4,11 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import xarray as xr
-from shapely.geometry import Polygon
+from shapely.geometry import Polygon, Point
 
 from clisops.core import subset
 from clisops.utils import get_file
+
 
 from .._common import XCLIM_TESTS_DATA as TESTS_DATA
 
@@ -653,6 +654,7 @@ class TestSubsetShape:
     nc_file = get_file("cmip5/tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc")
     lons_2d_nc_file = get_file("CRCM5/tasmax_bby_198406_se.nc")
     nc_file_neglons = get_file("NRCANdaily/nrcan_canada_daily_tasmax_1990.nc")
+
     meridian_geojson = os.path.join(TESTS_DATA, "cmip5", "meridian.json")
     meridian_multi_geojson = os.path.join(TESTS_DATA, "cmip5", "meridian_multi.json")
     poslons_geojson = os.path.join(TESTS_DATA, "cmip5", "poslons.json")
@@ -1002,3 +1004,89 @@ class TestSubsetLevel:
             out = subset.subset_level(da, first_level=41562, last_level=29999)
 
         np.testing.assert_array_equal(out.plev.values[:], da.plev.values[6:8])
+
+
+class TestGridPolygon:
+    def test_rectilinear(self):
+        pytest.importorskip("xesmf", "0.6.2")
+        # CF-Compliant with bounds
+        ds = xesmf.util.cf_grid_2d(-200, -100, 20, -60, 60, 10)
+        poly = subset._rectilinear_grid_exterior_polygon(ds)
+        assert poly == Polygon([(-200, -60), (-200, 60), (-100, 60), (-100, -60)])
+
+        # Without bounds
+        ds.lon.attrs.pop("bounds")
+        ds.lat.attrs.pop("bounds")
+        ds = xr.Dataset(dict(lon=ds.lon, lat=ds.lat))
+        poly = subset._rectilinear_grid_exterior_polygon(ds)
+        assert poly == Polygon([(-200, -60), (-200, 60), (-100, 60), (-100, -60)])
+
+    @pytest.mark.parametrize("mode", ["bbox"])
+    def test_curvilinear(self, mode):
+        """
+        Note that there is at least one error in the lat and lon vertices.
+        >>> print(ds.vertices_latitude[0, 283].data)
+        [-78.29248047  81.48125458 - 78.49452209 - 78.49452209]
+        >>> print(ds.vertices_longitude[0, 283].data)
+        [357.  73. 356. 356.]
+        """
+        from shapely.geometry import MultiPoint, Point
+
+        fn = get_file("cmip6/sic_SImon_CCCma-CanESM5_ssp245_r13i1p2f1_2020.nc")
+        ds = xr.open_dataset(fn)
+
+        poly = subset._curvilinear_grid_exterior_polygon(ds, mode=mode)
+
+        # Check that all grid centroids are within the polygon
+        pts = list(map(Point, zip(ds.longitude.data.flat, ds.latitude.data.flat)))
+        assert MultiPoint(pts).within(poly)
+
+
+class TestShapeBboxIndexer:
+    def test_rectilinear(self):
+        # Create small polygon fitting in one cell.
+        pytest.importorskip("xesmf", "0.6.2")
+        x, y = -150, 35
+        p = Point(x, y)
+        ds = xesmf.util.cf_grid_2d(-200, 0, 20, -60, 60, 10)
+
+        # Confirm that after subsetting, the polygon is still entirely within the grid.
+        for b in [1, 10, 20]:
+            pb = p.buffer(b)
+            inds = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=[pb]))
+            assert pb.within(subset.grid_exterior_polygon(ds.isel(inds)))
+
+    def test_curvilinear(self):
+        """This checks that a grid along lon/lat and a rotated grid are indexed identically for a geometry and a
+        rotated geometry."""
+        pytest.importorskip("xesmf", "0.6.2")
+        from shapely.affinity import rotate
+
+        ds = xesmf.util.grid_2d(0, 100, 10, 0, 60, 6)
+        rds = rotated_grid_2d(0, 100, 10, 0, 60, 6, angle=45)
+
+        geom = Polygon(([0, 0], [50, 0], [50, 30], [0, 30]))
+        rgeom = rotate(geom, 45, origin=Point(0, 0))
+
+        # The subsetted grid should have the same dimensions as the subsetted rotated grid.
+        i = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=[geom]))
+        ri = subset.shape_bbox_indexer(rds, gpd.GeoDataFrame(geometry=[rgeom]))
+        assert ri == i
+
+
+def rotated_grid_2d(lon0_b, lon1_b, d_lon, lat0_b, lat1_b, d_lat, angle):
+    """Rotate lat lon by degree"""
+    ds = xesmf.util.grid_2d(lon0_b, lon1_b, d_lon, lat0_b, lat1_b, d_lat)
+
+    # Rotation matrix
+    theta = np.radians(angle)
+    c, s = np.cos(theta), np.sin(theta)
+    r = np.array(((c, -s), (s, c)))
+
+    fds = ds.stack(z=("x", "y"), z_b=("x_b", "y_b"))
+    fds.lon[:], fds.lat[:] = np.matmul(r, xr.concat([fds.lon, fds.lat], dim="c").data)
+    fds.lon_b[:], fds.lat_b[:] = np.matmul(
+        r, xr.concat([fds.lon_b, fds.lat_b], dim="c").data
+    )
+
+    return fds.unstack(("z", "z_b"))
