@@ -4,11 +4,10 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import xarray as xr
-from shapely.geometry import Polygon, Point
+from shapely.geometry import Point, Polygon
 
 from clisops.core import subset
 from clisops.utils import get_file
-
 
 from .._common import XCLIM_TESTS_DATA as TESTS_DATA
 
@@ -103,10 +102,16 @@ class TestSubsetTime:
             subset.subset_time(
                 da, start_date="2064-01-01T00:00:00", end_date="2065-02-01T03:12:01"
             )
-        assert [str(q.message) for q in record] == [
-            '"start_date" has been nudged to nearest valid time step in xarray object.',
-            '"end_date" has been nudged to nearest valid time step in xarray object.',
-        ]
+
+        assert (
+            '"start_date" has been nudged to nearest valid time step in xarray object.'
+            in [str(q.message) for q in record]
+        )
+
+        assert (
+            '"end_date" has been nudged to nearest valid time step in xarray object.'
+            in [str(q.message) for q in record]
+        )
 
     def test_time_start_only(self):
         da = xr.open_dataset(self.nc_poslons).tas
