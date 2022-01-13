@@ -1,7 +1,7 @@
 Version History
 ===============
 
-v0.8.0 (unreleased)
+v0.8.0 (2022-01-13)
 -------------------
 
 New Features
@@ -18,6 +18,7 @@ Other Changes
 * Passing ``DataArray`` objects to ``clisops.core.average.average_shape`` is now deprecated. Averaging requires grid cell boundaries, which are not ``DataArray`` coordinates, but independent ``Dataset`` variables. Please pass ``Dataset`` objects and an optional list of variables to average.
 * ``average_shape`` performs an initial subset over the averaging region, before computing the weights, to reduce memory usage.
 * Minimum xesmf version set to 0.6.2.
+* Minimum pygeos version set to 0.9.
 * Replace ``cascaded_union`` by ``unary_union`` to anticipate a `shapely` deprecation.
 
 
