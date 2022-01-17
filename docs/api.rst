@@ -77,3 +77,13 @@ Dataset Utilities
    :members:
    :undoc-members:
    :show-inheritance:
+
+
+Time Utilities
+==============
+
+.. automodule:: clisops.utils.time_utils
+   :noindex:
+   :members:
+   :undoc-members:
+   :show-inheritance:

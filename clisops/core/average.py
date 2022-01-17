@@ -14,6 +14,8 @@ from roocs_utils.xarray_utils.xarray_utils import (
     known_coord_types,
 )
 
+from clisops.utils.time_utils import create_time_bounds
+
 from .subset import shape_bbox_indexer
 
 __all__ = ["average_over_dims", "average_shape", "average_time"]
@@ -277,37 +279,8 @@ def average_time(
         dim=t.name, skipna=True, keep_attrs=True
     )
 
-    # add time_bounds to dataset
-    # get datetime class
-    dt_cls = ds_t_avg.time.values[0].__class__
-
-    # generate time_bouds depending on frequency
-    if freq == "month":
-        time_bounds = [
-            [
-                dt_cls(tm.year, tm.month, tm.day),
-                dt_cls(tm.year, tm.month, tm.daysinmonth),
-            ]
-            for tm in ds_t_avg.time.values
-        ]
-
-    elif freq == "year":
-        # get number of days in december for calendar
-        dec_days = dt_cls(2000, 12, 1).daysinmonth
-        # generate time bounds
-        time_bounds = [
-            [dt_cls(tm.year, 1, 1), dt_cls(tm.year, 12, dec_days)]
-            for tm in ds_t_avg.time.values
-        ]
-
-    elif freq == "day":
-        time_bounds = [
-            [
-                dt_cls(tm.year, tm.month, tm.day, 0, 0, 0),
-                dt_cls(tm.year, tm.month, tm.day, 23, 59, 59),
-            ]
-            for tm in ds_t_avg.time.values
-        ]
+    # generate time_bounds depending on frequency
+    time_bounds = create_time_bounds(ds_t_avg, freq)
 
     # get name of bounds dimension for time
     bnds = ds.cf.get_bounds_dim_name("time")
