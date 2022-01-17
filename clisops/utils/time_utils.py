@@ -1,6 +1,3 @@
-from roocs_utils.exceptions import InvalidParameterValue
-
-
 def create_time_bounds(ds, freq):
     """
     Generate time bounds for datasets that have been temporally averaged.
@@ -37,8 +34,6 @@ def create_time_bounds(ds, freq):
         ]
 
     else:
-        raise InvalidParameterValue(
-            "Time frequency not supported for creation of time bounds."
-        )
+        raise Exception("Time frequency not supported for creation of time bounds.")
 
     return time_bounds
