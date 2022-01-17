@@ -234,10 +234,19 @@ def test_average_over_years():
     )
 
     time_length = ds.time.values[-1].year - ds.time.values[0].year + 1
-
     assert result[0].time.shape == (time_length,)  # get number of years
     assert result[0].time.values[0].isoformat() == "2005-01-01T00:00:00"
     assert result[0].time.values[-1].isoformat() == "2299-01-01T00:00:00"
+
+    # test time bounds
+    assert [t.isoformat() for t in result[0].time_bnds.values[0]] == [
+        "2005-01-01T00:00:00",
+        "2005-12-30T00:00:00",
+    ]
+    assert [t.isoformat() for t in result[0].time_bnds.values[-1]] == [
+        "2299-01-01T00:00:00",
+        "2299-12-30T00:00:00",
+    ]
 
 
 def test_average_over_months():
@@ -262,6 +271,16 @@ def test_average_over_months():
     assert result[0].time.shape == (time_length,)
     assert result[0].time.values[0].isoformat() == "1850-01-01T00:00:00"
     assert result[0].time.values[-1].isoformat() == "2014-12-01T00:00:00"
+
+    # test time bounds
+    assert [t.isoformat() for t in result[0].time_bnds.values[0]] == [
+        "1850-01-01T00:00:00",
+        "1850-01-31T00:00:00",
+    ]
+    assert [t.isoformat() for t in result[0].time_bnds.values[-1]] == [
+        "2014-12-01T00:00:00",
+        "2014-12-31T00:00:00",
+    ]
 
 
 def test_average_time_no_freq():
@@ -324,3 +343,13 @@ def test_average_time_cordex():
     assert result[0].time.shape == (time_length,)
     assert result[0].time.values[0].isoformat() == "2071-01-01T00:00:00"
     assert result[0].time.values[-1].isoformat() == "2080-12-01T00:00:00"
+
+    # test time bounds
+    assert [t.isoformat() for t in result[0].time_bnds.values[0]] == [
+        "2071-01-01T00:00:00",
+        "2071-01-31T00:00:00",
+    ]
+    assert [t.isoformat() for t in result[0].time_bnds.values[-1]] == [
+        "2080-12-01T00:00:00",
+        "2080-12-31T00:00:00",
+    ]

@@ -3,6 +3,7 @@ import warnings
 from pathlib import Path
 from typing import Sequence, Tuple, Union
 
+import cf_xarray
 import geopandas as gpd
 import numpy as np
 import xarray as xr
@@ -272,8 +273,46 @@ def average_time(
         raise Exception("Time dimension could not be found")
 
     # resample and average over time
-    ds_avg_over_time = ds.resample(indexer={t.name: freqs[freq]}).mean(
+    ds_t_avg = ds.resample(indexer={t.name: freqs[freq]}).mean(
         dim=t.name, skipna=True, keep_attrs=True
     )
 
-    return ds_avg_over_time
+    # add time_bounds to dataset
+    # get datetime class
+    dt_cls = ds_t_avg.time.values[0].__class__
+
+    # generate time_bouds depending on frequency
+    if freq == "month":
+        time_bounds = [
+            [
+                dt_cls(tm.year, tm.month, tm.day),
+                dt_cls(tm.year, tm.month, tm.daysinmonth),
+            ]
+            for tm in ds_t_avg.time.values
+        ]
+
+    elif freq == "year":
+        # get number of days in december for calendar
+        dec_days = dt_cls(2000, 12, 1).daysinmonth
+        # generate time bounds
+        time_bounds = [
+            [dt_cls(tm.year, 1, 1), dt_cls(tm.year, 12, dec_days)]
+            for tm in ds_t_avg.time.values
+        ]
+
+    elif freq == "day":
+        time_bounds = [
+            [
+                dt_cls(tm.year, tm.month, tm.day, 0, 0, 0),
+                dt_cls(tm.year, tm.month, tm.day, 23, 59, 59),
+            ]
+            for tm in ds_t_avg.time.values
+        ]
+
+    # get name of bounds dimension for time
+    bnds = ds.cf.get_bounds_dim_name("time")
+
+    # add time bounds to dataset
+    ds_t_avg = ds_t_avg.assign({"time_bnds": ((t.name, bnds), np.asarray(time_bounds))})
+
+    return ds_t_avg
