@@ -672,6 +672,9 @@ class TestRegrid:
         print(r)
 
 
+@pytest.mark.skipif(
+    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
+)
 def test_cache_init_and_flush(tmp_path):
     "Test of the cache init and flush functionalities"
 
