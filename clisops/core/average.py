@@ -1,18 +1,21 @@
 """Average module."""
 from pathlib import Path
-from typing import Tuple, Union
-
+from typing import Tuple, Union, Sequence
+import warnings
+import numpy as np
 import geopandas as gpd
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils.xarray_utils import get_coord_type, known_coord_types
+from .subset import shape_bbox_indexer
 
 __all__ = ["average_over_dims", "average_shape"]
 
 
 def average_shape(
-    ds: Union[xr.DataArray, xr.Dataset],
+    ds: xr.Dataset,
     shape: Union[str, Path, gpd.GeoDataFrame],
+    variable: Union[str, Sequence[str]] = None,
 ) -> Union[xr.DataArray, xr.Dataset]:
     """Average a DataArray or Dataset spatially using vector shapes.
 
@@ -21,11 +24,13 @@ def average_shape(
 
     Parameters
     ----------
-    ds : Union[xarray.DataArray, xarray.Dataset]
-      Input values, coordinates naming must be compatible with xESMF.
+    ds : xarray.Dataset
+      Input values, coordinate attributes must be CF-compliant.
     shape : Union[str, Path, gpd.GeoDataFrame]
       Path to shape file, or directly a geodataframe. Supports formats compatible with geopandas.
       Will be converted to EPSG:4326 if needed.
+    variable : Union[str, Sequence[str], None]
+      Variables to average. If None, average over all data variables.
 
     Returns
     -------
@@ -37,7 +42,7 @@ def average_shape(
     Notes
     -----
     The spatial weights are computed with ESMF, which uses corners given in lat/lon format (EPSG:4326),
-    the input dataset `ds` most provide those. In opposition to `subset.subset_shape`, the
+    the input dataset `ds` must provide those. In opposition to `subset.subset_shape`, the
     weights computed here take partial overlaps and holes into account.
 
     As xESMF computes the weight masks only once, skipping missing values is not really feasible. Thus,
@@ -62,7 +67,10 @@ def average_shape(
         raise ValueError("Package xesmf >= 0.5.0 is required to use average_shape")
 
     if isinstance(ds, xr.DataArray):
-        ds_copy = ds._to_temp_dataset()
+        warnings.warn(
+            "Pass a Dataset object instead of a DataArray.", DeprecationWarning
+        )
+        ds_copy = ds.to_dataset(name=ds.name)
     else:
         ds_copy = ds.copy()
 
@@ -74,28 +82,47 @@ def average_shape(
     if poly.crs is not None:
         poly = poly.to_crs(4326)
 
-    savger = SpatialAverager(ds_copy, poly.geometry)
-    if savger.weights.nnz == 0:
+    # First subset to bounding box to reduce memory usage.
+    indexer = shape_bbox_indexer(ds_copy, poly)
+    ds_sub = ds_copy.isel(indexer)
+
+    # Compute the weights
+    savger = SpatialAverager(ds_sub, poly.geometry)
+
+    # Check that some weights are not null. Handle both sparse and scipy weights.
+    nonnull = (
+        savger.weights.data.nnz
+        if isinstance(savger.weights, xr.DataArray)
+        else savger.weights.nnz
+    )
+    if nonnull == 0:
         raise ValueError(
             "There were no valid data points found in the requested averaging region. Verify objects overlap."
         )
-    ds_out = savger(ds_copy)
+
+    # Select variables to average
+    if variable is not None:
+        ds_sub = ds_sub[variable]
+
+    # Apply the weights to the actual data -> spatial average
+    # We transfer the global and variable attributes of the input to the output
+    ds_out = savger(ds_sub, keep_attrs=True)
 
     # Set geom coords to poly's index
     ds_out["geom"] = poly.index
 
-    # other info in poly
+    # Add polygon attributes to Dataset output as coordinates
     ds_meta = (
         poly.drop("geometry", axis=1)
         .to_xarray()
         .rename(**{poly.index.name or "index": "geom"})
     )
     ds_meta = ds_meta.set_coords(ds_meta.data_vars)
-
     ds_out = xr.merge([ds_out, ds_meta])
 
+    # Maybe returning a DataArray should be deprecated.
     if isinstance(ds, xr.DataArray):
-        return ds._from_temp_dataset(ds_out)
+        return ds_out[ds.name]
     return ds_out
 
 
@@ -180,9 +207,12 @@ def average_over_dims(
     # Short-term solution to error: "NotImplementedError: Computing the mean of an " ...
     #    "array containing cftime.datetime objects is not yet implemented on dask arrays."
     # See GITHUB ISSUE: https://github.com/roocs/clisops/issues/185
-    # The fix is simply to force `ds.load()` before processing
-    ds_averaged_over_dims = ds.load().mean(
-        dim=dims_to_average, skipna=True, keep_attrs=True
-    )
+    if isinstance(ds, xr.Dataset):
+        untouched_ds = ds.drop_dims(dims_to_average)
+        ds = ds.drop_vars(untouched_ds.data_vars.keys())
 
+    ds_averaged_over_dims = ds.mean(dim=dims_to_average, skipna=True, keep_attrs=True)
+
+    if isinstance(ds, xr.Dataset):
+        return xr.merge((ds_averaged_over_dims, untouched_ds))
     return ds_averaged_over_dims

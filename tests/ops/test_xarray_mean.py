@@ -105,7 +105,8 @@ def test_xarray_da_mean_keep_attrs_true(load_esgf_test_data):
         CMIP5_TAS,
         combine="by_coords",
         use_cftime=True,
-    ).load()
+        drop_variables=["time_bnds"],
+    )
     ds_tas_mean = ds.tas.mean(dim="lat", keep_attrs=True)
     ds_mean = ds.mean(dim="lat", keep_attrs=True)
 
