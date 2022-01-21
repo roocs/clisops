@@ -15,7 +15,6 @@ clisops - climate simulation operations
    :target: https://clisops.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation
 
-
 The ``clisops`` package (pronounced "clie-sops") provides a python library for running
 *data-reduction* operations on `Xarray <http://xarray.pydata.org/>`_ data sets or files
 that can be interpreted by Xarray. These basic operations (subsetting, averaging and
@@ -43,6 +42,21 @@ The package provides the following operations:
 * subset
 * average
 * regrid
+
+Online Demo
+-----------
+
+You can try clisops online using Binder (just click on the binder link below),
+or view the notebooks on NBViewer.
+
+.. image:: https://mybinder.org/badge_logo.svg
+   :target: https://mybinder.org/v2/gh/roocs/clisops/regrid-main-martin?filepath=notebooks
+   :alt: Binder Launcher
+
+.. image:: https://raw.githubusercontent.com/jupyter/design/master/logos/Badges/nbviewer_badge.svg
+   :target: https://nbviewer.jupyter.org/github/roocs/clisops/tree/regrid-main-martin/notebooks/
+   :alt: NBViewer
+   :height: 20
 
 Credits
 =======
