@@ -3,25 +3,13 @@ from typing import List, Optional, Tuple, Union
 
 import xarray as xr
 from roocs_utils.parameter.dimension_parameter import DimensionParameter
-from roocs_utils.xarray_utils.xarray_utils import (
-    convert_coord_to_axis,
-    get_coord_type,
-    known_coord_types,
-    open_xr_dataset,
-)
+from roocs_utils.xarray_utils.xarray_utils import convert_coord_to_axis
 
-from clisops import logging, utils
 from clisops.core import average
 from clisops.ops.base_operation import Operation
-from clisops.utils.common import expand_wildcards
 from clisops.utils.file_namers import get_file_namer
-from clisops.utils.output_utils import get_output, get_time_slices
 
-__all__ = [
-    "average_over_dims",
-]
-
-LOGGER = logging.getLogger(__file__)
+__all__ = ["average_over_dims", "Average"]
 
 
 class Average(Operation):

@@ -1,14 +1,14 @@
+import logging
 from pathlib import Path
 
 import xarray as xr
 from roocs_utils.xarray_utils.xarray_utils import get_main_variable, open_xr_dataset
 
-from clisops import logging, utils
 from clisops.utils.common import expand_wildcards
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import get_output, get_time_slices
 
-LOGGER = logging.getLogger(__file__)
+logger = logging.getLogger("clisops")
 
 
 class Operation(object):
@@ -127,7 +127,7 @@ class Operation(object):
             else:
                 result_ds = processed_ds.sel(time=slice(tslice[0], tslice[1]))
 
-            LOGGER.info(f"Processing {self.__class__.__name__} for times: {tslice}")
+            logger.info(f"Processing {self.__class__.__name__} for times: {tslice}")
 
             # Get the output (file or xarray Dataset)
             # When this is a file: xarray will read all the data and write the file

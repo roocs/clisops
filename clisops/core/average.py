@@ -1,12 +1,13 @@
 """Average module."""
-from pathlib import Path
-from typing import Tuple, Union, Sequence
 import warnings
-import numpy as np
+from pathlib import Path
+from typing import Sequence, Tuple, Union
+
 import geopandas as gpd
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils.xarray_utils import get_coord_type, known_coord_types
+
 from .subset import shape_bbox_indexer
 
 __all__ = ["average_over_dims", "average_shape"]

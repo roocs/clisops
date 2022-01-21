@@ -1,3 +1,4 @@
+import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
@@ -7,9 +8,7 @@ from roocs_utils.parameter.area_parameter import AreaParameter
 from roocs_utils.parameter.level_parameter import LevelParameter
 from roocs_utils.parameter.time_components_parameter import TimeComponentsParameter
 from roocs_utils.parameter.time_parameter import TimeParameter
-from roocs_utils.xarray_utils.xarray_utils import open_xr_dataset
 
-from clisops import logging
 from clisops.core import (
     subset_bbox,
     subset_level,
@@ -18,18 +17,13 @@ from clisops.core import (
     subset_time_by_components,
     subset_time_by_values,
 )
-from clisops.core.subset import assign_bounds, get_lat, get_lon
+from clisops.core.subset import assign_bounds, get_lat, get_lon  # noqa
 from clisops.ops.base_operation import Operation
-from clisops.utils.common import expand_wildcards
 from clisops.utils.dataset_utils import check_lon_alignment
-from clisops.utils.file_namers import get_file_namer
-from clisops.utils.output_utils import get_output, get_time_slices
 
-__all__ = [
-    "Subset",
-]
+__all__ = ["Subset", "subset"]
 
-LOGGER = logging.getLogger(__file__)
+LOGGER = logging.getLogger("clisops")
 
 
 class Subset(Operation):
@@ -109,8 +103,9 @@ class Subset(Operation):
                 lon_min, lon_max = lon.values.min(), lon.values.max()
                 raise Exception(
                     f"The requested longitude subset {self.params.get('lon_bnds')} is not within the longitude bounds "
-                    f"of this dataset and the data could not be converted to this longitude frame successfully. "
-                    f"Please re-run your request with longitudes within the bounds of the dataset: ({lon_min:.2f}, {lon_max:.2f})"
+                    "of this dataset and the data could not be converted to this longitude frame successfully. "
+                    "Please re-run your request with longitudes within the bounds of the dataset: "
+                    f"({lon_min:.2f}, {lon_max:.2f})"
                 )
         else:
             kwargs = {}

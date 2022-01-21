@@ -1,13 +1,7 @@
-import math
-
 import cftime
 import numpy as np
 from roocs_utils.utils.time_utils import str_to_AnyCalendarDateTime
 from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
-
-from clisops import logging
-
-LOGGER = logging.getLogger(__file__)
 
 
 def calculate_offset(lon, first_element_value):

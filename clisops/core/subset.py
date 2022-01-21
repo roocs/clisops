@@ -10,7 +10,7 @@ import cf_xarray  # noqa
 import geopandas as gpd
 import numpy as np
 import xarray
-from pandas.api.types import is_integer_dtype
+from pandas.api.types import is_integer_dtype  # noqa
 from pyproj import Geod
 from pyproj.crs import CRS
 from pyproj.exceptions import CRSError
