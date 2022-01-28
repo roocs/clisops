@@ -1,7 +1,6 @@
 """Testing and tutorial utilities module."""
 # Most of this code copied and adapted from xarray, xclim, and raven
 import hashlib
-import logging
 import re
 from pathlib import Path
 from typing import List, Optional, Sequence, Union
@@ -10,12 +9,12 @@ from urllib.parse import urljoin
 from urllib.request import urlretrieve
 
 import requests
+from loguru import logger
 from xarray import Dataset
 from xarray import open_dataset as _open_dataset
 
 _default_cache_dir = Path.home() / ".clisops_testing_data"
 
-logger = logging.getLogger("clisops.utils")
 
 __all__ = ["get_file", "open_dataset", "query_folder"]
 

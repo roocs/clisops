@@ -1,4 +1,3 @@
-import logging
 import math
 import os
 import shutil
@@ -11,12 +10,11 @@ from typing import List, Tuple, Union
 import dask
 import pandas as pd
 import xarray as xr
+from loguru import logger
 from roocs_utils.utils.common import parse_size
 from roocs_utils.xarray_utils import xarray_utils as xu
 
 from clisops import CONFIG, chunk_memory_limit
-
-logger = logging.getLogger("clisops.utils")
 
 SUPPORTED_FORMATS = {
     "netcdf": {"method": "to_netcdf", "extension": "nc"},

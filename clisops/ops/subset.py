@@ -1,8 +1,8 @@
-import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 import xarray as xr
+from loguru import logger
 from roocs_utils.parameter import parameterise
 from roocs_utils.parameter.area_parameter import AreaParameter
 from roocs_utils.parameter.level_parameter import LevelParameter
@@ -23,8 +23,6 @@ from clisops.utils.dataset_utils import check_lon_alignment
 
 __all__ = ["Subset", "subset"]
 
-LOGGER = logging.getLogger("clisops")
-
 
 class Subset(Operation):
     def _resolve_params(self, **params):
@@ -34,7 +32,7 @@ class Subset(Operation):
         level = params.get("level", None)
         time_comps = params.get("time_components", None)
 
-        LOGGER.debug(
+        logger.debug(
             f"Mapping parameters: time: {time}, area: {area}, "
             f"level: {level}, time_components: {time_comps}."
         )
@@ -81,7 +79,7 @@ class Subset(Operation):
             )
 
             # subset with space and optionally time and level
-            LOGGER.debug(f"subset_bbox with parameters: {self.params}")
+            logger.debug(f"subset_bbox with parameters: {self.params}")
             # bounds are always ascending, so if lon is descending rolling will not work.
             ds = check_lon_alignment(self.ds, self.params.get("lon_bnds"))
             try:
@@ -115,7 +113,7 @@ class Subset(Operation):
 
             # Subset over time interval if requested
             if any(kwargs.values()):
-                LOGGER.debug(f"subset_time with parameters: {kwargs}")
+                logger.debug(f"subset_time with parameters: {kwargs}")
                 result = subset_time(self.ds, **kwargs)
             # Subset a series of time values if requested
             elif self.params.get("time_values"):
@@ -141,18 +139,18 @@ class Subset(Operation):
                     )
                     self.params["first_level"], self.params["last_level"] = last, first
 
-                LOGGER.debug(f"subset_level with parameters: {kwargs}")
+                logger.debug(f"subset_level with parameters: {kwargs}")
                 result = subset_level(result, **kwargs)
 
             elif self.params.get("level_values", None):
                 kwargs = {"level_values": self.params["level_values"]}
-                LOGGER.debug(f"subset_level_by_values with parameters: {kwargs}")
+                logger.debug(f"subset_level_by_values with parameters: {kwargs}")
                 result = subset_level_by_values(result, **kwargs)
 
         # Now apply time components if specified
         time_comps = self.params.get("time_components")
         if time_comps:
-            LOGGER.debug(f"subset_by_time_components with parameters: {time_comps}")
+            logger.debug(f"subset_by_time_components with parameters: {time_comps}")
             result = subset_time_by_components(result, time_components=time_comps)
 
         return result

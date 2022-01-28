@@ -1,10 +1,13 @@
+import logging
 import os
 
 import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
+from _pytest.logging import caplog as _caplog  # noqa
 from git import Repo
+from loguru import logger
 
 from clisops.utils import get_file
 from tests._common import MINI_ESGF_CACHE_DIR, write_roocs_cfg
@@ -12,6 +15,18 @@ from tests._common import MINI_ESGF_CACHE_DIR, write_roocs_cfg
 write_roocs_cfg()
 
 ESGF_TEST_DATA_REPO_URL = "https://github.com/roocs/mini-esgf-data"
+
+
+@pytest.fixture
+def caplog(_caplog):  # noqa
+    class PropogateHandler(logging.Handler):
+        def emit(self, record):
+            logging.getLogger(record.name).handle(record)
+
+    handler_id = logger.add(PropogateHandler(), format="{message}")
+    yield _caplog
+    logger.remove(handler_id)
+    logger.remove()
 
 
 @pytest.fixture

@@ -1,20 +1,13 @@
 # -*- coding: utf-8 -*-
 """Top-level package for clisops."""
-import logging
 import os
 
+from loguru import logger
 from roocs_utils.config import get_config
 
 from .__version__ import __author__, __email__, __version__
 
-logging.getLogger("clisops").addHandler(logging.NullHandler())
-
-# logger.add(
-#     sys.stdout,
-#     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-#     filter="clisops",
-# )
-# clisops_logger = logger
+logger.disable("clisops")
 
 
 # Workaround for roocs_utils to not re-import clisops
