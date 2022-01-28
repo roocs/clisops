@@ -107,8 +107,9 @@ def test_tmp_dir_created_with_staging_dir(tmpdir):
         target_path = output_path
 
     assert target_path != "output_001.nc"
-    assert len(glob("tests/tmp*")) == 1
-    assert "tests/tmp" in glob("tests/tmp*")[0]
+    temp_test_folders = [f for f in staging.glob("tmp*")]
+    assert len(temp_test_folders) == 1
+    assert "tests/tmp" in temp_test_folders[0].as_posix()
 
 
 def test_tmp_dir_not_created_with_no_staging_dir():
@@ -214,7 +215,7 @@ def test_tmp_dir_deleted(tmpdir):
     get_output(ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")())
 
     # check that no tmpdir directories exist
-    assert [f for f in staging.glob("tmp*")] == []
+    assert len([f for f in staging.glob("tmp*")]) == 0
 
     os.remove("output_001.nc")
 
