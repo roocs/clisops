@@ -9,8 +9,13 @@ import xarray as xr
 from clisops import CONFIG, logging
 from clisops.utils.common import expand_wildcards
 from clisops.utils.file_namers import get_file_namer
-from clisops.utils.output_utils import get_output, get_time_slices
-from tests._common import CMIP5_TAS
+from clisops.utils.output_utils import (
+    get_chunk_length,
+    get_da,
+    get_output,
+    get_time_slices,
+)
+from tests._common import CMIP5_TAS, CMIP6_TOS
 
 LOGGER = logging.getLogger(__file__)
 
@@ -204,3 +209,51 @@ def test_tmp_dir_deleted():
     assert glob("tests/tmp*") == []
 
     os.remove("output_001.nc")
+
+
+def test_unify_chunks_cmip5():
+    """
+    testing unify chunks with a cmip5 example:
+    da.unify_chunks() doesn't change da.chunks
+    ds = ds.unify_chunks() doesn't appear to change ds.chunks in our case
+    """
+    # DataArray unify chunks method
+    ds1 = _open(CMIP5_TAS)
+    da = get_da(ds1)
+    chunk_length = get_chunk_length(da)
+    chunked_ds1 = ds1.chunk({"time": chunk_length})
+    da.unify_chunks()
+
+    # Dataset unify chunks method
+    chunk_length = get_chunk_length(da)
+    chunked_ds2 = ds1.chunk({"time": chunk_length})
+    chunked_ds2_unified = chunked_ds2.unify_chunks()
+
+    # test that da.unify_chunks hasn't changed ds.chunks
+    assert chunked_ds1.chunks == chunked_ds2.chunks
+    # test that ds = ds.unify_chunks hasn't changed ds.chunks
+    assert chunked_ds2.chunks == chunked_ds2_unified.chunks
+
+
+def test_unify_chunks_cmip6():
+    """
+    testing unify chunks with a cmip6 example:
+    da.unify_chunks() doesn't change da.chunks
+    ds = ds.unify_chunks() doesn't appear to change ds.chunks in our case
+    """
+    # DataArray unify chunks method
+    ds1 = _open(CMIP6_TOS)
+    da = get_da(ds1)
+    chunk_length = get_chunk_length(da)
+    chunked_ds1 = ds1.chunk({"time": chunk_length})
+    da.unify_chunks()
+
+    # Dataset unify chunks method
+    chunk_length = get_chunk_length(da)
+    chunked_ds2 = ds1.chunk({"time": chunk_length})
+    chunked_ds2_unified = chunked_ds2.unify_chunks()
+
+    # test that da.unify_chunks hasn't changed ds.chunks
+    assert chunked_ds1.chunks == chunked_ds2.chunks
+    # test that ds = ds.unify_chunks hasn't changed ds.chunks
+    assert chunked_ds2.chunks == chunked_ds2_unified.chunks

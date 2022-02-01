@@ -2,10 +2,8 @@ import os
 import tempfile
 from pathlib import Path
 
-import pytest
+import xarray as xr
 from jinja2 import Template
-
-from clisops.utils import get_file
 
 ROOCS_CFG = Path(tempfile.gettempdir(), "roocs.ini").as_posix()
 TESTS_HOME = Path(__file__).parent.absolute().as_posix()
@@ -17,10 +15,44 @@ DEFAULT_CMIP6_ARCHIVE_BASE = Path(
     TESTS_HOME, "mini-esgf-data/test_data/badc/cmip6/data"
 ).as_posix()
 
+
+def assert_vars_equal(var_id, *ds_list, extras=None):
+    """Extract variable/DataArray `var_id` from each Dataset in the `ds_list`.
+    Check they are all the same by comparing the arrays and common attributes.
+    `extras` is an optional list of extra attributes to check.
+    """
+    if not extras:
+        extras = []
+
+    if len(ds_list) == 1:
+        raise Exception("Only one Dataset passed to: _ds_var_check()")
+
+    das = [ds[var_id] for ds in ds_list]
+    ref_da = das[0]
+
+    # Create a list of attributes to compare
+    attrs = ["standard_name", "long_name", "units", "cell_methods"] + extras
+
+    for da in das[1:]:
+        assert da.values.tolist() == ref_da.values.tolist()
+
+        for attr in attrs:
+            if attr in ref_da.attrs:
+                assert ref_da.attrs[attr] == da.attrs.get(attr)
+
+
 # This is now only required for json files
 XCLIM_TESTS_DATA = Path(TESTS_HOME, "xclim-testdata/testdata").as_posix()
 MINI_ESGF_CACHE_DIR = Path.home() / ".mini-esgf-data"
 MINI_ESGF_MASTER_DIR = os.path.join(MINI_ESGF_CACHE_DIR, "master")
+
+
+def _check_output_nc(result, fname="output_001.nc", time=None):
+    assert fname in [Path(_).name for _ in result]
+    if time:
+        ds = xr.open_mfdataset(result, use_cftime=True, decode_timedelta=False)
+        time_ = f"{ds.time.values.min().isoformat()}/{ds.time.values.max().isoformat()}"
+        assert time == time_
 
 
 def write_roocs_cfg():
@@ -41,7 +73,7 @@ def write_roocs_cfg():
     base_dir = {{ base_dir }}/test_data/badc/cmip6/data/CMIP6
 
     [project:c3s-cordex]
-    base_dir = {{ base_dir }}/test_data/gws/nopw/j04/cp4cds1_vol1/data/c3s-cordex
+    base_dir = {{ base_dir }}/test_data/pool/data/CORDEX/data/cordex
     """
     cfg = Template(cfg_templ).render(base_dir=MINI_ESGF_MASTER_DIR)
     with open(ROOCS_CFG, "w") as fp:
@@ -113,9 +145,24 @@ CMIP6_TA = Path(
     "master/test_data/badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/Amon/ta/gn/files/d20190807/ta_Amon_MIROC6_ssp119_r1i1p1f1_gn_201501-202412.nc",
 ).as_posix()
 
-C3S_CORDEX_PSL = Path(
+C3S_CORDEX_AFR_TAS = Path(
     MINI_ESGF_CACHE_DIR,
-    "master/test_data/group_workspaces/jasmin2/cp4cds1/vol1/data/c3s-cordex/output/EUR-11/IPSL/MOHC-HadGEM2-ES/rcp85/r1i1p1/IPSL-WRF381P/v1/day/psl/v20190212/*.nc",
+    "master/test_data/pool/data/CORDEX/data/cordex/output/AFR-22/GERICS/MPI-M-MPI-ESM-LR/historical/r1i1p1/GERICS-REMO2015/v1/day/tas/v20201015/*.nc",
+).as_posix()
+
+C3S_CORDEX_NAM_PR = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/pool/data/CORDEX/data/cordex/output/NAM-22/OURANOS/NOAA-GFDL-GFDL-ESM2M/rcp45/r1i1p1/OURANOS-CRCM5/v1/day/pr/v20200831/*.nc",
+).as_posix()
+
+C3S_CORDEX_EUR_ZG500 = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/pool/data/CORDEX/data/cordex/output/EUR-11/IPSL/IPSL-IPSL-CM5A-MR/rcp85/r1i1p1/IPSL-WRF381P/v1/day/zg500/v20190919/*.nc",
+).as_posix()
+
+C3S_CORDEX_ANT_SFC_WIND = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/pool/data/CORDEX/data/cordex/output/ANT-44/KNMI/ECMWF-ERAINT/evaluation/r1i1p1/KNMI-RACMO21P/v1/day/sfcWind/v20201001/*.nc",
 ).as_posix()
 
 C3S_CMIP5_TSICE = Path(

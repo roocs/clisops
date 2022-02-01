@@ -28,12 +28,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - python-version: 3.6
-            tox-env: py36
-            allowed_to_fail: false
           - python-version: 3.7
-            tox-env: py37-xarray
-            allowed_to_fail: true
+            tox-env: py37
+            allowed_to_fail: false
           - python-version: 3.8
             tox-env: py38
             allowed_to_fail: false
@@ -72,10 +69,8 @@ jobs:
             conda env create -f environment.yml
             source activate clisops
             pip install -e ".[dev]"
-            pip install pangeo-xesmf==0.6.0
-#            pip install --upgrade git+https://github.com/pangeo-data/xESMF.git
       - name: Test with conda
         run: |
             source activate clisops
-            python -m pytest --cov tests
-
+            pytest --cov tests
+        continue-on-error: false

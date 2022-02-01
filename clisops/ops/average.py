@@ -26,7 +26,7 @@ LOGGER = logging.getLogger(__file__)
 
 class Average(Operation):
     def _resolve_params(self, **params):
-        dims = DimensionParameter(params.get("dims", None)).tuple
+        dims = DimensionParameter(params.get("dims", None)).value
         ignore_undetected_dims = params.get("ignore_undetected_dims", False)
 
         self.params = {"dims": dims, "ignore_undetected_dims": ignore_undetected_dims}

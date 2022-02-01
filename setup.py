@@ -35,7 +35,7 @@ docs_requirements = [
     "matplotlib",
 ]
 
-extra_requirements = ["xesmf>=0.6.0", "pygeos>=0.8"]
+extra_requirements = ["xesmf>=0.6.2", "pygeos>=0.9"]
 
 setup(
     version=about["__version__"],
@@ -58,7 +58,6 @@ setup(
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
@@ -71,7 +70,7 @@ setup(
     ],
     description="clisops - climate simulation operations.",
     license=__license__,
-    python_requires=">=3.6.0",
+    python_requires=">=3.7.0",
     install_requires=requirements,
     long_description=_long_description,
     long_description_content_type="text/x-rst",
