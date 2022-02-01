@@ -1,3 +1,4 @@
+from datetime import datetime as dt
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
@@ -74,7 +75,13 @@ class Regrid(Operation):
         compute_bounds = "conservative" in method
         grid_in = self._get_grid_in(self.ds, compute_bounds)
         grid_out = self._get_grid_out(grid, compute_bounds)
+
+        t_start = dt.now()
         weights = self._get_weights(grid_in=grid_in, grid_out=grid_out, method=method)
+        t_end = dt.now()
+        LOGGER.info(
+            f"Computed/Retrieved weights in {(t_end-t_start).total_seconds()} seconds."
+        )
 
         self.params = {
             "grid_in": grid_in,

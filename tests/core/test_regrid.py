@@ -1,13 +1,3 @@
-from pkg_resources import parse_version
-
-try:
-    import xesmf
-
-    if parse_version(xesmf.__version__) < parse_version("0.6.0"):
-        raise ImportError
-except ImportError:
-    xesmf = None
-
 import os
 from glob import glob
 from pathlib import Path
@@ -16,9 +6,11 @@ import cf_xarray as cfxr
 import numpy as np
 import pytest
 import xarray as xr
+from pkg_resources import parse_version
 from roocs_grids import get_grid_file
 
 from clisops.core.regrid import (
+    XESMF_MINIMUM_VERSION,
     Grid,
     Weights,
     regrid,
@@ -38,12 +30,26 @@ from .._common import (
     CORDEX_TAS_NO_BOUNDS,
 )
 
+try:
+    import xesmf
+
+    if parse_version(xesmf.__version__) < parse_version(XESMF_MINIMUM_VERSION):
+        raise ImportError
+except ImportError:
+    xesmf = None
+
+
 # test from grid_id --predetermined
 # test different types of grid e.g. irregular, not supported type
 # test for errors e.g.
 # no lat/lon in dataset
 # more than one latitude/longitude
 # grid instructor tuple not correct length
+
+
+XESMF_IMPORT_MSG = (
+    f"xESMF >= {XESMF_MINIMUM_VERSION} is needed for regridding functionalities."
+)
 
 
 def test_grid_init_ds_tas_regular(load_esgf_test_data):
@@ -123,9 +129,7 @@ def test_grid_init_ds_tas_irregular(load_esgf_test_data):
     # assert self.mask
 
 
-@pytest.mark.skipif(
-    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
-)
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_grid_instructor_global():
     grid_instructor = (1.5, 1.5)
     grid = Grid(grid_instructor=grid_instructor)
@@ -151,9 +155,7 @@ def test_grid_instructor_global():
     # assert self.mask
 
 
-@pytest.mark.skipif(
-    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
-)
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_grid_instructor_2d_regional_change_lon():
     grid_instructor = (50, 240, 1.5, -90, 90, 1.5)
     grid = Grid(grid_instructor=grid_instructor)
@@ -179,9 +181,7 @@ def test_grid_instructor_2d_regional_change_lon():
     # assert self.mask
 
 
-@pytest.mark.skipif(
-    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
-)
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_grid_instructor_2d_regional_change_lat():
     grid_instructor = (0, 360, 1.5, -60, 50, 1.5)
     grid = Grid(grid_instructor=grid_instructor)
@@ -207,9 +207,7 @@ def test_grid_instructor_2d_regional_change_lat():
     # assert self.mask
 
 
-@pytest.mark.skipif(
-    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
-)
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_grid_instructor_2d_regional_change_lon_and_lat():
     grid_instructor = (50, 240, 1.5, -60, 50, 1.5)
     grid = Grid(grid_instructor=grid_instructor)
@@ -235,9 +233,7 @@ def test_grid_instructor_2d_regional_change_lon_and_lat():
     # assert self.mask
 
 
-@pytest.mark.skipif(
-    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
-)
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_grid_instructor_2d_global():
     grid_instructor = (0, 360, 1.5, -90, 90, 1.5)
     grid = Grid(grid_instructor=grid_instructor)
@@ -283,9 +279,7 @@ def test_from_grid_id():
     # assert self.mask0
 
 
-@pytest.mark.skipif(
-    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
-)
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_grid_from_ds_adaptive_extent(load_esgf_test_data):
     "Test that the extent is evaluated as global for original and derived adaptive grid."
     dsA = xr.open_dataset(CMIP6_TOS_ONE_TIME_STEP, use_cftime=True)
@@ -307,9 +301,7 @@ def test_grid_from_ds_adaptive_extent(load_esgf_test_data):
     assert gCa.extent == "global"
 
 
-@pytest.mark.skipif(
-    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
-)
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_grid_from_ds_adaptive_reproducibility():
     "Test that the extent is evaluated as global for original and derived adaptive grid."
     fpathA = get_grid_file("0pt25deg")
@@ -359,9 +351,7 @@ def test_compare_grid_diff_in_precision(load_esgf_test_data):
     assert gA.compare_grid(gB)
 
 
-@pytest.mark.skipif(
-    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
-)
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_compare_grid_hash_dict_and_verbose(capfd):
     "Test Grid.hash_dict keys and Grid.compare_grid verbose option"
     gA = Grid(grid_instructor=(1.0, 0.5))
@@ -389,9 +379,7 @@ def test_detect_collapsing_cells(load_esgf_test_data):
     assert not gB.contains_collapsing_cells
 
 
-@pytest.mark.skipif(
-    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
-)
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_Weights_init_with_collapsing_cells(tmp_path, load_esgf_test_data):
     "Test the creation of remapping weights for a grid containing collapsing cells"
     # todo: the used dataset might not be appropriate if the halo gets more properly removed
@@ -557,9 +545,7 @@ def test_centers_within_bounds_regular_lat_lon():
 
 
 # test all methods
-@pytest.mark.skipif(
-    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
-)
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 class TestWeights:
     def test_grids_in_and_out_bilinear(self, tmp_path):
         ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
@@ -642,9 +628,7 @@ class TestWeights:
             Weights(grid_in=gi, grid_out=go, method="conservative")
 
 
-@pytest.mark.skipif(
-    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
-)
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 class TestRegrid:
     def _setup(self):
         if hasattr(self, "setup_done"):
@@ -672,9 +656,7 @@ class TestRegrid:
         print(r)
 
 
-@pytest.mark.skipif(
-    xesmf is None, reason="xESMF >= 0.6.0 is needed for regridding functionalities."
-)
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_cache_init_and_flush(tmp_path):
     "Test of the cache init and flush functionalities"
 
@@ -685,11 +667,11 @@ def test_cache_init_and_flush(tmp_path):
     go = Grid(grid_instructor=10)
     Weights(grid_in=gi, grid_out=go, method="nearest_s2d")
 
-    assert os.path.isfile(Path(weights_dir, "weights.json"))
-    flist = sorted(os.path.basename(f) for f in glob(f"{weights_dir}/*.nc"))
+    flist = sorted(os.path.basename(f) for f in glob(f"{weights_dir}/*"))
     flist_ref = [
         "grid_4d324aecaa8302ab0f2f212e9821b00f.nc",
         "grid_96395935b4e81f2a5b55970bd920d82c.nc",
+        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_nearest_s2d.json",
         "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_nearest_s2d.nc",
     ]
     assert flist == flist_ref

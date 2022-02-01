@@ -9,12 +9,14 @@ from roocs_grids import get_grid_file, grid_dict
 
 import clisops
 from clisops import CONFIG
-from clisops.core.regrid import weights_cache_init, xe
+from clisops.core.regrid import XESMF_MINIMUM_VERSION, weights_cache_init, xe
 from clisops.ops.regrid import regrid
 
 from .._common import CMIP5_MRSOS_ONE_TIME_STEP
 
-XESMF_IMPORT_MSG = "xESMF >= 0.6.0 is needed for regridding functionalities."
+XESMF_IMPORT_MSG = (
+    f"xESMF >= {XESMF_MINIMUM_VERSION} is needed for regridding functionalities."
+)
 
 
 def _check_output_nc(result, fname="output_001.nc"):

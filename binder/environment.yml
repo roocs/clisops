@@ -25,6 +25,7 @@ dependencies:
  - cartopy
  - matplotlib<3.5
  - GitPython
+ - pooch
  - pip:
 #     - cf-xarray @ git+https://github.com/xarray-contrib/cf-xarray/@main#egg=cf-xarray
      - clisops @ git+https://github.com/roocs/clisops/@regrid-main-martin#egg=clisops
