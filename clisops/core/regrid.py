@@ -30,14 +30,6 @@ except Exception:
 # from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
-# from daops import functions to load and save weights from/to a central weight store
-try:
-    from daops.regrid import weights_load, weights_save
-except Exception:
-    # Use local weight store
-    weights_save = None
-    weights_load = None
-
 from clisops import CONFIG
 from clisops import __version__ as clversion
 from clisops.utils.output_utils import FileLock
@@ -45,7 +37,6 @@ from clisops.utils.output_utils import FileLock
 # from clisops.utils import dataset_utils
 
 weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
-weights_svc = CONFIG["clisops:grid_weights"]["remote_weights_svc"]
 coord_precision_hor = int(CONFIG["clisops:coordinate_precision"]["hor_coord_decimals"])
 
 
@@ -125,6 +116,7 @@ def regrid(grid_in, grid_out, weights, adaptive_masking_threshold=0.5, keep_attr
     #  False - no attributes in final dataset but the newly set ones
     #  "target" - grid_out.ds attributes in final dataset
     #
+
     if not isinstance(grid_out.ds, xr.Dataset):
         raise Exception(
             "The target Grid object 'grid_out' has to be built from an xarray.Dataset"
@@ -149,7 +141,7 @@ def regrid(grid_in, grid_out, weights, adaptive_masking_threshold=0.5, keep_attr
     grid_out._drop_vars(keep_attrs=not keep_attrs)
     # Transfer all non-horizontal coords (and optionally attrs) from grid_out.ds to grid_in.ds
     # if isinstance(grid_in.ds, xr.Dataset):
-    grid_out._transfer_coords(grid_in, keep_attrs=True)
+    grid_out._transfer_coords(grid_in, keep_attrs=keep_attrs)
     regridded_ds = grid_out.ds
 
     # Add new attrs
@@ -1643,7 +1635,7 @@ class Grid:
         ]
         if not keep_attrs:
             self.ds.attrs = {}
-        self.ds = self.ds.drop(labels=to_drop)
+        self.ds = self.ds.drop_vars(names=to_drop)
 
     def _transfer_coords(self, source_grid, keep_attrs=True):
         "Transfer all non-horizontal coordinates to a dataset"

@@ -58,9 +58,10 @@ class Regrid(Operation):
 
         # self.method = params.get("method", "nn")
 
-        adaptive_masking_threshold = params.get("adaptive_masking_threshold", 0.5)
-        grid = params.get("grid", "adaptive")
-        method = params.get("method", "nearest_s2d")
+        adaptive_masking_threshold = params.get("adaptive_masking_threshold", None)
+        grid = params.get("grid", None)
+        method = params.get("method", None)
+        keep_attrs = params.get("keep_attrs", None)
 
         if method not in supported_regridding_methods:
             raise Exception(
@@ -90,6 +91,7 @@ class Regrid(Operation):
             "regridder": weights.regridder,
             "weights": weights,
             "adaptive_masking_threshold": adaptive_masking_threshold,
+            "keep_attrs": keep_attrs,
         }
 
         # In case there was a Halo removed, the shape of grid_in.ds and self.ds would not match anymore
@@ -110,10 +112,7 @@ class Regrid(Operation):
         )
 
     def _get_file_namer(self):
-        # need to overwrite the file namer to make it clear in the output file name
-        # that the dataset has been regridded - see ops.average.Average
         # extra is what will go at the end of the file name before .nc
-        # this may not make sense so change if needed
 
         extra = "_regrid-{}-{}".format(
             self.params.get("method"), self.params.get("grid_out").__str__()
@@ -156,7 +155,7 @@ class Regrid(Operation):
 def regrid(
     ds: Union[xr.Dataset, str, Path],
     *,
-    method="nearest_s2d",  # do we want defaults for these values? Yes, but now I added them at _resolve as well. Where to get rid of them?
+    method="nearest_s2d",
     adaptive_masking_threshold=0.5,
     grid: Optional[Union[xr.Dataset, int, float, tuple, str]] = "adaptive",
     output_dir: Optional[Union[str, Path]] = None,

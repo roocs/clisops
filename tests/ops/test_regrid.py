@@ -12,7 +12,7 @@ from clisops import CONFIG
 from clisops.core.regrid import XESMF_MINIMUM_VERSION, weights_cache_init, xe
 from clisops.ops.regrid import regrid
 
-from .._common import CMIP5_MRSOS_ONE_TIME_STEP
+from .._common import CMIP5_MRSOS_ONE_TIME_STEP, CMIP6_TOS_ONE_TIME_STEP
 
 XESMF_IMPORT_MSG = (
     f"xESMF >= {XESMF_MINIMUM_VERSION} is needed for regridding functionalities."
@@ -103,6 +103,58 @@ def test_regrid_regular_grid_to_all_roocs_grids(
     ds = xr.open_dataset(nc_file)
     assert "mrsos" in ds
     assert ds.mrsos.size > 100
+
+
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+def test_regrid_keep_attrs(load_esgf_test_data, tmp_path):
+    "Test regridded a regular lat/lon field to all roocs grid types."
+    fpath = CMIP6_TOS_ONE_TIME_STEP
+    method = "nearest_s2d"
+
+    weights_cache_init(Path(tmp_path, "weights"))
+
+    ds = xr.open_dataset(fpath).isel(time=0)
+
+    # regrid - keeping all attributes
+    result = regrid(
+        ds,
+        method=method,
+        adaptive_masking_threshold=-1,
+        grid="2pt5deg",
+        output_type="xarray",
+    )
+
+    # regrid - scrapping attributes
+    result_na = regrid(
+        ds,
+        method=method,
+        adaptive_masking_threshold=-1,
+        grid="2pt5deg",
+        output_type="xarray",
+        keep_attrs=False,
+    )
+
+    ds_remap = result[0]
+    ds_remap_na = result_na[0]
+
+    assert "tos" in ds_remap and "tos" in ds_remap_na
+    assert all([key not in ds_remap_na.tos.attrs.keys() for key in ds.tos.attrs.keys()])
+    assert all([key in ds_remap.tos.attrs.keys() for key in ds.tos.attrs.keys()])
+    assert all(
+        [
+            key not in ds_remap_na.attrs.keys()
+            for key in ds.attrs.keys()
+            if key not in ["grid", "grid_label"]
+        ]
+    )
+    # todo: remove the restriction when nominal_resolution of the target grid is calculated in core/regrid.py
+    assert all(
+        [
+            key in ds_remap.attrs.keys()
+            for key in ds.attrs.keys()
+            if key not in ["nominal_resolution"]
+        ]
+    )
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
