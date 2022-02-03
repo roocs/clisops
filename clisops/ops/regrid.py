@@ -1,15 +1,17 @@
 from datetime import datetime as dt
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Union
 
 import xarray as xr
+from roocs_utils.exceptions import InvalidParameterValue
 
 from clisops import logging
 from clisops.core import Grid, Weights
 from clisops.core import regrid as core_regrid
 from clisops.ops.base_operation import Operation
 from clisops.utils.file_namers import get_file_namer
-from clisops.utils.output_utils import get_output, get_time_slices
+
+# from clisops.utils.output_utils import get_output, get_time_slices
 
 __all__ = [
     "regrid",
@@ -21,14 +23,32 @@ supported_regridding_methods = ["conservative", "patch", "nearest_s2d", "bilinea
 
 
 class Regrid(Operation):
-    def _get_grid_in(self, grid_desc, compute_bounds):
+    """Class for regridding operation, extends clisops.ops.base_operation.Operation."""
+
+    def _get_grid_in(
+        self, grid_desc: Union[xr.Dataset, xr.DataArray], compute_bounds: bool
+    ):
+        """
+        Create clisops.core.regrid.Grid object as input grid of the regridding operation.
+
+        Return the Grid object.
+        """
         if isinstance(grid_desc, (xr.Dataset, xr.DataArray)):
             return Grid(ds=grid_desc, compute_bounds=compute_bounds)
-        raise Exception(
-            "An xarray.Dataset or xarray.DataArray has to be provided as input."
+        raise InvalidParameterValue(
+            "An xarray.Dataset or xarray.DataArray has to be provided as input for the source grid."
         )
 
-    def _get_grid_out(self, grid_desc, compute_bounds):
+    def _get_grid_out(
+        self,
+        grid_desc: Union[xr.Dataset, xr.DataArray, int, float, tuple, str],
+        compute_bounds: bool,
+    ):
+        """
+        Create clisops.core.regrid.Grid object as target grid of the regridding operation.
+
+        Returns the Grid object
+        """
         if isinstance(grid_desc, str):
             if grid_desc in ["auto", "adaptive"]:
                 return Grid(
@@ -41,22 +61,23 @@ class Regrid(Operation):
         elif isinstance(grid_desc, (xr.Dataset, xr.DataArray)):
             return Grid(ds=grid_desc, compute_bounds=compute_bounds)
         else:
+            # clisops.core.regrid.Grid will raise the exception
             return Grid()
 
-    def _get_weights(self, grid_in, grid_out, method):
+    def _get_weights(self, grid_in: Grid, grid_out: Grid, method: str):
+        """
+        Generate the remapping weights using clisops.core.regrid.Weights.
+
+        Returns the Weights object.
+        """
         return Weights(grid_in=grid_in, grid_out=grid_out, method=method)
 
     def _resolve_params(self, **params):
-        """Generates a dictionary of regrid parameters"""
+        """Generate a dictionary of regrid parameters."""
         # all regrid specific paramterers should be passed in via **params
         # this is where we resolve them and set self.params as a dict or as separate attributes
         # this would be where you make use of your other methods/ attributes e.g.
         # get_grid_in(), get_grid_out() and get_weights() to generate the regridder
-
-        # verify here that grid and method are valid inputs.
-        # we use roocs_utils.exceptions.InvalidParameterValue if an input isn't right
-
-        # self.method = params.get("method", "nn")
 
         adaptive_masking_threshold = params.get("adaptive_masking_threshold", None)
         grid = params.get("grid", None)
@@ -73,10 +94,13 @@ class Regrid(Operation):
             f"Input parameters: method: {method}, grid: {grid}, adaptive_masking: {adaptive_masking_threshold}"
         )
 
+        # Compute bounds only when required
         compute_bounds = "conservative" in method
+        # Create and check source and target grids
         grid_in = self._get_grid_in(self.ds, compute_bounds)
         grid_out = self._get_grid_out(grid, compute_bounds)
 
+        # Compute the remapping weights
         t_start = dt.now()
         weights = self._get_weights(grid_in=grid_in, grid_out=grid_out, method=method)
         t_end = dt.now()
@@ -84,6 +108,7 @@ class Regrid(Operation):
             f"Computed/Retrieved weights in {(t_end-t_start).total_seconds()} seconds."
         )
 
+        # Define params dict
         self.params = {
             "grid_in": grid_in,
             "grid_out": grid_out,
@@ -101,7 +126,7 @@ class Regrid(Operation):
 
         # Theres no __str__() method for the Regridder object, so I used its filename attribute,
         #  which specifies a default filename (which has but not much to do with the filename we would give the weight file).
-        # Better option might be to have the Weights class extend the Regridder class or to define
+        # todo: Better option might be to have the Weights class extend the Regridder class or to define
         #  a __str__() method for the Weights class.
         LOGGER.debug(
             "Resolved parameters: grid_in: {}, grid_out: {}, regridder: {}".format(
@@ -112,8 +137,8 @@ class Regrid(Operation):
         )
 
     def _get_file_namer(self):
-        # extra is what will go at the end of the file name before .nc
-
+        """Return the appropriate file namer object."""
+        # "extra" is what will go at the end of the file name before .nc
         extra = "_regrid-{}-{}".format(
             self.params.get("method"), self.params.get("grid_out").__str__()
         )
@@ -124,18 +149,11 @@ class Regrid(Operation):
 
     def _calculate(self):
         """
-        Process the regridding request:
-        - remove halos if present
-        - call: "clisops.core.regrid.regrid(...)"
-        - return the resulting regridded Xarray Dataset
-        """
-        # remove halos before regridding
+        Process the regridding request, calls clisops.core.regrid.regrid().
 
-        # the result is saved by the process() method on the base class -
-        # so I think that would replace your save()?
-        # Fix: pass self.grid to contain the output ds coordinate information
-        #  since else self.ds was used and contained both, input and output grid
-        #  coordinate variables leading to inconsistencies
+        Returns the resulting xarray.Dataset.
+        """
+        # the result is saved by the process() method on the base class
         regridded_ds = core_regrid(
             self.params.get("grid_in", None),
             self.params.get("grid_out", None),
@@ -144,27 +162,25 @@ class Regrid(Operation):
             self.params.get("keep_attrs", None),
         )
 
-        # The output ds might not yet be optimal
-        # Will need to test which data variables get dropped or modified by the remapping.
-        # It seems time_bnds, ... get dropped but the vertices of the old dataset are kept.
-        # Also, might want to set more global attributes (clisops+xesmf version, weights information)
-
         return regridded_ds
 
 
 def regrid(
     ds: Union[xr.Dataset, str, Path],
     *,
-    method="nearest_s2d",
-    adaptive_masking_threshold=0.5,
-    grid: Optional[Union[xr.Dataset, int, float, tuple, str]] = "adaptive",
+    method: Optional[str] = "nearest_s2d",
+    adaptive_masking_threshold: Optional[Union[int, float]] = 0.5,
+    grid: Optional[
+        Union[xr.Dataset, xr.DataArray, int, float, tuple, str]
+    ] = "adaptive",
     output_dir: Optional[Union[str, Path]] = None,
-    output_type="netcdf",
-    split_method="time:auto",
-    file_namer="standard",
-    keep_attrs=True,
+    output_type: Optional[str] = "netcdf",
+    split_method: Optional[str] = "time:auto",
+    file_namer: Optional[str] = "standard",
+    keep_attrs: Optional[Union[bool, str]] = True,
 ) -> List[Union[xr.Dataset, str]]:
     """
+    Regrid specified input file or xarray object.
 
     Parameters
     ----------

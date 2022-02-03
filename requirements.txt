@@ -7,7 +7,7 @@ shapely>=1.6
 geopandas>=0.7
 dask[complete]>=2.6
 pyproj>=2.5
-cf-xarray>=0.6.3
+cf-xarray>=0.7.0
 #cf-xarray @ git+https://github.com/xarray-contrib/cf-xarray/@main#egg=cf-xarray
 roocs-grids @ git+https://github.com/roocs/roocs-grids.git@main#egg=roocs-grids
 # Optional (if using regridding)

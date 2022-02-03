@@ -15,9 +15,20 @@ import numpy as np
 import roocs_grids
 import xarray as xr
 from pkg_resources import parse_version
+from roocs_utils.exceptions import InvalidParameterValue
+
+# from roocs_utils.exceptions import InvalidParameterValue
+from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
+
+from clisops import CONFIG
+from clisops import __version__ as clversion
+from clisops.utils.common import check_dir, require_module
+from clisops.utils.output_utils import FileLock
+
+# from clisops.utils import dataset_utils
 
 # Try importing xesmf and set to None if not found at correct version
-# If set to None, the `require_xesmf` decorator will check this
+# If set to None, the `require_module` decorator will check this
 XESMF_MINIMUM_VERSION = "0.6.2"
 try:
     import xesmf as xe
@@ -27,50 +38,26 @@ try:
 except Exception:
     xe = None
 
-# from roocs_utils.exceptions import InvalidParameterValue
-from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
-
-from clisops import CONFIG
-from clisops import __version__ as clversion
-from clisops.utils.output_utils import FileLock
-
-# from clisops.utils import dataset_utils
-
 weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
 coord_precision_hor = int(CONFIG["clisops:coordinate_precision"]["hor_coord_decimals"])
 
 
-def require_xesmf(func):
-    "Decorator to ensure that xesmf is installed before function/method is called."
-
-    @functools.wraps(func)
-    def wrapper_func(*args, **kwargs):
-        if xe is None:
-            raise Exception(
-                f"Package xesmf >= {XESMF_MINIMUM_VERSION} is required to use the regridding functionality."
-            )
-        return func(*args, **kwargs)
-
-    return wrapper_func
-
-
-def check_dir(func, dr):
-    "Decorator to ensure that a directory exists."
-    if not os.path.isdir(dr):
-        os.makedirs(dr)
-
-    @functools.wraps(func)
-    def wrapper_func(*args, **kwargs):
-        return func(*args, **kwargs)
-
-    return wrapper_func
-
-
+# Ensure local weight storage directory exists - decorator, used below
 check_weights_dir = functools.partial(check_dir, dr=weights_dir)
+# Ensure xESMF module is imported - decorator, used below
+require_xesmf = functools.partial(
+    require_module, module=xe, module_name="xESMF", min_version=XESMF_MINIMUM_VERSION
+)
 
 
 # Initialize local weights storage
 def weights_cache_init(weights_dir_tmp):
+    """
+    Initialize global variable `weights_dir` as used by the Weights class.
+
+    Also creates this directory, which is being used as local cache for regridding weights.
+    The directory can either be defined in roocs.ini or by calling this function.
+    """
     global weights_dir
     weights_dir = weights_dir_tmp
     CONFIG["clisops:grid_weights"]["local_weights_dir"] = weights_dir_tmp
@@ -118,7 +105,7 @@ def regrid(grid_in, grid_out, weights, adaptive_masking_threshold=0.5, keep_attr
     #
 
     if not isinstance(grid_out.ds, xr.Dataset):
-        raise Exception(
+        raise InvalidParameterValue(
             "The target Grid object 'grid_out' has to be built from an xarray.Dataset"
             " and not an xarray.DataArray!"
         )
@@ -222,7 +209,7 @@ class Weights:
         to reformat it to xESMF format.
         """
         if not isinstance(grid_in, Grid) or not isinstance(grid_out, Grid):
-            raise TypeError(
+            raise InvalidParameterValue(
                 "Input and output grids have to be instances of clisops.core.Grid!"
             )
         self.grid_in = grid_in
@@ -391,22 +378,10 @@ class Weights:
         # Store weights in xESMF-format (netCDF)
         # Store grids in CF-format (netCDF)
         # Further information will be stored in a json file in the same folder
-        try:
-            grid_in_source = self.grid_in.ds.encoding["source"]
-        except KeyError:
-            grid_in_source = ""
-        try:
-            grid_out_source = self.grid_out.ds.encoding["source"]
-        except KeyError:
-            grid_out_source = ""
-        try:
-            grid_in_tracking_id = self.grid_in.ds.attrs["tracking_id"]
-        except KeyError:
-            grid_in_tracking_id = ""
-        try:
-            grid_out_tracking_id = self.grid_out.ds.attrs["tracking_id"]
-        except KeyError:
-            grid_out_tracking_id = ""
+        grid_in_source = self.grid_in.ds.encoding.get("source", "")
+        grid_out_source = self.grid_out.ds.encoding.get("source", "")
+        grid_in_tracking_id = self.grid_in.ds.attrs.get("tracking_id", "")
+        grid_out_tracking_id = self.grid_out.ds.attrs.get("tracking_id", "")
         weights_dic = {
             "source_uid": self.grid_in.hash,
             "target_uid": self.grid_out.hash,
@@ -577,7 +552,7 @@ class Grid:
         elif grid_id:
             self.grid_from_id(grid_id)
         else:
-            raise Exception(
+            raise InvalidParameterValue(
                 "xarray.Dataset, grid_id or grid_instructor have to be specified as input."
             )
 
@@ -611,7 +586,7 @@ class Grid:
         # Compute bounds if not specified and if possible
         if (not self.lat_bnds or not self.lon_bnds) and compute_bounds:
             if not isinstance(self.ds, xr.Dataset):
-                raise Exception(
+                raise InvalidParameterValue(
                     "Bounds can only be attached to xarray.Datasets, not to xarray.DataArrays."
                 )
             else:
@@ -706,7 +681,7 @@ class Grid:
         if isinstance(grid_instructor, (int, float)):
             grid_instructor = (grid_instructor,)
         if len(grid_instructor) not in [1, 2, 3, 6]:
-            raise Exception(
+            raise InvalidParameterValue(
                 "The grid_instructor has to be a tuple of length 1, 2, 3 or 6!"
             )
         elif len(grid_instructor) in [1, 2]:
@@ -832,7 +807,7 @@ class Grid:
         ]
 
         if not isinstance(self.ds, xr.Dataset):
-            raise Exception(
+            raise InvalidParameterValue(
                 "Reformat is only possible for Datasets."
                 " DataArrays have to be CF conformal coordinate variables defined."
             )
@@ -1520,7 +1495,7 @@ class Grid:
         try:
             return coord.name
         except AttributeError:
-            raise Exception(
+            raise AttributeError(
                 "A %s coordinate cannot be identified in the dataset!" % coord_type
             )
 
@@ -1608,7 +1583,7 @@ class Grid:
         elif isinstance(ds_or_Grid, Grid):
             grid_tmp = ds_or_Grid
         else:
-            raise TypeError(
+            raise InvalidParameterValue(
                 "The provided input has to be of one of the types [xarray.DataArray, xarray.Dataset, clisops.core.Grid]!"
             )
         if verbose:
@@ -1674,7 +1649,7 @@ class Grid:
         elif keep_attrs:
             self.ds.attrs.update(source_grid.ds.attrs)
         else:
-            raise Exception("Illegal value for the parameter 'keep_attrs'.")
+            raise InvalidParameterValue("Illegal value for the parameter 'keep_attrs'.")
 
         self.ds = self.ds.assign_coords(coord_dict)
 
