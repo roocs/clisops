@@ -624,7 +624,7 @@ class TestWeights:
 
         with pytest.raises(
             Exception,
-            match="For conservative remapping, horizontal grid bounds have to be defined for the input and output grid!",
+            match="For conservative remapping, horizontal grid bounds have to be defined for the input and output grid.",
         ):
             weights_cache_init(Path(tmp_path, "weights"))
             Weights(grid_in=gi, grid_out=go, method="conservative")
