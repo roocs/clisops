@@ -46,6 +46,9 @@ The package provides the following operations:
 Online Demo
 -----------
 
+..
+  todo: Links have to be adjusted to the master or respective branch!
+
 You can try clisops online using Binder (just click on the binder link below),
 or view the notebooks on NBViewer.
 

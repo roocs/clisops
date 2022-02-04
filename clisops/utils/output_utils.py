@@ -282,7 +282,7 @@ class FileLock(object):
 
         while dt.now() < deadline:
             if not os.path.isfile(self._fpath):
-                open(self._fpath, "w")
+                Path(self._fpath).touch()
                 break
 
             time.sleep(3)

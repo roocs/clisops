@@ -1,4 +1,5 @@
 import os
+import warnings
 from glob import glob
 from pathlib import Path
 
@@ -18,6 +19,7 @@ from clisops.core.regrid import (
     weights_cache_init,
 )
 from clisops.ops.subset import subset
+from clisops.utils.output_utils import FileLock
 
 from .._common import (
     CMIP6_ATM_VERT_ONE_TIMESTEP,
@@ -709,3 +711,34 @@ def test_data_vars_coords_reset_and_cfxr(load_esgf_test_data):
     assert gA.ds.o3.cf.formula_terms == gB.ds.o3.cf.formula_terms
     assert gA.ds.cf.bounds == gB.ds.cf.bounds
     assert str(gA.ds.cf) == str(gB.ds.cf)
+
+
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
+def test_cache_lock_mechanism(load_esgf_test_data, tmp_path):
+    """Test lock mechanism of local regrid weights cache."""
+    ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+
+    grid_in = Grid(ds=ds)
+    grid_out = Grid(grid_instructor=10)
+
+    # First round - creating the weights should work without problems
+    weights_cache_init(Path(tmp_path, "weights"))
+    w = Weights(grid_in=grid_in, grid_out=grid_out, method="nearest_s2d")
+
+    # Second round, but manually put lockfile in place
+    LOCK_FILE = Path(tmp_path, "weights", w.filename + ".lock")
+    lock = FileLock(LOCK_FILE)
+    lock.acquire(timeout=10)
+
+    # Fail test if lockfile is not recognized
+    with pytest.warns(UserWarning, match="lockfile") as issuedWarnings:
+        Weights(grid_in=grid_in, grid_out=grid_out, method="nearest_s2d")
+        if not issuedWarnings:
+            raise Exception("Lockfile not recognized/ignored.")
+        else:
+            assert len(issuedWarnings) == 3
+            # todo: assert 2 issued warnings if core.regrid.Weights.loadFromCache is getting removed
+            # for issuedWarning in issuedWarnings:
+            #    print(issuedWarning.message)
+
+    lock.release()

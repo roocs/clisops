@@ -12,7 +12,11 @@ from clisops import CONFIG
 from clisops.core.regrid import XESMF_MINIMUM_VERSION, weights_cache_init, xe
 from clisops.ops.regrid import regrid
 
-from .._common import CMIP5_MRSOS_ONE_TIME_STEP, CMIP6_TOS_ONE_TIME_STEP
+from .._common import (
+    CMIP5_MRSOS_ONE_TIME_STEP,
+    CMIP6_OCE_HALO_CNRM,
+    CMIP6_TOS_ONE_TIME_STEP,
+)
 
 XESMF_IMPORT_MSG = (
     f"xESMF >= {XESMF_MINIMUM_VERSION} is needed for regridding functionalities."
@@ -107,7 +111,7 @@ def test_regrid_regular_grid_to_all_roocs_grids(
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_keep_attrs(load_esgf_test_data, tmp_path):
-    "Test regridded a regular lat/lon field to all roocs grid types."
+    "Test if dataset and variable attributes are kept / removed as specified."
     fpath = CMIP6_TOS_ONE_TIME_STEP
     method = "nearest_s2d"
 
@@ -155,6 +159,46 @@ def test_regrid_keep_attrs(load_esgf_test_data, tmp_path):
             if key not in ["nominal_resolution"]
         ]
     )
+
+
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+def test_regrid_halo_simple(load_esgf_test_data, tmp_path):
+    "Test regridding with a simple halo."
+    fpath = CMIP6_TOS_ONE_TIME_STEP
+    ds = xr.open_dataset(fpath).isel(time=0)
+
+    weights_cache_init(Path(tmp_path, "weights"))
+
+    ds_out = regrid(
+        ds,
+        method="conservative",
+        adaptive_masking_threshold=-1,
+        grid=5,
+        output_type="xarray",
+    )[0]
+
+    assert ds_out.attrs["regrid_operation"] == "conservative_402x800_36x72"
+
+
+@pytest.mark.xfail
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+def test_regrid_halo_adv(load_esgf_test_data, tmp_path):
+    "Test regridding of dataset with a more complex halo."
+    fpath = CMIP6_OCE_HALO_CNRM
+    ds = xr.open_dataset(fpath).isel(time=0)
+
+    weights_cache_init(Path(tmp_path, "weights"))
+
+    ds_out = regrid(
+        ds,
+        method="conservative",
+        adaptive_masking_threshold=-1,
+        grid=5,
+        output_type="xarray",
+    )[0]
+
+    # After the halo can be properly removed (maybe 1049x1440), the test can be updated
+    assert ds_out.attrs["regrid_operation"] == "conservative_1050x1442_36x72"
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
