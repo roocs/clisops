@@ -1,5 +1,4 @@
 """Regrid module."""
-# from typing import Tuple, Union
 import functools
 import json
 import os
@@ -9,6 +8,7 @@ from glob import glob
 from hashlib import md5
 from math import sqrt
 from pathlib import Path
+from typing import Optional, Tuple, Union
 
 import cf_xarray as cfxr
 import numpy as np
@@ -28,7 +28,7 @@ from clisops.utils.output_utils import FileLock
 # from clisops.utils import dataset_utils
 
 # Try importing xesmf and set to None if not found at correct version
-# If set to None, the `require_module` decorator will check this
+# If set to None, the `require_module` decorator will throw an exception
 XESMF_MINIMUM_VERSION = "0.6.2"
 try:
     import xesmf as xe
@@ -38,25 +38,37 @@ try:
 except Exception:
     xe = None
 
-weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
-coord_precision_hor = int(CONFIG["clisops:coordinate_precision"]["hor_coord_decimals"])
 
+# Read location of local weights cache from the clisops configuration (roocs.ini)
+weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
+
+# Read coordinate variable precision from the clisops configuration (roocs.ini)
+#  All horizontal coordinate variables will be rounded to this precision
+coord_precision_hor = int(CONFIG["clisops:coordinate_precision"]["hor_coord_decimals"])
 
 # Ensure local weight storage directory exists - decorator, used below
 check_weights_dir = functools.partial(check_dir, dr=weights_dir)
-# Ensure xESMF module is imported - decorator, used below
+
+# Check if xESMF module is imported - decorator, used below
 require_xesmf = functools.partial(
     require_module, module=xe, module_name="xESMF", min_version=XESMF_MINIMUM_VERSION
 )
 
 
-# Initialize local weights storage
-def weights_cache_init(weights_dir_tmp):
+def weights_cache_init(weights_dir_tmp: str):
     """
     Initialize global variable `weights_dir` as used by the Weights class.
 
-    Also creates this directory, which is being used as local cache for regridding weights.
-    The directory can either be defined in roocs.ini or by calling this function.
+    Parameters
+    ----------
+    weights_dir_tmp : str
+        Directory name to initalize the local weights cache in.
+        Will be created if it does not exist.
+        Per default, this function is called upon import with the input as defined in roocs.ini.
+
+    Returns
+    -------
+    None.
     """
     global weights_dir
     weights_dir = weights_dir_tmp
@@ -68,8 +80,31 @@ def weights_cache_init(weights_dir_tmp):
 weights_cache_init(weights_dir)
 
 
-# Flush the weights cache
-def weights_cache_flush(weights_dir_init=weights_dir, dryrun=False, verbose=False):
+def weights_cache_flush(
+    weights_dir_init: Optional[str] = weights_dir,
+    dryrun: Optional[bool] = False,
+    verbose: Optional[bool] = False,
+):
+    """
+    Flush and reinitialize the local weights cache.
+
+    Parameters
+    ----------
+    weights_dir_init : str, optional
+        Directory name to reinitalize the local weights cache in.
+        Will be created if it does not exist.
+        The default is clisops.core.regrid.weights_dir.
+    dryrun : bool, optional
+        If True, it will only print all files that would get deleted.
+    verbose : bool, optional
+        If True, and dryrun is False, will print all files that are getting deleted.
+        The default is False.
+
+    Returns
+    -------
+    None.
+
+    """
     if dryrun:
         print("Flushing the clisops weights cache would remove:")
     elif verbose:
@@ -93,102 +128,6 @@ def weights_cache_flush(weights_dir_init=weights_dir, dryrun=False, verbose=Fals
         weights_cache_init(weights_dir_init)
         if verbose:
             print(f"Initialized new weights cache at {weights_dir_init}")
-
-
-@require_xesmf
-def regrid(grid_in, grid_out, weights, adaptive_masking_threshold=0.5, keep_attrs=True):
-    # if adaptive_masking_threshold>1. or adaptive_masking_thresold<0.:
-    # keep_attrs:
-    #  True - grid_in.ds attributes in final dataset
-    #  False - no attributes in final dataset but the newly set ones
-    #  "target" - grid_out.ds attributes in final dataset
-    #
-
-    if not isinstance(grid_out.ds, xr.Dataset):
-        raise InvalidParameterValue(
-            "The target Grid object 'grid_out' has to be built from an xarray.Dataset"
-            " and not an xarray.DataArray."
-        )
-
-    # Create attrs
-    attrs_append = {}
-    if "grid" in grid_in.ds.attrs:
-        attrs_append["grid_original"] = grid_in.ds.attrs["grid"]
-    if "grid_label" in grid_in.ds.attrs:
-        attrs_append["grid_label_original"] = grid_in.ds.attrs["grid_label"]
-    nom_res_o = grid_in.ds.attrs.pop("nominal_resolution", None)
-    if nom_res_o:
-        attrs_append["nominal_resolution_original"] = nom_res_o
-    # todo: should nominal_resolution of the target grid be calculated if not specified in the attr?
-    nom_res_n = grid_out.ds.attrs.pop("nominal_resolution", None)
-    if nom_res_n:
-        attrs_append["nominal_resolution"] = nom_res_n
-
-    # Remove all unnecessary coords, data_vars (and optionally attrs) from grid_out.ds
-    grid_out._drop_vars(keep_attrs=not keep_attrs)
-    # Transfer all non-horizontal coords (and optionally attrs) from grid_out.ds to grid_in.ds
-    # if isinstance(grid_in.ds, xr.Dataset):
-    grid_out._transfer_coords(grid_in, keep_attrs=keep_attrs)
-    regridded_ds = grid_out.ds
-
-    # Add new attrs
-    regridded_ds.attrs.update(attrs_append)
-    regridded_ds.attrs.update(
-        {
-            "grid": grid_out.label,
-            "grid_label": "gr",  # regridded data reported on the data provider's preferred target grid
-            "regrid_operation": weights.regridder.filename.split(".")[0],
-            "regrid_tool": weights.tool,
-            "regrid_weights_uid": weights.id,
-        }
-    )
-
-    # It might in general be sufficient to always act as if the threshold was
-    #  set correctly and let xesmf handle it. But then we might not allow it
-    #  the bilinear method, as the results do not look too great and I am still
-    #  not sure/convinced adaptive_masking makes sense for this method.
-    if isinstance(grid_in.ds, xr.Dataset):
-        for data_var in grid_in.ds.data_vars:
-            if not all(
-                [
-                    dim in grid_in.ds[data_var].dims
-                    for dim in grid_in.ds[grid_in.lat].dims
-                    + grid_in.ds[grid_in.lon].dims
-                ]
-            ):
-                continue
-            if (
-                weights.regridder.method
-                in ["conservative", "conservative_normed", "patch"]
-                and adaptive_masking_threshold >= 0.0
-                and adaptive_masking_threshold <= 1.0
-            ):
-                regridded_ds[data_var] = weights.regridder(
-                    grid_in.ds[data_var],
-                    skipna=True,
-                    na_thres=adaptive_masking_threshold,
-                )
-            else:
-                regridded_ds[data_var] = weights.regridder(
-                    grid_in.ds[data_var], skipna=False
-                )
-            if keep_attrs:
-                regridded_ds[data_var].attrs.update(grid_in.ds[data_var].attrs)
-        return regridded_ds
-    else:
-        if (
-            weights.regridder.method in ["conservative", "conservative_normed", "patch"]
-            and adaptive_masking_threshold >= 0.0
-            and adaptive_masking_threshold <= 1.0
-        ):
-            regridded_ds[grid_in.ds.name] = weights.regridder(
-                grid_in.ds, skipna=True, na_thres=adaptive_masking_threshold
-            )
-        else:
-            regridded_ds[grid_in.ds.name] = weights.regridder(grid_in.ds, skipna=False)
-        if keep_attrs:
-            regridded_ds[data_var].attrs.update(grid_in.ds[data_var].attrs)
-        return regridded_ds  # [grid_in.ds.name] #always return a dataset
 
 
 class Weights:
@@ -786,6 +725,7 @@ class Grid:
         #       define a new Dataset and move all data_vars and aux. coords across.
         #       Might introduce drop_vars=True/False to get rid of other than horizonal
         #       coordinate variables if required.
+        # todo: removes attrs - should attrs be kept?
         #####################
         # Plan: Start with if-else-tree and later switch to a dictionary
         ###################################
@@ -1972,6 +1912,130 @@ class Grid:
                 % (self.type, self.format)
             )
             return
+
+
+@require_xesmf
+def regrid(
+    grid_in: Grid,
+    grid_out: Grid,
+    weights: Weights,
+    adaptive_masking_threshold: Optional[float] = 0.5,
+    keep_attrs: Optional[bool] = True,
+):
+    """
+    Perform regridding operation incl. dealing with dataset and variable attributes.
+
+    Parameters
+    ----------
+    grid_in : Grid
+        Grid object of the source grid, eg. created out of source xarray.Dataset.
+    grid_out : Grid
+        Grid object of the target grid.
+    weights : Weights
+        Weights object, as created by using grid_in and grid_out Grid objects as input.
+    adaptive_masking_threshold : float, optional
+        DESCRIPTION. The default is 0.5.
+    keep_attrs : bool / str, optional
+        Sets the global attributes of the resulting dataset, apart from the ones set by this routine:
+            True: attributes of grid_in.ds will be in the resulting dataset.
+            False: no attributes but the ones newly set by this routine
+            "target": attributes of grid_out.ds will be in the resulting dataset.
+        The default is True.
+
+    Returns
+    -------
+    xarray.Dataset
+        The regridded data in form of an xarray.Dataset.
+    """
+    if not isinstance(grid_out.ds, xr.Dataset):
+        raise InvalidParameterValue(
+            "The target Grid object 'grid_out' has to be built from an xarray.Dataset"
+            " and not an xarray.DataArray."
+        )
+
+    # Create attrs
+    attrs_append = {}
+    if "grid" in grid_in.ds.attrs:
+        attrs_append["grid_original"] = grid_in.ds.attrs["grid"]
+    if "grid_label" in grid_in.ds.attrs:
+        attrs_append["grid_label_original"] = grid_in.ds.attrs["grid_label"]
+    nom_res_o = grid_in.ds.attrs.pop("nominal_resolution", None)
+    if nom_res_o:
+        attrs_append["nominal_resolution_original"] = nom_res_o
+    # todo: should nominal_resolution of the target grid be calculated if not specified in the attr?
+    nom_res_n = grid_out.ds.attrs.pop("nominal_resolution", None)
+    if nom_res_n:
+        attrs_append["nominal_resolution"] = nom_res_n
+
+    # Remove all unnecessary coords, data_vars (and optionally attrs) from grid_out.ds
+    if keep_attrs == "target":
+        grid_out._drop_vars(keep_attrs=True)
+    else:
+        grid_out._drop_vars(keep_attrs=False)
+    # Transfer all non-horizontal coords (and optionally attrs) from grid_out.ds to grid_in.ds
+    grid_out._transfer_coords(grid_in, keep_attrs=keep_attrs)
+    regridded_ds = grid_out.ds
+
+    # Add new attrs
+    regridded_ds.attrs.update(attrs_append)
+    regridded_ds.attrs.update(
+        {
+            "grid": grid_out.label,
+            "grid_label": "gr",  # regridded data reported on the data provider's preferred target grid
+            "regrid_operation": weights.regridder.filename.split(".")[0],
+            "regrid_tool": weights.tool,
+            "regrid_weights_uid": weights.id,
+        }
+    )
+
+    # todo: It might in general be sufficient to always act as if the threshold was
+    #  set correctly and let xesmf handle it. But then we might not allow it for
+    #  the bilinear method, as the results do not look too great and I am still
+    #  not sure/convinced adaptive_masking makes sense for this method.
+
+    # Allow Dataset and DataArray as input, but always return a Dataset
+    if isinstance(grid_in.ds, xr.Dataset):
+        for data_var in grid_in.ds.data_vars:
+            if not all(
+                [
+                    dim in grid_in.ds[data_var].dims
+                    for dim in grid_in.ds[grid_in.lat].dims
+                    + grid_in.ds[grid_in.lon].dims
+                ]
+            ):
+                continue
+            if (
+                weights.regridder.method
+                in ["conservative", "conservative_normed", "patch"]
+                and adaptive_masking_threshold >= 0.0
+                and adaptive_masking_threshold <= 1.0
+            ):
+                regridded_ds[data_var] = weights.regridder(
+                    grid_in.ds[data_var],
+                    skipna=True,
+                    na_thres=adaptive_masking_threshold,
+                )
+            else:
+                regridded_ds[data_var] = weights.regridder(
+                    grid_in.ds[data_var], skipna=False
+                )
+            if keep_attrs:
+                regridded_ds[data_var].attrs.update(grid_in.ds[data_var].attrs)
+        return regridded_ds
+    else:
+        if (
+            weights.regridder.method in ["conservative", "conservative_normed", "patch"]
+            and adaptive_masking_threshold >= 0.0
+            and adaptive_masking_threshold <= 1.0
+        ):
+            regridded_ds[grid_in.ds.name] = weights.regridder(
+                grid_in.ds, skipna=True, na_thres=adaptive_masking_threshold
+            )
+        else:
+            regridded_ds[grid_in.ds.name] = weights.regridder(grid_in.ds, skipna=False)
+        if keep_attrs:
+            regridded_ds[data_var].attrs.update(grid_in.ds[data_var].attrs)
+        return regridded_ds  # [grid_in.ds.name] #-> in case of returning a DataArray
 
 
 """

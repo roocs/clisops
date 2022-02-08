@@ -119,31 +119,50 @@ def test_regrid_keep_attrs(load_esgf_test_data, tmp_path):
 
     ds = xr.open_dataset(fpath).isel(time=0)
 
-    # regrid - keeping all attributes
+    # regrid - preserve input attrs
     result = regrid(
         ds,
         method=method,
         adaptive_masking_threshold=-1,
-        grid="2pt5deg",
+        grid="2deg_lsm",
         output_type="xarray",
     )
 
-    # regrid - scrapping attributes
+    # regrid - scrapping attrs
     result_na = regrid(
         ds,
         method=method,
         adaptive_masking_threshold=-1,
-        grid="2pt5deg",
+        grid="2deg_lsm",
         output_type="xarray",
         keep_attrs=False,
     )
 
+    # regrid - keep target attrs
+    result_ta = regrid(
+        ds,
+        method=method,
+        adaptive_masking_threshold=-1,
+        grid="2deg_lsm",
+        output_type="xarray",
+        keep_attrs="target",
+    )
+
     ds_remap = result[0]
     ds_remap_na = result_na[0]
+    ds_remap_ta = result_ta[0]
 
-    assert "tos" in ds_remap and "tos" in ds_remap_na
-    assert all([key not in ds_remap_na.tos.attrs.keys() for key in ds.tos.attrs.keys()])
+    assert "tos" in ds_remap and "tos" in ds_remap_na and "tos" in ds_remap_ta
     assert all([key in ds_remap.tos.attrs.keys() for key in ds.tos.attrs.keys()])
+    assert all(
+        [
+            key in ds_remap.attrs.keys()
+            for key in ds.attrs.keys()
+            if key not in ["nominal_resolution"]
+        ]
+    )
+    # todo: remove the restriction when nominal_resolution of the target grid is calculated in core/regrid.py
+    assert all([key not in ds_remap_na.tos.attrs.keys() for key in ds.tos.attrs.keys()])
     assert all(
         [
             key not in ds_remap_na.attrs.keys()
@@ -151,12 +170,13 @@ def test_regrid_keep_attrs(load_esgf_test_data, tmp_path):
             if key not in ["grid", "grid_label"]
         ]
     )
-    # todo: remove the restriction when nominal_resolution of the target grid is calculated in core/regrid.py
+    assert all([key in ds_remap_ta.tos.attrs.keys() for key in ds.tos.attrs.keys()])
     assert all(
         [
-            key in ds_remap.attrs.keys()
+            key not in ds_remap_ta.attrs.keys()
             for key in ds.attrs.keys()
-            if key not in ["nominal_resolution"]
+            if key
+            not in ["source", "Conventions", "history", "NCO", "grid", "grid_label"]
         ]
     )
 
