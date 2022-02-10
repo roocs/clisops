@@ -8,7 +8,7 @@ from glob import glob
 from hashlib import md5
 from math import sqrt
 from pathlib import Path
-from typing import Optional, Tuple, Union
+from typing import Optional, Union
 
 import cf_xarray as cfxr
 import numpy as np
@@ -23,7 +23,7 @@ from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 from clisops import CONFIG
 from clisops import __version__ as clversion
 from clisops.utils.common import check_dir, require_module
-from clisops.utils.output_utils import FileLock
+from clisops.utils.output_utils import FileLock, create_lock
 
 # from clisops.utils import dataset_utils
 
@@ -39,15 +39,9 @@ except Exception:
     xe = None
 
 
-# Read location of local weights cache from the clisops configuration (roocs.ini)
-weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
-
 # Read coordinate variable precision from the clisops configuration (roocs.ini)
 #  All horizontal coordinate variables will be rounded to this precision
 coord_precision_hor = int(CONFIG["clisops:coordinate_precision"]["hor_coord_decimals"])
-
-# Ensure local weight storage directory exists - decorator, used below
-check_weights_dir = functools.partial(check_dir, dr=weights_dir)
 
 # Check if xESMF module is imported - decorator, used below
 require_xesmf = functools.partial(
@@ -55,33 +49,40 @@ require_xesmf = functools.partial(
 )
 
 
-def weights_cache_init(weights_dir_tmp: str):
+def weights_cache_init(weights_dir: str):
     """
     Initialize global variable `weights_dir` as used by the Weights class.
 
     Parameters
     ----------
-    weights_dir_tmp : str
+    weights_dir: str
         Directory name to initalize the local weights cache in.
         Will be created if it does not exist.
-        Per default, this function is called upon import with the input as defined in roocs.ini.
+        Per default, this function is called upon import with weights_dir as defined in roocs.ini.
 
     Returns
     -------
     None.
     """
-    global weights_dir
-    weights_dir = weights_dir_tmp
-    CONFIG["clisops:grid_weights"]["local_weights_dir"] = weights_dir_tmp
+    # Overwrite CONFIG entry with new value
+    CONFIG["clisops:grid_weights"]["local_weights_dir"] = weights_dir
+
+    # Create directory tree if required
     if not os.path.isdir(weights_dir):
         os.makedirs(weights_dir)
 
 
-weights_cache_init(weights_dir)
+# Initialize weights cache as defined in the clisops configuration (roocs.ini)
+weights_cache_init(CONFIG["clisops:grid_weights"]["local_weights_dir"])
+
+# Ensure local weight storage directory exists - decorator, used below
+check_weights_dir = functools.partial(
+    check_dir, dr=CONFIG["clisops:grid_weights"]["local_weights_dir"]
+)
 
 
 def weights_cache_flush(
-    weights_dir_init: Optional[str] = weights_dir,
+    weights_dir_init: Optional[Union[str, Path]] = "",
     dryrun: Optional[bool] = False,
     verbose: Optional[bool] = False,
 ):
@@ -93,9 +94,10 @@ def weights_cache_flush(
     weights_dir_init : str, optional
         Directory name to reinitalize the local weights cache in.
         Will be created if it does not exist.
-        The default is clisops.core.regrid.weights_dir.
+        The default is CONFIG["clisops:grid_weights"]["local_weights_dir"] as defined in roocs.ini
+        (or as redefined by a manual weights_cache_init call).
     dryrun : bool, optional
-        If True, it will only print all files that would get deleted.
+        If True, it will only print all files that would get deleted. The default is False.
     verbose : bool, optional
         If True, and dryrun is False, will print all files that are getting deleted.
         The default is False.
@@ -105,10 +107,15 @@ def weights_cache_flush(
     None.
 
     """
+    # Read weights_dir from CONFIG
+    weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
+
     if dryrun:
-        print("Flushing the clisops weights cache would remove:")
+        print(f"Flushing the clisops weights cache ('{weights_dir}')would remove:")
     elif verbose:
-        print("Flushing the clisops weights cache. Removing ...")
+        print(f"Flushing the clisops weights cache ('{weights_dir}'). Removing ...")
+
+    # Find and delete/report weight files, grid files and the json files containing the metadata
     if os.path.isdir(weights_dir):
         flist_weights = glob(f"{weights_dir}/weights_{'?'*32}_{'?'*32}_*.nc")
         flist_meta = glob(f"{weights_dir}/weights_{'?'*32}_{'?'*32}_*.json")
@@ -124,327 +131,14 @@ def weights_cache_flush(
                 print("No weight or grid files found. Cache empty?")
     elif dryrun:
         print("No weight or grid files found. Cache empty?")
+
+    # Reinitialize local weights cache
     if not dryrun:
+        if not weights_dir_init:
+            weights_dir_init = weights_dir
         weights_cache_init(weights_dir_init)
         if verbose:
             print(f"Initialized new weights cache at {weights_dir_init}")
-
-
-class Weights:
-    # todo:
-    # - Doc-Strings
-    # - Think about whether to extend xesmf.Regridder class?
-    # - Load weight file from cache or disk
-    # - Save weight file to cache or disk
-    # - Reformat to other weight-file formats when loading/saving from disk
-
-    @require_xesmf
-    def __init__(self, grid_in, grid_out, from_disk=None, method=None, format="xESMF"):
-        """
-        Generate weights / read from cache (if present locally or retreivable from central
-        regrid weight store) for grid_in, grid_out for method or alternatively
-        read weights from disk (from_disk, method).
-        In the latter case, the weight file format has to be detected and supported,
-        to reformat it to xESMF format.
-        """
-        if not isinstance(grid_in, Grid) or not isinstance(grid_out, Grid):
-            raise InvalidParameterValue(
-                "Input and output grids have to be instances of clisops.core.Grid."
-            )
-        self.grid_in = grid_in
-        self.grid_out = grid_out
-        if grid_in.hash == grid_out.hash:
-            raise Exception(
-                "The selected source and target grids are the same. "
-                "No regridding operation required."
-            )
-
-        # todo: Do we want to specify a default method apart from the ops regrid function?
-        #  When at a later time core.Weights supports reading weights generated by cdo etc,
-        #   that might lead to the weights being stored under the wrong method.
-        if not method:
-            raise Exception("'method' has to be specified.")
-        self.method = method
-
-        # todo: properly test / check the periodic attribute of the xESMF Regridder.
-        #  The grid.extent check done here might not be suitable to set the periodic att.
-        # Is grid periodic in longitude
-        self.periodic = False
-        try:
-            if self.grid_in.extent == "global":
-                self.periodic = True
-        except AttributeError:
-            # forced to False for conservative regridding in xesmf
-            if self.method not in ["conservative", "conservative_normed"]:
-                warnings.warn(
-                    "The grid extent could not be accessed. "
-                    "It will be assumed that the input grid is not periodic in longitude."
-                )
-
-        # Activate ignore degenerate cells setting if collapsing cells are found within the grid.
-        #  The default setting within ESMF is None, not False!
-        self.ignore_degenerate = (
-            True
-            if (
-                self.grid_in.contains_collapsing_cells
-                or self.grid_out.contains_collapsing_cells
-            )
-            else None
-        )
-
-        self.id = self._generate_id()
-        self.filename = "weights_" + self.id + ".nc"
-
-        # todo:
-        # - Load weights from disk
-        #   + read
-        #   + detect format & reformat to xESMF
-        #   + generate_id, set ignore_degenerate, periodic, method to unknown if cannot be determined
-        #     as id maybe generate hash of the weight matrix
-        # - Load weights from cache
-        #   + query local store for weights file
-        #   +if not file: query central store
-        #   +if not file: generate and store locally
-        #   +make sure format is xESMF
-        #   (+at some point generated weights will be added to central DB)
-
-        if not from_disk:
-            self.load_from_cache()
-            self.tool = "xESMF_v" + xe.__version__
-            self.regridder = self.compute()
-        if self.tool.startswith("xESMF"):
-            self.format = "xESMF"
-            self.save_to_cache()
-        else:
-            self.format = self._detect_format()
-            self._reformat("xESMF")
-        self.regridder.filename = self.regridder._get_default_filename()
-
-    def compute(self):
-        """
-        Method to generate or load the weights
-        If grids have problems of degenerated cells near the poles
-        there is the ignore_degenerate option.
-        """
-        # Check if bounds are present in case of conservative remapping
-        if self.method in ["conservative", "conservative_normed"] and (
-            not self.grid_in.lat_bnds
-            or not self.grid_in.lon_bnds
-            or not self.grid_out.lat_bnds
-            or not self.grid_out.lon_bnds
-        ):
-            raise Exception(
-                "For conservative remapping, horizontal grid bounds have to be defined for the input and output grid."
-            )
-        # Locstream for unstructured grids
-        locstream_in = False
-        locstream_out = False
-        if self.grid_in.type == "irregular":
-            locstream_in = True
-        if self.grid_out.type == "irregular":
-            locstream_out = True
-
-        # Call xesmf.Regridder - reuse weights if they are not currently written
-        LOCK = Path(weights_dir, self.filename + ".lock").as_posix()
-        lock_obj = FileLock(LOCK)
-        try:
-            lock_obj.acquire(timeout=10)
-            locked = False
-        except Exception as exc:
-            if str(exc) == f"Could not obtain file lock on {LOCK}":
-                locked = True
-            else:
-                locked = False
-        if locked:
-            warnings.warn(
-                f"Could not reuse cached weights '{self.filename}' because a "
-                "lockfile of another process exists that is writing to that file."
-            )
-            reuse_weights = False
-        else:
-            try:
-                if os.path.isfile(Path(weights_dir, self.filename).as_posix()):
-                    reuse_weights = True
-                else:
-                    reuse_weights = False
-            finally:
-                lock_obj.release()
-
-        return xe.Regridder(
-            self.grid_in.ds,
-            self.grid_out.ds,
-            self.method,
-            periodic=self.periodic,
-            locstream_in=locstream_in,
-            locstream_out=locstream_out,
-            ignore_degenerate=self.ignore_degenerate,
-            unmapped_to_nan=True,
-            filename=Path(weights_dir, self.filename).as_posix(),
-            reuse_weights=reuse_weights,
-        )
-        # The default filename is important for later use, so reset it.
-        # xESMF writes weights to disk when filename is given and reuse_weights=False
-        # (latter is default) else it will create a default filename and weights can be manually
-        # written to disk with Regridder.to_netcdf(filename)
-
-    def _reformat(self, format_from, format_to):
-        raise NotImplementedError
-
-    def _detect_format(self, ds):
-        raise NotImplementedError
-
-    def _generate_id(self):
-        # A unique id could maybe consist of:
-        #  - method
-        #  - hash/checksum of input and output grid (lat, lon, lat_bnds, lon_bnds)
-        peri_dict = {True: "peri", False: ""}
-        ignore_degenerate_dict = {None: "", True: "skip_degen", False: ""}
-        wid = "_".join(
-            filter(
-                None,
-                [
-                    self.grid_in.hash,
-                    self.grid_out.hash,
-                    peri_dict[self.periodic],
-                    ignore_degenerate_dict[self.ignore_degenerate],
-                    self.method,
-                ],
-            )
-        )
-        return wid
-
-    @check_weights_dir
-    def save_to_cache(self):
-        # Create folder dependent on id
-        # Store weights in xESMF-format (netCDF)
-        # Store grids in CF-format (netCDF)
-        # Further information will be stored in a json file in the same folder
-        grid_in_source = self.grid_in.ds.encoding.get("source", "")
-        grid_out_source = self.grid_out.ds.encoding.get("source", "")
-        grid_in_tracking_id = self.grid_in.ds.attrs.get("tracking_id", "")
-        grid_out_tracking_id = self.grid_out.ds.attrs.get("tracking_id", "")
-        weights_dic = {
-            "source_uid": self.grid_in.hash,
-            "target_uid": self.grid_out.hash,
-            "source_lat": self.grid_in.lat,
-            "source_lon": self.grid_in.lon,
-            "source_lat_bnds": self.grid_in.lat_bnds,
-            "source_lon_bnds": self.grid_in.lon_bnds,
-            "source_nlat": self.grid_in.nlat,
-            "source_nlon": self.grid_in.nlon,
-            "source_ncells": self.grid_in.ncells,
-            "source_type": self.grid_in.type,
-            "source_format": self.grid_in.format,
-            "source_extent": self.grid_in.extent,
-            "source_source": grid_in_source,
-            "source_tracking_id": grid_in_tracking_id,
-            "target_lat": self.grid_out.lat,
-            "target_lon": self.grid_out.lon,
-            "target_lat_bnds": self.grid_out.lat_bnds,
-            "target_lon_bnds": self.grid_out.lon_bnds,
-            "target_nlat": self.grid_out.nlat,
-            "target_nlon": self.grid_out.nlon,
-            "target_ncells": self.grid_out.ncells,
-            "target_type": self.grid_out.type,
-            "target_format": self.grid_out.format,
-            "target_extent": self.grid_out.extent,
-            "target_source": grid_out_source,
-            "target_tracking_id": grid_out_tracking_id,
-            "format": self.format,
-            "ignore_degenerate": str(self.ignore_degenerate),
-            "periodic": str(self.periodic),
-            "method": self.method,
-            "uid": self.id,
-            "filename": self.filename,
-            "def_filename": self.regridder._get_default_filename(),
-            "tool": self.tool,
-        }
-
-        self.grid_in.to_netcdf(folder=weights_dir)
-        self.grid_out.to_netcdf(folder=weights_dir)
-
-        LOCK = Path(weights_dir, self.filename + ".lock").as_posix()
-        lock_obj = FileLock(LOCK)
-        try:
-            lock_obj.acquire(timeout=10)
-            locked = False
-        except Exception as exc:
-            if str(exc) == f"Could not obtain file lock on {LOCK}":
-                locked = True
-            else:
-                locked = False
-        if locked:
-            warnings.warn(
-                f"Could not write weights to cache ('{self.filename}') because a "
-                "lockfile of another process exists."
-            )
-        else:
-            try:
-                if not os.path.isfile(Path(weights_dir, self.filename).as_posix()):
-                    self.regridder.to_netcdf(
-                        Path(weights_dir, self.filename).as_posix()
-                    )
-                if not os.path.isfile(
-                    Path(weights_dir, Path(self.filename).stem + ".json").as_posix()
-                ):
-                    with open(
-                        Path(
-                            weights_dir, Path(self.filename).stem + ".json"
-                        ).as_posix(),
-                        "w",
-                    ) as weights_dic_path:
-                        json.dump(
-                            weights_dic, weights_dic_path, sort_keys=True, indent=4
-                        )
-            finally:
-                lock_obj.release()
-
-    @check_weights_dir
-    def load_from_cache(self):
-        # Load additional info from the json file: setattr(self, key, initial_data[key])
-        # todo: read from local store, but have some cron job or similar
-        #       retrieving remote weights
-        # todo: might be obsolete, now that daops deals with loading remote weights into the cache
-        if os.path.isfile(
-            Path(weights_dir, self.filename).as_posix()
-        ) and os.path.isfile(
-            Path(weights_dir, Path(self.filename).stem + ".json").as_posix()
-        ):
-            LOCK = Path(weights_dir, self.filename + ".lock").as_posix()
-            lock_obj = FileLock(LOCK)
-            try:
-                lock_obj.acquire(timeout=10)
-                locked = False
-            except Exception as exc:
-                if str(exc) == f"Could not obtain file lock on {LOCK}":
-                    locked = True
-                else:
-                    locked = False
-            if locked:
-                warnings.warn(
-                    "Could not read weights from cache because a lockfile exists."
-                )
-            else:
-                try:
-                    with open(
-                        Path(weights_dir, Path(self.filename).stem + ".json").as_posix()
-                    ) as f:
-                        weights_dic = json.load(f)
-                finally:
-                    lock_obj.release()
-
-                # Retrieve from local weight store
-                self.tool = weights_dic["tool"]
-
-    def save_to_disk(self, filename=None, wformat="xESMF"):
-        raise NotImplementedError
-
-    def load_from_disk(self, filename=None, format=None):
-        # if format == "xESMF":
-        # weightfile = regridderHR.to_netcdf(regridder.filename)
-        # else:
-        # read file, reformat to xESMF sparse matrix and initialize xesmf.Regridder
-        raise NotImplementedError
 
 
 class Grid:
@@ -1912,6 +1606,343 @@ class Grid:
                 % (self.type, self.format)
             )
             return
+
+
+class Weights:
+    """
+    Creates remapping weights out of two Grid objects serving as source and target grid.
+
+    Reads weights from cache if possible. Reads weights from disk if specified (not yet implemented).
+    In the latter case, the weight file format has to be supported, to reformat it to xESMF format.
+
+    Parameters
+    ----------
+    grid_in : Grid
+        Grid object serving as source grid.
+    grid_out : Grid
+        Grid object serving as target grid.
+    method : str
+        Remapping method the weights should be / have been calculated with. One of ["nearest_s2d",
+        "bilinear", "conservative", "patch"] if weights have to be calculated. Free text if weights
+        are read from disk.
+    from_disk : str, optional
+        Not yet implemented. Instead of calculating the regridding weights (or reading them from
+        the cache), read them from disk. The default is None.
+    format: str, optional
+        Not yet implemented. When reading weights from disk, the format may be specified. If omitted
+        there will be an attempt to detect the format. The default is None.
+    """
+
+    @require_xesmf
+    def __init__(
+        self,
+        grid_in: Grid,
+        grid_out: Grid,
+        method: str,
+        from_disk: Optional[Union[str, Path]] = None,
+        format: Optional[str] = None,
+    ):
+        """Initialize Weights object, incl. calculating / reading the weights."""
+        if not isinstance(grid_in, Grid) or not isinstance(grid_out, Grid):
+            raise InvalidParameterValue(
+                "Input and output grids have to be instances of clisops.core.Grid."
+            )
+        self.grid_in = grid_in
+        self.grid_out = grid_out
+        self.method = method
+
+        # Compare source and target grid
+        if grid_in.hash == grid_out.hash:
+            raise Exception(
+                "The selected source and target grids are the same. "
+                "No regridding operation required."
+            )
+
+        # Periodic in longitude
+        # todo: properly test / check the periodic attribute of the xESMF Regridder.
+        #  The grid.extent check done here might not be suitable to set the periodic attribute:
+        #  global == is grid periodic in longitude
+        self.periodic = False
+        try:
+            if self.grid_in.extent == "global":
+                self.periodic = True
+        except AttributeError:
+            # forced to False for conservative regridding in xesmf
+            #  todo: check if this is proper behaviour of xesmf
+            if self.method not in ["conservative", "conservative_normed"]:
+                warnings.warn(
+                    "The grid extent could not be accessed. "
+                    "It will be assumed that the input grid is not periodic in longitude."
+                )
+
+        # Activate ignore degenerate cells setting if collapsing cells are found within the grids.
+        #  The default setting within ESMF is None, not False!
+        self.ignore_degenerate = (
+            True
+            if (
+                self.grid_in.contains_collapsing_cells
+                or self.grid_out.contains_collapsing_cells
+            )
+            else None
+        )
+
+        self.id = self._generate_id()
+        self.filename = "weights_" + self.id + ".nc"
+
+        if not from_disk:
+            # Read weights from cache or compute & save to cache
+            self.format = "xESMF"
+            self.compute()
+        else:
+            # Read weights from disk
+            self.load_from_disk(self, filename=from_disk, format=format)
+
+        # Reformat and cache the weights if required
+        if not self.tool.startswith("xESMF"):
+            self.format = self._detect_format()
+            self._reformat("xESMF")
+
+    def compute(self):
+        """Generate the weights with xESMF or read them from cache."""
+        # Read weights_dir from CONFIG
+        weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
+
+        # Check if bounds are present in case of conservative remapping
+        if self.method in ["conservative", "conservative_normed"] and (
+            not self.grid_in.lat_bnds
+            or not self.grid_in.lon_bnds
+            or not self.grid_out.lat_bnds
+            or not self.grid_out.lon_bnds
+        ):
+            raise Exception(
+                "For conservative remapping, horizontal grid bounds have to be defined for the source and target grids."
+            )
+
+        # Use "Locstream" functionality of xESMF as workaround for unstructured grids.
+        #  Yet, the locstream functionality only supports the nearest neighbour remapping method
+        locstream_in = False
+        locstream_out = False
+        if self.grid_in.type == "irregular":
+            locstream_in = True
+        if self.grid_out.type == "irregular":
+            locstream_out = True
+
+        # Read weights from cache (= reuse weights) if they are not currently written
+        #  to the cache by another process
+        #    Note: xESMF writes weights to disk if filename is specified and reuse_weights==False
+        #          (latter is default) else it will create a default filename and weights can
+        #          be manually written to disk with Regridder.to_netcdf(filename).
+        #          Weights are read from disk by xESMF if filename is specified and reuse_weights==True.
+        lock_obj = create_lock(Path(weights_dir, self.filename + ".lock").as_posix())
+        if not lock_obj:
+            warnings.warn(
+                f"Could not reuse cached weights '{self.filename}' because a "
+                "lockfile of another process exists that is writing to that file."
+            )
+            reuse_weights = False
+            regridder_filename = None
+        else:
+            regridder_filename = Path(weights_dir, self.filename).as_posix()
+            if os.path.isfile(regridder_filename):
+                reuse_weights = True
+            else:
+                reuse_weights = False
+
+        try:
+            # Read the tool & version the weights have been computed with - backup: current version
+            self.tool = self.read_info_from_cache("tool")
+            if not self.tool:
+                self.tool = "xESMF_v" + xe.__version__
+
+            # Call xesmf.Regridder
+            self.regridder = xe.Regridder(
+                self.grid_in.ds,
+                self.grid_out.ds,
+                self.method,
+                periodic=self.periodic,
+                locstream_in=locstream_in,
+                locstream_out=locstream_out,
+                ignore_degenerate=self.ignore_degenerate,
+                unmapped_to_nan=True,
+                filename=regridder_filename,
+                reuse_weights=reuse_weights,
+            )
+
+            # Save Weights to cache
+            self.save_to_cache(lock_obj)
+        finally:
+            # Release file lock
+            if lock_obj:
+                lock_obj.release()
+
+        # The default filename is important for later use, so it needs to be reset.
+        self.regridder.filename = self.regridder._get_default_filename()
+
+    def _reformat(self, format_from: str, format_to: str):
+        raise NotImplementedError
+
+    def _detect_format(self, ds: Union[xr.Dataset, xr.DataArray]):
+        raise NotImplementedError
+
+    def _generate_id(self):
+        """
+        Create an unique id for a Weights object.
+
+        The id consists of
+        - hashes / checksums of source and target grid (namely lat, lon, lat_bnds, lon_bnds variables)
+        - info about periodicity in longitude
+        - info about collapsing cells
+        - remapping method
+
+        Returns
+        -------
+        wid : str
+            The id as str.
+        """
+        peri_dict = {True: "peri", False: "unperi"}
+        ignore_degenerate_dict = {
+            None: "no-degen",
+            True: "skip-degen",
+            False: "no-skip-degen",
+        }
+        wid = "_".join(
+            filter(
+                None,
+                [
+                    self.grid_in.hash,
+                    self.grid_out.hash,
+                    peri_dict[self.periodic],
+                    ignore_degenerate_dict[self.ignore_degenerate],
+                    self.method,
+                ],
+            )
+        )
+        return wid
+
+    @check_weights_dir
+    def save_to_cache(self, store_weights: Union[FileLock, None, bool]):
+        """Save Weights and source/target grids to cache (netCDF), incl. metadata (JSON)."""
+        # Read weights_dir from CONFIG
+        weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
+
+        # Compile metadata
+        grid_in_source = self.grid_in.ds.encoding.get("source", "")
+        grid_out_source = self.grid_out.ds.encoding.get("source", "")
+        grid_in_tracking_id = self.grid_in.ds.attrs.get("tracking_id", "")
+        grid_out_tracking_id = self.grid_out.ds.attrs.get("tracking_id", "")
+        weights_dic = {
+            "source_uid": self.grid_in.hash,
+            "target_uid": self.grid_out.hash,
+            "source_lat": self.grid_in.lat,
+            "source_lon": self.grid_in.lon,
+            "source_lat_bnds": self.grid_in.lat_bnds,
+            "source_lon_bnds": self.grid_in.lon_bnds,
+            "source_nlat": self.grid_in.nlat,
+            "source_nlon": self.grid_in.nlon,
+            "source_ncells": self.grid_in.ncells,
+            "source_type": self.grid_in.type,
+            "source_format": self.grid_in.format,
+            "source_extent": self.grid_in.extent,
+            "source_source": grid_in_source,
+            "source_tracking_id": grid_in_tracking_id,
+            "target_lat": self.grid_out.lat,
+            "target_lon": self.grid_out.lon,
+            "target_lat_bnds": self.grid_out.lat_bnds,
+            "target_lon_bnds": self.grid_out.lon_bnds,
+            "target_nlat": self.grid_out.nlat,
+            "target_nlon": self.grid_out.nlon,
+            "target_ncells": self.grid_out.ncells,
+            "target_type": self.grid_out.type,
+            "target_format": self.grid_out.format,
+            "target_extent": self.grid_out.extent,
+            "target_source": grid_out_source,
+            "target_tracking_id": grid_out_tracking_id,
+            "format": self.format,
+            "ignore_degenerate": str(self.ignore_degenerate),
+            "periodic": str(self.periodic),
+            "method": self.method,
+            "uid": self.id,
+            "filename": self.filename,
+            "def_filename": self.regridder._get_default_filename(),
+            "tool": self.tool,
+        }
+
+        # Save Grid objects to cache
+        self.grid_in.to_netcdf(folder=weights_dir)
+        self.grid_out.to_netcdf(folder=weights_dir)
+
+        # Save Weights object (netCDF) and metadata (JSON) to cache if desired
+        #  (usually, if no lockfile exists)
+        if store_weights:
+            if not os.path.isfile(Path(weights_dir, self.filename).as_posix()):
+                self.regridder.to_netcdf(Path(weights_dir, self.filename).as_posix())
+            if not os.path.isfile(
+                Path(weights_dir, Path(self.filename).stem + ".json").as_posix()
+            ):
+                with open(
+                    Path(weights_dir, Path(self.filename).stem + ".json").as_posix(),
+                    "w",
+                ) as weights_dic_path:
+                    json.dump(weights_dic, weights_dic_path, sort_keys=True, indent=4)
+
+    @check_weights_dir
+    def read_info_from_cache(self, key: str):
+        """
+        Read info 'key' from cached metadata of current weightfile.
+
+        Returns the value for the given key, unless the key does not exist in the metadata or the
+        file cannot be read. In this case, None is returned.
+
+        Parameters
+        ----------
+        key : str
+
+        Returns
+        -------
+        str or None
+            Value for the given key, or None.
+        """
+        # Read weights_dir from CONFIG
+        weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
+
+        # Return requested value if weight and metadata files are present, else return None
+        if os.path.isfile(
+            Path(weights_dir, self.filename).as_posix()
+        ) and os.path.isfile(
+            Path(weights_dir, Path(self.filename).stem + ".json").as_posix()
+        ):
+            with open(
+                Path(weights_dir, Path(self.filename).stem + ".json").as_posix()
+            ) as f:
+                weights_dic = json.load(f)
+                try:
+                    return weights_dic[key]
+                except KeyError:
+                    warnings.warn(
+                        f"Requested info {key} does not exist in the metadata"
+                        " of the cached weights."
+                    )
+                    return None
+        else:
+            warnings.warn(
+                f"Requested info '{key}' could not be retrieved from remapping cache."
+                " A cached file does not exist."
+            )
+            return None
+
+    def save_to_disk(self, filename=None, wformat="xESMF"):
+        """Write weights to disk in a certain format, not yet implemented."""
+        # todo: if necessary, reformat weights, then save under specified path.
+        raise NotImplementedError
+
+    def load_from_disk(self, filename=None, format=None):
+        """Read and process weights from disk, not yet implemented."""
+        # todo: Reformat to other weight-file formats when loading/saving from disk
+        # if format != "xESMF":
+        #  read file, compare Grid and weight matrix dimensions,
+        #  reformat to xESMF sparse matrix and initialize xesmf.Regridder,
+        #  generate_id, set ignore_degenerate, periodic, method to unknown if cannot be determined
+        raise NotImplementedError
 
 
 @require_xesmf

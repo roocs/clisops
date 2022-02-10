@@ -10,6 +10,7 @@ import xarray as xr
 from pkg_resources import parse_version
 from roocs_grids import get_grid_file
 
+from clisops import CONFIG
 from clisops.core.regrid import (
     XESMF_MINIMUM_VERSION,
     Grid,
@@ -381,20 +382,6 @@ def test_detect_collapsing_cells(load_esgf_test_data):
     assert not gB.contains_collapsing_cells
 
 
-@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
-def test_Weights_init_with_collapsing_cells(tmp_path, load_esgf_test_data):
-    "Test the creation of remapping weights for a grid containing collapsing cells"
-    # todo: the used dataset might not be appropriate if the halo gets more properly removed
-    # ValueError: ESMC_FieldRegridStore failed with rc = 506. Please check the log files (named "*ESMF_LogFile").
-    ds = xr.open_dataset(CMIP6_OCE_HALO_CNRM, use_cftime=True)
-
-    g = Grid(ds=ds)
-    g_out = Grid(grid_instructor=(10.0,))
-
-    weights_cache_init(Path(tmp_path, "weights"))
-    Weights(g, g_out, method="bilinear")
-
-
 def test_subsetted_grid(load_esgf_test_data):
     ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
 
@@ -546,142 +533,6 @@ def test_centers_within_bounds_regular_lat_lon():
     )
 
 
-# test all methods
-@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
-class TestWeights:
-    def test_grids_in_and_out_bilinear(self, tmp_path):
-        ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
-        grid_in = Grid(ds=ds)
-
-        assert grid_in.extent == "global"
-
-        grid_instructor_out = (0, 360, 1.5, -90, 90, 1.5)
-        grid_out = Grid(grid_instructor=grid_instructor_out)
-
-        assert grid_out.extent == "global"
-
-        weights_cache_init(Path(tmp_path, "weights"))
-        w = Weights(grid_in=grid_in, grid_out=grid_out, method="bilinear")
-
-        assert w.method == "bilinear"
-        assert (
-            w.id
-            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_bilinear"
-        )
-        assert w.periodic
-        assert w.id in w.filename
-        assert "xESMF_v" in w.tool
-        assert w.format == "xESMF"
-
-        # default file_name = method_inputgrid_outputgrid_periodic"
-        assert w.regridder.filename == "bilinear_80x180_120x240_peri.nc"
-
-    def test_grids_in_and_out_conservative(self, tmp_path):
-        ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
-        grid_in = Grid(ds=ds)
-
-        assert grid_in.extent == "global"
-
-        grid_instructor_out = (0, 360, 1.5, -90, 90, 1.5)
-        grid_out = Grid(grid_instructor=grid_instructor_out)
-
-        assert grid_out.extent == "global"
-
-        weights_cache_init(Path(tmp_path, "weights"))
-        w = Weights(grid_in=grid_in, grid_out=grid_out, method="conservative")
-
-        assert w.method == "conservative"
-        assert (
-            w.id
-            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_conservative"
-        )
-        assert (
-            w.periodic != w.regridder.periodic
-        )  # xESMF resets periodic to False for conservative weights
-        assert w.id in w.filename
-        assert "xESMF_v" in w.tool
-        assert w.format == "xESMF"
-
-        # default file_name = method_inputgrid_outputgrid_periodic"
-        assert w.regridder.filename == "conservative_80x180_120x240.nc"
-
-    def test_from_id(self):
-        pass
-
-    def test_from_disk(self):
-        pass
-
-    def test_conservative_no_bnds(self, load_esgf_test_data, tmp_path):
-        "Test whether exception is raised when no bounds present for conservative remapping."
-        ds = xr.open_dataset(CORDEX_TAS_NO_BOUNDS)
-        gi = Grid(ds=ds)
-        go = Grid(grid_id="1deg", compute_bounds=True)
-
-        assert gi.lat_bnds is None
-        assert gi.lon_bnds is None
-        assert go.lat_bnds is not None
-        assert go.lon_bnds is not None
-
-        with pytest.raises(
-            Exception,
-            match="For conservative remapping, horizontal grid bounds have to be defined for the input and output grid.",
-        ):
-            weights_cache_init(Path(tmp_path, "weights"))
-            Weights(grid_in=gi, grid_out=go, method="conservative")
-
-
-@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
-class TestRegrid:
-    def _setup(self):
-        if hasattr(self, "setup_done"):
-            return
-
-        self.ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
-        self.grid_in = Grid(ds=self.ds)
-
-        self.grid_instructor_out = (0, 360, 1.5, -90, 90, 1.5)
-        self.grid_out = Grid(grid_instructor=self.grid_instructor_out)
-        self.setup_done = True
-
-    def test_adaptive_masking(self, load_esgf_test_data, tmp_path):
-        self._setup()
-        weights_cache_init(Path(tmp_path, "weights"))
-        w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="conservative")
-        r = regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.7)
-        print(r)
-
-    def test_no_adaptive_masking(self, load_esgf_test_data, tmp_path):
-        self._setup()
-        weights_cache_init(Path(tmp_path, "weights"))
-        w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="bilinear")
-        r = regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=-1.0)
-        print(r)
-
-
-@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
-def test_cache_init_and_flush(tmp_path):
-    "Test of the cache init and flush functionalities"
-
-    weights_dir = Path(tmp_path, "clisops_weights")
-    weights_cache_init(weights_dir)
-
-    gi = Grid(grid_instructor=20)
-    go = Grid(grid_instructor=10)
-    Weights(grid_in=gi, grid_out=go, method="nearest_s2d")
-
-    flist = sorted(os.path.basename(f) for f in glob(f"{weights_dir}/*"))
-    flist_ref = [
-        "grid_4d324aecaa8302ab0f2f212e9821b00f.nc",
-        "grid_96395935b4e81f2a5b55970bd920d82c.nc",
-        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_nearest_s2d.json",
-        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_nearest_s2d.nc",
-    ]
-    assert flist == flist_ref
-
-    weights_cache_flush()
-    assert glob(f"{weights_dir}/*") == []
-
-
 def test_data_vars_coords_reset_and_cfxr(load_esgf_test_data):
     dsA = xr.open_dataset(CMIP6_ATM_VERT_ONE_TIMESTEP)
 
@@ -713,6 +564,143 @@ def test_data_vars_coords_reset_and_cfxr(load_esgf_test_data):
     assert str(gA.ds.cf) == str(gB.ds.cf)
 
 
+# test all methods
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
+class TestWeights:
+    def test_grids_in_and_out_bilinear(self, tmp_path):
+        ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+        grid_in = Grid(ds=ds)
+
+        assert grid_in.extent == "global"
+
+        grid_instructor_out = (0, 360, 1.5, -90, 90, 1.5)
+        grid_out = Grid(grid_instructor=grid_instructor_out)
+
+        assert grid_out.extent == "global"
+
+        weights_cache_init(Path(tmp_path, "weights"))
+        w = Weights(grid_in=grid_in, grid_out=grid_out, method="bilinear")
+
+        assert w.method == "bilinear"
+        assert (
+            w.id
+            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_no-degen_bilinear"
+        )
+        assert w.periodic
+        assert w.id in w.filename
+        assert "xESMF_v" in w.tool
+        assert w.format == "xESMF"
+
+        # default file_name = method_inputgrid_outputgrid_periodic"
+        assert w.regridder.filename == "bilinear_80x180_120x240_peri.nc"
+
+    def test_grids_in_and_out_conservative(self, tmp_path):
+        ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+        grid_in = Grid(ds=ds)
+
+        assert grid_in.extent == "global"
+
+        grid_instructor_out = (0, 360, 1.5, -90, 90, 1.5)
+        grid_out = Grid(grid_instructor=grid_instructor_out)
+
+        assert grid_out.extent == "global"
+
+        weights_cache_init(Path(tmp_path, "weights"))
+        w = Weights(grid_in=grid_in, grid_out=grid_out, method="conservative")
+
+        assert w.method == "conservative"
+        assert (
+            w.id
+            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_no-degen_conservative"
+        )
+        assert (
+            w.periodic != w.regridder.periodic
+        )  # xESMF resets periodic to False for conservative weights
+        assert w.id in w.filename
+        assert "xESMF_v" in w.tool
+        assert w.format == "xESMF"
+
+        # default file_name = method_inputgrid_outputgrid_periodic"
+        assert w.regridder.filename == "conservative_80x180_120x240.nc"
+
+    def test_from_id(self):
+        pass
+
+    def test_from_disk(self):
+        pass
+
+    def test_conservative_no_bnds(self, load_esgf_test_data, tmp_path):
+        "Test whether exception is raised when no bounds present for conservative remapping."
+        ds = xr.open_dataset(CORDEX_TAS_NO_BOUNDS)
+        gi = Grid(ds=ds)
+        go = Grid(grid_id="1deg", compute_bounds=True)
+
+        assert gi.lat_bnds is None
+        assert gi.lon_bnds is None
+        assert go.lat_bnds is not None
+        assert go.lon_bnds is not None
+
+        with pytest.raises(
+            Exception,
+            match="For conservative remapping, horizontal grid bounds have to be defined for the source and target grids.",
+        ):
+            weights_cache_init(Path(tmp_path, "weights"))
+            Weights(grid_in=gi, grid_out=go, method="conservative")
+
+
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
+def test_Weights_init_with_collapsing_cells(tmp_path, load_esgf_test_data):
+    "Test the creation of remapping weights for a grid containing collapsing cells"
+    # todo: the used dataset might not be appropriate if the halo gets more properly removed
+    # ValueError: ESMC_FieldRegridStore failed with rc = 506. Please check the log files (named "*ESMF_LogFile").
+    ds = xr.open_dataset(CMIP6_OCE_HALO_CNRM, use_cftime=True)
+
+    g = Grid(ds=ds)
+    g_out = Grid(grid_instructor=(10.0,))
+
+    weights_cache_init(Path(tmp_path, "weights"))
+    Weights(g, g_out, method="bilinear")
+
+
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
+def test_Regridder_filename(tmp_path):
+    """Test that Regridder filename is reset properly."""
+    g1 = Grid(grid_id="2pt5deg")
+    g2 = Grid(grid_id="2deg_lsm")
+
+    weights_cache_init(Path(tmp_path, "weights"))
+
+    w = Weights(g1, g2, method="nearest_s2d")
+
+    assert w.regridder.filename == w.regridder._get_default_filename()
+    assert os.path.isfile(Path(tmp_path, "weights", w.filename))
+    assert w.filename != w.regridder.filename
+
+
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
+def test_cache_init_and_flush(tmp_path):
+    "Test of the cache init and flush functionalities"
+
+    weights_dir = Path(tmp_path, "clisops_weights")
+    weights_cache_init(weights_dir)
+
+    gi = Grid(grid_instructor=20)
+    go = Grid(grid_instructor=10)
+    Weights(grid_in=gi, grid_out=go, method="nearest_s2d")
+
+    flist = sorted(os.path.basename(f) for f in glob(f"{weights_dir}/*"))
+    flist_ref = [
+        "grid_4d324aecaa8302ab0f2f212e9821b00f.nc",
+        "grid_96395935b4e81f2a5b55970bd920d82c.nc",
+        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_no-degen_nearest_s2d.json",
+        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_no-degen_nearest_s2d.nc",
+    ]
+    assert flist == flist_ref
+
+    weights_cache_flush()
+    assert glob(f"{weights_dir}/*") == []
+
+
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_cache_lock_mechanism(load_esgf_test_data, tmp_path):
     """Test lock mechanism of local regrid weights cache."""
@@ -736,9 +724,86 @@ def test_cache_lock_mechanism(load_esgf_test_data, tmp_path):
         if not issuedWarnings:
             raise Exception("Lockfile not recognized/ignored.")
         else:
-            assert len(issuedWarnings) == 3
-            # todo: assert 2 issued warnings if core.regrid.Weights.loadFromCache is getting removed
+            assert len(issuedWarnings) == 1
             # for issuedWarning in issuedWarnings:
             #    print(issuedWarning.message)
 
     lock.release()
+
+
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
+def test_cache_reinit_and_write_protection(tmp_path):
+    """Test that Regridder does not write to cache if lockfile exists."""
+    g1 = Grid(grid_id="2pt5deg")
+    g2 = Grid(grid_id="2deg_lsm")
+
+    orig_cache_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
+    weights_cache_init(Path(tmp_path, "weights"))
+
+    # Create weights, get filename and flush cache
+    w = Weights(g1, g2, method="nearest_s2d")
+    fname = w.filename
+    weights_cache_flush()
+
+    # Create lockfile
+    LOCK_FILE = Path(tmp_path, "weights", fname + ".lock")
+    lock = FileLock(LOCK_FILE)
+    lock.acquire(timeout=10)
+
+    # recreate weights
+    w = Weights(g1, g2, method="nearest_s2d")
+
+    # ensure that cache does not contain weight file and metadata
+    lock.release()
+    flist = sorted(os.path.basename(f) for f in glob(f"{Path(tmp_path, 'weights')}/*"))
+    assert all([f.startswith("grid_") for f in flist])
+    assert len(flist) == 2
+    assert Path(CONFIG["clisops:grid_weights"]["local_weights_dir"]) == Path(
+        tmp_path, "weights"
+    )
+    assert CONFIG["clisops:grid_weights"]["local_weights_dir"] != orig_cache_dir
+
+
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
+def test_read_metadata(tmp_path):
+    """Test Weights method read_info_from_cache."""
+    g1 = Grid(grid_instructor=10.0)
+    g2 = Grid(grid_instructor=15.0)
+
+    # Create weights and assert attributes written to cache
+    weights_cache_init(Path(tmp_path, "weights"))
+    w = Weights(g1, g2, method="nearest_s2d")
+
+    assert w.read_info_from_cache("filename") == w.filename
+    assert w.read_info_from_cache("method") == "nearest_s2d"
+    assert w.read_info_from_cache("source_uid") == g1.hash
+    assert w.read_info_from_cache("target_extent") == g2.extent
+    assert w.read_info_from_cache("bla") is None
+
+
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
+class TestRegrid:
+    def _setup(self):
+        if hasattr(self, "setup_done"):
+            return
+
+        self.ds = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+        self.grid_in = Grid(ds=self.ds)
+
+        self.grid_instructor_out = (0, 360, 1.5, -90, 90, 1.5)
+        self.grid_out = Grid(grid_instructor=self.grid_instructor_out)
+        self.setup_done = True
+
+    def test_adaptive_masking(self, load_esgf_test_data, tmp_path):
+        self._setup()
+        weights_cache_init(Path(tmp_path, "weights"))
+        w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="conservative")
+        r = regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.7)
+        print(r)
+
+    def test_no_adaptive_masking(self, load_esgf_test_data, tmp_path):
+        self._setup()
+        weights_cache_init(Path(tmp_path, "weights"))
+        w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="bilinear")
+        r = regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=-1.0)
+        print(r)

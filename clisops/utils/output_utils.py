@@ -264,11 +264,13 @@ def get_output(ds, output_type, output_dir, namer):
 
 class FileLock(object):
     """
-    From
-    https://github.com/cedadev/cmip6-object-store/cmip6_zarr/file_lock.py
+    Create and release a lockfile.
+
+    Adapted from https://github.com/cedadev/cmip6-object-store/cmip6_zarr/file_lock.py
     """
 
     def __init__(self, fpath):
+        """Initialize Lock for 'fpath'."""
         self._fpath = fpath
         dr = os.path.dirname(fpath)
         if not os.path.isdir(dr):
@@ -277,6 +279,7 @@ class FileLock(object):
         self.state = "UNLOCKED"
 
     def acquire(self, timeout=10):
+        """Create actual lockfile, raise error if already exists beyond 'timeout'."""
         start = dt.now()
         deadline = start + td(seconds=timeout)
 
@@ -292,6 +295,7 @@ class FileLock(object):
         self.state = "LOCKED"
 
     def release(self):
+        """Release lock, i.e. delete lockfile."""
         if os.path.isfile(self._fpath):
             try:
                 os.remove(self._fpath)
@@ -299,3 +303,31 @@ class FileLock(object):
                 pass
 
         self.state = "UNLOCKED"
+
+
+def create_lock(fname: Union[str, Path]):
+    """
+    Check whether lockfile already exists and else creates lockfile.
+
+    Parameters
+    ----------
+    fname : str
+        Path of the lockfile to be created.
+
+    Returns
+    -------
+    FileLock object or None.
+    """
+    lock_obj = FileLock(fname)
+    try:
+        lock_obj.acquire(timeout=10)
+        locked = False
+    except Exception as exc:
+        if str(exc) == f"Could not obtain file lock on {fname}":
+            locked = True
+        else:
+            raise Exception(exc)
+    if locked:
+        return None
+    else:
+        return lock_obj
