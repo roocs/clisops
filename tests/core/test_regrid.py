@@ -1,9 +1,10 @@
 import os
-import warnings
+
+# import warnings
 from glob import glob
 from pathlib import Path
 
-import cf_xarray as cfxr
+# import cf_xarray as cfxr
 import numpy as np
 import pytest
 import xarray as xr
@@ -145,7 +146,7 @@ def test_grid_instructor_global():
     assert grid.extent == "global"
 
     # check that grid_from_instructor sets the format to xESMF
-    grid.grid_from_instructor(grid_instructor)
+    grid._grid_from_instructor(grid_instructor)
     assert grid.format == "xESMF"
 
     assert grid.lat_bnds == "lat_bnds"
@@ -171,7 +172,7 @@ def test_grid_instructor_2d_regional_change_lon():
     assert grid.extent == "regional"
 
     # check that grid_from_instructor sets the format to xESMF
-    grid.grid_from_instructor(grid_instructor)
+    grid._grid_from_instructor(grid_instructor)
     assert grid.format == "xESMF"
 
     assert grid.lat_bnds == "lat_bnds"
@@ -223,7 +224,7 @@ def test_grid_instructor_2d_regional_change_lon_and_lat():
     assert grid.extent == "regional"
 
     # check that grid_from_instructor sets the format to xESMF
-    grid.grid_from_instructor(grid_instructor)
+    grid._grid_from_instructor(grid_instructor)
     assert grid.format == "xESMF"
 
     assert grid.lat_bnds == "lat_bnds"
@@ -249,7 +250,7 @@ def test_grid_instructor_2d_global():
     assert grid.extent == "global"
 
     # check that grid_from_instructor sets the format to xESMF
-    grid.grid_from_instructor(grid_instructor)
+    grid._grid_from_instructor(grid_instructor)
     assert grid.format == "xESMF"
 
     assert grid.lat_bnds == "lat_bnds"
@@ -367,6 +368,39 @@ def test_compare_grid_hash_dict_and_verbose(capfd):
     assert not is_equal
     assert len(gA.hash_dict) == 5
     assert list(gA.hash_dict.keys()) == ["lat", "lon", "lat_bnds", "lon_bnds", "mask"]
+
+
+def test_to_netcdf(load_esgf_test_data, tmp_path):
+    "Test if grid file is properly written to disk using to_netcdf method."
+    # Create Grid object
+    dsA = xr.open_dataset(CMIP6_TAS_PRECISION_A)
+    gA = Grid(ds=dsA)
+
+    # Save to disk
+    outdir = Path(tmp_path, "grids")
+    outfile = "grid_test.nc"
+    gA.to_netcdf(folder=outdir, filename=outfile)
+
+    # Read from disk - ensure outfile has been created and lockfile deleted
+    assert os.path.isfile(Path(outdir, outfile))
+    assert len([os.path.basename(f) for f in glob(f"{outdir}/*")]) == 1
+    dsB = xr.open_dataset(Path(outdir, outfile))
+    gB = Grid(ds=dsB)
+
+    # Ensure Grid attributes and ds attrs are the same
+    assert gA.compare_grid(gB)
+    assert gA.format == gB.format
+    assert gA.type == gB.type
+    assert gA.extent == gB.extent
+    assert gA.source == gB.source
+    assert gA.contains_collapsing_cells == gB.contains_collapsing_cells
+    assert sorted(list(gA.ds.attrs.keys()) + ["clisops"]) == sorted(
+        list(gB.ds.attrs.keys())
+    )
+
+    # Ensure all variables have been deleted from the dataset
+    assert not list(gB.ds.data_vars)
+    assert sorted(list(gB.ds.coords)) == [gA.lat, gA.lat_bnds, gA.lon, gA.lon_bnds]
 
 
 def test_detect_collapsing_cells(load_esgf_test_data):
@@ -766,7 +800,7 @@ def test_cache_reinit_and_write_protection(tmp_path):
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_read_metadata(tmp_path):
-    """Test Weights method read_info_from_cache."""
+    """Test Weights method _read_info_from_cache."""
     g1 = Grid(grid_instructor=10.0)
     g2 = Grid(grid_instructor=15.0)
 
@@ -774,11 +808,11 @@ def test_read_metadata(tmp_path):
     weights_cache_init(Path(tmp_path, "weights"))
     w = Weights(g1, g2, method="nearest_s2d")
 
-    assert w.read_info_from_cache("filename") == w.filename
-    assert w.read_info_from_cache("method") == "nearest_s2d"
-    assert w.read_info_from_cache("source_uid") == g1.hash
-    assert w.read_info_from_cache("target_extent") == g2.extent
-    assert w.read_info_from_cache("bla") is None
+    assert w._read_info_from_cache("filename") == w.filename
+    assert w._read_info_from_cache("method") == "nearest_s2d"
+    assert w._read_info_from_cache("source_uid") == g1.hash
+    assert w._read_info_from_cache("target_extent") == g2.extent
+    assert w._read_info_from_cache("bla") is None
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)

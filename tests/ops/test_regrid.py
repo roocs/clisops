@@ -1,14 +1,10 @@
 import os
-import sys
 from pathlib import Path
-from unittest.mock import Mock
 
 import pytest
 import xarray as xr
 from roocs_grids import get_grid_file, grid_dict
 
-import clisops
-from clisops import CONFIG
 from clisops.core.regrid import XESMF_MINIMUM_VERSION, weights_cache_init, xe
 from clisops.ops.regrid import regrid
 

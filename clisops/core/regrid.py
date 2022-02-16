@@ -142,24 +142,42 @@ def weights_cache_flush(
 
 
 class Grid:
+    """
+    Create a Grid object that is suitable to serve as source or target grid of the Weights class.
+
+    Pre-processes coordinate variables of input dataset (eg. create or read dataset from input,
+    reformat, generate bounds, identify duplicated and collapsing cells, determine longitudinal extent).
+
+    Parameters
+    ----------
+    ds : xr.Dataset or xr.DataArray, optional
+        Uses horizontal coordinates of an xarray.Dataset or xarray.DataArray to create a Grid object.
+        The default is None.
+    grid_id : str, optional
+        Create the Grid object from a selection of pre-defined grids, eg. "1deg" or "2pt5deg".
+        The grids are provided via the roocs_grids package (https://github.com/roocs/roocs-grids).
+        A special setting is "adaptive"/"auto", which requires the parameter 'ds' to be specified as well,
+        and creates a regular lat-lon grid of the same extent and approximate resolution as the grid
+        described by 'ds'. The default is None.
+    grid_instructor : tuple, float or int, optional
+        Create a regional or global regular lat-lon grid using xESMF utility functions.
+        - Global grid: grid_instructor = (lon_step, lat_step) or grid_instructor = step
+        - Regional grid: grid_instructor = (lon_start, lon_end, lon_step, lat_start, lat_end, lat_step)
+                       or grid_instructor = (start, end, step)
+        The default is None.
+    compute_bounds : bool, optional
+        Compute latitude and longitude bounds if the dataset has none defined.
+        The default is False.
+    """
+
     def __init__(
-        self, ds=None, grid_id=None, grid_instructor=None, compute_bounds=False
+        self,
+        ds: Optional[Union[xr.Dataset, xr.DataArray]] = None,
+        grid_id: Optional[str] = None,
+        grid_instructor: Optional[Union[tuple, float, int]] = None,
+        compute_bounds: Optional[bool] = False,
     ):
-        "Initialise the Grid object. Supporting only 2D horizontal grids."
-
-        # todo: Doc-Strings
-
-        # todo: allow Grid object as input, in that case many of below checks can be skipped and
-        #       a copy is produced more quickly.
-
-        # todo: DataArrays cannot have bounds?! Therefore not allow DataArrays?
-
-        # Some of the methods might be useful outside clisops.core.regrid?
-        # -> @staticmethod?
-        # -> define outside the class?
-        # 2nd option preferred
-        grid_instructor = grid_instructor or tuple()
-
+        """Initialise the Grid object. Supporting only 2D horizontal grids."""
         # All attributes - defaults
         self.type = None
         self.format = None
@@ -174,19 +192,24 @@ class Grid:
         self.mask = None
         self.source = None
         self.hash = None
+        self.coll_mask = None
+        self.contains_collapsing_cells = None
+
+        # Create grid_instructor as empty tuple if None
+        grid_instructor = grid_instructor or tuple()
 
         # Grid from dataset/dataarray, grid_instructor or grid_id
         if isinstance(ds, (xr.Dataset, xr.DataArray)):
             if grid_id in ["auto", "adaptive"]:
-                self.grid_from_ds_adaptive(ds)
+                self._grid_from_ds_adaptive(ds)
             else:
                 self.ds = ds
                 self.format = self.detect_format()
                 self.source = "Dataset"
         elif grid_instructor:
-            self.grid_from_instructor(grid_instructor)
+            self._grid_from_instructor(grid_instructor)
         elif grid_id:
-            self.grid_from_id(grid_id)
+            self._grid_from_id(grid_id)
         else:
             raise InvalidParameterValue(
                 "xarray.Dataset, grid_id or grid_instructor have to be specified as input."
@@ -219,15 +242,6 @@ class Grid:
         # Lon/Lat dimension sizes
         self.nlat, self.nlon, self.ncells = self.detect_shape()
 
-        # Compute bounds if not specified and if possible
-        if (not self.lat_bnds or not self.lon_bnds) and compute_bounds:
-            if not isinstance(self.ds, xr.Dataset):
-                raise InvalidParameterValue(
-                    "Bounds can only be attached to xarray.Datasets, not to xarray.DataArrays."
-                )
-            else:
-                self.compute_bounds()
-
         # Extent of the grid (global or regional)
         if not self.extent:
             self.extent = self.detect_extent()
@@ -239,6 +253,15 @@ class Grid:
         if isinstance(self.ds, xr.Dataset):
             self._set_data_vars_and_coords()
 
+        # Compute bounds if not specified and if possible
+        if (not self.lat_bnds or not self.lon_bnds) and compute_bounds:
+            if not isinstance(self.ds, xr.Dataset):
+                raise InvalidParameterValue(
+                    "Bounds can only be attached to xarray.Datasets, not to xarray.DataArrays."
+                )
+            else:
+                self.compute_bounds()
+
         # todo: possible step to use np.around(in_array, decimals [, out_array])
         # 6 decimals corresponds to precision of ~ 0.1m (deg), 6m (rad)
         self._cap_precision(coord_precision_hor)
@@ -248,11 +271,8 @@ class Grid:
         self.hash = self.compute_hash()
 
         # Detect collapsing grid cells
-        if self.lat_bnds and self.lon_bnds:
+        if self.lat_bnds and self.lon_bnds and self.contains_collapsing_cells is None:
             self.detect_collapsed_grid_cells()
-        else:
-            self.coll_mask = None
-            self.contains_collapsing_cells = None
 
         self.label = self._get_label()
 
@@ -286,6 +306,7 @@ class Grid:
         return info
 
     def _get_label(self):
+        """Generate a label (str) for the Grid."""
         if self.source.startswith("Predefined_"):
             return ".".join(
                 ga
@@ -300,22 +321,29 @@ class Grid:
             else:
                 return f"{self.extent} {self.type} {self.ncells} cells grid."
 
-    def grid_from_id(self, grid_id):
+    def _grid_from_id(self, grid_id):
+        """Load pre-defined grid from netCDF file (uses roocs_grids)."""
+        # Load predefined grid files from disk
         try:
             grid_file = roocs_grids.get_grid_file(grid_id)
             grid = xr.open_dataset(grid_file)
         except KeyError:
             raise KeyError(f"The grid_id '{grid_id}' you specified does not exist.")
 
+        # Set attributes
         self.ds = grid
         self.source = "Predefined_" + grid_id
         self.type = "regular_lat_lon"
         self.format = self.detect_format()
 
     @require_xesmf
-    def grid_from_instructor(self, grid_instructor):
+    def _grid_from_instructor(self, grid_instructor: Union[tuple, float, int]):
+        """Process instructions to create regional or global grid (uses xESMF utility functions)."""
+        # Create tuple of length 1 if input is either float or int
         if isinstance(grid_instructor, (int, float)):
             grid_instructor = (grid_instructor,)
+
+        # Call xesmf.util functions to create the grid
         if len(grid_instructor) not in [1, 2, 3, 6]:
             raise InvalidParameterValue(
                 "The grid_instructor has to be a tuple of length 1, 2, 3 or 6."
@@ -331,20 +359,30 @@ class Grid:
                 grid_instructor[-2],
                 grid_instructor[-1],
             )
+
+        # Set attributes
         self.ds = grid
         self.source = "xESMF"
         self.type = "regular_lat_lon"
         self.format = "xESMF"
 
     @require_xesmf
-    def grid_from_ds_adaptive(self, ds):
-        # todo: dachar/daops to deal with missing values
-        #  when _FillValue/missing_value attribute is not set
+    def _grid_from_ds_adaptive(self, ds: Union[xr.Dataset, xr.DataArray]):
+        """Create Grid of similar extent and resolution of input dataset."""
+        # todo: dachar/daops to deal with missing values occuring in the coordinate variables
+        #       while no _FillValue/missing_value attribute is set
+        #  -> FillValues else might get selected as minimum/maximum lat/lon value
+        #     since they are not masked
+
+        # Create temporary Grid object out of input dataset
         grid_tmp = Grid(ds=ds)
+
+        # Determine "edges" of the grid
         xfirst = float(grid_tmp.ds[grid_tmp.lon].min())
         xlast = float(grid_tmp.ds[grid_tmp.lon].max())
         yfirst = float(grid_tmp.ds[grid_tmp.lat].min())
         ylast = float(grid_tmp.ds[grid_tmp.lat].max())
+
         # fix for regional grids that wrap around the Greenwich meridian
         if grid_tmp.extent == "regional" and (xfirst > 180 or xlast > 180):
             grid_tmp.ds.lon.data = grid_tmp.ds.lon.where(
@@ -352,19 +390,23 @@ class Grid:
             )
             xfirst = float(grid_tmp.ds[grid_tmp.lon].min())
             xlast = float(grid_tmp.ds[grid_tmp.lon].max())
+
+        # For irregular grids:
+        #    Distribute the number of grid cells to nlat and nlon, in proportion
+        #    to extent in latitudinal and longitudinal direction
         if grid_tmp.type == "irregular":
-            # Distribute the number of grid cells to nlat and nlon,
-            # in proportion to extent in latitudinal and longitudinal direction
             xsize = int(
                 sqrt(abs(xlast - xfirst) / abs(ylast - yfirst) * grid_tmp.ncells)
             )
             ysize = int(
                 sqrt(abs(ylast - yfirst) / abs(xlast - xfirst) * grid_tmp.ncells)
             )
-            # raise Exception("The grid type is not supported.")
+        # Else, use nlat and nlon of the dataset
         else:
             xsize = grid_tmp.nlon
             ysize = grid_tmp.nlat
+
+        # Compute latitudinal / longitudinal resolution (=increment)
         xinc = (xlast - xfirst) / (xsize - 1)
         yinc = (ylast - yfirst) / (ysize - 1)
         xrange = [0.0, 360.0] if xlast > 180 else [-180.0, 180.0]
@@ -376,38 +418,9 @@ class Grid:
         ylast = ylast + yinc / 2.0
         yfirst = yfirst if yfirst > -90.0 else -90.0
         ylast = ylast if ylast < 90.0 else 90.0
-        self.grid_from_instructor((xfirst, xlast, xinc, yfirst, ylast, yinc))
 
-    def to_netcdf(self, grid_format="CF", folder="./"):
-        # Create a copy and reformat etc, then save to disk
-        # Store only horizontal grid
-        filename = Path(folder, "grid_" + self.hash + ".nc").as_posix()
-        if not os.path.isfile(filename):
-            LOCK = filename + ".lock"
-            lock_obj = FileLock(LOCK)
-            try:
-                lock_obj.acquire(timeout=10)
-                locked = False
-            except Exception as exc:
-                if str(exc) == f"Could not obtain file lock on {LOCK}":
-                    locked = True
-                else:
-                    locked = False
-            if locked:
-                warnings.warn(
-                    f"Could not write grid '{filename}' to cache because a lockfile of "
-                    "another process exists."
-                )
-            else:
-                grid_tmp = Grid(ds=self.ds)
-                if grid_tmp.format != grid_format:
-                    grid_tmp.reformat(grid_format)
-                grid_tmp.ds.attrs.update({"clisops": clversion})
-                grid_tmp._drop_vars(keep_attrs=True)
-                try:
-                    grid_tmp.ds.to_netcdf(filename)
-                finally:
-                    lock_obj.release()
+        # Create regular lat-lon grid with these specifics
+        self._grid_from_instructor((xfirst, xlast, xinc, yfirst, ylast, yinc))
 
     def grid_reformat(self, grid_format):
         # todo: Extend for formats CF, xESMF, ESMF, UGRID, SCRIP
@@ -1607,6 +1620,66 @@ class Grid:
             )
             return
 
+    def to_netcdf(
+        self,
+        folder: Optional[Union[str, Path]] = "./",
+        filename: Optional[str] = "",
+        grid_format: Optional[str] = "CF",
+    ):
+        """
+        Store a copy of the horizontal Grid as netCDF file on disk.
+
+        Define output folder, filename and output format (currently only 'CF' is supported).
+
+        Parameters
+        ----------
+        folder : str or Path, optional
+            Output folder. The default is the current working directory "./".
+        filename : str, optional
+            Output filename, to be defined separately from folder. The default is 'grid_<grid.id>.nc'.
+        grid_format : str, optional
+            The format the grid information shall be stored as (in terms of variable attributes and dimensions).
+            The default is "CF", which is also the only supported output format currently supported.
+        """
+        # Check inputs
+        if filename:
+            if "/" in str(filename):
+                raise Exception(
+                    "Target directory and filename have to be passed separately."
+                )
+            filename = Path(folder, filename).as_posix()
+        else:
+            filename = Path(folder, "grid_" + self.hash + ".nc").as_posix()
+
+        # Write to disk (just horizontal coordinate variables + global attrs)
+        #  if not written by another process
+        if not os.path.isfile(filename):
+            LOCK = filename + ".lock"
+            lock_obj = FileLock(LOCK)
+            try:
+                lock_obj.acquire(timeout=10)
+                locked = False
+            except Exception as exc:
+                if str(exc) == f"Could not obtain file lock on {LOCK}":
+                    locked = True
+                else:
+                    locked = False
+            if locked:
+                warnings.warn(
+                    f"Could not write grid '{filename}' to cache because a lockfile of "
+                    "another process exists."
+                )
+            else:
+                grid_tmp = Grid(ds=self.ds)
+                if grid_tmp.format != grid_format:
+                    grid_tmp.reformat(grid_format)
+                grid_tmp.ds.attrs.update({"clisops": clversion})
+                grid_tmp._drop_vars(keep_attrs=True)
+                try:
+                    grid_tmp.ds.to_netcdf(filename)
+                finally:
+                    lock_obj.release()
+
 
 class Weights:
     """
@@ -1629,8 +1702,8 @@ class Weights:
         Not yet implemented. Instead of calculating the regridding weights (or reading them from
         the cache), read them from disk. The default is None.
     format: str, optional
-        Not yet implemented. When reading weights from disk, the format may be specified. If omitted
-        there will be an attempt to detect the format. The default is None.
+        Not yet implemented. When reading weights from disk, the input format may be specified.
+        If omitted, there will be an attempt to detect the format. The default is None.
     """
 
     @require_xesmf
@@ -1692,17 +1765,17 @@ class Weights:
         if not from_disk:
             # Read weights from cache or compute & save to cache
             self.format = "xESMF"
-            self.compute()
+            self._compute()
         else:
             # Read weights from disk
-            self.load_from_disk(self, filename=from_disk, format=format)
+            self._load_from_disk(self, filename=from_disk, format=format)
 
         # Reformat and cache the weights if required
         if not self.tool.startswith("xESMF"):
             self.format = self._detect_format()
             self._reformat("xESMF")
 
-    def compute(self):
+    def _compute(self):
         """Generate the weights with xESMF or read them from cache."""
         # Read weights_dir from CONFIG
         weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
@@ -1750,7 +1823,7 @@ class Weights:
 
         try:
             # Read the tool & version the weights have been computed with - backup: current version
-            self.tool = self.read_info_from_cache("tool")
+            self.tool = self._read_info_from_cache("tool")
             if not self.tool:
                 self.tool = "xESMF_v" + xe.__version__
 
@@ -1769,7 +1842,7 @@ class Weights:
             )
 
             # Save Weights to cache
-            self.save_to_cache(lock_obj)
+            self._save_to_cache(lock_obj)
         finally:
             # Release file lock
             if lock_obj:
@@ -1777,12 +1850,6 @@ class Weights:
 
         # The default filename is important for later use, so it needs to be reset.
         self.regridder.filename = self.regridder._get_default_filename()
-
-    def _reformat(self, format_from: str, format_to: str):
-        raise NotImplementedError
-
-    def _detect_format(self, ds: Union[xr.Dataset, xr.DataArray]):
-        raise NotImplementedError
 
     def _generate_id(self):
         """
@@ -1820,7 +1887,7 @@ class Weights:
         return wid
 
     @check_weights_dir
-    def save_to_cache(self, store_weights: Union[FileLock, None, bool]):
+    def _save_to_cache(self, store_weights: Union[FileLock, None, bool]):
         """Save Weights and source/target grids to cache (netCDF), incl. metadata (JSON)."""
         # Read weights_dir from CONFIG
         weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
@@ -1886,7 +1953,7 @@ class Weights:
                     json.dump(weights_dic, weights_dic_path, sort_keys=True, indent=4)
 
     @check_weights_dir
-    def read_info_from_cache(self, key: str):
+    def _read_info_from_cache(self, key: str):
         """
         Read info 'key' from cached metadata of current weightfile.
 
@@ -1935,13 +2002,21 @@ class Weights:
         # todo: if necessary, reformat weights, then save under specified path.
         raise NotImplementedError
 
-    def load_from_disk(self, filename=None, format=None):
+    def _load_from_disk(self, filename=None, format=None):
         """Read and process weights from disk, not yet implemented."""
         # todo: Reformat to other weight-file formats when loading/saving from disk
         # if format != "xESMF":
         #  read file, compare Grid and weight matrix dimensions,
         #  reformat to xESMF sparse matrix and initialize xesmf.Regridder,
         #  generate_id, set ignore_degenerate, periodic, method to unknown if cannot be determined
+        raise NotImplementedError
+
+    def reformat(self, format_from: str, format_to: str):
+        """Reformat remapping weights. Not yet implemented."""
+        raise NotImplementedError
+
+    def _detect_format(self, ds: Union[xr.Dataset, xr.DataArray]):
+        """Detect format of remapping weights (read from disk), not yet implemented."""
         raise NotImplementedError
 
 
@@ -2067,143 +2142,3 @@ def regrid(
         if keep_attrs:
             regridded_ds[data_var].attrs.update(grid_in.ds[data_var].attrs)
         return regridded_ds  # [grid_in.ds.name] #-> in case of returning a DataArray
-
-
-"""
-#Functions and code from the regrid-prototype notebooks that might
-#be useful at some point in setting this up.
-
-
-# Calculate the bounds of the target grid
-# The bnds cannot be in CF format, as xESMF conservative regridding requires
-#    certain format of the bnds. See eg.:
-#    https://github.com/JiaweiZhuang/xESMF/issues/5
-#    https://github.com/JiaweiZhuang/xESMF/issues/74
-#    https://github.com/JiaweiZhuang/xESMF/issues/14#issuecomment-369686779
-#
-# lat_bnds with shape (nlat+1)
-lat_bnds=np.zeros(ds_out.lat.shape[0]+1, dtype="double")
-lat_bnds[0]=-90.
-lat_bnds[-1]=90.
-lat_bnds[1:-1]=(ds_out.lat.values[:-1]+ds_out.lat.values[1:])/2.
-
-# lon_bnds with shape (nlon+1)
-lon_bnds=np.zeros(ds_out.lon.shape[0]+1, dtype="double")
-lon_bnds[0]=-180.
-lon_bnds[-1]=180.
-lon_bnds[1:-1]=(ds_out.lon.values[:-1]+ds_out.lon.values[1:])/2.
-
-# Create dataset with mask
-ds_out_mask=xr.Dataset(data_vars={"mask":(["lat", "lon"], xr.where(ds_out['sftlf']==0, 1, 0)),
-                                  "lat_b":(["lat1"], lat_bnds),
-                                  "lon_b":(["lon1"], lon_bnds)},
-                       coords={"lat":(["lat"], ds_out.lat),
-                               "lon":(["lon"], ds_out.lon)})
-
-# Create output dataset unmasked
-ds_out=xr.Dataset(data_vars={"lat_b":(["lat1"], lat_bnds),
-                             "lon_b":(["lon1"], lon_bnds)},
-                  coords={"lat":(["lat"], ds_out.lat),
-                          "lon":(["lon"], ds_out.lon)})
-
-# Variable attributes
-lat_attrs={"bounds":"lat_b",
-           "units":"degrees_north",
-           "long_name":"latitude",
-           "standard_name":"latitude"}
-lon_attrs={"bounds":"lon_b",
-           "units":"degrees_east",
-           "long_name":"longitude",
-           "standard_name":"longitude"}
-
-ds_out["lat"].attrs=lat_attrs
-ds_out["lon"].attrs=lon_attrs
-
-
-def SCRIP_to_xESMF_lat_lon(ds):
-
-    Return xarray.Dataset containing coordinate variables interpretable by xESMF.
-
-    Parameters
-    ----------
-    ds : xarray.Dataset
-        Regular horizontal lat-lon grid in SCRIP format (grid_center_lat/lon
-        of shape (nat, nlon), grid_corner_lat/lon of shape (nlat, nlon, 4)).
-
-    Returns
-    -------
-    xarray.Dataset
-        Regular lat-lon grid that can be interpreted by xESMF:
-            lat - 1D latitude array of length nlat
-            lon - 1D longitude array of length nlon
-            lat_b - 1D latitude bounds for lat, array of length nlat+1
-            lon_b - 1D longitude bounds for lon, array of length nlon+1
-
-    # SCRIP format seems not to be supported by xESMF (though it is by ESMF)
-    # -> converting manually to (almost) CF format for a rectilinear grid following
-    #    https://github.com/JiaweiZhuang/xESMF/issues/5
-    #    https://github.com/JiaweiZhuang/xESMF/issues/74
-    #    https://github.com/JiaweiZhuang/xESMF/issues/14#issuecomment-369686779
-    # The bnds cannot be in CF format, as xESMF conservative regridding requires
-    #    certain format of the bnds (see links above)
-    #
-    #  [:,3]     [:,2]
-    #
-    #    x---------x
-    #    |         |
-    #    |    o    |
-    #    |         |
-    #    x---------x
-    #
-    #  [:,0]     [:,1]
-    #
-    # x - grid cell corners
-    # o - grid cell center
-    #
-    # lat/lon
-    lat=ds["grid_center_lat"].values.reshape((180,360))[:, 0]
-    lon=ds["grid_center_lon"].values.reshape((180,360))[0, :]
-
-    # lower and upper bounds
-    latb_l=ds["grid_corner_lat"].values[:, 0].reshape((180,360))[:, 0]
-    latb_u=ds["grid_corner_lat"].values[:, 3].reshape((180,360))[:, 0]
-    lonb_l=ds["grid_corner_lon"].values[:, 0].reshape((180,360))[0, :]
-    lonb_u=ds["grid_corner_lon"].values[:, 1].reshape((180,360))[0, :]
-
-    # reshape from (nlat,2) to (nlat+1)
-    lat_bnds=np.zeros(lat.shape[0]+1, dtype="double")
-    lat_bnds[:-1]=latb_l[:]
-    lat_bnds[-1]=latb_u[-1]
-
-    # reshape from (nlon,2) to (nlon+1)
-    lon_bnds=np.zeros(lon.shape[0]+1, dtype="double")
-    lon_bnds[:-1]=lonb_l[:]
-    lon_bnds[-1]=lonb_u[-1]
-
-    # Create dataset
-    ds_out=xr.Dataset(data_vars={"lat_b":(["lat1"], lat_bnds),
-                                 "lon_b":(["lon1"], lon_bnds)},
-                      coords={"lat":(["lat"], lat),
-                              "lon":(["lon"], lon)})
-    ds_out["lat"].attrs={"bounds":"lat_b",
-                         "units":"degrees_north",
-                         "long_name":"latitude",
-                         "standard_name":"latitude",
-                         "axis":"Y"}
-    ds_out["lon"].attrs={"bounds":"lon_b",
-                         "units":"degrees_east",
-                         "long_name":"longitude",
-                         "standard_name":"longitude",
-                         "axis":"X"}
-    ds_out["lat_b"].attrs={"long_name":"latitude_bounds",
-                           "units":"degrees_north"}
-    ds_out["lon_b"].attrs={"long_name":"longitude_bounds",
-                           "units":"degrees_east"}
-
-    return ds_out
-
-# In case of problems, activate ESMF verbose mode
-import ESMF
-ESMF.Manager(debug=True)
-
-"""
