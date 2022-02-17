@@ -273,7 +273,7 @@ class FileLock(object):
         """Initialize Lock for 'fpath'."""
         self._fpath = fpath
         dr = os.path.dirname(fpath)
-        if not os.path.isdir(dr):
+        if dr and not os.path.isdir(dr):
             os.makedirs(dr)
 
         self.state = "UNLOCKED"

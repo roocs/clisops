@@ -217,7 +217,7 @@ class Grid:
 
         # Force format CF
         if self.format not in ["CF"]:
-            self.ds = self.grid_reformat(grid_format="CF")
+            self.ds = self._grid_reformat(grid_format="CF")
 
         # Detect latitude and longitude coordinates
         self.lat = self.detect_coordinate("latitude")
@@ -234,10 +234,10 @@ class Grid:
             self.type = self.detect_type()
 
         # Unstagger the grid if necessary
-        self.grid_unstagger()
+        self._grid_unstagger()
 
         # Cut off halo (duplicate grid rows / columns)
-        self.grid_remove_halo()
+        self._grid_remove_halo()
 
         # Lon/Lat dimension sizes
         self.nlat, self.nlon, self.ncells = self.detect_shape()
@@ -260,7 +260,7 @@ class Grid:
                     "Bounds can only be attached to xarray.Datasets, not to xarray.DataArrays."
                 )
             else:
-                self.compute_bounds()
+                self._compute_bounds()
 
         # todo: possible step to use np.around(in_array, decimals [, out_array])
         # 6 decimals corresponds to precision of ~ 0.1m (deg), 6m (rad)
@@ -268,11 +268,11 @@ class Grid:
 
         # Create md5 hash of the coordinate variable arrays
         # Takes into account lat/lon + bnds + mask (if defined)
-        self.hash = self.compute_hash()
+        self.hash = self._compute_hash()
 
         # Detect collapsing grid cells
         if self.lat_bnds and self.lon_bnds and self.contains_collapsing_cells is None:
-            self.detect_collapsed_grid_cells()
+            self._detect_collapsed_grid_cells()
 
         self.label = self._get_label()
 
@@ -422,7 +422,7 @@ class Grid:
         # Create regular lat-lon grid with these specifics
         self._grid_from_instructor((xfirst, xlast, xinc, yfirst, ylast, yinc))
 
-    def grid_reformat(self, grid_format):
+    def _grid_reformat(self, grid_format):
         # todo: Extend for formats CF, xESMF, ESMF, UGRID, SCRIP
         #      If CF and self.type=="regular_lat_lon":
         #        assure lat/lon are 1D each and bounds are nlat,2 and nlon,2
@@ -643,7 +643,7 @@ class Grid:
                 % (self.format, grid_format)
             )
 
-    def grid_unstagger(self):
+    def _grid_unstagger(self):
         # todo
         # Plan:
         # Check if it is vectoral and not scalar data (eg. by variable name? No other idea yet.)
@@ -658,7 +658,7 @@ class Grid:
         # All in all a quite impossible task to automatise this process.
         pass
 
-    def grid_remove_halo(self):
+    def _grid_remove_halo(self):
         # todo
         # If dimension is not named after the coordinate variable, get dimension name and then isel.
         # Always assuming for 2D coordinate variables, the first dimension is latitude, the second longitude
@@ -1159,7 +1159,7 @@ class Grid:
             )
             return
 
-    def detect_collapsed_grid_cells(self):
+    def _detect_collapsed_grid_cells(self):
         "Detect collapsing grid cells. Requires defined bounds."
         mask_lat = self._create_collapse_mask(self.ds[self.lat_bnds].data)
         mask_lon = self._create_collapse_mask(self.ds[self.lon_bnds].data)
@@ -1208,7 +1208,7 @@ class Grid:
                     self.ds[coord].attrs = attr_dict[coord]
                     self.ds[coord].encoding = encoding_dict[coord]
 
-    def compute_hash(self):
+    def _compute_hash(self):
         self.hash_dict = OrderedDict()
         for coord, coord_var in OrderedDict(
             [
@@ -1400,7 +1400,7 @@ class Grid:
         if to_datavar:
             self.ds = self.ds.reset_coords(list(set(to_datavar)))
 
-    def compute_bounds(self):
+    def _compute_bounds(self):
         # todo
         # Plan:
         # + xESMF / cf_xarray functions:
@@ -1625,11 +1625,13 @@ class Grid:
         folder: Optional[Union[str, Path]] = "./",
         filename: Optional[str] = "",
         grid_format: Optional[str] = "CF",
+        keep_attrs: Optional[bool] = True,
     ):
         """
         Store a copy of the horizontal Grid as netCDF file on disk.
 
         Define output folder, filename and output format (currently only 'CF' is supported).
+        Does not overwrite an existing file.
 
         Parameters
         ----------
@@ -1640,7 +1642,10 @@ class Grid:
         grid_format : str, optional
             The format the grid information shall be stored as (in terms of variable attributes and dimensions).
             The default is "CF", which is also the only supported output format currently supported.
+        keep_attrs : bool, optional
+            Whether to store the global attributes in the output netCDF file. The default is True.
         """
+        # todo: how to prevent xarray to define FillValues for the bounds variables?
         # Check inputs
         if filename:
             if "/" in str(filename):
@@ -1670,15 +1675,38 @@ class Grid:
                     "another process exists."
                 )
             else:
-                grid_tmp = Grid(ds=self.ds)
-                if grid_tmp.format != grid_format:
-                    grid_tmp.reformat(grid_format)
-                grid_tmp.ds.attrs.update({"clisops": clversion})
-                grid_tmp._drop_vars(keep_attrs=True)
                 try:
+                    # Create a copy of the Grid object with just the horizontal grid information
+                    grid_tmp = Grid(ds=self.ds)
+                    if grid_tmp.format != grid_format:
+                        grid_tmp.reformat(grid_format)
+                    grid_tmp._drop_vars(keep_attrs=keep_attrs)
+                    grid_tmp.ds.attrs.update({"clisops": clversion})
+
+                    # Workaround for the following "features" of xarray:
+                    # 1 # "When an xarray Dataset contains non-dimensional coordinates that do not
+                    #     share dimensions with any of the variables, these coordinate variable
+                    #     names are saved under a “global” "coordinates" attribute. This is not
+                    #     CF-compliant but again facilitates roundtripping of xarray datasets."
+                    # 2 # "By default, variables with float types are attributed a _FillValue of NaN
+                    #     in the output file, unless explicitly disabled with an encoding
+                    #     {'_FillValue': None}."
+                    if grid_tmp.lat_bnds and grid_tmp.lon_bnds:
+                        grid_tmp.ds = grid_tmp.ds.reset_coords(
+                            [grid_tmp.lat_bnds, grid_tmp.lon_bnds]
+                        )
+                        grid_tmp.ds[grid_tmp.lat_bnds].encoding["_FillValue"] = None
+                        grid_tmp.ds[grid_tmp.lon_bnds].encoding["_FillValue"] = None
+
+                    # Call to_netcdf method of xarray.Dataset
                     grid_tmp.ds.to_netcdf(filename)
                 finally:
                     lock_obj.release()
+        else:
+            # Issue a warning if the file already exists
+            #  Not raising an exception since this method is also used to save
+            #  grid files to the local cache
+            warnings.warn(f"The file '{Path(folder, filename)}' already exists.")
 
 
 class Weights:

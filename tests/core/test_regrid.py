@@ -402,6 +402,11 @@ def test_to_netcdf(load_esgf_test_data, tmp_path):
     assert not list(gB.ds.data_vars)
     assert sorted(list(gB.ds.coords)) == [gA.lat, gA.lat_bnds, gA.lon, gA.lon_bnds]
 
+    # Ensure the non-CF-compliant attributes xarray commonly defines are not present:
+    assert "_FillValue" not in dsB[gB.lat_bnds].attrs.keys()
+    assert "_FillValue" not in dsB[gB.lon_bnds].attrs.keys()
+    assert "coordinates" not in dsB.attrs.keys()
+
 
 def test_detect_collapsing_cells(load_esgf_test_data):
     "Test that collapsing cells are properly identified"
@@ -746,6 +751,10 @@ def test_cache_lock_mechanism(load_esgf_test_data, tmp_path):
     # First round - creating the weights should work without problems
     weights_cache_init(Path(tmp_path, "weights"))
     w = Weights(grid_in=grid_in, grid_out=grid_out, method="nearest_s2d")
+
+    # Remove grid files to suppress related warnings of already existing files
+    os.remove(Path(tmp_path, "weights", "grid_" + grid_in.hash + ".nc"))
+    os.remove(Path(tmp_path, "weights", "grid_" + grid_out.hash + ".nc"))
 
     # Second round, but manually put lockfile in place
     LOCK_FILE = Path(tmp_path, "weights", w.filename + ".lock")
