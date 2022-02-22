@@ -16,16 +16,13 @@ import roocs_grids
 import xarray as xr
 from pkg_resources import parse_version
 from roocs_utils.exceptions import InvalidParameterValue
-
-# from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
+import clisops.utils.dataset_utils as clidu
 from clisops import CONFIG
 from clisops import __version__ as clversion
 from clisops.utils.common import check_dir, require_module
 from clisops.utils.output_utils import FileLock, create_lock
-
-# from clisops.utils import dataset_utils
 
 # Try importing xesmf and set to None if not found at correct version
 # If set to None, the `require_module` decorator will throw an exception
@@ -204,7 +201,7 @@ class Grid:
                 self._grid_from_ds_adaptive(ds)
             else:
                 self.ds = ds
-                self.format = self.detect_format()
+                self.format = self.detect_format(ds=self.ds)
                 self.source = "Dataset"
         elif grid_instructor:
             self._grid_from_instructor(grid_instructor)
@@ -217,7 +214,7 @@ class Grid:
 
         # Force format CF
         if self.format not in ["CF"]:
-            self.ds = self._grid_reformat(grid_format="CF")
+            self.grid_reformat(grid_format="CF")
 
         # Detect latitude and longitude coordinates
         self.lat = self.detect_coordinate("latitude")
@@ -255,12 +252,7 @@ class Grid:
 
         # Compute bounds if not specified and if possible
         if (not self.lat_bnds or not self.lon_bnds) and compute_bounds:
-            if not isinstance(self.ds, xr.Dataset):
-                raise InvalidParameterValue(
-                    "Bounds can only be attached to xarray.Datasets, not to xarray.DataArrays."
-                )
-            else:
-                self._compute_bounds()
+            self._compute_bounds()
 
         # todo: possible step to use np.around(in_array, decimals [, out_array])
         # 6 decimals corresponds to precision of ~ 0.1m (deg), 6m (rad)
@@ -274,9 +266,10 @@ class Grid:
         if self.lat_bnds and self.lon_bnds and self.contains_collapsing_cells is None:
             self._detect_collapsed_grid_cells()
 
-        self.label = self._get_label()
+        self.title = self._get_title()
 
     def __str__(self):
+        """Return short string representation of a Grid object."""
         if self.type == "irregular":
             grid_str = str(self.ncells) + "_cells_grid"
         else:
@@ -284,6 +277,7 @@ class Grid:
         return grid_str
 
     def __repr__(self):
+        """Return full representation of a Grid object."""
         info = (
             "clisops {}\n".format(self.__str__())
             + (
@@ -305,8 +299,8 @@ class Grid:
         )
         return info
 
-    def _get_label(self):
-        """Generate a label (str) for the Grid."""
+    def _get_title(self):
+        """Generate a title (str) for the Grid with more information than the basic string representation."""
         if self.source.startswith("Predefined_"):
             return ".".join(
                 ga
@@ -334,7 +328,7 @@ class Grid:
         self.ds = grid
         self.source = "Predefined_" + grid_id
         self.type = "regular_lat_lon"
-        self.format = self.detect_format()
+        self.format = self.detect_format(ds=self.ds)
 
     @require_xesmf
     def _grid_from_instructor(self, grid_instructor: Union[tuple, float, int]):
@@ -422,221 +416,39 @@ class Grid:
         # Create regular lat-lon grid with these specifics
         self._grid_from_instructor((xfirst, xlast, xinc, yfirst, ylast, yinc))
 
-    def _grid_reformat(self, grid_format):
+    def grid_reformat(self, grid_format: str, keep_attrs: Optional[bool] = False):
+        """
+        Reformat the xarray.Dataset attached to the Grid object to a target format.
+
+        Parameters
+        ----------
+        grid_format : str
+            Target format of the reformat operation. Yet supported are 'SCRIP', 'CF', 'xESMF'.
+        keep_attrs: bool
+            Whether to keep the global attributes.
+
+        Returns
+        -------
+        ds_ref : xarray.Dataset
+            Reformated dataset.
+        """
         # todo: Extend for formats CF, xESMF, ESMF, UGRID, SCRIP
         #      If CF and self.type=="regular_lat_lon":
-        #        assure lat/lon are 1D each and bounds are nlat,2 and nlon,2
-        #      -> that might have to be executed after the regridding
+        #        ensure lat/lon are 1D each and bounds are nlat,2 and nlon,2
         # todo: When 2D coordinates will be changed to 1D index coordinates
         #       xarray.assign_coords might be necessary, or alternatively,
         #       define a new Dataset and move all data_vars and aux. coords across.
-        #       Might introduce drop_vars=True/False to get rid of other than horizonal
-        #       coordinate variables if required.
         # todo: removes attrs - should attrs be kept?
-        #####################
-        # Plan: Start with if-else-tree and later switch to a dictionary
-        ###################################
-        # if self.format=="CF":
-        #      if grid_format=="SCRIP":
-        #          do sth
-        # else:
-        #    raise NotImplementedError
-        ###################################
-        # def SCRIP_to_CF: ...
-        # reformat_dict["SCRIP_to_CF"]=SCRIP_to_CF
-        # reformat_dict[self.format+"_"+grid_format]()
-        ###################################
-        SCRIP_vars = [
-            "grid_center_lat",
-            "grid_center_lon",
-            "grid_corner_lat",
-            "grid_corner_lon",
-            "grid_dims",
-            "grid_area",
-            "grid_imask",
-        ]
 
-        if not isinstance(self.ds, xr.Dataset):
-            raise InvalidParameterValue(
-                "Reformat is only possible for Datasets."
-                " DataArrays have to be CF conformal coordinate variables defined."
+        # Generate reformat operation string
+        reformat_operation = "reformat_" + self.format + "_to_" + grid_format
+
+        # Conduct reformat operation if defined in clisops.utils.dataset_utils
+        if hasattr(clidu, reformat_operation):
+            self.ds = getattr(clidu, reformat_operation)(
+                ds=self.ds, keep_attrs=keep_attrs
             )
-
-        if self.format == "SCRIP":
-            if not (
-                all([var in SCRIP_vars for var in self.ds.data_vars])
-                and all([coord in SCRIP_vars for coord in self.ds.coords])
-            ):
-                raise Exception(
-                    "Converting the grid format from %s to %s is not yet possible for data variables."
-                    % (self.format, grid_format)
-                )
-            if grid_format == "CF":
-                lat = self.ds.grid_center_lat.values.reshape(
-                    (self.ds.grid_dims.values[1], self.ds.grid_dims.values[0])
-                ).astype(np.float32)
-                lon = self.ds.grid_center_lon.values.reshape(
-                    (self.ds.grid_dims.values[1], self.ds.grid_dims.values[0])
-                ).astype(np.float32)
-
-                if all(
-                    [
-                        np.array_equal(lat[:, i], lat[:, i + 1], equal_nan=True)
-                        for i in range(self.ds.grid_dims.values[0] - 1)
-                    ]
-                ) and all(
-                    [
-                        np.array_equal(lon[i, :], lon[i + 1, :], equal_nan=True)
-                        for i in range(self.ds.grid_dims.values[1] - 1)
-                    ]
-                ):
-                    # regular_lat_lon grid type:
-                    # Reshape vertices from (n,2) to (n+1) for lat and lon axis
-                    lat = lat[:, 0]
-                    lon = lon[0, :]
-                    lat_b = self.ds.grid_corner_lat.values.reshape(
-                        (
-                            self.ds.grid_dims.values[1],
-                            self.ds.grid_dims.values[0],
-                            self.ds.dims["grid_corners"],
-                        )
-                    ).astype(np.float32)
-                    lon_b = self.ds.grid_corner_lon.values.reshape(
-                        (
-                            self.ds.grid_dims.values[1],
-                            self.ds.grid_dims.values[0],
-                            self.ds.dims["grid_corners"],
-                        )
-                    ).astype(np.float32)
-                    lat_bnds = np.zeros(
-                        (self.ds.grid_dims.values[1], 2), dtype=np.float32
-                    )
-                    lon_bnds = np.zeros(
-                        (self.ds.grid_dims.values[0], 2), dtype=np.float32
-                    )
-                    lat_bnds[:, 0] = np.min(lat_b[:, 0, :], axis=1)
-                    lat_bnds[:, 1] = np.max(lat_b[:, 0, :], axis=1)
-                    lon_bnds[:, 0] = np.min(lon_b[0, :, :], axis=1)
-                    lon_bnds[:, 1] = np.max(lon_b[0, :, :], axis=1)
-                    ds_ref = xr.Dataset(
-                        data_vars={},
-                        coords={
-                            "lat": (["lat"], lat),
-                            "lon": (["lon"], lon),
-                            "lat_bnds": (["lat", "bnds"], lat_bnds),
-                            "lon_bnds": (["lon", "bnds"], lon_bnds),
-                        },
-                    )
-                    # todo: Case of other units (rad)
-                    # todo: Reformat data variables if in ds, apply imask on data variables
-                    # todo: vertical axis, time axis, ... ?!
-                    ds_ref["lat"].attrs = {
-                        "bounds": "lat_bnds",
-                        "units": "degrees_north",
-                        "long_name": "latitude",
-                        "standard_name": "latitude",
-                        "axis": "Y",
-                    }
-                    ds_ref["lon"].attrs = {
-                        "bounds": "lon_bnds",
-                        "units": "degrees_east",
-                        "long_name": "longitude",
-                        "standard_name": "longitude",
-                        "axis": "X",
-                    }
-                    ds_ref["lat_bnds"].attrs = {
-                        "long_name": "latitude_bounds",
-                        "units": "degrees_north",
-                    }
-                    ds_ref["lon_bnds"].attrs = {
-                        "long_name": "longitude_bounds",
-                        "units": "degrees_east",
-                    }
-                    self.format = "CF"
-                    return ds_ref
-
-                else:
-                    raise Exception(
-                        "Converting the grid format from %s to %s is yet only possible for regular latitude longitude grids."
-                        % (self.format, grid_format)
-                    )
-            else:
-                raise Exception(
-                    "Converting the grid format from %s to %s is not yet supported."
-                    % (self.format, grid_format)
-                )
-
-        elif self.format == "xESMF":
-            if grid_format == "CF":
-                # todo: Check if it is regular_lat_lon, Check dimension sizes
-                # Define lat, lon, lat_bnds, lon_bnds
-                lat = self.ds.lat[:, 0]
-                lon = self.ds.lon[0, :]
-                lat_bnds = np.zeros((lat.shape[0], 2), dtype=np.float32)
-                lon_bnds = np.zeros((lon.shape[0], 2), dtype=np.float32)
-
-                # From (N+1, M+1) shaped bounds to (N, M, 4) shaped vertices
-                lat_vertices = cfxr.vertices_to_bounds(
-                    self.ds.lat_b, ("bnds", "lat", "lon")
-                ).values
-                lon_vertices = cfxr.vertices_to_bounds(
-                    self.ds.lon_b, ("bnds", "lat", "lon")
-                ).values
-
-                lat_vertices = np.moveaxis(lat_vertices, 0, -1)
-                lon_vertices = np.moveaxis(lon_vertices, 0, -1)
-
-                # From (N, M, 4) shaped vertices to (N, 2)  and (M, 2) shaped bounds
-                lat_bnds[:, 0] = np.min(lat_vertices[:, 0, :], axis=1)
-                lat_bnds[:, 1] = np.max(lat_vertices[:, 0, :], axis=1)
-                lon_bnds[:, 0] = np.min(lon_vertices[0, :, :], axis=1)
-                lon_bnds[:, 1] = np.max(lon_vertices[0, :, :], axis=1)
-
-                # Create dataset
-                ds_ref = xr.Dataset(
-                    data_vars={},
-                    coords={
-                        "lat": (["lat"], lat.data),
-                        "lon": (["lon"], lon.data),
-                        "lat_bnds": (["lat", "bnds"], lat_bnds.data),
-                        "lon_bnds": (["lon", "bnds"], lon_bnds.data),
-                    },
-                )
-
-                # todo: Case of other units (rad)
-                # todo: Reformat data variables if in ds, apply imask on data variables
-                # todo: vertical axis, time axis, ... ?!
-                # Add variable attributes to the coordinate variables
-                ds_ref["lat"].attrs = {
-                    "bounds": "lat_bnds",
-                    "units": "degrees_north",
-                    "long_name": "latitude",
-                    "standard_name": "latitude",
-                    "axis": "Y",
-                }
-                ds_ref["lon"].attrs = {
-                    "bounds": "lon_bnds",
-                    "units": "degrees_east",
-                    "long_name": "longitude",
-                    "standard_name": "longitude",
-                    "axis": "X",
-                }
-                ds_ref["lat_bnds"].attrs = {
-                    "long_name": "latitude_bounds",
-                    "units": "degrees_north",
-                }
-                ds_ref["lon_bnds"].attrs = {
-                    "long_name": "longitude_bounds",
-                    "units": "degrees_east",
-                }
-                self.format = "CF"
-                return ds_ref
-            else:
-                raise Exception(
-                    "Converting the grid format from %s to %s is yet only possible for regular latitude longitude grids."
-                    % (self.format, grid_format)
-                )
-
+            self.format = grid_format
         else:
             raise Exception(
                 "Converting the grid format from %s to %s is not yet supported."
@@ -644,6 +456,7 @@ class Grid:
             )
 
     def _grid_unstagger(self):
+        """Interpolate to cell center from cell edges, rotate vector variables in lat/lon direction, not yet implemented."""
         # todo
         # Plan:
         # Check if it is vectoral and not scalar data (eg. by variable name? No other idea yet.)
@@ -659,6 +472,13 @@ class Grid:
         pass
 
     def _grid_remove_halo(self):
+        """
+        Detect and remove a possible grid halo.
+
+        Can only remove fully duplicated rows or columns. Assumes the halo column/row is a 1:1 copy of,
+        the original column/row, even though in practice it seems many grids are maldefined in the halo
+        region and it matters whether to keep the "original" or halo cells.
+        """
         # todo
         # If dimension is not named after the coordinate variable, get dimension name and then isel.
         # Always assuming for 2D coordinate variables, the first dimension is latitude, the second longitude
@@ -851,9 +671,23 @@ class Grid:
                 + ", ".join(str(i) for i in list1d[-5:])
             )
 
-    def detect_format(self):
-        # todo: Extend for formats CF, xESMF, ESMF, UGRID, SCRIP
-        # Add more conditions (dimension sizes, ...)
+    @staticmethod
+    def detect_format(ds: xr.Dataset):
+        """
+        Detect format of a dataset. Yet supported are 'CF', 'SCRIP', 'xESMF'.
+
+        Parameters
+        ----------
+        ds : xr.Dataset
+            xarray.Dataset of which to detect the format.
+
+        Returns
+        -------
+        str
+            The format, if supported. Else raises an Exception.
+        """
+        # todo: extend for formats CF, xESMF, ESMF, UGRID, SCRIP
+        # todo: add more conditions (dimension sizes, ...)
         SCRIP_vars = [
             "grid_center_lat",
             "grid_center_lon",
@@ -861,8 +695,8 @@ class Grid:
             "grid_corner_lon",
             # "grid_imask", "grid_area"
         ]
-
         SCRIP_dims = ["grid_corners", "grid_size", "grid_rank"]
+
         xESMF_vars = [
             "lat",
             "lon",
@@ -870,29 +704,26 @@ class Grid:
             "lon_b",
             # "mask",
         ]
-
         xESMF_dims = ["x", "y", "x_b", "y_b"]
 
         # Test if SCRIP
-        if all([var in self.ds for var in SCRIP_vars]) and all(
-            [dim in self.ds.dims for dim in SCRIP_dims]
+        if all([var in ds for var in SCRIP_vars]) and all(
+            [dim in ds.dims for dim in SCRIP_dims]
         ):
             return "SCRIP"
 
         # Test if xESMF
-        elif all([var in self.ds.coords for var in xESMF_vars]) and all(
-            [dim in self.ds.dims for dim in xESMF_dims]
+        elif all([var in ds.coords for var in xESMF_vars]) and all(
+            [dim in ds.dims for dim in xESMF_dims]
         ):
             return "xESMF"
 
         # Test if latitude and longitude can be found - standard_names would be set later if undef.
         elif (
-            "latitude" in self.ds.cf.standard_names
-            and "longitude" in self.ds.cf.standard_names
+            "latitude" in ds.cf.standard_names and "longitude" in ds.cf.standard_names
         ) or (
-            get_coord_by_type(self.ds, "latitude", ignore_aux_coords=False) is not None
-            and get_coord_by_type(self.ds, "longitude", ignore_aux_coords=False)
-            is not None
+            get_coord_by_type(ds, "latitude", ignore_aux_coords=False) is not None
+            and get_coord_by_type(ds, "longitude", ignore_aux_coords=False) is not None
         ):
             return "CF"
 
@@ -900,6 +731,16 @@ class Grid:
             raise Exception("The grid format is not supported.")
 
     def detect_type(self):
+        """
+        Detect type of the grid as one of "regular_lat_lon", "curvilinear", "irregular".
+
+        Else will issue an Exception if grid type is not supported.
+
+        Returns
+        -------
+        str
+            The detected grid type.
+        """
         # todo: Extend for other formats for regular_lat_lon, curvilinear / rotated_pole, irregular
         if self.format == "CF":
 
@@ -1088,7 +929,7 @@ class Grid:
             return "regional"
 
     def detect_mask(self):
-        "Yet to be implemented, if at all necessary (eg. for reformating to SCRIP etc.)."
+        """Yet to be implemented, if at all necessary (eg. for reformating to SCRIP etc.)."""
         # todo
         # Plan:
         # Depending on the format, the mask is stored as extra variable.
@@ -1134,14 +975,28 @@ class Grid:
 
     def detect_coordinate(self, coord_type):
         """
-        Using cf_xarray function. Might as well use a roocs_utils function, like:
-        roocs_utils.xarray_utils.get_coord_by_attr(ds, attr, value)
-        roocs_utils.xarray_utils.get_coord_type(coord)
-        roocs_utils.xarray_utils.xarray_utils.get_coord_by_type(ds, coord_type, ignore_aux_coords=True)
+        Use cf-xarray to attain the variable name of the requested coordinate.
+
+        Parameters
+        ----------
+        coord_type : str
+            Coordinate type understood by cf-xarray, eg. 'lat', 'lon', ...
+
+        Raises
+        ------
+        AttributeError
+            Raised if the requested coordinate cannot be identified.
+
+        Returns
+        -------
+        str
+            Coordinate variable name.
         """
+        # Make use of cf-xarray accessor
         coord = self.ds.cf[coord_type]
         # coord = get_coord_by_type(self.ds, coord_type, ignore_aux_coords=False)
 
+        # Return the name of the coordinate variable
         try:
             return coord.name
         except AttributeError:
@@ -1183,11 +1038,25 @@ class Grid:
         return mask.reshape(orig_shape)
 
     def _cap_precision(self, decimals):
+        """
+        Round horizontal coordinate variables to specified precision using numpy.around.
+
+        Parameters
+        ----------
+        decimals : int
+            The decimal position / precision to round to.
+
+        Returns
+        -------
+        None.
+        """
         # todo: extend for vertical axis for vertical interpolation usecase
         # 6 decimals corresponds to hor. precision of ~ 0.1m (deg), 6m (rad)
         coord_dict = {}
         attr_dict = {}
         encoding_dict = {}
+
+        # Assign the rounded values as new coordinate variables
         for coord in [self.lat_bnds, self.lon_bnds, self.lat, self.lon]:
             if coord:
                 attr_dict.update({coord: self.ds[coord].attrs})
@@ -1200,6 +1069,8 @@ class Grid:
                         )
                     }
                 )
+
+        # Restore the original attributes
         if coord_dict:
             self.ds = self.ds.assign_coords(coord_dict)
             # Restore attrs and encoding - is there a proper way to do this?? (todo)
@@ -1209,6 +1080,18 @@ class Grid:
                     self.ds[coord].encoding = encoding_dict[coord]
 
     def _compute_hash(self):
+        """
+        Compute md5 checksum of each component of the horizontal grid, incl. a potentially defined mask.
+
+        Stores the individual checksum of each component (lat, lon, lat_bnds, lon_bnds, mask)
+        in a dictionary and returns an overall checksum.
+
+        Returns
+        -------
+        str
+            md5 checksum of the checksums of all 5 grid components.
+        """
+        # Create dictionary including the hashes for each grid component and store it as attribute
         self.hash_dict = OrderedDict()
         for coord, coord_var in OrderedDict(
             [
@@ -1225,9 +1108,31 @@ class Grid:
                 ).hexdigest()
             else:
                 self.hash_dict[coord] = md5(b"undefined").hexdigest()
+
+        # Return overall checksum for all 5 components
         return md5("".join(self.hash_dict.values()).encode("utf-8")).hexdigest()
 
     def compare_grid(self, ds_or_Grid, verbose=False):
+        """
+        Compare two Grid objects.
+
+        Will compare the checksum of two Grid objects, which depend on the lat and lon coordinate
+        variables, their bounds and if defined, a mask.
+
+        Parameters
+        ----------
+        ds_or_Grid : xarray.Dataset or Grid
+            Grid that the current Grid object shall be compared to.
+        verbose : str, optional
+            Whether to also print the result. The default is False.
+
+        Returns
+        -------
+        bool
+            Returns True if the two Grids are considered identical within the defined precision,
+            else returns False.
+        """
+        # Create temporary Grid object if ds_or_Grid is an xarray object
         if isinstance(ds_or_Grid, xr.Dataset) or isinstance(ds_or_Grid, xr.DataArray):
             grid_tmp = Grid(ds=ds_or_Grid)
         elif isinstance(ds_or_Grid, Grid):
@@ -1236,6 +1141,8 @@ class Grid:
             raise InvalidParameterValue(
                 "The provided input has to be of one of the types [xarray.DataArray, xarray.Dataset, clisops.core.Grid]."
             )
+
+        # Compare each of the five components and print result if verbose is active
         if verbose:
             diff = [
                 coord_var
@@ -1246,10 +1153,19 @@ class Grid:
                 print(f"The two grids differ in their respective {', '.join(diff)}.")
             else:
                 print("The two grids are considered equal.")
+
+        # Return the result as boolean
         return grid_tmp.hash == self.hash
 
     def _drop_vars(self, keep_attrs=False):
-        "Remove all non necessary (=non-horizontal) coords and data_vars"
+        """
+        Remove all non necessary (=non-horizontal) coords and data_vars of the Grids' xarray.Dataset.
+
+        Parameters
+        ----------
+        keep_attrs : bool or str, optional
+            Whether to keep the global attributes. The default is False.
+        """
         to_keep = [
             var for var in [self.lat, self.lon, self.lat_bnds, self.lon_bnds] if var
         ]
@@ -1263,7 +1179,24 @@ class Grid:
         self.ds = self.ds.drop_vars(names=to_drop)
 
     def _transfer_coords(self, source_grid, keep_attrs=True):
-        "Transfer all non-horizontal coordinates to a dataset"
+        """
+        Transfer all non-horizontal coordinates and optionally global attributes between two Grid objects.
+
+        Parameters
+        ----------
+        source_grid : Grid
+            Source Grid object to transfer the coords from.
+        keep_attrs : bool or str, optional
+            Whether to transfer also the global attributes.
+                False: do not transfer the global attributes.
+                "target": preserve the global attributes of the target Grid object.
+                True: transfer the global attributes from source to target Grid object.
+            The default is True.
+
+        Returns
+        -------
+        None.
+        """
         # Skip all coords with horizontal dimensions or
         #  coords with no dimensions that are not listed
         #  in the coordinates attribute of the data_vars
@@ -1304,14 +1237,19 @@ class Grid:
         self.ds = self.ds.assign_coords(coord_dict)
 
     def _set_data_vars_and_coords(self):
-        "Set all non data vars as coordinates."
+        """
+        (Re)set xarray.Dataset.coords appropriately.
+
+        After opening/creating an xarray.Dataset, likely coordinates can be found set as data_vars,
+        and data_vars set as coords. This method (re)sets the coords. Dimensionless variables that
+        are not registered in any "coordinates" attribute are per default reset to data_vars,
+        so xarray does not keep them in the dataset after remapping; an example for this is
+        "rotated_latitude_longitude".
+        """
         to_coord = []
         to_datavar = []
 
         # Collect all (dimensionless) coordinates
-        #  dimensionless variables that are not registered in the coordinates attribute
-        #   may not be assigned as coords or xarray will keep them around forever
-        #   though they are likely useless after remapping (eg. rotated_latitude_longitude)
         coordinates_attr = []
         for var in self.ds.data_vars:
             cattr = ChainMap(self.ds[var].attrs, self.ds[var].encoding).get(
@@ -1319,6 +1257,7 @@ class Grid:
             )
             if cattr:
                 coordinates_attr += cattr.split()
+
         # Also add cell_measure variables
         cell_measures = list()
         for cmtype, cm in self.ds.cf.cell_measures.items():
@@ -1358,7 +1297,7 @@ class Grid:
                     ):
                         to_coord.append(var)
 
-        # Set bound variables to coord
+        # Set coordinate bounds as coords
         for var in [bnd for bnds in self.ds.cf.bounds.values() for bnd in bnds]:
             if var in self.ds.data_vars:
                 to_coord.append(var)
@@ -1395,26 +1334,40 @@ class Grid:
                         )
                     ):
                         to_datavar.append(var)
+
+        # Call xarray.Dataset.(re)set_coords
         if to_coord:
             self.ds = self.ds.set_coords(list(set(to_coord)))
         if to_datavar:
             self.ds = self.ds.reset_coords(list(set(to_datavar)))
 
     def _compute_bounds(self):
-        # todo
-        # Plan:
-        # + xESMF / cf_xarray functions:
-        #   - ds.cf.add_bounds([lon_name, lat_name]))
-        #   - functions in ESMPy?
-        # + 34d function
-        #   https://github.com/SantanderMetGroup/ATLAS/blob/mai-devel/scripts/ATLAS-data/bash-interpolation-scripts/AtlasCDOremappeR_CORDEX/grid_bounds_calc.py
+        """
+        Compute bounds for regular (rectangular or curvilinear) grids.
+
+        The bounds will be attached as coords to the xarray.Dataset of the Grid object.
+        If no bounds can be created, a warning is issued.
+
+        The bound calculation for curvilinear grids was adapted from
+        https://github.com/SantanderMetGroup/ATLAS/blob/mai-devel/scripts/ATLAS-data/\
+            bash-interpolation-scripts/AtlasCDOremappeR_CORDEX/grid_bounds_calc.py
+        which based on work by Caillaud Cécile and Samuel Somot from Meteo-France.
+        """
         #
-        # Computation may fail, in this case, raise Warning
-        # Without bounds, regrid method 'conservative' cannot be used
+        # todo: Duplicated cells should be removed before computing bounds
+        #       or the possiblity of duplicated cells has to be considered.
+        #       Yet this is not yet 100% properly done by the method _remove_halo().
+        #       In cases where duplicated cells cannot be removed one might add a boolean
+        #       attribute to state whether duplicated cells exist (in which case no bounds would be
+        #       calculated).
         #
-        # ! Duplicated cells should be removed before computing bounds
-        #   or the possiblity of duplicated cells has to be considered
-        #
+
+        # Bounds are only possible for xarray.Datasets
+        if not isinstance(self.ds, xr.Dataset):
+            raise InvalidParameterValue(
+                "Bounds can only be attached to xarray.Datasets, not to xarray.DataArrays."
+            )
+
         if self.format == "CF":
             if (
                 np.amin(self.ds[self.lat].values) < -90.0
@@ -1429,11 +1382,6 @@ class Grid:
                 )
                 return
             if self.type == "curvilinear":
-                # The bounds creation for curvilinear grids has been adapted from
-                # https://github.com/SantanderMetGroup/ATLAS/blob/mai-devel/scripts/ATLAS-data/ \
-                #  bash-interpolation-scripts/AtlasCDOremappeR_CORDEX/grid_bounds_calc.py
-                # It is no longer available there.
-
                 # Rearrange lat/lons
                 lons_row = self.ds[self.lon].data.flatten()
                 lats_row = self.ds[self.lat].data.flatten()
@@ -1526,6 +1474,7 @@ class Grid:
                 # Latitude / Longitude bounds shaped (nlat, 2) / (nlon, 2)
                 lat_bnds = np.zeros((self.ds[self.lat].shape[0], 2), dtype=np.float32)
                 lon_bnds = np.zeros((self.ds[self.lon].shape[0], 2), dtype=np.float32)
+
                 # lat_bnds
                 #  positive<0 for strong monotonically increasing
                 #  positive>0 for strong monotonically decreasing
@@ -1556,6 +1505,7 @@ class Grid:
                     return
                 lat_bnds = np.where(lat_bnds < -90.0, -90.0, lat_bnds)
                 lat_bnds = np.where(lat_bnds > 90.0, 90.0, lat_bnds)
+
                 # lon_bnds
                 positive = self.ds[self.lon].values[0] - self.ds[self.lon].values[1]
                 gspacingl = abs(positive)
@@ -1582,9 +1532,11 @@ class Grid:
                         "values are not strong monotonically decreasing/increasing."
                     )
                     return
+
                 # Add to the dataset
                 self.ds["lat_bnds"] = ((self.ds[self.lat].dims[0], "bnds"), lat_bnds)
                 self.ds["lon_bnds"] = ((self.ds[self.lon].dims[0], "bnds"), lon_bnds)
+
             else:
                 warnings.warn(
                     "The bounds cannot be calculated for grid_type '%s' and format '%s'."
@@ -1594,19 +1546,15 @@ class Grid:
 
             # Add common set of attributes and set as coordinates
             self.ds = self.ds.set_coords(["lat_bnds", "lon_bnds"])
-            self.ds[self.lat].attrs["bounds"] = "lat_bnds"
-            self.ds[self.lon].attrs["bounds"] = "lon_bnds"
-            self.ds["lat_bnds"].attrs = {
-                "long_name": "latitude_bounds",
-                "units": "degrees_north",
-            }
-            self.ds["lon_bnds"].attrs = {
-                "long_name": "longitude_bounds",
-                "units": "degrees_east",
-            }
+            print(self.lat, self.lon)
+            self.ds = clidu.add_hor_CF_coord_attrs(
+                ds=self.ds, lat=self.lat, lon=self.lon
+            )
+
             # Set the Class attributes
             self.lat_bnds = "lat_bnds"
             self.lon_bnds = "lon_bnds"
+
             # Issue warning
             warnings.warn(
                 "Successfully calculated a set of latitude and longitude bounds."
@@ -1645,7 +1593,6 @@ class Grid:
         keep_attrs : bool, optional
             Whether to store the global attributes in the output netCDF file. The default is True.
         """
-        # todo: how to prevent xarray to define FillValues for the bounds variables?
         # Check inputs
         if filename:
             if "/" in str(filename):
@@ -2114,7 +2061,7 @@ def regrid(
     regridded_ds.attrs.update(attrs_append)
     regridded_ds.attrs.update(
         {
-            "grid": grid_out.label,
+            "grid": grid_out.title,
             "grid_label": "gr",  # regridded data reported on the data provider's preferred target grid
             "regrid_operation": weights.regridder.filename.split(".")[0],
             "regrid_tool": weights.tool,
