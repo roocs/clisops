@@ -1,4 +1,5 @@
 import math
+import warnings
 
 import cf_xarray as cfxr
 import cftime
@@ -394,3 +395,310 @@ def reformat_xESMF_to_CF(ds, keep_attrs=False):
     #                "Converting the grid format from %s to %s is yet only possible for regular latitude longitude grids."
     #                % (self.format, grid_format)
     #            )
+
+
+def detect_format(ds):
+    """
+    Detect format of a dataset. Yet supported are 'CF', 'SCRIP', 'xESMF'.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        xarray.Dataset of which to detect the format.
+
+    Returns
+    -------
+    str
+        The format, if supported. Else raises an Exception.
+    """
+    # todo: extend for formats CF, xESMF, ESMF, UGRID, SCRIP
+    # todo: add more conditions (dimension sizes, ...)
+    SCRIP_vars = [
+        "grid_center_lat",
+        "grid_center_lon",
+        "grid_corner_lat",
+        "grid_corner_lon",
+        # "grid_imask", "grid_area"
+    ]
+    SCRIP_dims = ["grid_corners", "grid_size", "grid_rank"]
+
+    xESMF_vars = [
+        "lat",
+        "lon",
+        "lat_b",
+        "lon_b",
+        # "mask",
+    ]
+    xESMF_dims = ["x", "y", "x_b", "y_b"]
+
+    # Test if SCRIP
+    if all([var in ds for var in SCRIP_vars]) and all(
+        [dim in ds.dims for dim in SCRIP_dims]
+    ):
+        return "SCRIP"
+
+    # Test if xESMF
+    elif all([var in ds.coords for var in xESMF_vars]) and all(
+        [dim in ds.dims for dim in xESMF_dims]
+    ):
+        return "xESMF"
+
+    # Test if latitude and longitude can be found - standard_names would be set later if undef.
+    elif (
+        "latitude" in ds.cf.standard_names and "longitude" in ds.cf.standard_names
+    ) or (
+        get_coord_by_type(ds, "latitude", ignore_aux_coords=False) is not None
+        and get_coord_by_type(ds, "longitude", ignore_aux_coords=False) is not None
+    ):
+        return "CF"
+
+    else:
+        raise Exception("The grid format is not supported.")
+
+
+def detect_shape(ds, lat, lon, grid_type):
+    """
+    Detect the shape of the grid.
+
+    Returns a tuple of (nlat, nlon, ncells). For an irregular grid nlat and nlon are not defined
+    and therefore the returned tuple will be (ncells, ncells, ncells).
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset containing the grid / coordinate variables.
+    lat : str
+        Latitude variable name.
+    lon : str
+        Longitude variable name.
+    grid_type: str
+        One of "regular_lat_lon", "curvilinear", "irregular"
+
+    Returns
+    -------
+    nlat : int
+        Number of latitude points in the grid.
+    nlon : int
+        Number of longitude points in the grid.
+    ncells : int
+        Number of cells in the grid.
+    """
+    if grid_type not in ["regular_lat_lon", "curvilinear", "irregular"]:
+        raise Exception(f"The specified grid_type '{grid_type}' is not supported.")
+
+    if ds[lon].ndim != ds[lon].ndim:
+        raise Exception(
+            f"The coordinate variables {lat} and {lon} do not have the same number of dimensions."
+        )
+    elif ds[lat].ndim == 2:
+        nlat = ds[lat].shape[0]
+        nlon = ds[lon].shape[1]
+        ncells = nlat * nlon
+    elif ds[lat].ndim == 1:
+        if ds[lat].shape == ds[lon].shape and grid_type == "irregular":
+            nlat = ds[lat].shape[0]
+            nlon = nlat
+            ncells = nlat
+        else:
+            nlat = ds[lat].shape[0]
+            nlon = ds[lon].shape[0]
+            ncells = nlat * nlon
+    else:
+        raise Exception(
+            f"The coordinate variables {lat} and {lon} are not 1- or 2-dimensional."
+        )
+    return (nlat, nlon, ncells)
+
+
+def generate_bounds_curvilinear(ds, lat, lon):
+    """
+    Compute bounds for curvilinear grids.
+
+    Assumes 2D latitude and longitude coordinate variables. The bounds will be attached as coords
+    to the xarray.Dataset of the Grid object. If no bounds can be created, a warning is issued.
+    It is assumed but not ensured that no duplicated cells are present in the grid.
+
+    The bound calculation for curvilinear grids was adapted from
+    https://github.com/SantanderMetGroup/ATLAS/blob/mai-devel/scripts/ATLAS-data/\
+    bash-interpolation-scripts/AtlasCDOremappeR_CORDEX/grid_bounds_calc.py
+    which based on work by Caillaud Cécile and Samuel Somot from Meteo-France.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Dataset to generate the bounds for.
+    lat : str
+        Latitude variable name.
+    lon : str
+        Longitude variable name.
+
+    Returns
+    -------
+    xarray.Dataset
+        Dataset with attached bounds.
+    """
+    # Detect shape
+    nlat, nlon, ncells = detect_shape(ds=ds, lat=lat, lon=lon, grid_type="curvilinear")
+
+    # Rearrange lat/lons
+    lons_row = ds[lon].data.flatten()
+    lats_row = ds[lat].data.flatten()
+
+    # Allocate lat/lon corners
+    lons_cor = np.zeros(lons_row.size * 4)
+    lats_cor = np.zeros(lats_row.size * 4)
+
+    lons_crnr = np.empty((ds[lon].shape[0] + 1, ds[lon].shape[1] + 1))
+    lons_crnr[:] = np.nan
+    lats_crnr = np.empty((ds[lat].shape[0] + 1, ds[lat].shape[1] + 1))
+    lats_crnr[:] = np.nan
+
+    # -------- Calculating corners --------- #
+
+    # Loop through all grid points except at the boundaries
+    for ilat in range(1, ds[lon].shape[0]):
+        for ilon in range(1, ds[lon].shape[1]):
+            # SW corner for each lat/lon index is calculated
+            lons_crnr[ilat, ilon] = (
+                ds[lon][ilat - 1, ilon - 1]
+                + ds[lon][ilat, ilon - 1]
+                + ds[lon][ilat - 1, ilon]
+                + ds[lon][ilat, ilon]
+            ) / 4.0
+            lats_crnr[ilat, ilon] = (
+                ds[lat][ilat - 1, ilon - 1]
+                + ds[lat][ilat, ilon - 1]
+                + ds[lat][ilat - 1, ilon]
+                + ds[lat][ilat, ilon]
+            ) / 4.0
+
+    # Grid points at boundaries
+    lons_crnr[0, :] = lons_crnr[1, :] - (lons_crnr[2, :] - lons_crnr[1, :])
+    lons_crnr[-1, :] = lons_crnr[-2, :] + (lons_crnr[-2, :] - lons_crnr[-3, :])
+    lons_crnr[:, 0] = lons_crnr[:, 1] + (lons_crnr[:, 1] - lons_crnr[:, 2])
+    lons_crnr[:, -1] = lons_crnr[:, -2] + (lons_crnr[:, -2] - lons_crnr[:, -3])
+
+    lats_crnr[0, :] = lats_crnr[1, :] - (lats_crnr[2, :] - lats_crnr[1, :])
+    lats_crnr[-1, :] = lats_crnr[-2, :] + (lats_crnr[-2, :] - lats_crnr[-3, :])
+    lats_crnr[:, 0] = lats_crnr[:, 1] - (lats_crnr[:, 1] - lats_crnr[:, 2])
+    lats_crnr[:, -1] = lats_crnr[:, -2] + (lats_crnr[:, -2] - lats_crnr[:, -3])
+
+    # ------------ DONE ------------- #
+
+    # Fill in counterclockwise and rearrange
+    count = 0
+    for ilat in range(ds[lon].shape[0]):
+        for ilon in range(ds[lon].shape[1]):
+
+            lons_cor[count] = lons_crnr[ilat, ilon]
+            lons_cor[count + 1] = lons_crnr[ilat, ilon + 1]
+            lons_cor[count + 2] = lons_crnr[ilat + 1, ilon + 1]
+            lons_cor[count + 3] = lons_crnr[ilat + 1, ilon]
+
+            lats_cor[count] = lats_crnr[ilat, ilon]
+            lats_cor[count + 1] = lats_crnr[ilat, ilon + 1]
+            lats_cor[count + 2] = lats_crnr[ilat + 1, ilon + 1]
+            lats_cor[count + 3] = lats_crnr[ilat + 1, ilon]
+
+            count += 4
+
+    lon_bnds = lons_cor.reshape(nlat, nlon, 4)
+    lat_bnds = lats_cor.reshape(nlat, nlon, 4)
+
+    # Add to the dataset
+    ds["lat_bnds"] = (
+        (ds[lat].dims[0], ds[lat].dims[1], "vertices"),
+        lat_bnds,
+    )
+    ds["lon_bnds"] = (
+        (ds[lon].dims[0], ds[lon].dims[1], "vertices"),
+        lon_bnds,
+    )
+
+    return ds
+
+
+def generate_bounds_rectilinear(ds, lat, lon):
+    """
+    Compute bounds for rectilinear grids.
+
+    The bounds will be attached as coords to the xarray.Dataset of the Grid object.
+    If no bounds can be created, a warning is issued. It is assumed but not ensured that no
+    duplicated cells are present in the grid.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        .
+    lat : str
+        Latitude variable name.
+    lon : str
+        Longitude variable name.
+
+    Returns
+    -------
+    xarray.Dataset
+        Dataset with attached bounds.
+    """
+    # Detect shape
+    nlat, nlon, ncells = detect_shape(
+        ds=ds, lat=lat, lon=lon, grid_type="regular_lat_lon"
+    )
+
+    # Assuming lat / lon values are strong monotonically decreasing/increasing
+    # Latitude / Longitude bounds shaped (nlat, 2) / (nlon, 2)
+    lat_bnds = np.zeros((ds[lat].shape[0], 2), dtype=np.float32)
+    lon_bnds = np.zeros((ds[lon].shape[0], 2), dtype=np.float32)
+
+    # lat_bnds
+    #  positive<0 for strong monotonically increasing
+    #  positive>0 for strong monotonically decreasing
+    positive = ds[lat].values[0] - ds[lat].values[1]
+    gspacingl = abs(positive)
+    gspacingu = abs(ds[lat].values[-1] - ds[lat].values[-2])
+    if positive < 0:
+        lat_bnds[1:, 0] = (ds[lat].values[:-1] + ds[lat].values[1:]) / 2.0
+        lat_bnds[:-1, 1] = lat_bnds[1:, 0]
+        lat_bnds[0, 0] = ds[lat].values[0] - gspacingl / 2.0
+        lat_bnds[-1, 1] = ds[lat].values[-1] + gspacingu / 2.0
+    elif positive > 0:
+        lat_bnds[1:, 1] = (ds[lat].values[:-1] + ds[lat].values[1:]) / 2.0
+        lat_bnds[:-1, 0] = lat_bnds[1:, 1]
+        lat_bnds[0, 1] = ds[lat].values[0] + gspacingl / 2.0
+        lat_bnds[-1, 0] = ds[lat].values[-1] - gspacingu / 2.0
+    else:
+        warnings.warn(
+            "The bounds could not be calculated since the latitude and/or longitude "
+            "values are not strong monotonically decreasing/increasing."
+        )
+        return ds
+
+    lat_bnds = np.where(lat_bnds < -90.0, -90.0, lat_bnds)
+    lat_bnds = np.where(lat_bnds > 90.0, 90.0, lat_bnds)
+
+    # lon_bnds
+    positive = ds[lon].values[0] - ds[lon].values[1]
+    gspacingl = abs(positive)
+    gspacingu = abs(ds[lon].values[-1] - ds[lon].values[-2])
+    if positive < 0:
+        lon_bnds[1:, 0] = (ds[lon].values[:-1] + ds[lon].values[1:]) / 2.0
+        lon_bnds[:-1, 1] = lon_bnds[1:, 0]
+        lon_bnds[0, 0] = ds[lon].values[0] - gspacingl / 2.0
+        lon_bnds[-1, 1] = ds[lon].values[-1] + gspacingu / 2.0
+    elif positive > 0:
+        lon_bnds[1:, 1] = (ds[lon].values[:-1] + ds[lon].values[1:]) / 2.0
+        lon_bnds[:-1, 0] = lon_bnds[1:, 1]
+        lon_bnds[0, 1] = ds[lon].values[0] + gspacingl / 2.0
+        lon_bnds[-1, 0] = ds[lon].values[-1] - gspacingu / 2.0
+    else:
+        warnings.warn(
+            "The bounds could not be calculated since the latitude and/or longitude "
+            "values are not strong monotonically decreasing/increasing."
+        )
+        return ds
+
+    # Add to the dataset
+    ds["lat_bnds"] = ((ds[lat].dims[0], "bnds"), lat_bnds)
+    ds["lon_bnds"] = ((ds[lon].dims[0], "bnds"), lon_bnds)
+
+    return ds

@@ -201,6 +201,12 @@ CMIP5_MRSOS_ONE_TIME_STEP = Path(
     "master/test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/day/land/day/r1i1p1/latest/mrsos/mrsos_day_HadGEM2-ES_rcp85_r1i1p1_20051201.nc",
 ).as_posix()
 
+# CMIP6 dataset with weird range in its longitude coordinate (-300, 60)
+CMIP6_GFDL_EXTENT = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/badc/cmip6/data/CMIP6/CMIP/NOAA-GFDL/GFDL-CM4/historical/r1i1p1f1/Omon/sos/gn/v20180701/sos_Omon_GFDL-CM4_historical_r1i1p1f1_gn_185001.nc",
+).as_posix()
+
 # CMIP6 two files with different precision in their coordinate variables
 CMIP6_TAS_PRECISION_A = Path(
     MINI_ESGF_CACHE_DIR,

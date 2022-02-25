@@ -11,6 +11,7 @@ import xarray as xr
 from pkg_resources import parse_version
 from roocs_grids import get_grid_file
 
+import clisops.utils.dataset_utils as clidu
 from clisops import CONFIG
 from clisops.core.regrid import (
     XESMF_MINIMUM_VERSION,
@@ -25,6 +26,7 @@ from clisops.utils.output_utils import FileLock
 
 from .._common import (
     CMIP6_ATM_VERT_ONE_TIMESTEP,
+    CMIP6_GFDL_EXTENT,
     CMIP6_OCE_HALO_CNRM,
     CMIP6_TAS_ONE_TIME_STEP,
     CMIP6_TAS_PRECISION_A,
@@ -331,6 +333,18 @@ def test_grid_from_ds_adaptive_reproducibility():
     assert gA.compare_grid(gAa)
     assert gB.extent == "global"
     assert gB.compare_grid(gBa)
+
+
+@pytest.mark.xfail
+def test_detect_extent(load_esgf_test_data):
+    "Test whether the extent can be correctly inferred for a weird test case."
+    # Load dataset with longitude ranging from (-300, 60)
+    ds = xr.open_dataset(CMIP6_GFDL_EXTENT, use_cftime=True)
+    # s = clidu.lon_roll(ds, (0, 360))
+    print(ds)
+    g = Grid(ds=ds)
+
+    assert g.extent == "global"
 
 
 def test_compare_grid_same_resolution():

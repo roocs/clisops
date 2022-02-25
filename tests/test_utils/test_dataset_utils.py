@@ -7,7 +7,7 @@ from roocs_grids import get_grid_file
 import clisops.utils.dataset_utils as clidu
 from clisops.core.regrid import XESMF_MINIMUM_VERSION
 
-from .._common import CMIP6_SICONC
+from .._common import CMIP6_SICONC, CMIP6_UNSTR_ICON_A
 
 try:
     import xesmf
@@ -156,3 +156,49 @@ def test_reformat_SCRIP_to_CF():
     assert all([coord in ds_ref for coord in ["lat", "lon", "lat_bnds", "lon_bnds"]])
     assert all([dim in ds_ref.dims for dim in ["lat", "lon", "bnds"]])
     assert ds_ref.attrs["Conventions"] == "SCRIP"
+
+
+def test_detect_shape_regular():
+    "Test detect_shape function for a regular grid"
+    # Load dataset
+    ds = xr.open_dataset(get_grid_file("0pt25deg_era5_lsm"))
+
+    # Detect shape
+    nlat, nlon, ncells = clidu.detect_shape(
+        ds, lat="latitude", lon="longitude", grid_type="regular_lat_lon"
+    )
+
+    # Assertion
+    assert nlat == 721
+    assert nlon == 1440
+    assert ncells == nlat * nlon
+
+
+def test_detect_shape_irregular():
+    "Test detect_shape function for an irregular grid"
+    # Load dataset
+    ds = xr.open_dataset(CMIP6_UNSTR_ICON_A, use_cftime=True)
+
+    # Detect shape
+    nlat, nlon, ncells = clidu.detect_shape(
+        ds, lat="latitude", lon="longitude", grid_type="irregular"
+    )
+
+    # Assertion
+    assert nlat == ncells
+    assert nlon == ncells
+    assert ncells == 20480
+
+
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
+def test_detect_format():
+    "Test detect_format function"
+    # Load/Create datasets in SCRIP, CF and xESMF format
+    ds_cf = xr.open_dataset(get_grid_file("0pt25deg_era5_lsm"))
+    ds_scrip = xr.open_dataset(get_grid_file("0pt25deg_era5"))
+    ds_xesmf = xesmf.util.grid_global(5.0, 5.0)
+
+    # Assertion
+    assert clidu.detect_format(ds_cf) == "CF"
+    assert clidu.detect_format(ds_scrip) == "SCRIP"
+    assert clidu.detect_format(ds_xesmf) == "xESMF"
