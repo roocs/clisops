@@ -21,7 +21,7 @@ from clisops.core import (
 from clisops.core.subset import assign_bounds, get_lat, get_lon
 from clisops.ops.base_operation import Operation
 from clisops.utils.common import expand_wildcards
-from clisops.utils.dataset_utils import check_lon_alignment
+from clisops.utils.dataset_utils import cf_convert_between_lon_frames
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import get_output, get_time_slices
 
@@ -78,7 +78,6 @@ class Subset(Operation):
         if "lon_bnds" and "lat_bnds" in self.params:
             lon = get_lon(self.ds)
             lat = get_lat(self.ds)
-
             # ensure lat/lon bounds are in the same order as data, before trying to roll
             # if descending in dataset, they will be flipped in subset_bbox
             self.params["lon_bnds"], self.params["lat_bnds"] = (
@@ -89,7 +88,10 @@ class Subset(Operation):
             # subset with space and optionally time and level
             LOGGER.debug(f"subset_bbox with parameters: {self.params}")
             # bounds are always ascending, so if lon is descending rolling will not work.
-            ds = check_lon_alignment(self.ds, self.params.get("lon_bnds"))
+            ds, lb, ub = cf_convert_between_lon_frames(
+                self.ds, self.params.get("lon_bnds")
+            )
+            self.params["lon_bnds"] = (lb, ub)
             try:
                 kwargs = {}
                 valid_args = [

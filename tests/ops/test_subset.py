@@ -1211,27 +1211,19 @@ class TestReverseBounds:
         np.testing.assert_array_equal(result[0].tos, result_rev[0].tos)
 
     def test_reverse_lon_cross_meridian_curvilinear(self, load_esgf_test_data):
-        # can't roll because ds has a curvilinear grid
-        with pytest.raises(Exception) as exc:
-            subset(
-                ds=CMIP6_TOS_ONE_TIME_STEP,
-                area=(-70, -45, 240, 45),
-                output_type="xarray",
-            )
-
-        # can't roll because ds has a curvilinear grid
-        with pytest.raises(Exception) as exc_rev:
-            subset(
-                ds=CMIP6_TOS_ONE_TIME_STEP,
-                area=(240, -45, -70, 45),
-                output_type="xarray",
-            )
-
-        assert (
-            str(exc.value)
-            == "The requested longitude subset (-70.0, 240.0) is not within the longitude bounds of this dataset and the data could not be converted to this longitude frame successfully. Please re-run your request with longitudes within the bounds of the dataset: (0.01, 360.00)"
+        result = subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area=(-70, -45, 120, 45),
+            output_type="xarray",
         )
-        assert str(exc.value) == str(exc_rev.value)
+
+        result_rev = subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area=(120, -45, -70, 45),
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].tos, result_rev[0].tos)
 
     def test_reverse_lat_and_lon_curvilinear(self, load_esgf_test_data):
         result = subset(

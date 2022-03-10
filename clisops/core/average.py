@@ -269,9 +269,9 @@ def average_time(
         )
 
     # check time coordinate exists and get name
-    t = get_coord_by_type(ds, "time", ignore_aux_coords=False)
-
-    if t is None:
+    try:
+        t = get_coord_by_type(ds, "time", ignore_aux_coords=False)
+    except KeyError:
         raise Exception("Time dimension could not be found")
 
     # resample and average over time
