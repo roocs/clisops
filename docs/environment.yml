@@ -7,6 +7,8 @@ dependencies:
 - sphinx
 - nbsphinx
 - ipython
+- jupyterlab
+- sphinx_rtd_theme
 - pandoc
 - pip
 - numpy>=1.16
@@ -23,6 +25,3 @@ dependencies:
 - pyproj>=2.5
 - roocs-utils>=0.2.1
 - cf_xarray>=0.3.1
-- pip:
-   - ipython_genutils
-   - sphinx_rtd_theme
