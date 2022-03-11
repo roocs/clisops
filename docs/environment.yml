@@ -9,6 +9,7 @@ dependencies:
 - ipython
 - pandoc
 - pip
+- ipython_genutils
 - numpy>=1.16
 - xarray>=0.15
 - pandas>=1.0.3
