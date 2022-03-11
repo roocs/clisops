@@ -78,6 +78,7 @@ class Subset(Operation):
         if "lon_bnds" and "lat_bnds" in self.params:
             lon = get_lon(self.ds)
             lat = get_lat(self.ds)
+
             # ensure lat/lon bounds are in the same order as data, before trying to roll
             # if descending in dataset, they will be flipped in subset_bbox
             self.params["lon_bnds"], self.params["lat_bnds"] = (
