@@ -12,6 +12,7 @@ from .._common import (
     CMIP6_OCE_HALO_CNRM,
     CMIP6_SICONC,
     CMIP6_UNSTR_ICON_A,
+    CORDEX_TAS_ONE_TIMESTEP,
 )
 
 
@@ -111,6 +112,50 @@ def test_detect_coordinate_and_bounds():
     assert lon_d == clidu.detect_coordinate(ds_d, "longitude")
 
 
+def test_crosses_0_meridian():
+    "Test the _crosses_0_meridian function"
+    # Case 1 - longitude crossing 180° meridian
+    lon = np.arange(160.0, 200.0, 1.0)
+
+    # convert to [-180, 180], min and max now suggest 0-meridian crossing
+    lon = np.where(lon > 180, lon - 360, lon)
+
+    da = xr.DataArray(dims=["x"], coords={"x": lon})
+    assert not clidu._crosses_0_meridian(da["x"])
+
+    # Case 2 - regional dataset ranging [315 .. 66] but for whatever reason not defined on
+    #          [-180, 180] longitude frame
+    ds = xr.open_dataset(CORDEX_TAS_ONE_TIMESTEP)
+    assert np.isclose(ds["lon"].min(), 0, atol=0.1)
+    assert np.isclose(ds["lon"].max(), 360, atol=0.1)
+
+    # Convert to -180, 180 frame and confirm crossing 0-meridian
+    ds, ll, lu = clidu.cf_convert_between_lon_frames(ds, (-180, 180))
+    assert np.isclose(ds["lon"].min(), -45.4, atol=0.1)
+    assert np.isclose(ds["lon"].max(), 66.1, atol=0.1)
+    assert clidu._crosses_0_meridian(ds["lon"])
+
+
+def test_convert_interval_between_lon_frames():
+    "Test the helper function _convert_interval_between_lon_frames"
+    # Convert from 0,360 to -180,180 longitude frame and vice versa
+    assert clidu._convert_interval_between_lon_frames(20, 60) == (20, 60)
+    assert clidu._convert_interval_between_lon_frames(190, 200) == (-170, -160)
+    assert clidu._convert_interval_between_lon_frames(-20, -90) == (270, 340)
+
+    # Exception when crossing 0°- or 180°-meridian
+    with pytest.raises(
+        Exception,
+        match="Cannot convert longitude interval if it includes the 0°- or 180°-meridian.",
+    ):
+        clidu._convert_interval_between_lon_frames(170, 300)
+    with pytest.raises(
+        Exception,
+        match="Cannot convert longitude interval if it includes the 0°- or 180°-meridian.",
+    ):
+        clidu._convert_interval_between_lon_frames(-30, 10)
+
+
 def test_convert_lon_frame_bounds():
     "Test the function cf_convert_between_lon_frames"
     # Load tutorial dataset defined on [200,330]
@@ -140,7 +185,6 @@ def test_convert_lon_frame_bounds():
     assert lu == 350.0
 
 
-@pytest.mark.skip(reason="MINIESGF PR awaiting approval")
 def test_convert_lon_frame_shifted():
     ds = xr.open_dataset(CMIP6_GFDL_EXTENT, use_cftime=True)
 

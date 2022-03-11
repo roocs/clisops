@@ -54,9 +54,7 @@ def _crosses_0_meridian(lon_c):
         True for a dataset crossing the 0-meridian, False else.
     """
     if not isinstance(lon_c, xr.DataArray):
-        raise InvalidParameterValue(
-            "Input needs to be of type xarray.DataArray or np.ndarray."
-        )
+        raise InvalidParameterValue("Input needs to be of type xarray.DataArray.")
 
     # Not crossing the 0-meridian if all values are positive or negative
     lon_n = lon_c.where(lon_c <= 0, 0)
