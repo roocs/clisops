@@ -30,6 +30,7 @@ docs_requirements = [
     "nbsphinx",
     "pandoc",
     "ipython",
+    "ipython_genutils",
     "ipykernel",
     "jupyter_client",
     "matplotlib",
