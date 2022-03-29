@@ -1,7 +1,8 @@
 import sys
 from pathlib import Path
-from typing import Union
+from typing import Union, List
 
+import loguru
 from loguru import logger
 
 
@@ -23,20 +24,21 @@ def _logging_examples() -> None:
     logger.critical("5")
 
 
-def enable_logging():
-    logger.remove()
-
-    logger.enable("clisops")
-    logger.add(
-        sys.stdout,
-        format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS Z UTC}</>"
-        " <red>|</> <lvl>{level}</> <red>|</> <cyan>{name}:{function}:{line}</>"
-        " <red>|</> <lvl>{message}</>",
-        level="INFO",
+def enable_logging() -> List[int]:
+    config = dict(
+        handlers=[
+            dict(
+                sink=sys.stdout,
+                format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS Z UTC}</>"
+                " <red>|</> <lvl>{level}</> <red>|</> <cyan>{name}:{function}:{line}</>"
+                " <red>|</> <lvl>{message}</>",
+                level="INFO",
+            ),
+            dict(
+                sink=sys.stderr,
+                format="<red>{time:YYYY-MM-DD HH:mm:ss.SSS Z UTC} | {level} | {name}:{function}:{line} | {message}</>",
+                level="WARNING",
+            ),
+        ]
     )
-
-    logger.add(
-        sys.stderr,
-        format="<red>{time:YYYY-MM-DD HH:mm:ss.SSS Z UTC} | {level} | {name}:{function}:{line} | {message}</>",
-        level="WARNING",
-    )
+    return logger.configure(**config)

@@ -9,6 +9,7 @@ Sphinx
 sphinx-rtd-theme
 twine
 pytest
+pytest-loguru
 pytest-runner
 pre-commit>=2.9.0
 black>=21.12b0

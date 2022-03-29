@@ -7,7 +7,8 @@ from roocs_utils.config import get_config
 
 from .__version__ import __author__, __email__, __version__
 
-logger.disable("clisops")
+# Remove the logger that is instantiated on import
+logger.remove()
 
 
 # Workaround for roocs_utils to not re-import clisops
