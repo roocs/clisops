@@ -1,6 +1,14 @@
 Version History
 ===============
 
+v0.9.0 (unreleased)
+-------------------
+
+Other Changes
+^^^^^^^^^^^^^
+* Pandas now pinned below version 1.4.0.
+* Pre-commit configuration updated with code style conventions (black, pyupgrade) set to Python3.7+.
+
 v0.8.0 (2022-01-13)
 -------------------
 
