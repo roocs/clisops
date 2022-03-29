@@ -2,14 +2,16 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import xarray as xr
+from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.parameter.dimension_parameter import DimensionParameter
 from roocs_utils.xarray_utils.xarray_utils import convert_coord_to_axis
 
 from clisops.core import average
 from clisops.ops.base_operation import Operation
 from clisops.utils.file_namers import get_file_namer
+from clisops.utils.output_utils import get_output, get_time_slices
 
-__all__ = ["average_over_dims", "Average"]
+__all__ = ["average_over_dims", "average_time"]
 
 
 class Average(Operation):
@@ -84,4 +86,76 @@ def average_over_dims(
 
     """
     op = Average(**locals())
+    return op.process()
+
+
+class AverageTime(Operation):
+    def _resolve_params(self, **params):
+        freq = params.get("freq", None)
+
+        if not freq:
+            raise InvalidParameterValue(
+                "At least one frequency for averaging must be provided"
+            )
+
+        if freq not in list(average.freqs.keys()):
+            raise InvalidParameterValue(
+                f"Time frequency for averaging must be one of {list(average.freqs.keys())}."
+            )
+
+        self.params = {"freq": freq}
+
+    def _get_file_namer(self):
+        extra = f"_avg-{self.params.get('freq')}"
+        namer = get_file_namer(self._file_namer)(extra=extra)
+
+        return namer
+
+    def _calculate(self):
+        avg_ds = average.average_time(
+            self.ds,
+            self.params.get("freq", None),
+        )
+
+        return avg_ds
+
+
+def average_time(
+    ds,
+    freq: str,
+    output_dir: Optional[Union[str, Path]] = None,
+    output_type="netcdf",
+    split_method="time:auto",
+    file_namer="standard",
+) -> List[Union[xr.Dataset, str]]:
+    """
+
+    Parameters
+    ----------
+    ds: Union[xr.Dataset, str]
+    freq: str
+      The frequency to average over. One of "month", "year".
+    output_dir: Optional[Union[str, Path]] = None
+    output_type: {"netcdf", "nc", "zarr", "xarray"}
+    split_method: {"time:auto"}
+    file_namer: {"standard", "simple"}
+
+    Returns
+    -------
+    List[Union[xr.Dataset, str]]
+    A list of the outputs in the format selected; str corresponds to file paths if the
+    output format selected is a file.
+
+    Examples
+    --------
+    | ds: xarray Dataset or "cmip5.output1.MOHC.HadGEM2-ES.rcp85.mon.atmos.Amon.r1i1p1.latest.tas"
+    | dims: ['latitude', 'longitude']
+    | ignore_undetected_dims: False
+    | output_dir: "/cache/wps/procs/req0111"
+    | output_type: "netcdf"
+    | split_method: "time:auto"
+    | file_namer: "standard"
+
+    """
+    op = AverageTime(**locals())
     return op.process()

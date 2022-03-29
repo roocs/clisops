@@ -7,6 +7,8 @@ v0.8.0 (2022-01-13)
 New Features
 ^^^^^^^^^^^^
 * ``clisops.core.average.average_shape`` copies the global and variable attributes from the input data to the results.
+* ``clisops.ops.average.average_time`` and ``clisops.core.average.average_time`` added. Allowing averaging over time frequencies of day, month and year.
+* New function ``create_time_bounds`` in  ``clisops.utils.time_utils``, to generate time bounds for temporally averaged datasets.
 
 Bug fixes
 ^^^^^^^^^

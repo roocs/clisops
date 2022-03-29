@@ -29,8 +29,8 @@ Subset operation
    :show-inheritance:
 
 
-Average operation
-=================
+Average operations
+==================
 
 .. automodule:: clisops.ops.average
    :noindex:
@@ -73,6 +73,16 @@ Dataset Utilities
 ================
 
 .. automodule:: clisops.utils.dataset_utils
+   :noindex:
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Time Utilities
+==============
+
+.. automodule:: clisops.utils.time_utils
    :noindex:
    :members:
    :undoc-members:
