@@ -648,11 +648,11 @@ def _curvilinear_grid_exterior_polygon(ds, mode="bbox"):
     from shapely.ops import unary_union
 
     def round_up(x, decimal=1):
-        f = 10 ** decimal
+        f = 10**decimal
         return math.ceil(x * f) / f
 
     def round_down(x, decimal=1):
-        f = 10 ** decimal
+        f = 10**decimal
         return math.floor(x * f) / f
 
     if mode == "bbox":
