@@ -1,8 +1,7 @@
 import sys
 from pathlib import Path
-from typing import Union, List
+from typing import List, Union
 
-import loguru
 from loguru import logger
 
 

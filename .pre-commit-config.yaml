@@ -16,7 +16,7 @@ repos:
     -   id: debug-statements
         language_version: python3
 -   repo: https://github.com/ambv/black
-    rev: 21.12b0
+    rev: 22.3.0
     hooks:
     -   id: black
         language_version: python3
@@ -44,7 +44,7 @@ repos:
 #    -   id: pydocstyle
 #        args: ["--conventions=numpy"]
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v2.31.0
+    rev: v2.31.1
     hooks:
     -   id: pyupgrade
         language_version: python3
