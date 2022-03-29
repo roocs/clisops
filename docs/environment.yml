@@ -4,13 +4,11 @@ channels:
 - conda-forge
 - defaults
 dependencies:
-- python>3.7
 - sphinx
-- sphinx_rtd_theme
 - nbsphinx
 - ipython
-- jupyterlab
 - pandoc
+- pip
 - numpy>=1.16
 - xarray>=0.15
 - pandas>=1.0.3

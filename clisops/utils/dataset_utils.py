@@ -111,10 +111,12 @@ def cf_convert_between_lon_frames(ds_in, lon_interval):
     Convert ds or lon_interval (whichever deems appropriate) to the other longitude frame, if the longitude frames do not match.
 
     If ds and lon_interval are defined on different longitude frames ([-180, 180] and [0, 360]),
-    this function will convert the input parameters to the other longitude frame, preferably the
-    lon_interval.
+    this function will convert one of the input parameters to the other longitude frame, preferably
+    the lon_interval.
     Adjusts shifted longitude frames [0-x, 360-x] in the dataset to one of the two standard longitude
     frames, dependent on the specified lon_interval.
+    In case of curvilinear grids featuring an additional 1D x-coordinate of the projection,
+    this projection x-coordinate will not get converted.
 
     Parameters
     ----------
@@ -131,32 +133,15 @@ def cf_convert_between_lon_frames(ds_in, lon_interval):
     """
     # Collect input specs
     if isinstance(ds_in, (xr.Dataset, xr.DataArray)):
-        lon = get_coord_by_type(ds_in, "longitude", ignore_aux_coords=False).name
-        lat = get_coord_by_type(ds_in, "latitude", ignore_aux_coords=False).name
-        lon_bnds = detect_bounds(ds_in, "longitude")
-        gridtype = ""
-        x = lon
-        x_is_index = True
-        if ds_in[lon].ndim == 1 and ds_in[lon].dims == ds_in[lat].dims:
-            gridtype = "irregular"
-        elif ds_in[lon].ndim == 1:
-            gridtype = "regular_lat_lon"
-        elif ds_in[lon].ndim == 2:
-            gridtype = "curvilinear"
-            x = ds_in[lon].dims[1]
-            if x in ds_in.coords and (
-                list(ds_in[x].values) == list(range(ds_in.dims[x]))
-                or list(ds_in[x].values) == list(range(1, ds_in.dims[x] + 1))
-            ):
-                x_is_index = True
-            elif x not in ds_in.coords:
-                x_is_index = True
-            else:
-                x_is_index = False
-        else:
-            raise InvalidParameterValue(
-                "The longitude coordinate variable has more than 2 dimensions."
-            )
+        lon = detect_coordinate(ds_in, "longitude")
+        lat = detect_coordinate(ds_in, "latitude")
+        lon_bnds = detect_bounds(ds_in, lon)
+        # lat_bnds = detect_bounds(ds_in, lat)
+        # Do not consider bounds in gridtype detection (yet fails due to open_mfdataset bug that adds
+        #  time dimension to bounds - todo)
+        gridtype = detect_gridtype(
+            ds_in, lon=lon, lat=lat
+        )  # lat_bnds=lat_bnds, lon_bnds = lon_bnds)
         ds = ds_in.copy()
     else:
         raise InvalidParameterValue(
@@ -193,16 +178,12 @@ def cf_convert_between_lon_frames(ds_in, lon_interval):
                 ds[lon_bnds] = ds[lon_bnds].where(
                     ds[lon_bnds] > 180, ds[lon_bnds] - 360.0
                 )
-            if not x_is_index:
-                ds[x] = ds[x].where(ds[x] <= 180, ds[x] - 360.0)
         elif low > 0 and lon_min < 0:
             ds[lon] = ds[lon].where(ds[lon] >= 0, ds[lon] + 360.0)
             if lon_bnds:
                 ds[lon_bnds] = ds[lon_bnds].where(
                     ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0
                 )
-            if not x_is_index:
-                ds[x] = ds[x].where(ds[x] >= 0, ds[x] + 360.0)
         return ds, low, high
 
     # Conversion: 1D or 2D longitude coordinate variable
@@ -212,38 +193,34 @@ def cf_convert_between_lon_frames(ds_in, lon_interval):
             return ds, low, high
 
         # shifted frame beyond -180, eg. [-300, 60]
-        elif lon_min < -180.5:
+        elif lon_min < -180 - atol:
             if low < 0:
                 ds[lon] = ds[lon].where(ds[lon] > -180, ds[lon] + 360.0)
-                ds[lon_bnds] = ds[lon_bnds].where(
-                    ds[lon_bnds] > -180, ds[lon_bnds] + 360.0
-                )
-                if not x_is_index:
-                    ds[x] = ds[x].where(ds[x] > -180, ds[x] + 360.0)
+                if lon_bnds:
+                    ds[lon_bnds] = ds[lon_bnds].where(
+                        ds[lon_bnds] > -180, ds[lon_bnds] + 360.0
+                    )
             elif low >= 0:
                 ds[lon] = ds[lon].where(ds[lon] >= 0, ds[lon] + 360.0)
-                ds[lon_bnds] = ds[lon_bnds].where(
-                    ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0
-                )
-                if not x_is_index:
-                    ds[x] = ds[x].where(ds[x] >= 0, ds[x] + 360.0)
+                if lon_bnds:
+                    ds[lon_bnds] = ds[lon_bnds].where(
+                        ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0
+                    )
 
         # shifted frame beyond 0, eg. [-60, 300]
         elif lon_min < -atol and lon_max > 180 + atol:
             if low < 0:
                 ds[lon] = ds[lon].where(ds[lon] <= 180, ds[lon] - 360.0)
-                ds[lon_bnds] = ds[lon_bnds].where(
-                    ds[lon_bnds] <= 180, ds[lon_bnds] - 360.0
-                )
-                if not x_is_index:
-                    ds[x] = ds[x].where(ds[x] <= 180, ds[x] - 360.0)
+                if lon_bnds:
+                    ds[lon_bnds] = ds[lon_bnds].where(
+                        ds[lon_bnds] <= 180, ds[lon_bnds] - 360.0
+                    )
             elif low >= 0:
                 ds[lon] = ds[lon].where(ds[lon] >= 0, ds[lon] + 360.0)
-                ds[lon_bnds] = ds[lon_bnds].where(
-                    ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0
-                )
-                if not x_is_index:
-                    ds[x] = ds[x].where(ds[x] >= 0, ds[x] + 360.0)
+                if lon_bnds:
+                    ds[lon_bnds] = ds[lon_bnds].where(
+                        ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0
+                    )
 
         # [-180 ... 180]
         elif lon_min < 0:
@@ -254,8 +231,6 @@ def cf_convert_between_lon_frames(ds_in, lon_interval):
                     ds[lon_bnds] = ds[lon_bnds].where(
                         ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0
                     )
-                if not x_is_index:
-                    ds[x] = ds[x].where(ds[x] >= 0, ds[x] + 360.0)
             # interval does not include 180°-meridian: convert interval to [-180,180]
             else:
                 if low >= 0:
@@ -274,39 +249,16 @@ def cf_convert_between_lon_frames(ds_in, lon_interval):
                     ds[lon_bnds] = ds[lon_bnds].where(
                         ds[lon_bnds] <= 180, ds[lon_bnds] - 360.0
                     )
-                if not x_is_index:
-                    ds[x] = ds[x].where(ds[x] <= 180, ds[x] - 360.0)
             # interval negative
             else:
                 low, high = _convert_interval_between_lon_frames(low, high)
                 return ds, low, high
 
-        # Sort since order is no longer ascending / descending
-        # 1D coordinate variable
-        if gridtype == "irregular":
-            return ds, low, high
-        elif gridtype == "regular_lat_lon":
+        # 1D coordinate variable: Sort, since order might no longer be ascending / descending
+        if gridtype == "regular_lat_lon":
             ds = ds.sortby(lon)
-            return ds, low, high
-        # 2D coordinate variable
-        else:
-            # If x / longitude dimension does have a coordinate variable assigned that is not just
-            # an index, assign a row of the dataset as coordinate for x-dimension,
-            # sort by x to obtain ~ascending longitude coordinates
-            # todo: sorting even necessary in that case?
-            # todo: how does xesmf react to sorted / unsorted datasets?
-            if not x_is_index:
-                ds = ds.sortby(x)
-            else:
-                ds = ds.assign_coords({x: ds[lon][0, :].squeeze().values})
-                ds = ds.sortby(x)
 
-                if x not in ds_in.coords:
-                    ds = ds.drop(x)
-                else:
-                    ds = ds.assign_coords({x: ds_in[x]})
-
-            return ds, low, high
+        return ds, low, high
 
 
 def check_lon_alignment(ds, lon_bnds):
@@ -471,3 +423,82 @@ def detect_bounds(ds, coordinate):
             "For coordinate variable '%s' no bounds can be identified." % coordinate
         )
     return
+
+
+def detect_gridtype(ds, lon, lat, lon_bnds=None, lat_bnds=None):
+    """
+    Detect type of the grid as one of "regular_lat_lon", "curvilinear", "unstructured".
+
+    Assumes the grid description / structure follows the CF conventions.
+    """
+
+    # 1D coordinate variables
+    if ds[lat].ndim == 1 and ds[lon].ndim == 1:
+        lat_1D = ds[lat].dims[0]
+        lon_1D = ds[lon].dims[0]
+        if not lat_bnds or not lon_bnds:
+            if lat_1D == lon_1D:
+                return "unstructured"
+            else:
+                return "regular_lat_lon"
+        else:
+            # unstructured: bounds [ncells, nvertices]
+            if (
+                lat_1D == lon_1D
+                and all([ds[bnds].ndim == 2 for bnds in [lon_bnds, lat_bnds]])
+                and all(
+                    [
+                        ds.dims[dim] > 2
+                        for dim in [
+                            ds[lon_bnds].dims[-1],
+                            ds[lat_bnds].dims[-1],
+                        ]
+                    ]
+                )
+            ):
+                return "unstructured"
+            # rectilinear: bounds [nlat/nlon, 2]
+            elif (
+                all([ds[bnds].ndim == 2 for bnds in [lon_bnds, lat_bnds]])
+                and ds.dims[ds.cf.get_bounds_dim_name(lon)] == 2
+            ):
+                return "regular_lat_lon"
+            else:
+                raise Exception("The grid type is not supported.")
+
+    # 2D coordinate variables
+    elif ds[lat].ndim == 2 and ds[lon].ndim == 2:
+        # Test for curvilinear or restructure lat/lon coordinate variables
+        # todo: Check if regular_lat_lon despite 2D
+        #  - requires additional function checking
+        #      lat[:,i]==lat[:,j] for all i,j
+        #      lon[i,:]==lon[j,:] for all i,j
+        #  - and if that is the case to extract lat/lon and *_bnds
+        #      lat[:]=lat[:,j], lon[:]=lon[j,:]
+        #      lat_bnds[:, 2]=[min(lat_bnds[:,j, :]), max(lat_bnds[:,j, :])]
+        #      lon_bnds similar
+        if not ds[lat].shape == ds[lon].shape:
+            raise InvalidParameterValue(
+                "The horizontal coordinate variables have differing shapes."
+            )
+        else:
+            if not lat_bnds or not lon_bnds:
+                return "curvilinear"
+            else:
+                # Shape of curvilinear bounds either [nlat, nlon, 4] or [nlat+1, nlon+1]
+                if list(ds[lat].shape) + [4] == list(ds[lat_bnds].shape) and list(
+                    ds[lon].shape
+                ) + [4] == list(ds[lon_bnds].shape):
+                    return "curvilinear"
+                elif [si + 1 for si in ds[lat].shape] == list(ds[lat_bnds].shape) and [
+                    si + 1 for si in ds[lon].shape
+                ] == list(ds[lon_bnds].shape):
+                    return "curvilinear"
+                else:
+                    raise Exception("The grid type is not supported.")
+
+    # >2D coordinate variables, or coordinate variables of different dimensionality
+    else:
+        raise InvalidParameterValue(
+            "The horizontal coordinate variables have more than 2 dimensions."
+        )

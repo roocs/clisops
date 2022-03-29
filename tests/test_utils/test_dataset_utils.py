@@ -9,8 +9,11 @@ from .._common import (
     C3S_CORDEX_AFR_TAS,
     C3S_CORDEX_ANT_SFC_WIND,
     CMIP6_GFDL_EXTENT,
+    CMIP6_IITM_EXTENT,
     CMIP6_OCE_HALO_CNRM,
     CMIP6_SICONC,
+    CMIP6_TAS_ONE_TIME_STEP,
+    CMIP6_TOS_ONE_TIME_STEP,
     CMIP6_UNSTR_ICON_A,
     CORDEX_TAS_ONE_TIMESTEP,
 )
@@ -112,6 +115,39 @@ def test_detect_coordinate_and_bounds():
     assert lon_d == clidu.detect_coordinate(ds_d, "longitude")
 
 
+def test_detect_gridtype():
+    "Test the function detect_gridtype"
+    ds_a = xr.open_dataset(CMIP6_UNSTR_ICON_A, use_cftime=True)
+    ds_b = xr.open_dataset(CMIP6_TOS_ONE_TIME_STEP, use_cftime=True)
+    ds_c = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+    assert (
+        clidu.detect_gridtype(
+            ds_a,
+            lat="latitude",
+            lon="longitude",
+            lat_bnds="latitude_bnds",
+            lon_bnds="longitude_bnds",
+        )
+        == "unstructured"
+    )
+    assert (
+        clidu.detect_gridtype(
+            ds_b,
+            lat="latitude",
+            lon="longitude",
+            lat_bnds="vertices_latitude",
+            lon_bnds="vertices_longitude",
+        )
+        == "curvilinear"
+    )
+    assert (
+        clidu.detect_gridtype(
+            ds_c, lat="lat", lon="lon", lat_bnds="lat_bnds", lon_bnds="lon_bnds"
+        )
+        == "regular_lat_lon"
+    )
+
+
 def test_crosses_0_meridian():
     "Test the _crosses_0_meridian function"
     # Case 1 - longitude crossing 180° meridian
@@ -179,13 +215,13 @@ def test_convert_lon_frame_bounds():
     # Convert only lon_interval
     conv, ll, lu = clidu.cf_convert_between_lon_frames(dsb, (-180, -10))
 
-    assert ds["lon"].min() == 200.0
-    assert ds["lon"].max() == 330.0
+    assert conv["lon"].min() == 200.0
+    assert conv["lon"].max() == 330.0
     assert ll == 180.0
     assert lu == 350.0
 
 
-def test_convert_lon_frame_shifted():
+def test_convert_lon_frame_shifted_bounds():
     ds = xr.open_dataset(CMIP6_GFDL_EXTENT, use_cftime=True)
 
     # confirm shifted frame
@@ -224,12 +260,44 @@ def test_convert_lon_frame_shifted():
     assert np.isclose(ds_d["lon_bnds"].min(), -180.0, atol=0.5)
     assert np.isclose(ds_d["lon_bnds"].max(), 180.0, atol=0.5)
 
-    # assert projection coordinate converted and sorted
-    assert np.isclose(ds_d["x"].values[0], -180.0, atol=0.5)
-    assert np.isclose(ds_d["x"].values[-1], 180.0, atol=0.5)
+    # assert projection coordinate sorted
     assert np.all(ds_d["x"].values[1:] - ds_d["x"].values[:-1] > 0.0)
-    assert np.isclose(ds_c["x"].values[0], 0.0, atol=0.5)
-    assert np.isclose(ds_c["x"].values[-1], 360.0, atol=0.5)
+    assert np.all(ds_c["x"].values[1:] - ds_c["x"].values[:-1] > 0.0)
+
+
+def test_convert_lon_frame_shifted_no_bounds():
+    ds = xr.open_dataset(CMIP6_IITM_EXTENT, use_cftime=True)
+
+    # confirm shifted frame
+    assert np.isclose(ds["longitude"].min(), -280.0, atol=1.0)
+    assert np.isclose(ds["longitude"].max(), 80.0, atol=1.0)
+
+    # convert to [-180, 180]
+    ds_a, ll, lu = clidu.cf_convert_between_lon_frames(ds, (-180, 180))
+    assert (ll, lu) == (-180, 180)
+    assert np.isclose(ds_a["longitude"].min(), -180.0, atol=1.0)
+    assert np.isclose(ds_a["longitude"].max(), 180.0, atol=1.0)
+
+    # convert to [0, 360]
+    ds_b, ll, lu = clidu.cf_convert_between_lon_frames(ds, (0, 360))
+    assert (ll, lu) == (0, 360)
+    assert np.isclose(ds_b["longitude"].min(), 0.0, atol=1.0)
+    assert np.isclose(ds_b["longitude"].max(), 360.0, atol=1.0)
+
+    # convert intermediate result to [0, 360]
+    ds_c, ll, lu = clidu.cf_convert_between_lon_frames(ds_a, (0, 360))
+    assert (ll, lu) == (0, 360)
+    assert np.isclose(ds_c["longitude"].min(), 0.0, atol=1.0)
+    assert np.isclose(ds_c["longitude"].max(), 360.0, atol=1.0)
+
+    # convert intermediate result to [-180, 180]
+    ds_d, ll, lu = clidu.cf_convert_between_lon_frames(ds_a, (-180, 180))
+    assert (ll, lu) == (-180, 180)
+    assert np.isclose(ds_d["longitude"].min(), -180.0, atol=1.0)
+    assert np.isclose(ds_d["longitude"].max(), 180.0, atol=1.0)
+
+    # assert projection coordinate sorted
+    assert np.all(ds_d["x"].values[1:] - ds_d["x"].values[:-1] > 0.0)
     assert np.all(ds_c["x"].values[1:] - ds_c["x"].values[:-1] > 0.0)
 
 
