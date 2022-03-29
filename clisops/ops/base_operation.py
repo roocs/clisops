@@ -11,7 +11,7 @@ from clisops.utils.output_utils import get_output, get_time_slices
 LOGGER = logging.getLogger(__file__)
 
 
-class Operation(object):
+class Operation:
     """
     Base class for all Operations.
     """
