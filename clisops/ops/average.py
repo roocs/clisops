@@ -9,7 +9,8 @@ from roocs_utils.xarray_utils.xarray_utils import convert_coord_to_axis
 from clisops.core import average
 from clisops.ops.base_operation import Operation
 from clisops.utils.file_namers import get_file_namer
-from clisops.utils.output_utils import get_output, get_time_slices
+
+# from clisops.utils.output_utils import get_output, get_time_slices
 
 __all__ = ["average_over_dims", "average_time"]
 

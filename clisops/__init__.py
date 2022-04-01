@@ -1,13 +1,25 @@
 # -*- coding: utf-8 -*-
 """Top-level package for clisops."""
 import os
+import warnings
 
 from loguru import logger
 from roocs_utils.config import get_config
 
 from .__version__ import __author__, __email__, __version__
 
-# Remove the logger that is instantiated on import
+
+def showwarning(message, *args, **kwargs):
+    """Inject warnings from `warnings.warn` into `loguru`."""
+    logger.warning(message)
+    showwarning_(message, *args, **kwargs)
+
+
+showwarning_ = warnings.showwarning
+warnings.showwarning = showwarning
+
+# Disable logging for clisops and remove the logger that is instantiated on import
+logger.disable("clisops")
 logger.remove()
 
 

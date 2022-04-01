@@ -1,65 +1,63 @@
-import logging
 import sys
 
 import pytest
-from loguru import logger
 
 from clisops.utils.common import _logging_examples, enable_logging  # noqa
+from tests._common import ContextLogger
 
 
 class TestLoggingFuncs:
     @pytest.mark.xfail(
-        reason="pytest-loguru does not implement logging levels for caplog yet"
+        reason="pytest-loguru does not implement logging levels for caplog yet."
     )
     def test_logging_configuration(self, caplog):
-        caplog.set_level(logging.WARNING, logger="clisops")
+        with ContextLogger(caplog):
+            caplog.set_level("WARNING", logger="clisops")
 
-        _logging_examples()  # noqa
+            _logging_examples()  # noqa
 
-        assert ("clisops.utils.common", 10, "1") not in caplog.record_tuples
-        assert ("clisops.utils.common", 40, "4") in caplog.record_tuples
+            assert ("clisops.utils.common", 10, "1") not in caplog.record_tuples
+            assert ("clisops.utils.common", 40, "4") in caplog.record_tuples
 
     def test_disabled_enabled_logging(self, capsys):
-        logger.disable("clisops")
+        with ContextLogger() as _logger:
 
-        # CLISOPS disabled
-        id1 = logger.add(sys.stderr, level="WARNING")
-        id2 = logger.add(sys.stdout, level="INFO")
+            _logger.disable("clisops")
 
-        _logging_examples()  # noqa
+            # CLISOPS disabled
+            _logger.add(sys.stderr, level="WARNING")
+            _logger.add(sys.stdout, level="INFO")
 
-        captured = capsys.readouterr()
-        assert "WARNING" not in captured.err
-        assert "INFO" not in captured.out
+            _logging_examples()  # noqa
 
-        # re-enable CLISOPS logging
-        logger.enable("clisops")
+            captured = capsys.readouterr()
+            assert "WARNING" not in captured.err
+            assert "INFO" not in captured.out
 
-        _logging_examples()  # noqa
+            # re-enable CLISOPS logging
+            _logger.enable("clisops")
 
-        captured = capsys.readouterr()
-        assert "INFO" not in captured.err
-        assert "WARNING" in captured.err
-        assert "INFO" in captured.out
+            _logging_examples()  # noqa
 
-        logger.remove(id1)
-        logger.remove(id2)
+            captured = capsys.readouterr()
+            assert "INFO" not in captured.err
+            assert "WARNING" in captured.err
+            assert "INFO" in captured.out
 
     def test_logging_enabler(self, capsys):
-        _logging_examples()  # noqa
+        with ContextLogger():
 
-        captured = capsys.readouterr()
-        assert "WARNING" not in captured.err
-        assert "INFO" not in captured.out
+            _logging_examples()  # noqa
 
-        ids = enable_logging()
+            captured = capsys.readouterr()
+            assert "WARNING" not in captured.err
+            assert "INFO" not in captured.out
 
-        _logging_examples()  # noqa
+            enable_logging()
 
-        captured = capsys.readouterr()
-        assert "INFO" not in captured.err
-        assert "WARNING" in captured.err
-        assert "INFO" in captured.out
+            _logging_examples()  # noqa
 
-        for i in ids:
-            logger.remove(i)  # sets logging back to default
+            captured = capsys.readouterr()
+            assert "INFO" not in captured.err
+            assert "WARNING" in captured.err
+            assert "INFO" in captured.out
