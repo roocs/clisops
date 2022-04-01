@@ -106,6 +106,28 @@ Ready to contribute? Here's how to set up ``clisops`` for local development.
 #.
     Submit a pull request through the GitHub website.
 
+
+Logging
+-------
+
+``clisops`` uses the `loguru <https://loguru.readthedocs.io/en/stable/index.html>`_ library as its primary logging engine. In order to integrate this kind of logging in processes, we can use their logger:
+
+.. code-block:: python
+    from loguru import logger
+    logger.warning("This a warning message!")
+
+The mechanism for enabling log reporting in scripts/notebooks using ``loguru`` is as follows:
+
+.. code-block:: python
+    import sys
+    from loguru import logger
+
+    logger.enable("clisops")
+    LEVEL = "INFO || DEBUG || WARNING || etc."
+    logger.add(sys.stdout, level=LEVEL)  # for logging to stdout
+    # or
+    logger.add("my_log_file.log", level=LEVEL, enqueue=True)  # for logging to a file
+
 Pull Request Guidelines
 -----------------------
 
