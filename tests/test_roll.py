@@ -44,8 +44,8 @@ def test_roll_lon_minus_180(load_esgf_test_data):
     ds, lon = setup_test()
 
     # check longitude is 0 to 360 initially
-    assert isclose(lon.values.min(), 0, abs_tol=10 ** 2)
-    assert isclose(lon.values.max(), 360, abs_tol=10 ** 2)
+    assert isclose(lon.values.min(), 0, abs_tol=10**2)
+    assert isclose(lon.values.max(), 360, abs_tol=10**2)
 
     # roll longitude by -180
     ds = ds.roll(shifts={f"{lon.name}": -180}, roll_coords=True)
@@ -159,8 +159,8 @@ def test_convert_lon_coords(tmpdir, load_esgf_test_data):
     ds.coords[lon.name] = (ds.coords[lon.name] + 180) % 360 - 180
     ds = ds.sortby(ds[lon.name])
 
-    assert isclose(ds.lon.values.min(), -180, abs_tol=10 ** 2)
-    assert isclose(ds.lon.values.max(), 180, abs_tol=10 ** 2)
+    assert isclose(ds.lon.values.min(), -180, abs_tol=10**2)
+    assert isclose(ds.lon.values.max(), 180, abs_tol=10**2)
 
     result = subset(
         ds=ds,
@@ -191,8 +191,8 @@ def test_roll_convert_lon_coords(load_esgf_test_data):
 
     ds_roll.coords[lon.name] = ds_roll.coords[lon.name] - 180
 
-    assert isclose(ds_roll.lon.values.min(), -180, abs_tol=10 ** 2)
-    assert isclose(ds_roll.lon.values.max(), 180, abs_tol=10 ** 2)
+    assert isclose(ds_roll.lon.values.min(), -180, abs_tol=10**2)
+    assert isclose(ds_roll.lon.values.max(), 180, abs_tol=10**2)
 
     result = subset(
         ds=ds_roll,
@@ -253,8 +253,8 @@ def test_compare_methods(load_esgf_test_data):
 
     ds_roll.coords[lon.name] = ds_roll.coords[lon.name] - 180
 
-    assert isclose(ds_roll.lon.values.min(), -180, abs_tol=10 ** 2)
-    assert isclose(ds_roll.lon.values.max(), 180, abs_tol=10 ** 2)
+    assert isclose(ds_roll.lon.values.min(), -180, abs_tol=10**2)
+    assert isclose(ds_roll.lon.values.max(), 180, abs_tol=10**2)
 
     result1 = subset(
         ds=ds_roll,
@@ -270,8 +270,8 @@ def test_compare_methods(load_esgf_test_data):
     ds.coords[lon.name] = (ds.coords[lon.name] + 180) % 360 - 180
     ds = ds.sortby(ds[lon.name])
 
-    assert isclose(ds.lon.values.min(), -180, abs_tol=10 ** 2)
-    assert isclose(ds.lon.values.max(), 180, abs_tol=10 ** 2)
+    assert isclose(ds.lon.values.min(), -180, abs_tol=10**2)
+    assert isclose(ds.lon.values.max(), 180, abs_tol=10**2)
 
     result2 = subset(
         ds=ds,
