@@ -128,6 +128,13 @@ The mechanism for enabling log reporting in scripts/notebooks using ``loguru`` i
     # or
     logger.add("my_log_file.log", level=LEVEL, enqueue=True)  # for logging to a file
 
+For convenience, a preset logger configuration can be enabled via `clisops.enable_logging()`.
+
+.. code-block:: python
+    from clisops import enable_logging
+
+    enable_logging()
+
 Pull Request Guidelines
 -----------------------
 

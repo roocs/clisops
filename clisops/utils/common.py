@@ -24,6 +24,8 @@ def _logging_examples() -> None:
 
 
 def enable_logging() -> List[int]:
+    logger.enable("clisops")
+
     config = dict(
         handlers=[
             dict(

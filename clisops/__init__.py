@@ -7,6 +7,7 @@ from loguru import logger
 from roocs_utils.config import get_config
 
 from .__version__ import __author__, __email__, __version__
+from .utils.common import enable_logging
 
 
 def showwarning(message, *args, **kwargs):
