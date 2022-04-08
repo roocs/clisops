@@ -386,17 +386,20 @@ def detect_coordinate(ds, coord_type):
     str
         Coordinate variable name.
     """
+    error_msg = f"A {coord_type} coordinate cannot be identified in the dataset."
+
     # Make use of cf-xarray accessor
-    coord = ds.cf[coord_type]
-    # coord = get_coord_by_type(ds, coord_type, ignore_aux_coords=False)
+    try:
+        coord = ds.cf[coord_type]
+        # coord = get_coord_by_type(ds, coord_type, ignore_aux_coords=False)
+    except KeyError:
+        raise KeyError(error_msg)
 
     # Return the name of the coordinate variable
     try:
         return coord.name
     except AttributeError:
-        raise AttributeError(
-            "A %s coordinate cannot be identified in the dataset." % coord_type
-        )
+        raise AttributeError(error_msg)
 
 
 def detect_bounds(ds, coordinate):

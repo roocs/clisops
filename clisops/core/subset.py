@@ -259,11 +259,11 @@ def check_lons(func):
                     f"Input longitude bounds ({kwargs[lon]}) cross the 0 degree meridian but"
                     " dataset longitudes are all positive."
                 )
-            if np.all((ds_lon <= 0) | (np.isnan(ds_lon))) and np.any(kwargs[lon] > 0):
+            if np.all((ds_lon <= 0) | (np.isnan(ds_lon))) and np.any(kwargs[lon] > 180):
                 if isinstance(kwargs[lon], float):
                     kwargs[lon] -= 360
                 else:
-                    kwargs[lon][kwargs[lon] < 0] -= 360
+                    kwargs[lon][kwargs[lon] < 180] -= 360
 
         return func(*args, **kwargs)
 
