@@ -19,8 +19,10 @@ New Features
     # or
     logger.add("my_log_file.log", level=LEVEL, enqueue=True)  # for logging to a file
 
-Other changes
+Other Changes
 ^^^^^^^^^^^^^
+* Pandas now pinned below version 1.4.0.
+* Pre-commit configuration updated with code style conventions (black, pyupgrade) set to Python3.7+.
 * ``loguru`` is now an install dependency, with ``pytest-loguru`` as a development-only dependency.
 
 v0.8.0 (2022-01-13)

@@ -6,48 +6,36 @@ repos:
     rev: v4.1.0
     hooks:
     -   id: trailing-whitespace
-        language_version: python3
         exclude: setup.cfg
     -   id: end-of-file-fixer
-        language_version: python3
         exclude: setup.cfg
     -   id: check-yaml
-        language_version: python3
     -   id: debug-statements
-        language_version: python3
 -   repo: https://github.com/ambv/black
     rev: 22.3.0
     hooks:
     -   id: black
-        language_version: python3
         args: ["--target-version", "py37"]
 -   repo: https://github.com/pycqa/flake8
     rev: 4.0.1
     hooks:
     -   id: flake8
-        language_version: python3
         args: ['--config=setup.cfg']
-#-   repo: https://github.com/pre-commit/mirrors-autopep8
-#    rev: v1.4.4
-#    hooks:
-#    -   id: autopep8
-#        args: ['--global-config=setup.cfg','--in-place']
 -   repo: https://github.com/timothycrosley/isort
     rev: 5.10.1
     hooks:
     -   id: isort
-        language_version: python3
         args: ['--profile', 'black']
 #-   repo: https://github.com/pycqa/pydocstyle
-#    rev: 5.0.2
+#    rev: 6.1.1
 #    hooks:
 #    -   id: pydocstyle
-#        args: ["--conventions=numpy"]
+#        args: ["--convention=numpy"]
 -   repo: https://github.com/asottile/pyupgrade
     rev: v2.31.1
     hooks:
     -   id: pyupgrade
-        language_version: python3
+        args: ['--py37-plus']
 -   repo: meta
     hooks:
     -   id: check-hooks-apply
@@ -56,5 +44,15 @@ repos:
     rev: 0.5.0
     hooks:
     -   id: nbstripout
-        language_version: python3
         files: ".ipynb"
+
+ci:
+  autofix_commit_msg: |
+    [pre-commit.ci] auto fixes from pre-commit.com hooks
+    for more information, see https://pre-commit.ci
+  autofix_prs: true
+  autoupdate_branch: ''
+  autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
+  autoupdate_schedule: weekly
+  skip: []
+  submodules: false

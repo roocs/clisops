@@ -9,7 +9,7 @@ from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import get_output, get_time_slices
 
 
-class Operation(object):
+class Operation:
     """
     Base class for all Operations.
     """
