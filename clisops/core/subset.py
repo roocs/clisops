@@ -263,7 +263,7 @@ def check_lons(func):
                 if isinstance(kwargs[lon], float):
                     kwargs[lon] -= 360
                 else:
-                    kwargs[lon][kwargs[lon] < 180] -= 360
+                    kwargs[lon][kwargs[lon] <= 180] -= 360
 
         return func(*args, **kwargs)
 

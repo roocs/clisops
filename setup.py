@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """The setup script."""
 import os
 
@@ -13,7 +12,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 _long_description = open(os.path.join(here, "README.rst")).read()
 
 about = dict()
-with open(os.path.join(here, "clisops", "__version__.py"), "r") as f:
+with open(os.path.join(here, "clisops", "__version__.py")) as f:
     exec(f.read(), about)
 
 requirements = [line.strip() for line in open("requirements.txt")]
