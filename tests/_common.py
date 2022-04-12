@@ -1,8 +1,10 @@
 import os
 import tempfile
 from pathlib import Path
+from typing import Optional
 
 import xarray as xr
+from _pytest.logging import LogCaptureFixture  # noqa
 from jinja2 import Template
 
 ROOCS_CFG = Path(tempfile.gettempdir(), "roocs.ini").as_posix()
@@ -14,6 +16,32 @@ REAL_C3S_CMIP5_ARCHIVE_BASE = "/gws/nopw/j04/cp4cds1_vol1/data/"
 DEFAULT_CMIP6_ARCHIVE_BASE = Path(
     TESTS_HOME, "mini-esgf-data/test_data/badc/cmip6/data"
 ).as_posix()
+
+
+class ContextLogger:
+    """Helper function for safe logging management in pytests"""
+
+    def __init__(self, caplog: Optional[LogCaptureFixture] = False):
+        from loguru import logger
+
+        self.logger = logger
+        self.using_caplog = False
+        if caplog:
+            self.using_caplog = True
+
+    def __enter__(self):
+        self.logger.enable("clisops")
+        return self.logger
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """If test is supplying caplog, pytest will manage teardown."""
+
+        self.logger.disable("clisops")
+        if not self.using_caplog:
+            try:
+                self.logger.remove()
+            except ValueError:
+                pass
 
 
 def assert_vars_equal(var_id, *ds_list, extras=None):

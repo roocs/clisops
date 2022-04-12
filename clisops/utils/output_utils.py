@@ -10,12 +10,11 @@ from typing import List, Tuple, Union
 import dask
 import pandas as pd
 import xarray as xr
+from loguru import logger
 from roocs_utils.utils.common import parse_size
 from roocs_utils.xarray_utils import xarray_utils as xu
 
-from clisops import CONFIG, chunk_memory_limit, logging
-
-LOGGER = logging.getLogger(__file__)
+from clisops import CONFIG, chunk_memory_limit
 
 SUPPORTED_FORMATS = {
     "netcdf": {"method": "to_netcdf", "extension": "nc"},
@@ -200,11 +199,11 @@ def get_output(ds, output_type, output_dir, namer):
     the output format and chunking
     """
     format_writer = get_format_writer(output_type)
-    LOGGER.info(f"format_writer={format_writer}, output_type={output_type}")
+    logger.info(f"format_writer={format_writer}, output_type={output_type}")
 
     # If there is no writer for this output type, just return the `ds` object
     if not format_writer:
-        LOGGER.info(f"Returning output as {type(ds)}")
+        logger.info(f"Returning output as {type(ds)}")
         return ds
 
     # Use the file namer to get the required file name
@@ -235,7 +234,7 @@ def get_output(ds, output_type, output_dir, namer):
         tmp_dir = tempfile.TemporaryDirectory(dir=staging_dir)
         fname = os.path.basename(output_path)
         target_path = os.path.join(tmp_dir.name, fname)
-        LOGGER.info(f"Writing to temporary path: {target_path}")
+        logger.info(f"Writing to temporary path: {target_path}")
     else:
         target_path = output_path
 
@@ -257,5 +256,5 @@ def get_output(ds, output_type, output_dir, namer):
         time.sleep(3)
         tmp_dir.cleanup()
 
-    LOGGER.info(f"Wrote output file: {output_path}")
+    logger.info(f"Wrote output file: {output_path}")
     return output_path
