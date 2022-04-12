@@ -6,7 +6,11 @@ v0.9.0 (2022-04-13)
 
 New Features
 ^^^^^^^^^^^^
-* ``clisops`` now uses the `loguru <https://loguru.readthedocs.io/en/stable/index.html>`_ library as its primary logging engine.
+
+* ``clisops.ops.average.average_time`` and ``clisops.core.average.average_time`` added (#211). Allowing averaging over time frequencies of day, month and year.
+* New function ``create_time_bounds`` in  ``clisops.utils.time_utils``, to generate time bounds for temporally averaged datasets.
+
+* ``clisops`` now uses the `loguru <https://loguru.readthedocs.io/en/stable/index.html>`_ library as its primary logging engine (#216).
   The mechanism for enabling log reporting in scripts/notebooks using ``loguru`` is as follows:
 
 .. code-block:: python
@@ -22,7 +26,7 @@ New Features
 Other Changes
 ^^^^^^^^^^^^^
 * Pandas now pinned below version 1.4.0.
-* Pre-commit configuration updated with code style conventions (black, pyupgrade) set to Python3.7+.
+* Pre-commit configuration updated with code style conventions (black, pyupgrade) set to Python3.7+ (#219).
 * ``loguru`` is now an install dependency, with ``pytest-loguru`` as a development-only dependency.
 * Added function to convert the longitude axis between different longitude frames (eg. [-180, 180] and [0, 360]).
 
