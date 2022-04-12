@@ -4,10 +4,26 @@ Version History
 v0.9.0 (unreleased)
 -------------------
 
+New Features
+^^^^^^^^^^^^
+* ``clisops`` now uses the `loguru <https://loguru.readthedocs.io/en/stable/index.html>`_ library as its primary logging engine.
+  The mechanism for enabling log reporting in scripts/notebooks using ``loguru`` is as follows:
+
+.. code-block:: python
+    import sys
+    from loguru import logger
+
+    logger.activate("clisops")
+    LEVEL = "INFO || DEBUG || WARNING || etc."
+    logger.add(sys.stdout, level=LEVEL)  # for logging to stdout
+    # or
+    logger.add("my_log_file.log", level=LEVEL, enqueue=True)  # for logging to a file
+
 Other Changes
 ^^^^^^^^^^^^^
 * Pandas now pinned below version 1.4.0.
 * Pre-commit configuration updated with code style conventions (black, pyupgrade) set to Python3.7+.
+* ``loguru`` is now an install dependency, with ``pytest-loguru`` as a development-only dependency.
 * Added function to convert the longitude axis between different longitude frames (eg. [-180, 180] and [0, 360]).
 
 v0.8.0 (2022-01-13)

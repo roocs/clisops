@@ -3,7 +3,7 @@ default_language_version:
 
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.1.0
+    rev: v4.2.0
     hooks:
     -   id: trailing-whitespace
         exclude: setup.cfg
@@ -11,7 +11,7 @@ repos:
         exclude: setup.cfg
     -   id: check-yaml
     -   id: debug-statements
--   repo: https://github.com/ambv/black
+-   repo: https://github.com/psf/black
     rev: 22.3.0
     hooks:
     -   id: black
@@ -21,7 +21,7 @@ repos:
     hooks:
     -   id: flake8
         args: ['--config=setup.cfg']
--   repo: https://github.com/timothycrosley/isort
+-   repo: https://github.com/PyCQA/isort
     rev: 5.10.1
     hooks:
     -   id: isort
@@ -32,7 +32,7 @@ repos:
 #    -   id: pydocstyle
 #        args: ["--convention=numpy"]
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v2.31.1
+    rev: v2.32.0
     hooks:
     -   id: pyupgrade
         args: ['--py37-plus']
