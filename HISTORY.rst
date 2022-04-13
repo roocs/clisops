@@ -6,7 +6,6 @@ v0.9.0 (2022-04-13)
 
 New Features
 ^^^^^^^^^^^^
-
 * ``clisops.ops.average.average_time`` and ``clisops.core.average.average_time`` added (#211). Allowing averaging over time frequencies of day, month and year.
 * New function ``create_time_bounds`` in  ``clisops.utils.time_utils``, to generate time bounds for temporally averaged datasets.
 
