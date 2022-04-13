@@ -19,7 +19,10 @@ from clisops.core import (
 )
 from clisops.core.subset import assign_bounds, get_lat, get_lon  # noqa
 from clisops.ops.base_operation import Operation
-from clisops.utils.dataset_utils import check_lon_alignment
+from clisops.utils.common import expand_wildcards
+from clisops.utils.dataset_utils import cf_convert_between_lon_frames
+from clisops.utils.file_namers import get_file_namer
+from clisops.utils.output_utils import get_output, get_time_slices
 
 __all__ = ["Subset", "subset"]
 
@@ -81,7 +84,10 @@ class Subset(Operation):
             # subset with space and optionally time and level
             logger.debug(f"subset_bbox with parameters: {self.params}")
             # bounds are always ascending, so if lon is descending rolling will not work.
-            ds = check_lon_alignment(self.ds, self.params.get("lon_bnds"))
+            ds, lb, ub = cf_convert_between_lon_frames(
+                self.ds, self.params.get("lon_bnds")
+            )
+            self.params["lon_bnds"] = (lb, ub)
             try:
                 kwargs = {}
                 valid_args = [

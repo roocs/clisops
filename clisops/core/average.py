@@ -269,10 +269,15 @@ def average_time(
         )
 
     # check time coordinate exists and get name
+    # For roocs_utils 0.5.0
     t = get_coord_by_type(ds, "time", ignore_aux_coords=False)
-
     if t is None:
         raise Exception("Time dimension could not be found")
+    # For latest roocs_utils (master)
+    # try:
+    #    t = get_coord_by_type(ds, "time", ignore_aux_coords=False)
+    # except KeyError:
+    #    raise Exception("Time dimension could not be found")
 
     # resample and average over time
     ds_t_avg = ds.resample(indexer={t.name: freqs[freq]}).mean(

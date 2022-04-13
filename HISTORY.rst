@@ -24,6 +24,7 @@ Other Changes
 * Pandas now pinned below version 1.4.0.
 * Pre-commit configuration updated with code style conventions (black, pyupgrade) set to Python3.7+.
 * ``loguru`` is now an install dependency, with ``pytest-loguru`` as a development-only dependency.
+* Added function to convert the longitude axis between different longitude frames (eg. [-180, 180] and [0, 360]).
 
 v0.8.0 (2022-01-13)
 -------------------
