@@ -23,5 +23,4 @@ dependencies:
  - xarray>=0.15
  - xesmf>=0.6.2
  - pip:
-     - pytest-loguru
 #     - roocs-utils @ git+https://github.com/roocs/roocs-utils.git@master#egg=roocs-utils
