@@ -1619,3 +1619,18 @@ def test_subset_nc_no_fill_value(cmip5_tas_file, tmpdir):
     assert "_FillValue" not in res.lat_bnds.encoding
     assert "_FillValue" not in res.lon_bnds.encoding
     assert "_FillValue" not in res.time_bnds.encoding
+
+
+def test_subset_nc_consistent_bounds(cmip5_tas_file, tmpdir):
+    """Tests clisops subset function with a time subset."""
+    result = subset(
+        ds=CMIP5_TAS,
+        time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+    res = _load_ds(result)
+    assert "_FillValue" not in res.lat_bnds.encoding
+    assert "_FillValue" not in res.lon_bnds.encoding
+    assert "_FillValue" not in res.time_bnds.encoding

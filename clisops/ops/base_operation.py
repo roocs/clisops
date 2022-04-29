@@ -86,6 +86,23 @@ class Operation:
                     continue
         return ds
 
+    def _remove_redundant_coordinates(self, ds):
+        """
+        This method removes redundant coordinates from bounds, example:
+
+        .. code-block:: python
+
+            double time_bnds(time, bnds) ;
+                time_bnds:coordinates = "height" ;
+
+        Programs like cdo will complain about this:
+
+            Warning (cdf_set_var): Inconsistent variable definition for time_bnds!
+
+        See issue: https://github.com/roocs/clisops/issues/224
+        """
+        return ds
+
     def process(self):
         """
         Main processing method used by all sub-classes.
@@ -108,6 +125,8 @@ class Operation:
 
         # remove fill values from lat/lon/time if required
         processed_ds = self._remove_redundant_fill_values(processed_ds)
+        # remove redundant coordinates from bounds
+        processed_ds = self._remove_redundant_coordinates(processed_ds)
 
         # Work out how many outputs should be created based on the size
         # of the array. Manage this as a list of time slices.
