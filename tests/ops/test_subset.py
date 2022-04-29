@@ -1635,6 +1635,10 @@ def test_subset_nc_consistent_bounds(cmip5_tas_file, tmpdir):
     assert "_FillValue" not in res.lat_bnds.encoding
     assert "_FillValue" not in res.lon_bnds.encoding
     assert "_FillValue" not in res.time_bnds.encoding
+    # check fill value in variables
+    assert "_FillValue" not in res.lat.encoding
+    assert "_FillValue" not in res.lon.encoding
+    # assert "_FillValue" not in res.height.encoding
     # check coordinates
     assert "coordinates" not in res.lat_bnds.encoding
     assert "coordinates" not in res.lon_bnds.encoding
