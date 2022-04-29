@@ -1621,6 +1621,7 @@ def test_subset_nc_no_fill_value(cmip5_tas_file, tmpdir):
     assert "_FillValue" not in res.time_bnds.encoding
 
 
+@pytest.mark.xfail(reason="not working yet")
 def test_subset_nc_consistent_bounds(cmip5_tas_file, tmpdir):
     """Tests clisops subset function with a time subset."""
     result = subset(
@@ -1631,6 +1632,11 @@ def test_subset_nc_consistent_bounds(cmip5_tas_file, tmpdir):
         file_namer="simple",
     )
     res = _load_ds(result)
+    # check fill value in bounds
     assert "_FillValue" not in res.lat_bnds.encoding
     assert "_FillValue" not in res.lon_bnds.encoding
     assert "_FillValue" not in res.time_bnds.encoding
+    # check coordinates
+    assert "coordinates" not in res.lat_bnds.encoding
+    assert "coordinates" not in res.lon_bnds.encoding
+    assert "coordinates" not in res.time_bnds.encoding

@@ -101,6 +101,8 @@ class Operation:
 
         See issue: https://github.com/roocs/clisops/issues/224
         """
+        if isinstance(ds, xr.Dataset):
+            pass
         return ds
 
     def process(self):
