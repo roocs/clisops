@@ -76,8 +76,8 @@ class Operation:
             main_var = get_main_variable(ds)
             for coord_id in ds[main_var].coords:
                 # remove fill value from coordinate variables
-                if ds.coords[coord_id].dims == (coord_id,):
-                    ds[coord_id].encoding["_FillValue"] = None
+                # if ds.coords[coord_id].dims == (coord_id,):
+                ds[coord_id].encoding["_FillValue"] = None
                 # remove fill value from bounds variables if they exist
                 try:
                     bnd = ds.cf.get_bounds(coord_id).name
@@ -86,11 +86,9 @@ class Operation:
                     continue
         return ds
 
-    def _remove_redundant_coordinates(self, ds):
+    def _remove_redundant_coordinates_from_bounds(self, ds):
         """
         This method removes redundant coordinates from bounds, example:
-
-        .. code-block:: python
 
             double time_bnds(time, bnds) ;
                 time_bnds:coordinates = "height" ;
@@ -102,7 +100,8 @@ class Operation:
         See issue: https://github.com/roocs/clisops/issues/224
         """
         if isinstance(ds, xr.Dataset):
-            for coord_id in ds.cf.coordinates:
+            main_var = get_main_variable(ds)
+            for coord_id in ds[main_var].coords:
                 try:
                     bnd = ds.cf.get_bounds(coord_id).name
                     ds[bnd].encoding["coordinates"] = None
@@ -133,7 +132,7 @@ class Operation:
         # remove fill values from lat/lon/time if required
         processed_ds = self._remove_redundant_fill_values(processed_ds)
         # remove redundant coordinates from bounds
-        processed_ds = self._remove_redundant_coordinates(processed_ds)
+        processed_ds = self._remove_redundant_coordinates_from_bounds(processed_ds)
 
         # Work out how many outputs should be created based on the size
         # of the array. Manage this as a list of time slices.

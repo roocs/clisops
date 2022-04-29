@@ -1604,8 +1604,10 @@ def test_subset_nc_no_fill_value(cmip5_tas_file, tmpdir):
     ds.to_netcdf(f"{tmpdir}/test_fill_values.nc")
     ds = _load_ds(f"{tmpdir}/test_fill_values.nc")
 
+    # assert np.isnan(float(ds.time.encoding.get("_FillValue")))
     assert np.isnan(float(ds.lat.encoding.get("_FillValue")))
     assert np.isnan(float(ds.lon.encoding.get("_FillValue")))
+    assert np.isnan(float(ds.height.encoding.get("_FillValue")))
 
     assert np.isnan(float(ds.lat_bnds.encoding.get("_FillValue")))
     assert np.isnan(float(ds.lon_bnds.encoding.get("_FillValue")))
@@ -1613,8 +1615,10 @@ def test_subset_nc_no_fill_value(cmip5_tas_file, tmpdir):
 
     # check that there is no fill value in encoding for coordinate variables and bounds
     res = _load_ds(result)
+    assert "_FillValue" not in res.time.encoding
     assert "_FillValue" not in res.lat.encoding
     assert "_FillValue" not in res.lon.encoding
+    assert "_FillValue" not in res.height.encoding
 
     assert "_FillValue" not in res.lat_bnds.encoding
     assert "_FillValue" not in res.lon_bnds.encoding
@@ -1635,11 +1639,12 @@ def test_subset_nc_consistent_bounds(cmip5_tas_file, tmpdir):
     assert "_FillValue" not in res.lat_bnds.encoding
     assert "_FillValue" not in res.lon_bnds.encoding
     assert "_FillValue" not in res.time_bnds.encoding
-    # check fill value in variables
+    # check fill value in coordinates
+    assert "_FillValue" not in res.time.encoding
     assert "_FillValue" not in res.lat.encoding
     assert "_FillValue" not in res.lon.encoding
-    # assert "_FillValue" not in res.height.encoding
-    # check coordinates
+    assert "_FillValue" not in res.height.encoding
+    # check coordinates in bounds
     assert "coordinates" not in res.lat_bnds.encoding
     assert "coordinates" not in res.lon_bnds.encoding
     assert "coordinates" not in res.time_bnds.encoding
