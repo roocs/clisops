@@ -102,7 +102,12 @@ class Operation:
         See issue: https://github.com/roocs/clisops/issues/224
         """
         if isinstance(ds, xr.Dataset):
-            pass
+            for coord_id in ds.cf.coordinates:
+                try:
+                    bnd = ds.cf.get_bounds(coord_id).name
+                    ds[bnd].encoding["coordinates"] = None
+                except KeyError:
+                    continue
         return ds
 
     def process(self):
