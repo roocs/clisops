@@ -71,6 +71,8 @@ class Operation:
         """
         Get coordinate variables and remove fill values added by xarray (CF conventions say that coordinate variables cannot have missing values).
         Get bounds variables and remove fill values added by xarray.
+
+        See issue: https://github.com/roocs/clisops/issues/224
         """
         if isinstance(ds, xr.Dataset):
             main_var = get_main_variable(ds)
