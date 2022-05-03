@@ -71,17 +71,42 @@ class Operation:
         """
         Get coordinate variables and remove fill values added by xarray (CF conventions say that coordinate variables cannot have missing values).
         Get bounds variables and remove fill values added by xarray.
+
+        See issue: https://github.com/roocs/clisops/issues/224
         """
         if isinstance(ds, xr.Dataset):
             main_var = get_main_variable(ds)
             for coord_id in ds[main_var].coords:
                 # remove fill value from coordinate variables
-                if ds.coords[coord_id].dims == (coord_id,):
-                    ds[coord_id].encoding["_FillValue"] = None
+                # if ds.coords[coord_id].dims == (coord_id,):
+                ds[coord_id].encoding["_FillValue"] = None
                 # remove fill value from bounds variables if they exist
                 try:
                     bnd = ds.cf.get_bounds(coord_id).name
                     ds[bnd].encoding["_FillValue"] = None
+                except KeyError:
+                    continue
+        return ds
+
+    def _remove_redundant_coordinates_from_bounds(self, ds):
+        """
+        This method removes redundant coordinates from bounds, example:
+
+            double time_bnds(time, bnds) ;
+                time_bnds:coordinates = "height" ;
+
+        Programs like cdo will complain about this:
+
+            Warning (cdf_set_var): Inconsistent variable definition for time_bnds!
+
+        See issue: https://github.com/roocs/clisops/issues/224
+        """
+        if isinstance(ds, xr.Dataset):
+            main_var = get_main_variable(ds)
+            for coord_id in ds[main_var].coords:
+                try:
+                    bnd = ds.cf.get_bounds(coord_id).name
+                    ds[bnd].encoding["coordinates"] = None
                 except KeyError:
                     continue
         return ds
@@ -108,6 +133,8 @@ class Operation:
 
         # remove fill values from lat/lon/time if required
         processed_ds = self._remove_redundant_fill_values(processed_ds)
+        # remove redundant coordinates from bounds
+        processed_ds = self._remove_redundant_coordinates_from_bounds(processed_ds)
 
         # Work out how many outputs should be created based on the size
         # of the array. Manage this as a list of time slices.
