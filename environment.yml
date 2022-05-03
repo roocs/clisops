@@ -18,7 +18,7 @@ dependencies:
  - pyproj>=2.5
  - pooch
  - requests>=2.0
- #- roocs-utils>=0.6.2,0.7
+ #- roocs-utils>=0.6.2,<0.7
  - shapely>=1.6
  - xarray>=0.15
  - xesmf>=0.6.2
