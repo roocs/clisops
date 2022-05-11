@@ -1,6 +1,19 @@
 Version History
 ===============
 
+v0.9.1 (2022-05-12)
+-------------------
+
+Bug fixes
+^^^^^^^^^
+* Fix inconsistent bounds in metadata after subset operation (#224).
+
+Other Changes
+^^^^^^^^^^^^^
+* Use ``roocs-utils`` 0.6.2 to avoid test failure (#226).
+* Removed unneeded testing dep from environment.yml (#223).
+* Merged pre-commit autoupdate (#227).
+
 v0.9.0 (2022-04-13)
 -------------------
 
