@@ -30,6 +30,7 @@ from .._common import (
     CMIP6_SICONC,
     CMIP6_SICONC_DAY,
     CMIP6_TA,
+    CMIP6_TASMIN,
     CMIP6_TOS,
     CMIP6_TOS_ONE_TIME_STEP,
     _check_output_nc,
@@ -1625,11 +1626,36 @@ def test_subset_nc_no_fill_value(cmip5_tas_file, tmpdir):
     assert "_FillValue" not in res.time_bnds.encoding
 
 
-def test_subset_nc_consistent_bounds(cmip5_tas_file, tmpdir):
-    """Tests clisops subset function with a time subset."""
+def test_subset_cmip5_nc_consistent_bounds(cmip5_tas_file, tmpdir):
+    """Tests clisops subset function with a time subset and check the metadata"""
     result = subset(
         ds=CMIP5_TAS,
         time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+    res = _load_ds(result)
+    # check fill value in bounds
+    assert "_FillValue" not in res.lat_bnds.encoding
+    assert "_FillValue" not in res.lon_bnds.encoding
+    assert "_FillValue" not in res.time_bnds.encoding
+    # check fill value in coordinates
+    assert "_FillValue" not in res.time.encoding
+    assert "_FillValue" not in res.lat.encoding
+    assert "_FillValue" not in res.lon.encoding
+    assert "_FillValue" not in res.height.encoding
+    # check coordinates in bounds
+    assert "coordinates" not in res.lat_bnds.encoding
+    assert "coordinates" not in res.lon_bnds.encoding
+    assert "coordinates" not in res.time_bnds.encoding
+
+
+def test_subset_cmip6_nc_consistent_bounds(cmip5_tas_file, tmpdir):
+    """Tests clisops subset function with a time subset and check the metadata"""
+    result = subset(
+        ds=CMIP6_TASMIN,
+        time=time_interval("2010-01-01T00:00:00", "2010-12-31T00:00:00"),
         output_dir=tmpdir,
         output_type="nc",
         file_namer="simple",
