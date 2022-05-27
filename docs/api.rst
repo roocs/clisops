@@ -11,7 +11,7 @@ Core subset functionality
    :show-inheritance:
 
 Core average functionality
-=========================
+==========================
 
 .. automodule:: clisops.core.average
    :members:
@@ -70,7 +70,7 @@ File Namers
 
 
 Dataset Utilities
-================
+=================
 
 .. automodule:: clisops.utils.dataset_utils
    :noindex:

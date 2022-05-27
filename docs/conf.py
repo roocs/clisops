@@ -44,6 +44,9 @@ extensions = [
     "IPython.sphinxext.ipython_console_highlighting",
 ]
 
+autosectionlabel_prefix_document = True
+autosectionlabel_maxdepth = 2
+
 napoleon_numpy_docstring = True
 napoleon_use_rtype = False
 napoleon_use_param = False

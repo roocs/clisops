@@ -26,6 +26,7 @@ New Features
   The mechanism for enabling log reporting in scripts/notebooks using ``loguru`` is as follows:
 
 .. code-block:: python
+
     import sys
     from loguru import logger
 
@@ -64,7 +65,6 @@ Other Changes
 * Minimum pygeos version set to 0.9.
 * Replace ``cascaded_union`` by ``unary_union`` to anticipate a `shapely` deprecation.
 
-
 v0.7.0 (2021-10-26)
 -------------------
 
@@ -85,7 +85,6 @@ New Features
 Other Changes
 ^^^^^^^^^^^^^
 * Python 3.6 no longer tested in GitHub actions.
-
 
 v0.6.5 (2021-06-10)
 -------------------
@@ -130,7 +129,6 @@ Other Changes
 ^^^^^^^^^^^^^
 * Error message improved to include longitude bounds of the dataset when the bounds requested in ``ops.subset.subset`` are not within range and rolling could not be completed.
 
-
 v0.6.2 (2021-03-22)
 -------------------
 
@@ -146,17 +144,18 @@ New Features
 
 v0.6.1 (2021-02-23)
 -------------------
+
 Bug Fixes
 ^^^^^^^^^
 * Add ``cf-xarray`` as dependency. This is a dependency of ``roocs-utils``>=0.2.1 so is not a breaking change.
 * Remove ``python-dateutil``, ``fiona`` and ``geojson`` as dependencies, no longer needed.
 
-
 v0.6.0 (2021-02-22)
 -------------------
+
 Breaking Changes
 ^^^^^^^^^^^^^^^^
-* New dev dependency: ``GitPython``==3.1.12
+* New dev dependency: ``GitPython``\ ==3.1.12
 * ``roocs-utils``>=0.2.1 required.
 
 New Features
@@ -181,7 +180,6 @@ Other Changes
 * Added functionality to ``core.subset.create_mask`` so it can accept ``GeoDataFrames`` with non-integer indexes.
 * ``clisops.utils.file_namers`` adjusted to allow values to be overwritten and extras to be added to the end before the file extension.
 
-
 v0.5.1 (2021-01-11)
 -------------------
 
@@ -197,7 +195,7 @@ Other Changes
 
 
 v0.5.0 (2020-12-17)
-------------------
+-------------------
 
 Breaking Changes
 ^^^^^^^^^^^^^^^^
@@ -214,7 +212,7 @@ Other Changes
 
 
 v0.4.0 (2020-11-10)
------------------
+-------------------
 
 Adding new features, updating doc strings and documentation and inclusion of static type support.
 
@@ -250,7 +248,6 @@ Bug Fixes
 * Nudging time values to nearest available in dataset to fix a bug where subsetting failed when the exact date
   did not exist in the dataset.
 
-
 Other Changes
 ^^^^^^^^^^^^^
 
@@ -261,7 +258,6 @@ Other Changes
 * md files changed to rst.
 * tests now use ``mini-esgf-data`` by default.
 
-
 v0.3.1 (2020-08-04)
 -------------------
 
@@ -269,9 +265,8 @@ Other Changes
 ^^^^^^^^^^^^^
 * Add missing ``rtree`` dependency to ensure correct spatial indexing.
 
-
 v0.3.0 (2020-07-23)
-------------------
+-------------------
 
 Other Changes
 ^^^^^^^^^^^^^
@@ -287,7 +282,7 @@ Other Changes
 
 
 v0.2.0 (2020-06-19)
-------------------
+-------------------
 
 New Features
 ^^^^^^^^^^^^^
@@ -303,6 +298,6 @@ Other Changes
 
 
 v0.1.0 (2020-04-22)
-------------------
+-------------------
 
 * First release.
