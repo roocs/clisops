@@ -1,5 +1,6 @@
 import math
 import warnings
+from typing import Optional
 
 import cf_xarray as cfxr
 import cftime
@@ -11,12 +12,14 @@ from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
 
 def calculate_offset(lon, first_element_value):
-    """
-    Calculate the number of elements to roll the dataset by in order to have
-    longitude from within requested bounds.
+    """Calculate the number of elements to roll the dataset by in order to have longitude from within requested bounds.
 
-    :param lon: longitude coordinate of xarray dataset.
-    :param first_element_value: the value of the first element of the longitude array to roll to.
+    Parameters
+    ----------
+    lon
+        Longitude coordinate of xarray dataset.
+    first_element_value
+        The value of the first element of the longitude array to roll to.
     """
     # get resolution of data
     res = lon.values[1] - lon.values[0]
@@ -33,15 +36,14 @@ def calculate_offset(lon, first_element_value):
     return offset
 
 
-def _crosses_0_meridian(lon_c):
-    """
-    Determine whether grid extents over the 0-meridian.
+def _crosses_0_meridian(lon_c: xr.DataArray):
+    """Determine whether grid extents over the 0-meridian.
 
     Assumes approximate constant width of grid cells.
 
     Parameters
     ----------
-    lon_c : TYPE
+    lon_c: xr.DataArray
         Longitude coordinate variable in the longitude frame [-180, 180].
 
     Returns
@@ -103,8 +105,7 @@ def _convert_interval_between_lon_frames(low, high):
 
 
 def cf_convert_between_lon_frames(ds_in, lon_interval):
-    """
-    Convert ds or lon_interval (whichever deems appropriate) to the other longitude frame, if the longitude frames do not match.
+    """Convert ds or lon_interval (whichever deems appropriate) to the other longitude frame, if the longitude frames do not match.
 
     If ds and lon_interval are defined on different longitude frames ([-180, 180] and [0, 360]),
     this function will convert one of the input parameters to the other longitude frame, preferably
@@ -116,9 +117,9 @@ def cf_convert_between_lon_frames(ds_in, lon_interval):
 
     Parameters
     ----------
-    ds_in : xarray.Dataset or xarray.DataArray
+    ds_in: xarray.Dataset or xarray.DataArray
         xarray data object with defined longitude dimension.
-    lon_interval : tuple or list
+    lon_interval: tuple or list
         length-2-tuple or -list of floats or integers denoting the bounds of the longitude interval.
 
     Returns
@@ -313,20 +314,27 @@ def check_lon_alignment(ds, lon_bnds):
 
 
 def adjust_date_to_calendar(da, date, direction="backwards"):
-    """
-    Check that the date specified exists in the calendar type of the dataset. If not,
-    change the date a day at a time (up to a maximum of 5 times) to find a date that does exist.
+    """Check that the date specified exists in the calendar type of the dataset.
 
+    If not present, changes the date a day at a time (up to a maximum of 5 times) to find a date that does exist.
     The direction to change the date by is indicated by 'direction'.
 
-    :param da: xarray.Dataset or xarray.DataArray
-    :param date: The date to check, as a string.
-    :param direction: The direction to move in days to find a date that does exist.
-                     'backwards' means the search will go backwards in time until an existing date is found.
-                     'forwards' means the search will go forwards in time.
-                      The default is 'backwards'.
+    Parameters
+    ----------
+    da: xarray.Dataset or xarray.DataArray
+        The data to examine.
+    date: str
+        The date to check.
+    direction: str
+        The direction to move in days to find a date that does exist.
+        'backwards' means the search will go backwards in time until an existing date is found.
+        'forwards' means the search will go forwards in time.
+        The default is 'backwards'.
 
-    :return: (str) The next possible existing date in the calendar of the dataset.
+    Returns
+    -------
+    str
+        The next possible existing date in the calendar of the dataset.
     """
     # turn date into AnyCalendarDateTime object
     d = str_to_AnyCalendarDateTime(date)
@@ -362,14 +370,13 @@ def adjust_date_to_calendar(da, date, direction="backwards"):
 
 
 def detect_coordinate(ds, coord_type):
-    """
-    Use cf_xarray to obtain the variable name of the requested coordinate.
+    """Use cf_xarray to obtain the variable name of the requested coordinate.
 
     Parameters
     ----------
     ds: xarray.Dataset, xarray.DataArray
         Dataset the coordinate variable name shall be obtained from.
-    coord_type : str
+    coord_type: str
         Coordinate type understood by cf-xarray, eg. 'lat', 'lon', ...
 
     Raises
@@ -398,9 +405,8 @@ def detect_coordinate(ds, coord_type):
         raise AttributeError(error_msg)
 
 
-def detect_bounds(ds, coordinate):
-    """
-    Use cf_xarray to obtain the variable name of the requested coordinates bounds.
+def detect_bounds(ds, coordinate) -> Optional[str]:
+    """Use cf_xarray to obtain the variable name of the requested coordinates bounds.
 
     Parameters
     ----------
@@ -411,9 +417,9 @@ def detect_bounds(ds, coordinate):
 
     Returns
     -------
-    str
-        Returns the variable name of the requested coordinate bounds,
-        returns None if the variable has no bounds or they cannot be identified.
+    str or None
+        Returns the variable name of the requested coordinate bounds.
+        Returns None if the variable has no bounds or if they cannot be identified.
     """
     try:
         return ds.cf.bounds[coordinate][0]
@@ -425,12 +431,10 @@ def detect_bounds(ds, coordinate):
 
 
 def detect_gridtype(ds, lon, lat, lon_bnds=None, lat_bnds=None):
-    """
-    Detect type of the grid as one of "regular_lat_lon", "curvilinear", "unstructured".
+    """Detect type of the grid as one of "regular_lat_lon", "curvilinear", "unstructured".
 
     Assumes the grid description / structure follows the CF conventions.
     """
-
     # 1D coordinate variables
     if ds[lat].ndim == 1 and ds[lon].ndim == 1:
         lat_1D = ds[lat].dims[0]

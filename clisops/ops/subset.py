@@ -189,26 +189,14 @@ def subset(
     split_method="time:auto",
     file_namer="standard",
 ) -> List[Union[xr.Dataset, str]]:
-    """
+    """Subset operation.
 
     Parameters
     ----------
     ds: Union[xr.Dataset, str]
     time: Optional[Union[str, Tuple[str, str], TimeParameter]] = None,
-    area: Optional[
-        Union[
-            str,
-            Tuple[
-                Union[int, float, str],
-                Union[int, float, str],
-                Union[int, float, str],
-                Union[int, float, str],
-            ],
-            AreaParameter
-        ]
-    ] = None,
-    level: Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]],
-           LevelParameter] = None,
+    area: str or AreaParameter or Tuple[Union[int, float, str], Union[int, float, str], Union[int, float, str], Union[int, float, str]], optional
+    level: Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter] = None,
     time_components: Optional[Union[str, Dict, TimeComponentsParameter]] = None,
     output_dir: Optional[Union[str, Path]] = None
     output_type: {"netcdf", "nc", "zarr", "xarray"}
@@ -236,9 +224,9 @@ def subset(
 
     Note
     ----
-        If you request a selection range (such as level, latitude or longitude) that specifies the lower
-        and upper bounds in the opposite direction to the actual coordinate values then clisops.ops.subset
-        will detect this issue and reverse your selection before returning the data subset.
+    If you request a selection range (such as level, latitude or longitude) that specifies the lower
+    and upper bounds in the opposite direction to the actual coordinate values then clisops.ops.subset
+    will detect this issue and reverse your selection before returning the data subset.
     """
     op = Subset(**locals())
     return op.process()

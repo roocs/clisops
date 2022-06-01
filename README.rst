@@ -1,7 +1,5 @@
-
 clisops - climate simulation operations
 =======================================
-
 
 .. image:: https://img.shields.io/pypi/v/clisops.svg
    :target: https://pypi.python.org/pypi/clisops
@@ -14,7 +12,6 @@ clisops - climate simulation operations
 .. image:: https://readthedocs.org/projects/clisops/badge/?version=latest
    :target: https://clisops.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation
-
 
 The ``clisops`` package (pronounced "clie-sops") provides a python library for running
 *data-reduction* operations on `Xarray <http://xarray.pydata.org/>`_ data sets or files
@@ -30,7 +27,6 @@ the results.
 
 ``clisops`` can be used stand-alone to read individual, or groups of, NetCDF files directly.
 
-
 * Free software: BSD
 * Documentation: https://clisops.readthedocs.io.
 
@@ -45,14 +41,12 @@ The package provides the following operations:
 * regrid
 
 Credits
-=======
+-------
 
 This package was created with ``Cookiecutter`` and the ``audreyr/cookiecutter-pypackage`` project template.
 
-
 * Cookiecutter: https://github.com/audreyr/cookiecutter
 * cookiecutter-pypackage: https://github.com/audreyr/cookiecutter-pypackage
-
 
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
    :target: https://github.com/python/black
