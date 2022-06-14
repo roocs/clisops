@@ -15,7 +15,7 @@ repos:
     rev: 22.3.0
     hooks:
     -   id: black
-        args: ["--target-version", "py37"]
+        args: ["--target-version", "py38"]
 -   repo: https://github.com/pycqa/flake8
     rev: 4.0.1
     hooks:
@@ -35,7 +35,7 @@ repos:
     rev: v2.32.1
     hooks:
     -   id: pyupgrade
-        args: ['--py37-plus']
+        args: ['--py38-plus']
 -   repo: meta
     hooks:
     -   id: check-hooks-apply

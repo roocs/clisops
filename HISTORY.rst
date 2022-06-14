@@ -1,6 +1,13 @@
 Version History
 ===============
 
+v0.9.2 (unreleased)
+-------------------
+
+Breaking Changes
+^^^^^^^^^^^^^^^^
+* Support has been dropped for Python3.7 and extended to Python3.10. Python3.7 is no longer tested in GitHub actions.
+
 v0.9.1 (2022-05-12)
 -------------------
 
