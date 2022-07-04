@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # clisops documentation build configuration file, created by
 # sphinx-quickstart on Fri Jun  9 13:47:02 2017.
@@ -23,9 +22,12 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(".."))
+import xarray
 
-import sphinx_rtd_theme
+xarray.DataArray.__module__ = "xarray"
+xarray.Dataset.__module__ = "xarray"
+
+sys.path.insert(0, os.path.abspath(".."))
 
 # -- General configuration ---------------------------------------------
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -45,11 +47,15 @@ extensions = [
     "IPython.sphinxext.ipython_console_highlighting",
 ]
 
+autosectionlabel_prefix_document = True
+autosectionlabel_maxdepth = 2
+
 napoleon_numpy_docstring = True
 napoleon_use_rtype = False
 napoleon_use_param = False
 napoleon_use_ivar = True
 
+nbsphinx_allow_errors = True
 nbsphinx_execute = "auto"
 nbsphinx_timeout = 300
 
@@ -60,7 +66,8 @@ templates_path = ["_templates"]
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = [".rst", ".ipynb"]
+source_suffix = [".rst"]
+# note: do not add .ipynb when nbspinx is enabled, otherwise you get the "missing title" error
 
 # The master toctree document.
 master_doc = "index"
@@ -75,7 +82,7 @@ author = "Elle Smith"
 # the built documents.
 #
 # The short X.Y version.
-version = "0.8.0"
+version = "0.9.1"
 # The full version, including alpha/beta/rc tags.
 release = version
 
@@ -84,7 +91,7 @@ release = version
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.

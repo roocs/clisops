@@ -3,15 +3,25 @@ import warnings
 from pathlib import Path
 from typing import Sequence, Tuple, Union
 
+import cf_xarray
 import geopandas as gpd
 import numpy as np
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
-from roocs_utils.xarray_utils.xarray_utils import get_coord_type, known_coord_types
+from roocs_utils.xarray_utils.xarray_utils import (
+    get_coord_by_type,
+    get_coord_type,
+    known_coord_types,
+)
+
+from clisops.utils.time_utils import create_time_bounds
 
 from .subset import shape_bbox_indexer
 
-__all__ = ["average_over_dims", "average_shape"]
+__all__ = ["average_over_dims", "average_shape", "average_time"]
+
+# see https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
+freqs = {"day": "1D", "month": "1MS", "year": "1AS"}
 
 
 def average_shape(
@@ -218,3 +228,69 @@ def average_over_dims(
     if isinstance(ds, xr.Dataset):
         return xr.merge((ds_averaged_over_dims, untouched_ds))
     return ds_averaged_over_dims
+
+
+def average_time(
+    ds: Union[xr.DataArray, xr.Dataset],
+    freq: str,
+) -> Union[xr.DataArray, xr.Dataset]:
+    """
+    Average a DataArray or Dataset over the time frequency specified.
+
+    Parameters
+    ----------
+    ds : Union[xr.DataArray, xr.Dataset]
+      Input values.
+    freq: str
+      The frequency to average over. One of "month", "year".
+
+    Returns
+    -------
+    Union[xr.DataArray, xr.Dataset]
+      New Dataset or DataArray object averaged over the indicated time frequency.
+
+    Examples
+    --------
+    >>> from clisops.core.average import average_time  # doctest: +SKIP
+    >>> pr = xr.open_dataset(path_to_pr_file).pr  # doctest: +SKIP
+    ...
+    # Average data array over each month
+    >>> prAvg = average_time(pr, freq='month')  # doctest: +SKIP
+    """
+
+    if not freq:
+        raise InvalidParameterValue(
+            "At least one frequency for averaging must be provided"
+        )
+
+    if freq not in list(freqs.keys()):
+        raise InvalidParameterValue(
+            f"Time frequency for averaging must be one of {list(freqs.keys())}."
+        )
+
+    # check time coordinate exists and get name
+    # For roocs_utils 0.5.0
+    t = get_coord_by_type(ds, "time", ignore_aux_coords=False)
+    if t is None:
+        raise Exception("Time dimension could not be found")
+    # For latest roocs_utils (master)
+    # try:
+    #    t = get_coord_by_type(ds, "time", ignore_aux_coords=False)
+    # except KeyError:
+    #    raise Exception("Time dimension could not be found")
+
+    # resample and average over time
+    ds_t_avg = ds.resample(indexer={t.name: freqs[freq]}).mean(
+        dim=t.name, skipna=True, keep_attrs=True
+    )
+
+    # generate time_bounds depending on frequency
+    time_bounds = create_time_bounds(ds_t_avg, freq)
+
+    # get name of bounds dimension for time
+    bnds = ds.cf.get_bounds_dim_name("time")
+
+    # add time bounds to dataset
+    ds_t_avg = ds_t_avg.assign({"time_bnds": ((t.name, bnds), np.asarray(time_bounds))})
+
+    return ds_t_avg

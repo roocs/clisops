@@ -58,7 +58,7 @@ def test_SimpleFileNamer_with_chunking(load_esgf_test_data, tmpdir):
 def test_StandardFileNamer_no_project_match():
     s = get_file_namer("standard")()
 
-    class Thing(object):
+    class Thing:
         pass
 
     mock_ds = Thing()
