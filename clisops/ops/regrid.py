@@ -2,8 +2,8 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import xarray as xr
-
 from loguru import logger
+
 from clisops.core import Grid, Weights
 from clisops.core import regrid as core_regrid
 from clisops.ops.base_operation import Operation

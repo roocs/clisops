@@ -1,16 +1,15 @@
 """Regrid module."""
+import functools
 import warnings
 from pathlib import Path
 from typing import Tuple, Union
-import functools
-from pkg_resources import parse_version
 
 import cf_xarray as cfxr
 import numpy as np
 import roocs_grids
 import scipy
 import xarray as xr
-
+from pkg_resources import parse_version
 
 XESMF_MINIMUM_VERSION = "0.6.0"
 
@@ -288,21 +287,21 @@ class Grid:
 
     def __repr__(self):
         info = (
-            "clisops {}\n".format(self.__str__())
+            f"clisops {self.__str__()}\n"
             + (
-                "Lat x Lon:      {} x {}\n".format(self.nlat, self.nlon)
+                f"Lat x Lon:      {self.nlat} x {self.nlon}\n"
                 if self.type != "irregular"
                 else ""
             )
-            + "Gridcells:      {}\n".format(self.ncells)
-            + "Format:         {}\n".format(self.format)
-            + "Type:           {}\n".format(self.type)
-            + "Extent:         {}\n".format(self.extent)
-            + "Source:         {}\n".format(self.source)
+            + f"Gridcells:      {self.ncells}\n"
+            + f"Format:         {self.format}\n"
+            + f"Type:           {self.type}\n"
+            + f"Extent:         {self.extent}\n"
+            + f"Source:         {self.source}\n"
             + "Bounds?         {}\n".format(
                 self.lat_bnds is not None and self.lon_bnds is not None
             )
-            + "Permanent Mask: {}".format(self.mask)
+            + f"Permanent Mask: {self.mask}"
         )
         return info
 
