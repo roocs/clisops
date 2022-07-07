@@ -1,4 +1,6 @@
 """Regrid module."""
+from __future__ import annotations
+
 import functools
 import json
 import os
@@ -21,7 +23,7 @@ from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 import clisops.utils.dataset_utils as clidu
 from clisops import CONFIG
 from clisops import __version__ as clversion
-from clisops.utils.common import check_dir, require_module
+from clisops.utils.common import _list_ten, check_dir, require_module
 from clisops.utils.output_utils import FileLock, create_lock
 
 # Try importing xesmf and set to None if not found at correct version

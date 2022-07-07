@@ -618,6 +618,7 @@ class TestSubsetBbox:
         np.testing.assert_array_equal(out.time.max().dt.day, 15)
 
     def test_raise(self):
+        # 1st case
         da = xr.open_dataset(self.nc_poslons).tas
         with pytest.raises(ValueError):
             subset.subset_bbox(
@@ -628,9 +629,23 @@ class TestSubsetBbox:
                 end_date="2055",
             )
 
+        # 2nd case
         da = xr.open_dataset(self.nc_2dlonlat).tasmax.drop_vars(names=["lon", "lat"])
         with pytest.raises(Exception):
             subset.subset_bbox(da, lon_bnds=self.lon, lat_bnds=self.lat)
+
+        # 3rd case
+        ds = xr.Dataset(
+            data_vars={"var": (("lat", "lon"), np.ones((5, 10)))},
+            coords={
+                "lat": ("lat", np.zeros(5)),
+                "lon": ("lon", np.arange(-10, 0, 1)),
+            },
+        )
+        ds["lat"].attrs["standard_name"] = "latitude"
+        ds["lon"].attrs["standard_name"] = "longitude"
+        with pytest.raises(ValueError):
+            subset.subset_bbox(ds, lon_bnds=(-0.1, 1.0))
 
     def test_warnings(self):
         da = xr.open_dataset(self.nc_poslons).tas

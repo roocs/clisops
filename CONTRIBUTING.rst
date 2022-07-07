@@ -85,7 +85,7 @@ Ready to contribute? Here's how to set up ``clisops`` for local development.
     tests, including testing other Python versions with tox:
 
     $ flake8 clisops tests
-    $ black --target-version py36 clisops tests
+    $ black --target-version py38 clisops tests
     $ python setup.py test  # (or pytest)
     $ tox
 
@@ -106,6 +106,35 @@ Ready to contribute? Here's how to set up ``clisops`` for local development.
 #.
     Submit a pull request through the GitHub website.
 
+
+Logging
+-------
+
+``clisops`` uses the `loguru <https://loguru.readthedocs.io/en/stable/index.html>`_ library as its primary logging engine. In order to integrate this kind of logging in processes, we can use their logger:
+
+.. code-block:: python
+    from loguru import logger
+    logger.warning("This a warning message!")
+
+The mechanism for enabling log reporting in scripts/notebooks using ``loguru`` is as follows:
+
+.. code-block:: python
+    import sys
+    from loguru import logger
+
+    logger.enable("clisops")
+    LEVEL = "INFO || DEBUG || WARNING || etc."
+    logger.add(sys.stdout, level=LEVEL)  # for logging to stdout
+    # or
+    logger.add("my_log_file.log", level=LEVEL, enqueue=True)  # for logging to a file
+
+For convenience, a preset logger configuration can be enabled via `clisops.enable_logging()`.
+
+.. code-block:: python
+    from clisops import enable_logging
+
+    enable_logging()
+
 Pull Request Guidelines
 -----------------------
 
@@ -116,6 +145,6 @@ Before you submit a pull request, check that it meets these guidelines:
 #. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.md.
-#. The pull request should work for Python 3.7, 3.8, and 3.9. Check
+#. The pull request should work for Python 3.8, 3.9, and 3.10. Check
    https://github.com/roocs/clisops/actions
    and make sure that the tests pass for all supported Python versions.

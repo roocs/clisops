@@ -5,7 +5,7 @@ from typing import List, Optional, Union
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
 
-from clisops import logging
+from loguru import logger
 from clisops.core import Grid, Weights
 from clisops.core import regrid as core_regrid
 from clisops.ops.base_operation import Operation
@@ -16,8 +16,6 @@ from clisops.utils.file_namers import get_file_namer
 __all__ = [
     "regrid",
 ]
-
-LOGGER = logging.getLogger(__file__)
 
 supported_regridding_methods = ["conservative", "patch", "nearest_s2d", "bilinear"]
 
@@ -90,7 +88,7 @@ class Regrid(Operation):
                 "Please choose one of %s." % ", ".join(supported_regridding_methods)
             )
 
-        LOGGER.debug(
+        logger.debug(
             f"Input parameters: method: {method}, grid: {grid}, adaptive_masking: {adaptive_masking_threshold}"
         )
 
@@ -104,7 +102,7 @@ class Regrid(Operation):
         t_start = dt.now()
         weights = self._get_weights(grid_in=grid_in, grid_out=grid_out, method=method)
         t_end = dt.now()
-        LOGGER.info(
+        logger.info(
             f"Computed/Retrieved weights in {(t_end-t_start).total_seconds()} seconds."
         )
 
@@ -128,7 +126,7 @@ class Regrid(Operation):
         #  which specifies a default filename (which has but not much to do with the filename we would give the weight file).
         # todo: Better option might be to have the Weights class extend the Regridder class or to define
         #  a __str__() method for the Weights class.
-        LOGGER.debug(
+        logger.debug(
             "Resolved parameters: grid_in: {}, grid_out: {}, regridder: {}".format(
                 self.params.get("grid_in").__str__(),
                 self.params.get("grid_out").__str__(),

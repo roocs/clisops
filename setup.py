@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
 """The setup script."""
 import os
 
@@ -13,7 +12,7 @@ here = os.path.abspath(os.path.dirname(__file__))
 _long_description = open(os.path.join(here, "README.rst")).read()
 
 about = dict()
-with open(os.path.join(here, "clisops", "__version__.py"), "r") as f:
+with open(os.path.join(here, "clisops", "__version__.py")) as f:
     exec(f.read(), about)
 
 requirements = [line.strip() for line in open("requirements.txt")]
@@ -30,12 +29,13 @@ docs_requirements = [
     "nbsphinx",
     "pandoc",
     "ipython",
+    "ipython_genutils",
     "ipykernel",
     "jupyter_client",
     "matplotlib",
 ]
 
-extra_requirements = ["xesmf>=0.6.2", "pygeos>=0.9"]
+extra_requirements = ["xesmf>=0.6.3", "pygeos>=0.9"]
 
 setup(
     version=about["__version__"],
@@ -58,9 +58,9 @@ setup(
         "Operating System :: POSIX :: Linux",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
         "Topic :: Security",
         "Topic :: Internet",
         "Topic :: Scientific/Engineering",
@@ -70,7 +70,7 @@ setup(
     ],
     description="clisops - climate simulation operations.",
     license=__license__,
-    python_requires=">=3.7.0",
+    python_requires=">=3.8.0",
     install_requires=requirements,
     long_description=_long_description,
     long_description_content_type="text/x-rst",

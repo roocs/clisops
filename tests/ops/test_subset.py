@@ -30,6 +30,7 @@ from .._common import (
     CMIP6_SICONC,
     CMIP6_SICONC_DAY,
     CMIP6_TA,
+    CMIP6_TASMIN,
     CMIP6_TOS,
     CMIP6_TOS_ONE_TIME_STEP,
     _check_output_nc,
@@ -1211,27 +1212,19 @@ class TestReverseBounds:
         np.testing.assert_array_equal(result[0].tos, result_rev[0].tos)
 
     def test_reverse_lon_cross_meridian_curvilinear(self, load_esgf_test_data):
-        # can't roll because ds has a curvilinear grid
-        with pytest.raises(Exception) as exc:
-            subset(
-                ds=CMIP6_TOS_ONE_TIME_STEP,
-                area=(-70, -45, 240, 45),
-                output_type="xarray",
-            )
-
-        # can't roll because ds has a curvilinear grid
-        with pytest.raises(Exception) as exc_rev:
-            subset(
-                ds=CMIP6_TOS_ONE_TIME_STEP,
-                area=(240, -45, -70, 45),
-                output_type="xarray",
-            )
-
-        assert (
-            str(exc.value)
-            == "The requested longitude subset (-70.0, 240.0) is not within the longitude bounds of this dataset and the data could not be converted to this longitude frame successfully. Please re-run your request with longitudes within the bounds of the dataset: (0.01, 360.00)"
+        result = subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area=(-70, -45, 120, 45),
+            output_type="xarray",
         )
-        assert str(exc.value) == str(exc_rev.value)
+
+        result_rev = subset(
+            ds=CMIP6_TOS_ONE_TIME_STEP,
+            area=(120, -45, -70, 45),
+            output_type="xarray",
+        )
+
+        np.testing.assert_array_equal(result[0].tos, result_rev[0].tos)
 
     def test_reverse_lat_and_lon_curvilinear(self, load_esgf_test_data):
         result = subset(
@@ -1612,8 +1605,10 @@ def test_subset_nc_no_fill_value(cmip5_tas_file, tmpdir):
     ds.to_netcdf(f"{tmpdir}/test_fill_values.nc")
     ds = _load_ds(f"{tmpdir}/test_fill_values.nc")
 
+    # assert np.isnan(float(ds.time.encoding.get("_FillValue")))
     assert np.isnan(float(ds.lat.encoding.get("_FillValue")))
     assert np.isnan(float(ds.lon.encoding.get("_FillValue")))
+    assert np.isnan(float(ds.height.encoding.get("_FillValue")))
 
     assert np.isnan(float(ds.lat_bnds.encoding.get("_FillValue")))
     assert np.isnan(float(ds.lon_bnds.encoding.get("_FillValue")))
@@ -1621,9 +1616,61 @@ def test_subset_nc_no_fill_value(cmip5_tas_file, tmpdir):
 
     # check that there is no fill value in encoding for coordinate variables and bounds
     res = _load_ds(result)
+    assert "_FillValue" not in res.time.encoding
     assert "_FillValue" not in res.lat.encoding
     assert "_FillValue" not in res.lon.encoding
+    assert "_FillValue" not in res.height.encoding
 
     assert "_FillValue" not in res.lat_bnds.encoding
     assert "_FillValue" not in res.lon_bnds.encoding
     assert "_FillValue" not in res.time_bnds.encoding
+
+
+def test_subset_cmip5_nc_consistent_bounds(cmip5_tas_file, tmpdir):
+    """Tests clisops subset function with a time subset and check the metadata"""
+    result = subset(
+        ds=CMIP5_TAS,
+        time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+    res = _load_ds(result)
+    # check fill value in bounds
+    assert "_FillValue" not in res.lat_bnds.encoding
+    assert "_FillValue" not in res.lon_bnds.encoding
+    assert "_FillValue" not in res.time_bnds.encoding
+    # check fill value in coordinates
+    assert "_FillValue" not in res.time.encoding
+    assert "_FillValue" not in res.lat.encoding
+    assert "_FillValue" not in res.lon.encoding
+    assert "_FillValue" not in res.height.encoding
+    # check coordinates in bounds
+    assert "coordinates" not in res.lat_bnds.encoding
+    assert "coordinates" not in res.lon_bnds.encoding
+    assert "coordinates" not in res.time_bnds.encoding
+
+
+def test_subset_cmip6_nc_consistent_bounds(cmip5_tas_file, tmpdir):
+    """Tests clisops subset function with a time subset and check the metadata"""
+    result = subset(
+        ds=CMIP6_TASMIN,
+        time=time_interval("2010-01-01T00:00:00", "2010-12-31T00:00:00"),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+    res = _load_ds(result)
+    # check fill value in bounds
+    assert "_FillValue" not in res.lat_bnds.encoding
+    assert "_FillValue" not in res.lon_bnds.encoding
+    assert "_FillValue" not in res.time_bnds.encoding
+    # check fill value in coordinates
+    assert "_FillValue" not in res.time.encoding
+    assert "_FillValue" not in res.lat.encoding
+    assert "_FillValue" not in res.lon.encoding
+    assert "_FillValue" not in res.height.encoding
+    # check coordinates in bounds
+    assert "coordinates" not in res.lat_bnds.encoding
+    assert "coordinates" not in res.lon_bnds.encoding
+    assert "coordinates" not in res.time_bnds.encoding

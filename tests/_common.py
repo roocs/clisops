@@ -1,8 +1,10 @@
 import os
 import tempfile
 from pathlib import Path
+from typing import Optional
 
 import xarray as xr
+from _pytest.logging import LogCaptureFixture  # noqa
 from jinja2 import Template
 
 ROOCS_CFG = Path(tempfile.gettempdir(), "roocs.ini").as_posix()
@@ -14,6 +16,32 @@ REAL_C3S_CMIP5_ARCHIVE_BASE = "/gws/nopw/j04/cp4cds1_vol1/data/"
 DEFAULT_CMIP6_ARCHIVE_BASE = Path(
     TESTS_HOME, "mini-esgf-data/test_data/badc/cmip6/data"
 ).as_posix()
+
+
+class ContextLogger:
+    """Helper function for safe logging management in pytests"""
+
+    def __init__(self, caplog: Optional[LogCaptureFixture] = False):
+        from loguru import logger
+
+        self.logger = logger
+        self.using_caplog = False
+        if caplog:
+            self.using_caplog = True
+
+    def __enter__(self):
+        self.logger.enable("clisops")
+        return self.logger
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """If test is supplying caplog, pytest will manage teardown."""
+
+        self.logger.disable("clisops")
+        if not self.using_caplog:
+            try:
+                self.logger.remove()
+            except ValueError:
+                pass
 
 
 def assert_vars_equal(var_id, *ds_list, extras=None):
@@ -145,6 +173,17 @@ CMIP6_TA = Path(
     "master/test_data/badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/Amon/ta/gn/files/d20190807/ta_Amon_MIROC6_ssp119_r1i1p1f1_gn_201501-202412.nc",
 ).as_posix()
 
+CMIP6_TASMIN = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Amon/tasmin/gn/v20190710/tasmin_Amon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_201001-201412.nc",
+).as_posix()
+
+# Dataset with julian calender
+CMIP6_JULIAN = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/badc/cmip6/data/CMIP6/CMIP/CCCR-IITM/IITM-ESM/1pctCO2/r1i1p1f1/Omon/tos/gn/v20191204/tos_Omon_IITM-ESM_1pctCO2_r1i1p1f1_gn_193001-193412.nc",
+).as_posix()
+
 C3S_CORDEX_AFR_TAS = Path(
     MINI_ESGF_CACHE_DIR,
     "master/test_data/pool/data/CORDEX/data/cordex/output/AFR-22/GERICS/MPI-M-MPI-ESM-LR/historical/r1i1p1/GERICS-REMO2015/v1/day/tas/v20201015/*.nc",
@@ -222,6 +261,12 @@ CMIP6_TAS_PRECISION_B = Path(
 CMIP6_ATM_VERT_ONE_TIMESTEP = Path(
     MINI_ESGF_CACHE_DIR,
     "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/AERmon/o3/gn/v20190710/o3_AERmon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
+).as_posix()
+
+# CMIP6 2nd dataset with weird range in its longitude coordinate (-280, 80)
+CMIP6_IITM_EXTENT = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/badc/cmip6/data/CMIP6/CMIP/CCCR-IITM/IITM-ESM/1pctCO2/r1i1p1f1/Omon/tos/gn/v20191204/tos_Omon_IITM-ESM_1pctCO2_r1i1p1f1_gn_193001.nc",
 ).as_posix()
 
 CMIP6_OCE_HALO_CNRM = Path(

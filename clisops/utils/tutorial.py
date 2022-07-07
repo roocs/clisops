@@ -1,7 +1,6 @@
 """Testing and tutorial utilities module."""
 # Most of this code copied and adapted from xarray, xclim, and raven
 import hashlib
-import logging
 import re
 from pathlib import Path
 from typing import List, Optional, Sequence, Union
@@ -10,12 +9,12 @@ from urllib.parse import urljoin
 from urllib.request import urlretrieve
 
 import requests
+from loguru import logger
 from xarray import Dataset
 from xarray import open_dataset as _open_dataset
 
 _default_cache_dir = Path.home() / ".clisops_testing_data"
 
-LOGGER = logging.getLogger(__file__)
 
 __all__ = ["get_file", "open_dataset", "query_folder"]
 
@@ -36,7 +35,7 @@ def _get(
 ) -> Path:
     cache_dir = cache_dir.absolute()
     local_file = cache_dir / branch / fullname
-    md5name = fullname.with_suffix("{}.md5".format(suffix))
+    md5name = fullname.with_suffix(f"{suffix}.md5")
     md5file = cache_dir / branch / md5name
 
     if not local_file.is_file():
@@ -45,12 +44,12 @@ def _get(
         local_file.parent.mkdir(parents=True, exist_ok=True)
 
         url = "/".join((github_url, "raw", branch, fullname.as_posix()))
-        LOGGER.info("Fetching remote file: %s" % fullname.as_posix())
+        logger.info("Fetching remote file: %s" % fullname.as_posix())
         urlretrieve(url, local_file)
 
         try:
             url = "/".join((github_url, "raw", branch, md5name.as_posix()))
-            LOGGER.info("Fetching remote file md5: %s" % md5name.as_posix())
+            logger.info("Fetching remote file md5: %s" % md5name.as_posix())
             urlretrieve(url, md5file)
         except HTTPError as e:
             msg = f"{md5name.as_posix()} not found. Aborting file retrieval."
@@ -69,7 +68,7 @@ def _get(
                     """
                 raise OSError(msg)
         except OSError as e:
-            LOGGER.error(e)
+            logger.error(e)
     return local_file
 
 
@@ -220,7 +219,7 @@ def open_dataset(
             return ds
         except OSError:
             msg = "OPeNDAP file not read. Verify that service is available."
-            LOGGER.error(msg)
+            logger.error(msg)
             raise
 
     local_file = _get(

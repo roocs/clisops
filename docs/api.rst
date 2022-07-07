@@ -11,7 +11,7 @@ Core subset functionality
    :show-inheritance:
 
 Core average functionality
-=========================
+==========================
 
 .. automodule:: clisops.core.average
    :members:
@@ -37,8 +37,8 @@ Subset operation
    :show-inheritance:
 
 
-Average operation
-=================
+Average operations
+==================
 
 .. automodule:: clisops.ops.average
    :noindex:
@@ -87,9 +87,19 @@ File Namers
 
 
 Dataset Utilities
-================
+=================
 
 .. automodule:: clisops.utils.dataset_utils
+   :noindex:
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Time Utilities
+==============
+
+.. automodule:: clisops.utils.time_utils
    :noindex:
    :members:
    :undoc-members:

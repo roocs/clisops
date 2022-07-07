@@ -12,7 +12,7 @@ def get_file_namer(name):
     return namers.get(name, StandardFileNamer)
 
 
-class _BaseFileNamer(object):
+class _BaseFileNamer:
     """File namer base class"""
 
     def __init__(self, replace=None, extra=""):

@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
+from _pytest.logging import caplog as _caplog  # noqa
 from git import Repo
 
 from clisops.utils import get_file

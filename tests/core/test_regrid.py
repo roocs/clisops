@@ -335,15 +335,18 @@ def test_grid_from_ds_adaptive_reproducibility():
     assert gB.compare_grid(gBa)
 
 
-@pytest.mark.xfail
-def test_detect_extent(load_esgf_test_data):
-    "Test whether the extent can be correctly inferred for a weird test case."
+#@pytest.mark.xfail
+def test_detect_extent_shifted_lon_frame(load_esgf_test_data):
+    "Test whether the extent can be correctly inferred for a dataset with shifted longitude frame."
     # Load dataset with longitude ranging from (-300, 60)
     ds = xr.open_dataset(CMIP6_GFDL_EXTENT, use_cftime=True)
-    # s = clidu.lon_roll(ds, (0, 360))
-    print(ds)
-    g = Grid(ds=ds)
 
+    # Convert the longitude frame to 0,360 (shall happen implicitly in the future)
+    ds, ll, lu = clidu.cf_convert_between_lon_frames(ds, (0, 360))
+    assert (ll, lu) == (0, 360)
+
+    # Create Grid object and assert zonal extent
+    g = Grid(ds=ds)
     assert g.extent == "global"
 
 
@@ -466,7 +469,7 @@ def test_subsetted_grid(load_esgf_test_data):
 
 
 def test_drop_vars_transfer_coords(load_esgf_test_data):
-    "Test for Grid methods _drop_vars ad _transfer_coords"
+    "Test for Grid methods drop_vars and transfer_coords"
     ds = xr.open_dataset(CMIP6_ATM_VERT_ONE_TIMESTEP)
     g = Grid(ds=ds)
     gt = Grid(grid_id="0pt25deg_era5_lsm", compute_bounds=True)
