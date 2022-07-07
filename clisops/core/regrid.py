@@ -81,9 +81,9 @@ check_weights_dir = functools.partial(
 
 
 def weights_cache_flush(
-    weights_dir_init: Optional[Union[str, Path]] = "",
-    dryrun: Optional[bool] = False,
-    verbose: Optional[bool] = False,
+    weights_dir_init: str | Path | None = "",
+    dryrun: bool | None = False,
+    verbose: bool | None = False,
 ):
     """
     Flush and reinitialize the local weights cache.
@@ -171,10 +171,10 @@ class Grid:
 
     def __init__(
         self,
-        ds: Optional[Union[xr.Dataset, xr.DataArray]] = None,
-        grid_id: Optional[str] = None,
-        grid_instructor: Optional[Union[tuple, float, int]] = None,
-        compute_bounds: Optional[bool] = False,
+        ds: xr.Dataset | xr.DataArray | None = None,
+        grid_id: str | None = None,
+        grid_instructor: tuple | float | int | None = None,
+        compute_bounds: bool | None = False,
     ):
         """Initialise the Grid object. Supporting only 2D horizontal grids."""
         # All attributes - defaults
@@ -281,23 +281,23 @@ class Grid:
     def __repr__(self):
         """Return full representation of a Grid object."""
         info = (
-            "clisops {}\n".format(self.__str__())
+            f"clisops {self.__str__()}\n"
             + (
-                "Lat x Lon:        {} x {}\n".format(self.nlat, self.nlon)
+                f"Lat x Lon:        {self.nlat} x {self.nlon}\n"
                 if self.type != "irregular"
                 else ""
             )
-            + "Gridcells:        {}\n".format(self.ncells)
-            + "Format:           {}\n".format(self.format)
-            + "Type:             {}\n".format(self.type)
-            + "Extent:           {}\n".format(self.extent)
-            + "Source:           {}\n".format(self.source)
+            + f"Gridcells:        {self.ncells}\n"
+            + f"Format:           {self.format}\n"
+            + f"Type:             {self.type}\n"
+            + f"Extent:           {self.extent}\n"
+            + f"Source:           {self.source}\n"
             + "Bounds?           {}\n".format(
                 self.lat_bnds is not None and self.lon_bnds is not None
             )
-            + "Collapsing cells? {}\n".format(self.contains_collapsing_cells)
-            + "Permanent Mask:   {}\n".format(self.mask)
-            + "md5 hash:         {}".format(self.hash)
+            + f"Collapsing cells? {self.contains_collapsing_cells}\n"
+            + f"Permanent Mask:   {self.mask}\n"
+            + f"md5 hash:         {self.hash}"
         )
         return info
 
@@ -333,7 +333,7 @@ class Grid:
         self.format = self.detect_format()
 
     @require_xesmf
-    def _grid_from_instructor(self, grid_instructor: Union[tuple, float, int]):
+    def _grid_from_instructor(self, grid_instructor: tuple | float | int):
         """Process instructions to create regional or global grid (uses xESMF utility functions)."""
         # Create tuple of length 1 if input is either float or int
         if isinstance(grid_instructor, (int, float)):
@@ -363,7 +363,7 @@ class Grid:
         self.format = "xESMF"
 
     @require_xesmf
-    def _grid_from_ds_adaptive(self, ds: Union[xr.Dataset, xr.DataArray]):
+    def _grid_from_ds_adaptive(self, ds: xr.Dataset | xr.DataArray):
         """Create Grid of similar extent and resolution of input dataset."""
         # todo: dachar/daops to deal with missing values occuring in the coordinate variables
         #       while no _FillValue/missing_value attribute is set
@@ -418,7 +418,7 @@ class Grid:
         # Create regular lat-lon grid with these specifics
         self._grid_from_instructor((xfirst, xlast, xinc, yfirst, ylast, yinc))
 
-    def grid_reformat(self, grid_format: str, keep_attrs: Optional[bool] = False):
+    def grid_reformat(self, grid_format: str, keep_attrs: bool | None = False):
         """
         Reformat the xarray.Dataset attached to the Grid object to a target format.
 
@@ -1396,10 +1396,10 @@ class Grid:
 
     def to_netcdf(
         self,
-        folder: Optional[Union[str, Path]] = "./",
-        filename: Optional[str] = "",
-        grid_format: Optional[str] = "CF",
-        keep_attrs: Optional[bool] = True,
+        folder: str | Path | None = "./",
+        filename: str | None = "",
+        grid_format: str | None = "CF",
+        keep_attrs: bool | None = True,
     ):
         """
         Store a copy of the horizontal Grid as netCDF file on disk.
@@ -1513,8 +1513,8 @@ class Weights:
         grid_in: Grid,
         grid_out: Grid,
         method: str,
-        from_disk: Optional[Union[str, Path]] = None,
-        format: Optional[str] = None,
+        from_disk: str | Path | None = None,
+        format: str | None = None,
     ):
         """Initialize Weights object, incl. calculating / reading the weights."""
         if not isinstance(grid_in, Grid) or not isinstance(grid_out, Grid):
@@ -1688,7 +1688,7 @@ class Weights:
         return wid
 
     @check_weights_dir
-    def _save_to_cache(self, store_weights: Union[FileLock, None, bool]):
+    def _save_to_cache(self, store_weights: FileLock | None | bool):
         """Save Weights and source/target grids to cache (netCDF), incl. metadata (JSON)."""
         # Read weights_dir from CONFIG
         weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
@@ -1816,7 +1816,7 @@ class Weights:
         """Reformat remapping weights. Not yet implemented."""
         raise NotImplementedError
 
-    def _detect_format(self, ds: Union[xr.Dataset, xr.DataArray]):
+    def _detect_format(self, ds: xr.Dataset | xr.DataArray):
         """Detect format of remapping weights (read from disk), not yet implemented."""
         raise NotImplementedError
 
@@ -1826,8 +1826,8 @@ def regrid(
     grid_in: Grid,
     grid_out: Grid,
     weights: Weights,
-    adaptive_masking_threshold: Optional[float] = 0.5,
-    keep_attrs: Optional[bool] = True,
+    adaptive_masking_threshold: float | None = 0.5,
+    keep_attrs: bool | None = True,
 ):
     """
     Perform regridding operation incl. dealing with dataset and variable attributes.

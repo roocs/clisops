@@ -261,7 +261,7 @@ def get_output(ds, output_type, output_dir, namer):
     return output_path
 
 
-class FileLock(object):
+class FileLock:
     """
     Create and release a lockfile.
 

@@ -1,5 +1,6 @@
 import functools
-import os, sys
+import os
+import sys
 from pathlib import Path
 from types import FunctionType, ModuleType
 from typing import List, Optional, Union

@@ -335,7 +335,7 @@ def test_grid_from_ds_adaptive_reproducibility():
     assert gB.compare_grid(gBa)
 
 
-#@pytest.mark.xfail
+# @pytest.mark.xfail
 def test_detect_extent_shifted_lon_frame(load_esgf_test_data):
     "Test whether the extent can be correctly inferred for a dataset with shifted longitude frame."
     # Load dataset with longitude ranging from (-300, 60)
