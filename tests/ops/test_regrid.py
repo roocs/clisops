@@ -13,7 +13,6 @@ from clisops.ops.regrid import regrid
 
 from .._common import CMIP5_MRSOS_ONE_TIME_STEP
 
-
 XESMF_IMPORT_MSG = "xESMF >= 0.6.0 is needed for regridding functionalities."
 
 

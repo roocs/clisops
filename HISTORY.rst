@@ -1,12 +1,63 @@
 Version History
 ===============
 
+v0.9.2 (unreleased)
+-------------------
+
+Breaking Changes
+^^^^^^^^^^^^^^^^
+* Support has been dropped for Python3.7 and extended to Python3.10. Python3.7 is no longer tested in GitHub actions.
+
+v0.9.1 (2022-05-12)
+-------------------
+
+Bug fixes
+^^^^^^^^^
+* Fix inconsistent bounds in metadata after subset operation (#224).
+
+Other Changes
+^^^^^^^^^^^^^
+* Use ``roocs-utils`` 0.6.2 to avoid test failure (#226).
+* Removed unneeded testing dep from environment.yml (#223).
+* Merged pre-commit autoupdate (#227).
+
+v0.9.0 (2022-04-13)
+-------------------
+
+New Features
+^^^^^^^^^^^^
+* ``clisops.ops.average.average_time`` and ``clisops.core.average.average_time`` added (#211). Allowing averaging over time frequencies of day, month and year.
+* New function ``create_time_bounds`` in  ``clisops.utils.time_utils``, to generate time bounds for temporally averaged datasets.
+
+* ``clisops`` now uses the `loguru <https://loguru.readthedocs.io/en/stable/index.html>`_ library as its primary logging engine (#216).
+  The mechanism for enabling log reporting in scripts/notebooks using ``loguru`` is as follows:
+
+.. code-block:: python
+
+    import sys
+    from loguru import logger
+
+    logger.activate("clisops")
+    LEVEL = "INFO || DEBUG || WARNING || etc."
+    logger.add(sys.stdout, level=LEVEL)  # for logging to stdout
+    # or
+    logger.add("my_log_file.log", level=LEVEL, enqueue=True)  # for logging to a file
+
+Other Changes
+^^^^^^^^^^^^^
+* Pandas now pinned below version 1.4.0.
+* Pre-commit configuration updated with code style conventions (black, pyupgrade) set to Python3.7+ (#219).
+* ``loguru`` is now an install dependency, with ``pytest-loguru`` as a development-only dependency.
+* Added function to convert the longitude axis between different longitude frames (eg. [-180, 180] and [0, 360]) (#217, #218).
+
 v0.8.0 (2022-01-13)
 -------------------
 
 New Features
 ^^^^^^^^^^^^
 * ``clisops.core.average.average_shape`` copies the global and variable attributes from the input data to the results.
+* ``clisops.ops.average.average_time`` and ``clisops.core.average.average_time`` added. Allowing averaging over time frequencies of day, month and year.
+* New function ``create_time_bounds`` in  ``clisops.utils.time_utils``, to generate time bounds for temporally averaged datasets.
 
 Bug fixes
 ^^^^^^^^^
@@ -20,7 +71,6 @@ Other Changes
 * Minimum xesmf version set to 0.6.2.
 * Minimum pygeos version set to 0.9.
 * Replace ``cascaded_union`` by ``unary_union`` to anticipate a `shapely` deprecation.
-
 
 v0.7.0 (2021-10-26)
 -------------------
@@ -42,7 +92,6 @@ New Features
 Other Changes
 ^^^^^^^^^^^^^
 * Python 3.6 no longer tested in GitHub actions.
-
 
 v0.6.5 (2021-06-10)
 -------------------
@@ -87,7 +136,6 @@ Other Changes
 ^^^^^^^^^^^^^
 * Error message improved to include longitude bounds of the dataset when the bounds requested in ``ops.subset.subset`` are not within range and rolling could not be completed.
 
-
 v0.6.2 (2021-03-22)
 -------------------
 
@@ -103,17 +151,18 @@ New Features
 
 v0.6.1 (2021-02-23)
 -------------------
+
 Bug Fixes
 ^^^^^^^^^
 * Add ``cf-xarray`` as dependency. This is a dependency of ``roocs-utils``>=0.2.1 so is not a breaking change.
 * Remove ``python-dateutil``, ``fiona`` and ``geojson`` as dependencies, no longer needed.
 
-
 v0.6.0 (2021-02-22)
 -------------------
+
 Breaking Changes
 ^^^^^^^^^^^^^^^^
-* New dev dependency: ``GitPython``==3.1.12
+* New dev dependency: ``GitPython``\ ==3.1.12
 * ``roocs-utils``>=0.2.1 required.
 
 New Features
@@ -138,7 +187,6 @@ Other Changes
 * Added functionality to ``core.subset.create_mask`` so it can accept ``GeoDataFrames`` with non-integer indexes.
 * ``clisops.utils.file_namers`` adjusted to allow values to be overwritten and extras to be added to the end before the file extension.
 
-
 v0.5.1 (2021-01-11)
 -------------------
 
@@ -154,7 +202,7 @@ Other Changes
 
 
 v0.5.0 (2020-12-17)
-------------------
+-------------------
 
 Breaking Changes
 ^^^^^^^^^^^^^^^^
@@ -171,7 +219,7 @@ Other Changes
 
 
 v0.4.0 (2020-11-10)
------------------
+-------------------
 
 Adding new features, updating doc strings and documentation and inclusion of static type support.
 
@@ -207,7 +255,6 @@ Bug Fixes
 * Nudging time values to nearest available in dataset to fix a bug where subsetting failed when the exact date
   did not exist in the dataset.
 
-
 Other Changes
 ^^^^^^^^^^^^^
 
@@ -218,7 +265,6 @@ Other Changes
 * md files changed to rst.
 * tests now use ``mini-esgf-data`` by default.
 
-
 v0.3.1 (2020-08-04)
 -------------------
 
@@ -226,9 +272,8 @@ Other Changes
 ^^^^^^^^^^^^^
 * Add missing ``rtree`` dependency to ensure correct spatial indexing.
 
-
 v0.3.0 (2020-07-23)
-------------------
+-------------------
 
 Other Changes
 ^^^^^^^^^^^^^
@@ -244,7 +289,7 @@ Other Changes
 
 
 v0.2.0 (2020-06-19)
-------------------
+-------------------
 
 New Features
 ^^^^^^^^^^^^^
@@ -260,6 +305,6 @@ Other Changes
 
 
 v0.1.0 (2020-04-22)
-------------------
+-------------------
 
 * First release.

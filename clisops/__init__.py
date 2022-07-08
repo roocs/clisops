@@ -1,21 +1,35 @@
-# -*- coding: utf-8 -*-
 """Top-level package for clisops."""
-
-import logging.config
 import os
+import warnings
 
+from loguru import logger
 from roocs_utils.config import get_config
 
-import clisops
-
 from .__version__ import __author__, __email__, __version__
+from .utils.common import enable_logging
 
-logging.config.fileConfig(
-    os.path.join(os.path.dirname(__file__), "etc", "logging.conf"),
-    disable_existing_loggers=False,
-)
-CONFIG = get_config(clisops)
 
+def showwarning(message, *args, **kwargs):
+    """Inject warnings from `warnings.warn` into `loguru`."""
+    logger.warning(message)
+    showwarning_(message, *args, **kwargs)
+
+
+showwarning_ = warnings.showwarning
+warnings.showwarning = showwarning
+
+# Disable logging for clisops and remove the logger that is instantiated on import
+logger.disable("clisops")
+logger.remove()
+
+
+# Workaround for roocs_utils to not re-import clisops
+class Package:
+    __file__ = __file__  # noqa
+
+
+package = Package()
+CONFIG = get_config(package)
 
 # Set the memory limit for each dask chunk
 chunk_memory_limit = CONFIG["clisops:read"].get("chunk_memory_limit", None)

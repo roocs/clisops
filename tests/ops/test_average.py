@@ -8,9 +8,9 @@ from roocs_utils.exceptions import InvalidParameterValue
 
 import clisops
 from clisops import CONFIG
-from clisops.ops.average import average_over_dims
+from clisops.ops.average import average_over_dims, average_time
 
-from .._common import CMIP5_TAS
+from .._common import C3S_CORDEX_EUR_ZG500, CMIP5_TAS, CMIP6_SICONC_DAY
 
 
 def _check_output_nc(result, fname="output_001.nc"):
@@ -18,7 +18,7 @@ def _check_output_nc(result, fname="output_001.nc"):
 
 
 def _load_ds(fpath):
-    return xr.open_mfdataset(fpath)
+    return xr.open_mfdataset(fpath, use_cftime=True)
 
 
 def test_average_basic_data_array(cmip5_tas_file):
@@ -217,3 +217,139 @@ def test_aux_variables():
     )
 
     assert "do_i_get_written" in result[0].variables
+
+
+def test_average_over_years():
+    ds = _load_ds(CMIP5_TAS)  # monthly dataset
+
+    # check initial dataset
+    assert ds.time.shape == (3530,)
+    assert ds.time.values[0].isoformat() == "2005-12-16T00:00:00"
+    assert ds.time.values[-1].isoformat() == "2299-12-16T00:00:00"
+
+    result = average_time(
+        CMIP5_TAS,
+        freq="year",
+        output_type="xarray",
+    )
+
+    time_length = ds.time.values[-1].year - ds.time.values[0].year + 1
+    assert result[0].time.shape == (time_length,)  # get number of years
+    assert result[0].time.values[0].isoformat() == "2005-01-01T00:00:00"
+    assert result[0].time.values[-1].isoformat() == "2299-01-01T00:00:00"
+
+    # test time bounds
+    assert [t.isoformat() for t in result[0].time_bnds.values[0]] == [
+        "2005-01-01T00:00:00",
+        "2005-12-30T00:00:00",
+    ]
+    assert [t.isoformat() for t in result[0].time_bnds.values[-1]] == [
+        "2299-01-01T00:00:00",
+        "2299-12-30T00:00:00",
+    ]
+
+
+def test_average_over_months():
+    ds = _load_ds(CMIP6_SICONC_DAY)  # monthly dataset
+
+    # check initial dataset
+    assert ds.time.shape == (60225,)
+    assert ds.time.values[0].isoformat() == "1850-01-01T12:00:00"
+    assert ds.time.values[-1].isoformat() == "2014-12-31T12:00:00"
+
+    # average over time
+    result = average_time(
+        CMIP6_SICONC_DAY,
+        freq="month",
+        output_type="xarray",
+    )
+
+    time_length = (
+        ds.time.values[-1].year - ds.time.values[0].year + 1
+    ) * 12  # get number of months
+
+    assert result[0].time.shape == (time_length,)
+    assert result[0].time.values[0].isoformat() == "1850-01-01T00:00:00"
+    assert result[0].time.values[-1].isoformat() == "2014-12-01T00:00:00"
+
+    # test time bounds
+    assert [t.isoformat() for t in result[0].time_bnds.values[0]] == [
+        "1850-01-01T00:00:00",
+        "1850-01-31T00:00:00",
+    ]
+    assert [t.isoformat() for t in result[0].time_bnds.values[-1]] == [
+        "2014-12-01T00:00:00",
+        "2014-12-31T00:00:00",
+    ]
+
+
+def test_average_time_no_freq():
+    with pytest.raises(InvalidParameterValue) as exc:
+        # average over time
+        average_time(
+            CMIP6_SICONC_DAY,
+            freq=None,
+            output_type="xarray",
+        )
+    assert str(exc.value) == "At least one frequency for averaging must be provided"
+
+
+def test_average_time_incorrect_freq():
+    with pytest.raises(InvalidParameterValue) as exc:
+        # average over time
+        average_time(
+            CMIP6_SICONC_DAY,
+            freq="week",
+            output_type="xarray",
+        )
+    assert (
+        str(exc.value)
+        == "Time frequency for averaging must be one of ['day', 'month', 'year']."
+    )
+
+
+def test_average_time_file_name(tmpdir):
+    result = average_time(
+        CMIP5_TAS,
+        freq="year",
+        output_type="nc",
+        output_dir=tmpdir,
+    )
+
+    _check_output_nc(
+        result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_20050101-22990101_avg-year.nc"
+    )
+
+
+def test_average_time_cordex():
+    ds = _load_ds(C3S_CORDEX_EUR_ZG500)
+
+    # check initial dataset
+    assert ds.time.shape == (3653,)
+    assert ds.time.values[0].isoformat() == "2071-01-01T12:00:00"
+    assert ds.time.values[-1].isoformat() == "2080-12-31T12:00:00"
+
+    # average over time
+    result = average_time(
+        C3S_CORDEX_EUR_ZG500,
+        freq="month",
+        output_type="xarray",
+    )
+
+    time_length = (
+        ds.time.values[-1].year - ds.time.values[0].year + 1
+    ) * 12  # get number of months
+
+    assert result[0].time.shape == (time_length,)
+    assert result[0].time.values[0].isoformat() == "2071-01-01T00:00:00"
+    assert result[0].time.values[-1].isoformat() == "2080-12-01T00:00:00"
+
+    # test time bounds
+    assert [t.isoformat() for t in result[0].time_bnds.values[0]] == [
+        "2071-01-01T00:00:00",
+        "2071-01-31T00:00:00",
+    ]
+    assert [t.isoformat() for t in result[0].time_bnds.values[-1]] == [
+        "2080-12-01T00:00:00",
+        "2080-12-31T00:00:00",
+    ]

@@ -2,8 +2,8 @@ from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import xarray as xr
+from loguru import logger
 
-from clisops import logging
 from clisops.core import Grid, Weights
 from clisops.core import regrid as core_regrid
 from clisops.ops.base_operation import Operation
@@ -13,8 +13,6 @@ from clisops.utils.output_utils import get_output, get_time_slices
 __all__ = [
     "regrid",
 ]
-
-LOGGER = logging.getLogger(__file__)
 
 supported_regridding_methods = ["conservative", "patch", "nearest_s2d", "bilinear"]
 
@@ -62,7 +60,7 @@ class Regrid(Operation):
                 "Please choose one of %s." % ", ".join(supported_regridding_methods)
             )
 
-        LOGGER.debug(
+        logger.debug(
             f"Input parameters: method: {method}, grid: {grid}, adaptive_masking: {adaptive_masking_threshold}"
         )
 
@@ -87,7 +85,7 @@ class Regrid(Operation):
         #  which specifies a default filename (which has but not much to do with the filename we would give the weight file).
         # Better option might be to have the Weights class extend the Regridder class or to define
         #  a __str__() method for the Weights class.
-        LOGGER.debug(
+        logger.debug(
             "Resolved parameters: grid_in: {}, grid_out: {}, regridder: {}".format(
                 self.params.get("grid_in").__str__(),
                 self.params.get("grid_out").__str__(),
