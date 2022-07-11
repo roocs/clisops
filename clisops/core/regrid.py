@@ -1841,10 +1841,10 @@ def regrid(
     weights : Weights
         Weights object, as created by using grid_in and grid_out Grid objects as input.
     adaptive_masking_threshold : float, optional
-        (AMT) A value within the [0., 1.] interval that defines the maximum `RATIO` of missing_values amongst the total 
+        (AMT) A value within the [0., 1.] interval that defines the maximum `RATIO` of missing_values amongst the total
         number of data values contributing to the calculation of the target grid cell value. For a fraction [0., AMT[
         of the contributing source data missing, the target grid cell will be set to missing_value, else, it will be
-        renormalized by the factor `1./(1.-RATIO)`. Thus, if AMT is set to 1, all source grid cells that contribute to a 
+        renormalized by the factor `1./(1.-RATIO)`. Thus, if AMT is set to 1, all source grid cells that contribute to a
         target grid cell must be missing in order for the target grid cell to be defined as missing itself. Values greater
         than 1 or less than 0 will cause adaptive masking to be turned off. This adaptive masking technique allows to reuse
         generated weights for differently masked data (eg. land-sea masks or orographic masks that vary with depth / height).
