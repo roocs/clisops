@@ -30,8 +30,8 @@ dependencies:
 - ipython_genutils
 - ipykernel
 - jupyter_client
-- matplotlib
-- cartopy
+- matplotlib=3.4.3
+- cartopy=0.20.2
 - GitPython
 - pip:
     - psy-maps
