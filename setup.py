@@ -23,6 +23,8 @@ setup_requirements = ["pytest-runner"]
 
 test_requirements = ["pytest", "tox"]
 
+# Mind that this has higher priority than the environment.yml
+#  in terms of any set version limits
 docs_requirements = [
     "sphinx",
     "sphinx-rtd-theme",
