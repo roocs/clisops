@@ -21,7 +21,7 @@ dependencies:
 - requests>=2.0
 - roocs-utils>=0.6.2,<0.7
 - shapely>=1.6
-- xarray>=0.15
+- xarray>=0.15,<2022.6.0
 - xesmf>=0.6.3
 - sphinx
 - nbsphinx
