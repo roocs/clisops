@@ -186,14 +186,14 @@ def test_detect_shape_regular():
     assert ncells == nlat * nlon
 
 
-def test_detect_shape_irregular():
-    "Test detect_shape function for an irregular grid"
+def test_detect_shape_unstructured():
+    "Test detect_shape function for an unstructured grid"
     # Load dataset
     ds = xr.open_dataset(CMIP6_UNSTR_ICON_A, use_cftime=True)
 
     # Detect shape
     nlat, nlon, ncells = clidu.detect_shape(
-        ds, lat="latitude", lon="longitude", grid_type="irregular"
+        ds, lat="latitude", lon="longitude", grid_type="unstructured"
     )
 
     # Assertion

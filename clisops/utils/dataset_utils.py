@@ -410,28 +410,15 @@ def add_hor_CF_coord_attrs(
         "standard_name": "longitude",
         "axis": "X",
     }
-    # todo: Should at all attributes for the bounds be defined?
-    lat_bnds_attrs = {
-        "long_name": "latitude_bounds",
-        "units": "degrees_north",
-    }
-    lon_bnds_attrs = {
-        "long_name": "longitude_bounds",
-        "units": "degrees_east",
-    }
 
     # Overwrite or update coordinate variables of input dataset
     try:
         if keep_attrs:
             ds[lat].attrs.update(lat_attrs)
             ds[lon].attrs.update(lon_attrs)
-            ds[lat_bnds].attrs.update(lat_bnds_attrs)
-            ds[lon_bnds].attrs.update(lon_bnds_attrs)
         else:
             ds[lat].attrs = lat_attrs
             ds[lon].attrs = lon_attrs
-            ds[lat_bnds].attrs = lat_bnds_attrs
-            ds[lon_bnds].attrs = lon_bnds_attrs
     except KeyError:
         raise KeyError("Not all specified coordinate variables exist in the dataset.")
 
@@ -688,7 +675,7 @@ def detect_shape(ds, lat, lon, grid_type):
     """
     Detect the shape of the grid.
 
-    Returns a tuple of (nlat, nlon, ncells). For an irregular grid nlat and nlon are not defined
+    Returns a tuple of (nlat, nlon, ncells). For an unstructured grid nlat and nlon are not defined
     and therefore the returned tuple will be (ncells, ncells, ncells).
 
     Parameters
@@ -700,7 +687,7 @@ def detect_shape(ds, lat, lon, grid_type):
     lon : str
         Longitude variable name.
     grid_type: str
-        One of "regular_lat_lon", "curvilinear", "irregular"
+        One of "regular_lat_lon", "curvilinear", "unstructured"
 
     Returns
     -------
@@ -711,7 +698,7 @@ def detect_shape(ds, lat, lon, grid_type):
     ncells : int
         Number of cells in the grid.
     """
-    if grid_type not in ["regular_lat_lon", "curvilinear", "irregular"]:
+    if grid_type not in ["regular_lat_lon", "curvilinear", "unstructured"]:
         raise Exception(f"The specified grid_type '{grid_type}' is not supported.")
 
     if ds[lon].ndim != ds[lon].ndim:
@@ -723,7 +710,7 @@ def detect_shape(ds, lat, lon, grid_type):
         nlon = ds[lon].shape[1]
         ncells = nlat * nlon
     elif ds[lat].ndim == 1:
-        if ds[lat].shape == ds[lon].shape and grid_type == "irregular":
+        if ds[lat].shape == ds[lon].shape and grid_type == "unstructured":
             nlat = ds[lat].shape[0]
             nlon = nlat
             ncells = nlat

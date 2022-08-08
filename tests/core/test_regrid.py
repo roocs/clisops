@@ -46,7 +46,7 @@ except ImportError:
 
 
 # test from grid_id --predetermined
-# test different types of grid e.g. irregular, not supported type
+# test different types of grid e.g. unstructured, not supported type
 # test for errors e.g.
 # no lat/lon in dataset
 # more than one latitude/longitude
@@ -116,7 +116,7 @@ def test_grid_init_ds_tos_curvilinear(load_esgf_test_data):
     # assert self.mask
 
 
-def test_grid_init_ds_tas_irregular(load_esgf_test_data):
+def test_grid_init_ds_tas_unstructured(load_esgf_test_data):
     ds = xr.open_dataset(CMIP6_UNSTR_ICON_A, use_cftime=True)
     grid = Grid(ds=ds)
 
@@ -124,7 +124,7 @@ def test_grid_init_ds_tas_irregular(load_esgf_test_data):
     assert grid.source == "Dataset"
     assert grid.lat == ds.latitude.name
     assert grid.lon == ds.longitude.name
-    assert grid.type == "irregular"
+    assert grid.type == "unstructured"
     assert grid.extent == "global"
     assert grid.lat_bnds == "latitude_bnds"
     assert grid.lon_bnds == "longitude_bnds"

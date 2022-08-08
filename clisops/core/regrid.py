@@ -110,7 +110,7 @@ def weights_cache_flush(
     weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
 
     if dryrun:
-        print(f"Flushing the clisops weights cache ('{weights_dir}')would remove:")
+        print(f"Flushing the clisops weights cache ('{weights_dir}') would remove:")
     elif verbose:
         print(f"Flushing the clisops weights cache ('{weights_dir}'). Removing ...")
 
@@ -272,7 +272,7 @@ class Grid:
 
     def __str__(self):
         """Return short string representation of a Grid object."""
-        if self.type == "irregular":
+        if self.type == "unstructured":
             grid_str = str(self.ncells) + "_cells_grid"
         else:
             grid_str = str(self.nlat) + "x" + str(self.nlon) + "_cells_grid"
@@ -284,7 +284,7 @@ class Grid:
             f"clisops {self.__str__()}\n"
             + (
                 f"Lat x Lon:        {self.nlat} x {self.nlon}\n"
-                if self.type != "irregular"
+                if self.type != "unstructured"
                 else ""
             )
             + f"Gridcells:        {self.ncells}\n"
@@ -312,7 +312,7 @@ class Grid:
                 if "land-sea mask" not in ga
             )
         else:
-            if self.type != "irregular":
+            if self.type != "unstructured":
                 return f"{self.extent} {self.type} {self.nlat}x{self.nlon} ({self.ncells} cells) grid."
             else:
                 return f"{self.extent} {self.type} {self.ncells} cells grid."
@@ -387,10 +387,10 @@ class Grid:
             xfirst = float(grid_tmp.ds[grid_tmp.lon].min())
             xlast = float(grid_tmp.ds[grid_tmp.lon].max())
 
-        # For irregular grids:
+        # For unstructured grids:
         #    Distribute the number of grid cells to nlat and nlon, in proportion
         #    to extent in meridional and zonal direction
-        if grid_tmp.type == "irregular":
+        if grid_tmp.type == "unstructured":
             xsize = int(
                 sqrt(abs(xlast - xfirst) / abs(ylast - yfirst) * grid_tmp.ncells)
             )
@@ -468,7 +468,7 @@ class Grid:
         #    cell center of unstaggered grid
         # c) Flux direction seems to be important for the rotation (see cdo mrotuvb), how to infer that?
         # d) Grids staggered in vertical direction, w-component? Is that important at all for
-        #    horizontal regridding, maybe only for 3D-irregular grids?
+        #    horizontal regridding, maybe only for 3D-unstructured grids?
         # All in all a quite impossible task to automatise this process.
         pass
 
@@ -500,7 +500,7 @@ class Grid:
 
         # Create array of (ilat, ilon) tuples
         if self.ds[self.lon].ndim == 2 or (
-            self.ds[self.lon].ndim == 1 and self.type == "irregular"
+            self.ds[self.lon].ndim == 1 and self.type == "unstructured"
         ):
             latlon_halo = np.array(
                 list(
@@ -559,8 +559,8 @@ class Grid:
                     % (len(dup_rows), ", ".join([str(i) for i in dup_rows]))
                 )
             return
-        # For 1D irregular - find duplicates - remove them using xarray.Dataset.isel
-        elif self.type == "irregular" and self.ds[self.lon].ndim == 1:
+        # For 1D unstructured - find duplicates - remove them using xarray.Dataset.isel
+        elif self.type == "unstructured" and self.ds[self.lon].ndim == 1:
             mask_duplicates = self._create_duplicate_mask(latlon_halo)
             dup_cells = np.where(mask_duplicates is True)[0]
             if dup_cells.size > 0:
@@ -578,7 +578,7 @@ class Grid:
                 warnings.warn(
                     "The selected dataset contains duplicate grid cells. "
                     "The following %i duplicated cells will be removed: %s"
-                    % (len(dup_cells), self._list_ten(dup_cells))
+                    % (len(dup_cells), _list_ten(dup_cells))
                 )
             return
         # For 2D coordinate variables - find duplicates - remove them using xarray.Dataset.isel
@@ -658,20 +658,6 @@ class Grid:
         mask_duplicates = np.where(mask, False, True).reshape(arr.shape)
         return mask_duplicates
 
-    def _list_ten(self, list1d):
-        """
-        List up to 10 list elements equally distributed to beginning and end of list.
-        Helper function.
-        """
-        if len(list1d) < 11:
-            return ", ".join(str(i) for i in list1d)
-        else:
-            return (
-                ", ".join(str(i) for i in list1d[0:5])
-                + " ... "
-                + ", ".join(str(i) for i in list1d[-5:])
-            )
-
     def detect_format(self):
         """
         Detect format of a dataset. Yet supported are 'CF', 'SCRIP', 'xESMF'.
@@ -685,7 +671,7 @@ class Grid:
 
     def detect_type(self):
         """
-        Detect type of the grid as one of "regular_lat_lon", "curvilinear", "irregular".
+        Detect type of the grid as one of "regular_lat_lon", "curvilinear", "unstructured".
 
         Else will issue an Exception if grid type is not supported.
 
@@ -694,7 +680,7 @@ class Grid:
         str
             The detected grid type.
         """
-        # todo: Extend for other formats for regular_lat_lon, curvilinear / rotated_pole, irregular
+        # todo: Extend for other formats for regular_lat_lon, curvilinear / rotated_pole, unstructured
 
         if self.format == "CF":
 
@@ -705,7 +691,7 @@ class Grid:
                 # if lat_1D in ds[var].dims and lon_1D in ds[var].dims:
                 if not self.lat_bnds or not self.lon_bnds:
                     if lat_1D == lon_1D:
-                        return "irregular"
+                        return "unstructured"
                     else:
                         return "regular_lat_lon"
                 else:
@@ -727,7 +713,7 @@ class Grid:
                             ]
                         )
                     ):
-                        return "irregular"
+                        return "unstructured"
                     elif all(
                         [
                             self.ds[bnds].ndim == 2
@@ -820,7 +806,7 @@ class Grid:
             yinc = (ylast - yfirst) / (ysize - 1)
             approx_res = (xinc + yinc) / 2.0
         elif self.ds[self.lon].ndim == 1:
-            if self.type == "irregular":
+            if self.type == "unstructured":
                 # Distribute the number of grid cells to nlat and nlon,
                 # in proportion to extent in zonal and meridional direction
                 # todo: Alternatively one can use the kdtree method to calculate the approx. resolution
@@ -906,7 +892,7 @@ class Grid:
         """
         Detect the shape of the grid.
 
-        Returns a tuple of (nlat, nlon, ncells). For an irregular grid nlat and nlon are not defined
+        Returns a tuple of (nlat, nlon, ncells). For an unstructured grid nlat and nlon are not defined
         and therefore the returned tuple will be (ncells, ncells, ncells).
 
         Returns
@@ -1187,7 +1173,6 @@ class Grid:
         for coord in to_transfer:
             if coord not in to_skip:
                 coord_dict.update({coord: source_grid.ds[coord]})
-
         if not keep_attrs:
             self.ds.attrs = {}
         elif keep_attrs == "target":
@@ -1247,7 +1232,7 @@ class Grid:
                 elif self.ds[var].ndim == 0 and var in coordinates_attr:
                     to_coord.append(var)
                     continue
-                elif self.type == "irregular":
+                elif self.type == "unstructured":
                     if (
                         len(self.ds[var].shape) > 0
                         and (self.ds[var].shape[-1],) != self.ds[self.lat].shape
@@ -1274,7 +1259,7 @@ class Grid:
                     continue
                 elif self.ds[var].ndim == 0 and var not in coordinates_attr:
                     to_datavar.append(var)
-                elif self.type == "irregular":
+                elif self.type == "unstructured":
                     if len(self.ds[var].shape) > 0 and (
                         self.ds[var].shape[-1] == self.ncells
                         and self.ds[var].dims[-1] in self.ds[self.lat].dims
@@ -1596,9 +1581,9 @@ class Weights:
         #  Yet, the locstream functionality only supports the nearest neighbour remapping method
         locstream_in = False
         locstream_out = False
-        if self.grid_in.type == "irregular":
+        if self.grid_in.type == "unstructured":
             locstream_in = True
-        if self.grid_out.type == "irregular":
+        if self.grid_out.type == "unstructured":
             locstream_out = True
 
         # Read weights from cache (= reuse weights) if they are not currently written
@@ -1792,10 +1777,6 @@ class Weights:
                     )
                     return None
         else:
-            warnings.warn(
-                f"Requested info '{key}' could not be retrieved from remapping cache."
-                " A cached file does not exist."
-            )
             return None
 
     def save_to_disk(self, filename=None, wformat="xESMF"):
@@ -1886,21 +1867,6 @@ def regrid(
         grid_out._drop_vars(keep_attrs=True)
     else:
         grid_out._drop_vars(keep_attrs=False)
-    # Transfer all non-horizontal coords (and optionally attrs) from grid_out.ds to grid_in.ds
-    grid_out._transfer_coords(grid_in, keep_attrs=keep_attrs)
-    regridded_ds = grid_out.ds
-
-    # Add new attrs
-    regridded_ds.attrs.update(attrs_append)
-    regridded_ds.attrs.update(
-        {
-            "grid": grid_out.title,
-            "grid_label": "gr",  # regridded data reported on the data provider's preferred target grid
-            "regrid_operation": weights.regridder.filename.split(".")[0],
-            "regrid_tool": weights.tool,
-            "regrid_weights_uid": weights.id,
-        }
-    )
 
     # todo: It might in general be sufficient to always act as if the threshold was
     #  set correctly and let xesmf handle it. But then we might not allow it for
@@ -1924,29 +1890,45 @@ def regrid(
                 and adaptive_masking_threshold >= 0.0
                 and adaptive_masking_threshold <= 1.0
             ):
-                regridded_ds[data_var] = weights.regridder(
+                grid_out.ds[data_var] = weights.regridder(
                     grid_in.ds[data_var],
                     skipna=True,
                     na_thres=adaptive_masking_threshold,
                 )
             else:
-                regridded_ds[data_var] = weights.regridder(
+                grid_out.ds[data_var] = weights.regridder(
                     grid_in.ds[data_var], skipna=False
                 )
             if keep_attrs:
-                regridded_ds[data_var].attrs.update(grid_in.ds[data_var].attrs)
-        return regridded_ds
+                grid_out.ds[data_var].attrs.update(grid_in.ds[data_var].attrs)
+                grid_out.ds[data_var].encoding.update(grid_in.ds[data_var].encoding)
     else:
         if (
             weights.regridder.method in ["conservative", "conservative_normed", "patch"]
             and adaptive_masking_threshold >= 0.0
             and adaptive_masking_threshold <= 1.0
         ):
-            regridded_ds[grid_in.ds.name] = weights.regridder(
+            grid_out.ds[grid_in.ds.name] = weights.regridder(
                 grid_in.ds, skipna=True, na_thres=adaptive_masking_threshold
             )
         else:
-            regridded_ds[grid_in.ds.name] = weights.regridder(grid_in.ds, skipna=False)
+            grid_out.ds[grid_in.ds.name] = weights.regridder(grid_in.ds, skipna=False)
         if keep_attrs:
-            regridded_ds[data_var].attrs.update(grid_in.ds[data_var].attrs)
-        return regridded_ds  # [grid_in.ds.name] #-> in case of returning a DataArray
+            grid_out.ds[data_var].attrs.update(grid_in.ds[data_var].attrs)
+            grid_out.ds[data_var].encoding.update(grid_in.ds[data_var].encoding)
+
+    # Transfer all non-horizontal coords (and optionally attrs) from grid_out.ds to grid_in.ds
+    grid_out._transfer_coords(grid_in, keep_attrs=keep_attrs)
+
+    # Add new attrs
+    grid_out.ds.attrs.update(attrs_append)
+    grid_out.ds.attrs.update(
+        {
+            "grid": grid_out.title,
+            "grid_label": "gr",  # regridded data reported on the data provider's preferred target grid
+            "regrid_operation": weights.regridder.filename.split(".")[0],
+            "regrid_tool": weights.tool,
+            "regrid_weights_uid": weights.id,
+        }
+    )
+    return grid_out.ds
