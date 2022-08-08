@@ -23,6 +23,8 @@ setup_requirements = ["pytest-runner"]
 
 test_requirements = ["pytest", "tox"]
 
+# Mind that this has higher priority than the environment.yml
+#  in terms of any set version limits
 docs_requirements = [
     "sphinx",
     "sphinx-rtd-theme",
@@ -35,7 +37,7 @@ docs_requirements = [
     "matplotlib",
 ]
 
-extra_requirements = ["xesmf>=0.6.2", "pygeos>=0.9"]
+extra_requirements = ["xesmf>=0.6.3", "pygeos>=0.9"]
 
 setup(
     version=about["__version__"],

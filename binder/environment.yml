@@ -1,5 +1,4 @@
-# conda env create -f environment.yml
-name: clisops-docs
+name: clisops
 channels:
 - conda-forge
 - defaults
@@ -23,18 +22,12 @@ dependencies:
 - shapely>=1.6
 - xarray>=0.15,<2022.6.0
 - xesmf>=0.6.3
-- sphinx
-- nbsphinx
-- ipython
-- pandoc
-- ipython_genutils
-- ipykernel
-- jupyter_client
+- jupyterlab
 - matplotlib>=3.5.2
 - cartopy>=0.20.2
 - GitPython
 - pip:
     - psy-maps
-    - sphinx-rtd-theme
+    - clisops @ git+https://github.com/roocs/clisops/@regrid-main-martin#egg=clisops
 #    - cf-xarray @ git+https://github.com/xarray-contrib/cf-xarray/@main#egg=cf-xarray
 #    - roocs-utils @ git+https://github.com/roocs/roocs-utils.git@master#egg=roocs-utils

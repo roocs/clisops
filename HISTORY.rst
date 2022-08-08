@@ -4,6 +4,11 @@ Version History
 v0.9.2 (unreleased)
 -------------------
 
+New Features
+^^^^^^^^^^^^
+* ``clisops.ops.regrid``, ``clisops.core.regrid``, ``clisops.core.Weights`` and ``clisops.core.Grid`` added (#TBA). Allowing the remapping of geospatial data on various grids by applying the `xESMF <https://pangeo-xesmf.readthedocs.io/en/latest/>`_ regridder.
+
+
 Breaking Changes
 ^^^^^^^^^^^^^^^^
 * Support has been dropped for Python3.7 and extended to Python3.10. Python3.7 is no longer tested in GitHub actions.

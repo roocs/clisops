@@ -76,6 +76,7 @@ jobs:
             mamba env create -f environment.yml
             source activate clisops
             pip install -e ".[dev]"
+#            pip install --upgrade git+https://github.com/pangeo-data/xESMF.git
       - name: Test with conda
         run: |
             source activate clisops
