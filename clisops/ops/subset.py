@@ -213,7 +213,7 @@ def subset(
     --------
     | ds: xarray Dataset or "cmip5.output1.MOHC.HadGEM2-ES.rcp85.mon.atmos.Amon.r1i1p1.latest.tas"
     | time: ("1999-01-01T00:00:00", "2100-12-30T00:00:00") or "2085-01-01T12:00:00Z/2120-12-30T12:00:00Z"
-    | area: (-5.,49.,10.,65) or "0.,49.,10.,65" or [0, 49.5, 10, 65]
+    | area: (-5.,49.,10.,65) or "0.,49.,10.,65" or [0, 49.5, 10, 65] with the order being lon_0, lat_0, lon_1, lat_1
     | level: (1000.,) or "1000/2000" or ("1000.50", "2000.60")
     | time_components: "year:2000,2004,2008|month:01,02" or {"year": (2000, 2004, 2008),
     |                                                        "months": (1, 2)}

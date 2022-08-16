@@ -10,6 +10,7 @@ from clisops.ops.regrid import regrid
 
 from .._common import (
     CMIP5_MRSOS_ONE_TIME_STEP,
+    CMIP6_ATM_VERT_ONE_TIMESTEP,
     CMIP6_OCE_HALO_CNRM,
     CMIP6_TOS_ONE_TIME_STEP,
 )
@@ -237,3 +238,37 @@ def test_regrid_same_grid_exception(tmpdir, tmp_path):
             output_type="netcdf",
             file_namer="standard",
         )
+
+
+def test_regrid_cmip6_nc_consistent_bounds_and_coords(load_esgf_test_data, tmpdir):
+    """Tests clisops regrid function with a time subset and check metadata added by xarray"""
+    result = regrid(
+        ds=CMIP6_ATM_VERT_ONE_TIMESTEP,
+        method="nearest_s2d",
+        grid=10.0,
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="standard",
+    )
+    res = _load_ds(result)
+    # check fill value in bounds
+    assert "_FillValue" not in res.lat_bnds.encoding
+    assert "_FillValue" not in res.lon_bnds.encoding
+    assert "_FillValue" not in res.time_bnds.encoding
+    assert "_FillValue" not in res.lev_bnds.encoding
+    assert "_FillValue" not in res.ap_bnds.encoding
+    assert "_FillValue" not in res.b_bnds.encoding
+    # check fill value in coordinates
+    assert "_FillValue" not in res.time.encoding
+    assert "_FillValue" not in res.lat.encoding
+    assert "_FillValue" not in res.lon.encoding
+    assert "_FillValue" not in res.lev.encoding
+    assert "_FillValue" not in res.ap.encoding
+    assert "_FillValue" not in res.b.encoding
+    # check coordinates in bounds
+    assert "coordinates" not in res.lat_bnds.encoding
+    assert "coordinates" not in res.lon_bnds.encoding
+    assert "coordinates" not in res.time_bnds.encoding
+    # Check coordinates not in variable attributes
+    assert "coordinates" not in res.o3.encoding
+    assert "coordinates" not in res.ps.encoding

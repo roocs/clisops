@@ -1,3 +1,4 @@
+from collections import ChainMap
 from pathlib import Path
 
 import xarray as xr
@@ -69,28 +70,35 @@ class Operation:
 
     def _remove_redundant_fill_values(self, ds):
         """
-        Get coordinate variables and remove fill values added by xarray (CF conventions say that coordinate variables cannot have missing values).
-        Get bounds variables and remove fill values added by xarray.
+        Get coordinate and data variables and remove fill values added by xarray
+        (CF conventions say that coordinate variables cannot have missing values).
 
         See issue: https://github.com/roocs/clisops/issues/224
         """
         if isinstance(ds, xr.Dataset):
-            main_var = get_main_variable(ds)
-            for coord_id in ds[main_var].coords:
-                # remove fill value from coordinate variables
-                # if ds.coords[coord_id].dims == (coord_id,):
-                ds[coord_id].encoding["_FillValue"] = None
-                # remove fill value from bounds variables if they exist
-                try:
-                    bnd = ds.cf.get_bounds(coord_id).name
-                    ds[bnd].encoding["_FillValue"] = None
-                except KeyError:
-                    continue
+            varlist = list(ds.coords) + list(ds.data_vars)
+        elif isinstance(ds, xr.DataArray):
+            varlist = list(ds.coords)
+
+        for var in varlist:
+            fval = ChainMap(ds[var].attrs, ds[var].encoding).get("_FillValue", None)
+            mval = ChainMap(ds[var].attrs, ds[var].encoding).get("missing_value", None)
+            if not fval and not mval:
+                ds[var].encoding["_FillValue"] = None
+            elif not mval:
+                ds[var].encoding["missing_value"] = fval
+                ds[var].encoding["_FillValue"] = fval
+                ds[var].attrs.pop("_FillValue", None)
+            elif not fval:
+                ds[var].encoding["_FillValue"] = mval
+                ds[var].encoding["missing_value"] = mval
+                ds[var].attrs.pop("missing_value", None)
+
         return ds
 
-    def _remove_redundant_coordinates_from_bounds(self, ds):
+    def _remove_redundant_coordinates_attr(self, ds):
         """
-        This method removes redundant coordinates from bounds, example:
+        This method removes the coordinates attribute added by xarray, example:
 
             double time_bnds(time, bnds) ;
                 time_bnds:coordinates = "height" ;
@@ -102,13 +110,14 @@ class Operation:
         See issue: https://github.com/roocs/clisops/issues/224
         """
         if isinstance(ds, xr.Dataset):
-            main_var = get_main_variable(ds)
-            for coord_id in ds[main_var].coords:
-                try:
-                    bnd = ds.cf.get_bounds(coord_id).name
-                    ds[bnd].encoding["coordinates"] = None
-                except KeyError:
-                    continue
+            varlist = list(ds.coords) + list(ds.data_vars)
+        elif isinstance(ds, xr.DataArray):
+            varlist = list(ds.coords)
+
+        for var in varlist:
+            cattr = ChainMap(ds[var].attrs, ds[var].encoding).get("coordinates", None)
+            if not cattr:
+                ds[var].encoding["coordinates"] = None
         return ds
 
     def process(self):
@@ -134,7 +143,7 @@ class Operation:
         # remove fill values from lat/lon/time if required
         processed_ds = self._remove_redundant_fill_values(processed_ds)
         # remove redundant coordinates from bounds
-        processed_ds = self._remove_redundant_coordinates_from_bounds(processed_ds)
+        processed_ds = self._remove_redundant_coordinates_attr(processed_ds)
 
         # Work out how many outputs should be created based on the size
         # of the array. Manage this as a list of time slices.
