@@ -93,7 +93,11 @@ class Operation:
                 ds[var].encoding["_FillValue"] = mval
                 ds[var].encoding["missing_value"] = mval
                 ds[var].attrs.pop("missing_value", None)
-
+            else:
+                if fval != mval:
+                    raise Exception(
+                        f"The defined _FillValue and missing_value for '{var}' are not the same '{fval}' != '{mval}'."
+                    )
         return ds
 
     def _remove_redundant_coordinates_attr(self, ds):
@@ -118,6 +122,9 @@ class Operation:
             cattr = ChainMap(ds[var].attrs, ds[var].encoding).get("coordinates", None)
             if not cattr:
                 ds[var].encoding["coordinates"] = None
+            else:
+                ds[var].encoding["coordinates"] = cattr
+                ds[var].attrs.pop("coordinates", None)
         return ds
 
     def process(self):

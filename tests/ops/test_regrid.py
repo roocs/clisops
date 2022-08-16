@@ -241,7 +241,7 @@ def test_regrid_same_grid_exception(tmpdir, tmp_path):
 
 
 def test_regrid_cmip6_nc_consistent_bounds_and_coords(load_esgf_test_data, tmpdir):
-    """Tests clisops regrid function with a time subset and check metadata added by xarray"""
+    """Tests clisops regrid function and check metadata added by xarray"""
     result = regrid(
         ds=CMIP6_ATM_VERT_ONE_TIMESTEP,
         method="nearest_s2d",
@@ -269,6 +269,9 @@ def test_regrid_cmip6_nc_consistent_bounds_and_coords(load_esgf_test_data, tmpdi
     assert "coordinates" not in res.lat_bnds.encoding
     assert "coordinates" not in res.lon_bnds.encoding
     assert "coordinates" not in res.time_bnds.encoding
+    assert "coordinates" not in res.lev_bnds.encoding
+    assert "coordinates" not in res.ap_bnds.encoding
+    assert "coordinates" not in res.b_bnds.encoding
     # Check coordinates not in variable attributes
     assert "coordinates" not in res.o3.encoding
     assert "coordinates" not in res.ps.encoding
