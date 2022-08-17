@@ -8,6 +8,7 @@ dependencies:
 #- cf_xarray>0.7.4
 - cftime>=1.4.1
 - dask>=2.6.0
+- gdal<3.5
 - geopandas>=0.7
 - loguru>=0.5.3
 - netCDF4>=1.4
