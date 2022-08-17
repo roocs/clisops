@@ -240,6 +240,7 @@ def test_regrid_same_grid_exception(tmpdir, tmp_path):
         )
 
 
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_cmip6_nc_consistent_bounds_and_coords(load_esgf_test_data, tmpdir):
     """Tests clisops regrid function and check metadata added by xarray"""
     result = regrid(
