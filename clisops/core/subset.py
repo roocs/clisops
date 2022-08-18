@@ -10,6 +10,7 @@ import cf_xarray  # noqa
 import geopandas as gpd
 import numpy as np
 import xarray
+from packaging import version
 from pandas.api.types import is_integer_dtype  # noqa
 from pyproj import Geod
 from pyproj.crs import CRS
@@ -788,10 +789,19 @@ def shape_bbox_indexer(ds, poly):
     # Find indices nearest the rectangle' corners
     # Note that the nearest indices might be inside the shape, so we'll need to add a *halo* around those indices.
     if rectilinear:
-        native_ind, _ = xarray.core.coordinates.remap_label_indexers(
-            ds, ind, method="nearest"
-        )
-
+        if version.parse(xarray.__version__) < version.Version("2022.06.0"):
+            warnings.warn(
+                "CLISOPS will require xarray >= 2022.06 in the next major release. "
+                "Please update your environment dependencies.",
+                DeprecationWarning,
+            )
+            native_ind, _ = xarray.core.coordinates.remap_label_indexers(
+                ds, ind, method="nearest"
+            )
+        else:
+            native_ind = xarray.core.indexing.map_index_queries(
+                ds, ind, method="nearest"
+            ).indexers
     else:
         # For curvilinear grids, finding the closest points require a bit more work.
         # Note that this code is not exercised for now.
@@ -885,7 +895,7 @@ def create_weight_masks(
     )
 
     # Assign coords from ds_in, but only those with no unknown dims.
-    # Otherwise xarray rises an error.
+    # Otherwise, xarray rises an error.
     masks = masks.assign_coords(
         **{
             k: crd
