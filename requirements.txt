@@ -7,6 +7,7 @@ shapely>=1.6
 #gdal==3.4.1
 geopandas>=0.7
 dask[complete]>=2.6
+packaging
 pyproj>=2.5
 scipy>=1.5.4
 roocs-grids @ git+https://github.com/roocs/roocs-grids.git@main#egg=roocs-grids

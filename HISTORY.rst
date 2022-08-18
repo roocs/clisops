@@ -12,6 +12,11 @@ New Features
 Breaking Changes
 ^^^^^^^^^^^^^^^^
 * Support has been dropped for Python3.7 and extended to Python3.10. Python3.7 is no longer tested in GitHub actions.
+* ``packaging`` has been added as a dependency.
+
+Bug Fixes
+^^^^^^^^^
+* Adapted ``clisops.core.subset_bbox_indexer`` to the newest indexing API changes in xarray, with backwards compatibility.
 
 v0.9.1 (2022-05-12)
 -------------------
