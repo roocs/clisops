@@ -4,7 +4,7 @@ pandas>=1.0.3,<1.4
 cftime>=1.4.1
 netCDF4>=1.4
 shapely>=1.6
-gdal==3.4.1
+#gdal==3.4.1
 geopandas>=0.7
 dask[complete]>=2.6
 pyproj>=2.5
