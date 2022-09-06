@@ -1,17 +1,21 @@
 Version History
 ===============
 
-v0.9.2 (unreleased)
+v0.9.2 (2022-09-06)
 -------------------
 
 Breaking Changes
 ^^^^^^^^^^^^^^^^
-* Support has been dropped for Python3.7 and extended to Python3.10. Python3.7 is no longer tested in GitHub actions.
-* ``packaging`` has been added as a dependency.
+* Support has been dropped for Python3.7 and extended to Python3.10. Python3.7 is no longer tested in GitHub actions (#234).
+* ``packaging`` has been added as a dependency (#241).
 
 Bug Fixes
 ^^^^^^^^^
-* Adapted ``clisops.core.subset_bbox_indexer`` to the newest indexing API changes in xarray, with backwards compatibility.
+* Adapted ``clisops.core.subset_bbox_indexer`` to the newest indexing API changes in xarray, with backwards compatibility (#241).
+
+Other Changes
+^^^^^^^^^^^^^
+* Docstrings and documentation configuration adjustments have been made to ensure that builds are adequately tested (#232, #235).
 
 v0.9.1 (2022-05-12)
 -------------------
