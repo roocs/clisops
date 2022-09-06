@@ -25,13 +25,14 @@ from xarray.core.utils import get_temp_dimname
 from clisops.utils.dataset_utils import adjust_date_to_calendar
 
 try:
-    import pygeos
+    import pygeos  # noqa
 except ImportError:
     pygeos = None
 
 
 __all__ = [
     "create_mask",
+    "create_weight_masks",
     "distance",
     "subset_bbox",
     "subset_gridpoint",
@@ -516,7 +517,7 @@ def create_mask(
     >>> mask = create_mask(x_dim=ds.lon, y_dim=ds.lat, poly=polys)  # doctest: +SKIP
     >>> ds = ds.assign_coords(regions=mask)  # doctest: +SKIP
     ...
-    # Operations can be applied to each regions with  `groupby`. Ex:
+    # Operations can be applied to each region with `groupby`. Ex:
     >>> ds = ds.groupby('regions').mean()  # doctest: +SKIP
     ...
     # Extra step to retrieve the names of those polygons stored in another column (here "id")
@@ -557,8 +558,9 @@ def create_mask(
     else:
         geoms = poly.geometry.values
 
-    # do all geometries
-    # For the pygeos case, this is slightly slower than going directly 3D, but keeps memory usage to an acceptable level with large polygon collections.
+    # Do for all geometries
+    # For the pygeos case, this is slightly slower than going directly 3D,
+    # but keeps memory usage at an acceptable level with large polygon collections.
     mask = np.full(lat1.shape, np.nan)
     for val, geom in zip(poly.index[::-1], geoms[::-1]):
         if pygeos is not None:
@@ -858,7 +860,7 @@ def create_weight_masks(
     --------
     >>> import geopandas as gpd  # doctest: +SKIP
     >>> import xarray as xr  # doctest: +SKIP
-    >>> from clisops.core.subset import create_weight_mask  # doctest: +SKIP
+    >>> from clisops.core.subset import create_weight_masks  # doctest: +SKIP
     >>> ds = xr.open_dataset(path_to_tasmin_file)  # doctest: +SKIP
     >>> polys = gpd.read_file(path_to_multi_shape_file)  # doctest: +SKIP
     ...
