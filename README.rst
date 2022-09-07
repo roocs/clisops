@@ -4,7 +4,7 @@ clisops - climate simulation operations
 .. image:: https://img.shields.io/pypi/v/clisops.svg
    :target: https://pypi.python.org/pypi/clisops
    :alt: PyPI
-   
+
 .. image:: https://img.shields.io/conda/vn/conda-forge/clisops.svg
    :target: https://anaconda.org/conda-forge/clisops
    :alt: Conda Forge
