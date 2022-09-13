@@ -10,8 +10,6 @@ from clisops.core import average
 from clisops.ops.base_operation import Operation
 from clisops.utils.file_namers import get_file_namer
 
-# from clisops.utils.output_utils import get_output, get_time_slices
-
 __all__ = ["average_over_dims", "average_time"]
 
 
@@ -57,14 +55,15 @@ def average_over_dims(
 
     Parameters
     ----------
-    ds: Union[xr.Dataset, str]
-    dims : Optional[Union[Tuple[str], DimensionParameter]]
-      The dimensions over which to apply the average. If None, none of the dimensions are averaged over. Dimensions
-      must be one of ["time", "level", "latitude", "longitude"].
-    ignore_undetected_dims: bool
-      If the dimensions specified are not found in the dataset, an Exception will be raised if set to True.
-      If False, an exception will not be raised and the other dimensions will be averaged over. Default = False
-    output_dir: Optional[Union[str, Path]] = None
+    ds : Union[xr.Dataset, str]
+        Xarray dataset.
+    dims : Optional[Union[Tuple[{"time", "level", "latitude", "longitude"}], DimensionParameter]]
+        The dimensions over which to apply the average. If None, none of the dimensions are averaged over. Dimensions
+        must be one of ["time", "level", "latitude", "longitude"].
+    ignore_undetected_dims : bool
+        If the dimensions specified are not found in the dataset, an Exception will be raised if set to True.
+        If False, an exception will not be raised and the other dimensions will be averaged over. Default = False
+    output_dir: Optional[Union[str, Path]]
     output_type: {"netcdf", "nc", "zarr", "xarray"}
     split_method: {"time:auto"}
     file_namer: {"standard", "simple"}
@@ -133,13 +132,14 @@ def average_time(
 
     Parameters
     ----------
-    ds: Union[xr.Dataset, str]
-    freq: str
-      The frequency to average over. One of "month", "year".
-    output_dir: Optional[Union[str, Path]] = None
-    output_type: {"netcdf", "nc", "zarr", "xarray"}
-    split_method: {"time:auto"}
-    file_namer: {"standard", "simple"}
+    ds : Union[xr.Dataset, str]
+        Xarray dataset.
+    freq : str
+        The frequency to average over. One of "month", "year".
+    output_dir : Optional[Union[str, Path]]
+    output_type : {"netcdf", "nc", "zarr", "xarray"}
+    split_method : {"time:auto"}
+    file_name r: {"standard", "simple"}
 
     Returns
     -------

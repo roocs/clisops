@@ -47,7 +47,7 @@ def get_format_extension(fmt):
 
 
 def _format_time(tm: Union[str, dt], fmt="%Y-%m-%d"):
-    """Convert to datetime if time is a numpy datetime"""
+    """Convert to datetime if time is a numpy datetime."""
     if not hasattr(tm, "strftime"):
         tm = pd.to_datetime(str(tm))
 
@@ -92,7 +92,6 @@ def get_time_slices(
 ) -> List[Tuple[str, str]]:
 
     """
-
     Take an xarray Dataset or DataArray, assume it can be split on the time axis
     into a sequence of slices. Optionally, take a start and end date to specify
     a sub-slice of the main time axis.
@@ -103,12 +102,12 @@ def get_time_slices(
 
     Parameters
     ----------
-    ds: Union[xr.Dataset, xr.DataArray]
+    ds : Union[xr.Dataset, xr.DataArray]
     split_method
     start
     end
-    file_size_limit: str
-      a string specifying "<number><units>".
+    file_size_limit : str
+        a string specifying "<number><units>".
 
     Returns
     -------
@@ -164,8 +163,7 @@ def get_time_slices(
 
 
 def get_chunk_length(da):
-    """
-    Calculate the chunk length to use when chunking xarray datasets.
+    """Calculate the chunk length to use when chunking xarray datasets.
 
     Based on memory limit provided in config and the size of the dataset.
     """
@@ -184,9 +182,7 @@ def get_chunk_length(da):
 
 
 def _get_chunked_dataset(ds):
-    """
-    Chunk xr.Dataset and return chunked dataset
-    """
+    """Chunk xr.Dataset and return chunked dataset."""
     da = get_da(ds)
     chunk_length = get_chunk_length(da)
     chunked_ds = ds.chunk({"time": chunk_length})
@@ -194,10 +190,7 @@ def _get_chunked_dataset(ds):
 
 
 def get_output(ds, output_type, output_dir, namer):
-    """
-    Return output after applying chunking and determining
-    the output format and chunking
-    """
+    """Return output after applying chunking and determining the output format and chunking."""
     format_writer = get_format_writer(output_type)
     logger.info(f"format_writer={format_writer}, output_type={output_type}")
 
