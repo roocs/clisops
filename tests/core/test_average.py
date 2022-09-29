@@ -199,7 +199,7 @@ class TestAverageTime:
         ds = xu.open_xr_dataset(self.month_ds)
 
         with pytest.raises(InvalidParameterValue) as exc:
-            average.average_time(ds, freq=None)
+            average.average_time(ds, freq=None)  # noqa
         assert str(exc.value) == "At least one frequency for averaging must be provided"
 
     def test_incorrect_freq(self):
@@ -216,7 +216,7 @@ class TestAverageTime:
         ds = xu.open_xr_dataset(self.month_ds)
 
         with pytest.raises(InvalidParameterValue) as exc:
-            average.average_time(ds, freq=0)
+            average.average_time(ds, freq=0)  # noqa
         assert str(exc.value) == "At least one frequency for averaging must be provided"
 
     def test_no_time(self):

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union, Sequence
 
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
@@ -43,8 +43,8 @@ class Average(Operation):
 
 
 def average_over_dims(
-    ds,
-    dims: Optional[Union[Tuple[str], DimensionParameter]] = None,
+    ds: Union[xr.Dataset, str],
+    dims: Optional[Union[Sequence[str], DimensionParameter]] = None,
     ignore_undetected_dims: bool = False,
     output_dir: Optional[Union[str, Path]] = None,
     output_type="netcdf",
@@ -57,7 +57,7 @@ def average_over_dims(
     ----------
     ds : Union[xr.Dataset, str]
         Xarray dataset.
-    dims : Optional[Union[Tuple[{"time", "level", "latitude", "longitude"}], DimensionParameter]]
+    dims : Optional[Union[Sequence[{"time", "level", "latitude", "longitude"}], DimensionParameter]]
         The dimensions over which to apply the average. If None, none of the dimensions are averaged over. Dimensions
         must be one of ["time", "level", "latitude", "longitude"].
     ignore_undetected_dims : bool
@@ -139,7 +139,7 @@ def average_time(
     output_dir : Optional[Union[str, Path]]
     output_type : {"netcdf", "nc", "zarr", "xarray"}
     split_method : {"time:auto"}
-    file_name r: {"standard", "simple"}
+    file_namer: {"standard", "simple"}
 
     Returns
     -------

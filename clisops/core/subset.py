@@ -404,7 +404,7 @@ def wrap_lons_and_split_at_greenwich(func):
 
         if wrap_lons:
             if (np.min(x_dim) < 0 and np.max(x_dim) >= 360) or (
-                np.min(x_dim) < -180 and np.max >= 180
+                np.min(x_dim) < -180 and np.max(x_dim) >= 180
             ):
                 # TODO: This should raise an exception, right?
                 warnings.warn(
@@ -488,7 +488,7 @@ def create_mask(
     y_dim : xarray.DataArray
         Y or latitudinal dimension of xarray object. Can also be given through `ds_in`.
     poly : gpd.GeoDataFrame
-        GeoDataFrame used to create the xarray.DataArray mask. If its index doesn't have a
+        A GeoDataFrame used to create the xarray.DataArray mask. If its index doesn't have an
         integer dtype, it will be reset to integers, which will be used in the mask.
     wrap_lons : bool
         Shift vector longitudes by -180,180 degrees to 0,360 degrees; Default = False
@@ -697,6 +697,8 @@ def _curvilinear_grid_exterior_polygon(ds, mode="bbox"):
         x, y = np.around(pts.xy, 1)
         y = np.clip(y, -90, 90)
         pts = zip(x, y)
+    else:
+        raise NotImplementedError(f"mode: {mode}")
 
     return Polygon(pts)
 
@@ -784,7 +786,7 @@ def shape_bbox_indexer(ds, poly):
     # Find indices nearest the rectangle' corners
     # Note that the nearest indices might be inside the shape, so we'll need to add a *halo* around those indices.
     if rectilinear:
-        if version.parse(xarray.__version__) < version.Version("2022.06.0"):
+        if version.parse(xarray.__version__) < version.Version("2022.6.0"):
             warnings.warn(
                 "CLISOPS will require xarray >= 2022.06 in the next major release. "
                 "Please update your environment dependencies.",
@@ -858,7 +860,7 @@ def create_weight_masks(
     >>> polys = gpd.read_file(path_to_multi_shape_file)  # doctest: +SKIP
     ...
     # Get a weight mask for each polygon in the shape file
-    >>> mask = create_weight_mask(x_dim=ds.lon, y_dim=ds.lat, poly=polys)  # doctest: +SKIP
+    >>> mask = create_weight_masks(x_dim=ds.lon, y_dim=ds.lat, poly=polys)  # doctest: +SKIP
     """
     try:
         from xesmf import SpatialAverager
@@ -924,7 +926,7 @@ def subset_shape(
     ds : Union[xarray.DataArray, xarray.Dataset]
         Input values.
     shape : Union[str, Path, gpd.GeoDataFrame]
-        Path to shape file, or directly a geodataframe. Supports formats compatible with geopandas.
+        Path to a shape file, or GeoDataFrame directly. Supports GeoPandas-compatible formats.
     raster_crs : Optional[Union[str, int]]
         EPSG number or PROJ4 string.
     shape_crs : Optional[Union[str, int]]
@@ -1672,8 +1674,8 @@ def subset_time_by_components(
 @check_start_end_levels
 def subset_level(
     da: Union[xarray.DataArray, xarray.Dataset],
-    first_level: Optional[Union[int, float]] = None,
-    last_level: Optional[Union[int, float]] = None,
+    first_level: Optional[Union[int, float, str]] = None,
+    last_level: Optional[Union[int, float, str]] = None,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
     """Subset input DataArray or Dataset based on first and last levels.
 
@@ -1683,11 +1685,11 @@ def subset_level(
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
         Input data.
-    first_level : Optional[Union[int, float]]
+    first_level : Optional[Union[int, float, str]]
         First level of the subset (specified as the value, not the index).
         Can be either an integer or float.
         Defaults to first level of input data-array.
-    last_level : Optional[Union[int, float]]
+    last_level : Optional[Union[int, float, str]]
         Last level of the subset (specified as the value, not the index).
         Can be either an integer or float.
         Defaults to last level of input data-array.

@@ -13,7 +13,7 @@ def expand_wildcards(paths: Union[str, Path]) -> list:
 
 
 def _logging_examples() -> None:
-    """Testing module,"""
+    """Testing module."""
     logger.trace("0")
     logger.debug("1")
     logger.info("2")

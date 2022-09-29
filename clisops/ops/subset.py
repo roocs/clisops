@@ -8,6 +8,7 @@ from roocs_utils.parameter.area_parameter import AreaParameter
 from roocs_utils.parameter.level_parameter import LevelParameter
 from roocs_utils.parameter.time_components_parameter import TimeComponentsParameter
 from roocs_utils.parameter.time_parameter import TimeParameter
+from roocs_utils.parameter.param_utils import Interval, Series
 
 from clisops.core import (
     subset_bbox,
@@ -162,7 +163,7 @@ class Subset(Operation):
 def subset(
     ds: Union[xr.Dataset, str, Path],
     *,
-    time: Optional[Union[str, Tuple[str, str], TimeParameter]] = None,
+    time: Optional[Union[str, Tuple[str, str], TimeParameter, Series, Interval]] = None,
     area: Optional[
         Union[
             str,
@@ -177,7 +178,7 @@ def subset(
     ] = None,
     level: Optional[
         Union[
-            str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter
+            str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter, Interval
         ]
     ] = None,
     time_components: Optional[Union[str, Dict, TimeComponentsParameter]] = None,
@@ -191,9 +192,9 @@ def subset(
     Parameters
     ----------
     ds : Union[xr.Dataset, str]
-    time : Optional[Union[str, Tuple[str, str], TimeParameter]] = None,
+    time : Optional[Union[str, Tuple[str, str], TimeParameter, Series, Interval]] = None,
     area : str or AreaParameter or Tuple[Union[int, float, str], Union[int, float, str], Union[int, float, str], Union[int, float, str]], optional
-    level : Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter] = None,
+    level : Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter, Interval] = None,
     time_components : Optional[Union[str, Dict, TimeComponentsParameter]] = None,
     output_dir : Optional[Union[str, Path]] = None
     output_type : {"netcdf", "nc", "zarr", "xarray"}
