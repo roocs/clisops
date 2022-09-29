@@ -140,7 +140,7 @@ def average_shape(
 
 def average_over_dims(
     ds: Union[xr.DataArray, xr.Dataset],
-    dims: Tuple[str] = None,
+    dims: Sequence[str] = None,
     ignore_undetected_dims: bool = False,
 ) -> Union[xr.DataArray, xr.Dataset]:
     """
@@ -150,7 +150,7 @@ def average_over_dims(
     ----------
     ds : Union[xr.DataArray, xr.Dataset]
       Input values.
-    dims : Tuple[str] = None
+    dims : Sequence[str] = None
       The dimensions over which to apply the average. If None, none of the dimensions are averaged over. Dimensions
       must be one of ["time", "level", "latitude", "longitude"].
     ignore_undetected_dims: bool

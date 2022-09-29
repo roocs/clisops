@@ -6,6 +6,7 @@ from loguru import logger
 from roocs_utils.parameter import parameterise
 from roocs_utils.parameter.area_parameter import AreaParameter
 from roocs_utils.parameter.level_parameter import LevelParameter
+from roocs_utils.parameter.param_utils import Interval, TimeComponents
 from roocs_utils.parameter.time_components_parameter import TimeComponentsParameter
 from roocs_utils.parameter.time_parameter import TimeParameter
 
@@ -19,10 +20,7 @@ from clisops.core import (
 )
 from clisops.core.subset import assign_bounds, get_lat, get_lon  # noqa
 from clisops.ops.base_operation import Operation
-from clisops.utils.common import expand_wildcards
 from clisops.utils.dataset_utils import cf_convert_between_lon_frames
-from clisops.utils.file_namers import get_file_namer
-from clisops.utils.output_utils import get_output, get_time_slices
 
 __all__ = ["Subset", "subset"]
 
@@ -165,7 +163,7 @@ class Subset(Operation):
 def subset(
     ds: Union[xr.Dataset, str, Path],
     *,
-    time: Optional[Union[str, Tuple[str, str], TimeParameter]] = None,
+    time: Optional[Union[str, Tuple[str, str], TimeParameter, Interval]] = None,
     area: Optional[
         Union[
             str,
@@ -183,7 +181,9 @@ def subset(
             str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter
         ]
     ] = None,
-    time_components: Optional[Union[str, Dict, TimeComponentsParameter]] = None,
+    time_components: Optional[
+        Union[str, Dict, TimeComponents, TimeComponentsParameter]
+    ] = None,
     output_dir: Optional[Union[str, Path]] = None,
     output_type="netcdf",
     split_method="time:auto",
