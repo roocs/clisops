@@ -88,7 +88,7 @@ def get_file(
     name : Union[str, Sequence[str]]
         Name of the file or list/tuple of names of files containing the dataset(s) including suffixes.
     github_url : str
-        URL to Github repository where the data is stored.
+        URL to GitHub repository where the data is stored.
     branch : str, optional
         For GitHub-hosted files, the branch to download from.
     cache_dir : Path
@@ -137,7 +137,7 @@ def query_folder(
     pattern : str, optional
         Regex pattern to identify a file.
     github_url : str
-        URL to Github repository where the data is stored.
+        URL to GitHub repository where the data is stored.
     branch : str, optional
         For GitHub-hosted files, the branch to download from.
 
@@ -189,7 +189,7 @@ def open_dataset(
     dap_url : str, optional
         URL to OPeNDAP folder where the data is stored. If supplied, supersedes github_url.
     github_url : str
-        URL to Github repository where the data is stored.
+        URL to GitHub repository where the data is stored.
     branch : str, optional
         For GitHub-hosted files, the branch to download from.
     cache_dir : Path

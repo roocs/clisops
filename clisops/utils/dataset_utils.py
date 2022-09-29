@@ -1,8 +1,7 @@
-import math
 import warnings
 from typing import Optional
 
-import cf_xarray as cfxr
+import cf_xarray  # noqa
 import cftime
 import numpy as np
 import xarray as xr
@@ -259,9 +258,9 @@ def cf_convert_between_lon_frames(ds_in, lon_interval):
 
 
 def check_lon_alignment(ds, lon_bnds):
-    """
-    Check whether the longitude subset requested is within the bounds of the dataset. If not try to roll the dataset so
-    that the request is. Raise an exception if rolling is not possible.
+    """Check whether the longitude subset requested is within the bounds of the dataset.
+
+    If not try to roll the dataset so that the request is. Raise an exception if rolling is not possible.
     """
     low, high = lon_bnds
     lon = get_coord_by_type(ds, "longitude", ignore_aux_coords=False)
@@ -321,11 +320,11 @@ def adjust_date_to_calendar(da, date, direction="backwards"):
 
     Parameters
     ----------
-    da: xarray.Dataset or xarray.DataArray
+    da : xarray.Dataset or xarray.DataArray
         The data to examine.
-    date: str
+    date : str
         The date to check.
-    direction: str
+    direction : str
         The direction to move in days to find a date that does exist.
         'backwards' means the search will go backwards in time until an existing date is found.
         'forwards' means the search will go forwards in time.
@@ -410,7 +409,7 @@ def detect_bounds(ds, coordinate) -> Optional[str]:
 
     Parameters
     ----------
-    ds: xarray.Dataset, xarray.DataArray
+    ds : xarray.Dataset, xarray.DataArray
         Dataset the coordinate bounds variable name shall be obtained from.
     coordinate : str
         Name of the coordinate variable to determine the bounds from.

@@ -61,10 +61,7 @@ class Operation:
         return namer
 
     def _calculate(self):
-        """
-        The `_calculate()` method is implemented within each operation
-        sub-class.
-        """
+        """The `_calculate()` method is implemented within each operation subclass."""
         raise NotImplementedError
 
     def _remove_redundant_fill_values(self, ds):
@@ -113,12 +110,12 @@ class Operation:
 
     def process(self):
         """
-        Main processing method used by all sub-classes.
+        Main processing method used by all subclasses.
 
-        Returns a list of outputs, which might be:
-        - netCDF file paths
-        - Zarr file paths
-        - xarray Datasets
+        Returns
+        -------
+        List[Union[xarray.Dataset, os.PathLike]]
+            A list of outputs, which might be NetCDF file paths, Zarr file paths, or xarray.Dataset
         """
         # Create an empty list for outputs
         outputs = list()
@@ -143,7 +140,7 @@ class Operation:
         # Loop through each time slice
         for tslice in time_slices:
 
-            # If there is only one time slice and it is None:
+            # If there is only one time slice, and it is None:
             # - then just set the result Dataset to the processed Dataset
             if tslice is None:
                 result_ds = processed_ds

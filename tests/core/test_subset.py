@@ -62,7 +62,7 @@ class TestSubsetTime:
         yr_st = "1776"
         yr_ed = "2077"
 
-        with pytest.warns(None) as record:
+        with pytest.warns(None) as record:  # noqa
             out = subset.subset_time(
                 da, start_date=f"{yr_st}-01", end_date=f"{yr_ed}-01"
             )
@@ -87,18 +87,18 @@ class TestSubsetTime:
         with pytest.raises(TypeError):
             subset.subset_time(da, start_yr=2050, end_yr=2059)
 
-        with pytest.warns(None) as record:
+        with pytest.warns(None) as record:  # noqa
             subset.subset_time(
                 da,
-                start_date=2050,
-                end_date=2055,
+                start_date=2050,  # noqa
+                end_date=2055,  # noqa
             )
         assert (
             'start_date and end_date require dates in (type: str) using formats of "%Y", "%Y-%m" or "%Y-%m-%d".'
             in [str(q.message) for q in record]
         )
 
-        with pytest.warns(None) as record:
+        with pytest.warns(None) as record:  # noqa
             subset.subset_time(
                 da, start_date="2064-01-01T00:00:00", end_date="2065-02-01T03:12:01"
             )
@@ -118,19 +118,19 @@ class TestSubsetTime:
         yr_st = "2050"
 
         # start date only
-        with pytest.warns(None):
+        with pytest.warns(None):  # noqa
             out = subset.subset_time(da, start_date=f"{yr_st}-01")
         np.testing.assert_array_equal(out.time.dt.year.min(), int(yr_st))
         np.testing.assert_array_equal(out.time.dt.year.max(), da.time.dt.year.max())
 
-        with pytest.warns(None):
+        with pytest.warns(None):  # noqa
             out = subset.subset_time(da, start_date=f"{yr_st}-07")
         np.testing.assert_array_equal(out.time.dt.year.min(), int(yr_st))
         np.testing.assert_array_equal(out.time.min().dt.month, 7)
         np.testing.assert_array_equal(out.time.dt.year.max(), da.time.dt.year.max())
         np.testing.assert_array_equal(out.time.max(), da.time.max())
 
-        with pytest.warns(None):
+        with pytest.warns(None):  # noqa
             out = subset.subset_time(da, start_date=f"{yr_st}-07-15")
         np.testing.assert_array_equal(out.time.dt.year.min(), int(yr_st))
         np.testing.assert_array_equal(out.time.min().dt.month, 7)
@@ -143,14 +143,14 @@ class TestSubsetTime:
         yr_ed = "2059"
 
         # end date only
-        with pytest.warns(None):
+        with pytest.warns(None):  # noqa
             out = subset.subset_time(da, end_date=f"{yr_ed}-01")
         np.testing.assert_array_equal(out.time.dt.year.max(), int(yr_ed))
         np.testing.assert_array_equal(out.time.max().dt.month, 1)
         np.testing.assert_array_equal(out.time.max().dt.day, 31)
         np.testing.assert_array_equal(out.time.min(), da.time.min())
 
-        with pytest.warns(None):
+        with pytest.warns(None):  # noqa
             out = subset.subset_time(da, end_date=f"{yr_ed}-06-15")
         np.testing.assert_array_equal(out.time.dt.year.max(), int(yr_ed))
         np.testing.assert_array_equal(out.time.max().dt.month, 6)
@@ -655,7 +655,7 @@ class TestSubsetBbox:
             subset.subset_bbox(
                 da, lon_bnds=self.lon, lat_bnds=self.lat, start_yr=2050, end_yr=2059
             )
-        with pytest.warns(None) as record:
+        with pytest.warns(None) as record:  # noqa
             subset.subset_bbox(
                 da,
                 lon_bnds=self.lon,
@@ -743,7 +743,7 @@ class TestSubsetShape:
     def test_no_wraps(self, tmp_netcdf_filename):
         ds = xr.open_dataset(self.nc_file)
 
-        with pytest.warns(None) as record:
+        with pytest.warns(None) as record:  # noqa
             sub = subset.subset_shape(ds, self.poslons_geojson)
 
         self.compare_vals(ds, sub, "tas")
@@ -774,7 +774,7 @@ class TestSubsetShape:
     def test_all_neglons(self):
         ds = xr.open_dataset(self.nc_file_neglons)
 
-        with pytest.warns(None) as record:
+        with pytest.warns(None) as record:  # noqa
             sub = subset.subset_shape(ds, self.southern_qc_geojson)
 
         self.compare_vals(ds, sub, "tasmax")
@@ -793,7 +793,7 @@ class TestSubsetShape:
     def test_rotated_pole_with_time(self):
         ds = xr.open_dataset(self.lons_2d_nc_file)
 
-        with pytest.warns(None) as record:
+        with pytest.warns(None) as record:  # noqa
             sub = subset.subset_shape(
                 ds,
                 self.eastern_canada_geojson,
@@ -961,7 +961,7 @@ class TestSubsetLevel:
         lev_st = 10000000
         lev_ed = 10
 
-        with pytest.warns(None) as record:
+        with pytest.warns(None) as record:  # noqa
             out = subset.subset_level(da, first_level=lev_st, last_level=lev_ed)
 
         np.testing.assert_array_equal(out.plev.min(), da.plev.min())
@@ -982,14 +982,14 @@ class TestSubsetLevel:
         with pytest.raises(TypeError):
             subset.subset_level(da, first_level=da, last_level=da)
 
-        with pytest.warns(None) as record:
+        with pytest.warns(None) as record:  # noqa
             subset.subset_level(da, first_level="1000", last_level="1000")
         assert (
             '"first_level" should be a number, it has been converted to a float.'
             in [str(q.message) for q in record]
         )
 
-        with pytest.warns(None) as record:
+        with pytest.warns(None) as record:  # noqa
             subset.subset_level(da, first_level=81200, last_level=54100.6)
 
         msgs = {
@@ -1003,7 +1003,7 @@ class TestSubsetLevel:
         lev_st = 100000
 
         # first level only
-        with pytest.warns(None):
+        with pytest.warns(None):  # noqa
             out = subset.subset_level(da, first_level=lev_st, last_level=lev_st)
 
         np.testing.assert_array_equal(out.plev.values[0], da.plev.values[0])
@@ -1014,13 +1014,13 @@ class TestSubsetLevel:
         # good_levels = [40000, 30000]
         # good_indices = [6, 7]
 
-        with pytest.warns(None):
+        with pytest.warns(None):  # noqa
             out = subset.subset_level(da, first_level=37000.2342, last_level=27777)
 
         np.testing.assert_array_equal(out.plev.values[0], da.plev.values[7])
         np.testing.assert_array_equal(out.plev.values[-1], da.plev.values[7])
 
-        with pytest.warns(None):
+        with pytest.warns(None):  # noqa
             out = subset.subset_level(da, first_level=41562, last_level=29999)
 
         np.testing.assert_array_equal(out.plev.values[:], da.plev.values[6:8])

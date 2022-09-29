@@ -16,7 +16,7 @@ from roocs_utils.parameter.param_utils import (
 
 from clisops import CONFIG
 from clisops.ops.subset import Subset, subset
-from clisops.utils.output_utils import _format_time
+from clisops.utils.output_utils import _format_time  # noqa
 
 from .._common import (
     C3S_CMIP5_TOS,
@@ -108,7 +108,7 @@ def test_subset_ds_is_none(tmpdir):
     """Tests subset with ds=None."""
     with pytest.raises(InvalidParameterValue):
         subset(
-            ds=None,
+            ds=None,  # noqa
             time=time_interval("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
             area=(0, -90.0, 360.0, 90.0),
             output_dir=tmpdir,
@@ -122,7 +122,7 @@ def test_subset_no_ds(tmpdir):
             time=time_interval("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
             area=(0, -90.0, 360.0, 90.0),
             output_dir=tmpdir,
-        )
+        )  # noqa
 
 
 def test_subset_area_simple_file_name(cmip5_tas_file, tmpdir):
@@ -1104,7 +1104,8 @@ def test_curvilinear_ds_no_data_in_bbox():
         )
     assert (
         str(exc.value)
-        == "There were no valid data points found in the requested subset. Please expand the area covered by the bounding box."
+        == "There were no valid data points found in the requested subset. "
+        "Please expand the area covered by the bounding box."
     )
 
 

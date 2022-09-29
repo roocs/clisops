@@ -6,7 +6,7 @@ from loguru import logger
 from roocs_utils.parameter import parameterise
 from roocs_utils.parameter.area_parameter import AreaParameter
 from roocs_utils.parameter.level_parameter import LevelParameter
-from roocs_utils.parameter.param_utils import Interval, TimeComponents
+from roocs_utils.parameter.param_utils import Interval, Series, TimeComponents
 from roocs_utils.parameter.time_components_parameter import TimeComponentsParameter
 from roocs_utils.parameter.time_parameter import TimeParameter
 
@@ -27,7 +27,7 @@ __all__ = ["Subset", "subset"]
 
 class Subset(Operation):
     def _resolve_params(self, **params):
-        """Generates a dictionary of subset parameters"""
+        """Generates a dictionary of subset parameters."""
         time = params.get("time", None)
         area = params.get("area", None)
         level = params.get("level", None)
@@ -163,7 +163,7 @@ class Subset(Operation):
 def subset(
     ds: Union[xr.Dataset, str, Path],
     *,
-    time: Optional[Union[str, Tuple[str, str], TimeParameter, Interval]] = None,
+    time: Optional[Union[str, Tuple[str, str], TimeParameter, Series, Interval]] = None,
     area: Optional[
         Union[
             str,
@@ -178,7 +178,10 @@ def subset(
     ] = None,
     level: Optional[
         Union[
-            str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter
+            str,
+            Tuple[Union[int, float, str], Union[int, float, str]],
+            LevelParameter,
+            Interval,
         ]
     ] = None,
     time_components: Optional[
@@ -193,15 +196,15 @@ def subset(
 
     Parameters
     ----------
-    ds: Union[xr.Dataset, str]
-    time: Optional[Union[str, Tuple[str, str], TimeParameter]] = None,
-    area: str or AreaParameter or Tuple[Union[int, float, str], Union[int, float, str], Union[int, float, str], Union[int, float, str]], optional
-    level: Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter] = None,
-    time_components: Optional[Union[str, Dict, TimeComponentsParameter]] = None,
-    output_dir: Optional[Union[str, Path]] = None
-    output_type: {"netcdf", "nc", "zarr", "xarray"}
-    split_method: {"time:auto"}
-    file_namer: {"standard", "simple"}
+    ds : Union[xr.Dataset, str]
+    time : Optional[Union[str, Tuple[str, str], TimeParameter, Series, Interval]] = None,
+    area : str or AreaParameter or Tuple[Union[int, float, str], Union[int, float, str], Union[int, float, str], Union[int, float, str]], optional
+    level : Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter, Interval] = None,
+    time_components : Optional[Union[str, Dict, TimeComponentsParameter]] = None,
+    output_dir : Optional[Union[str, Path]] = None
+    output_type : {"netcdf", "nc", "zarr", "xarray"}
+    split_method : {"time:auto"}
+    file_namer : {"standard", "simple"}
 
     Returns
     -------
@@ -215,8 +218,7 @@ def subset(
     | time: ("1999-01-01T00:00:00", "2100-12-30T00:00:00") or "2085-01-01T12:00:00Z/2120-12-30T12:00:00Z"
     | area: (-5.,49.,10.,65) or "0.,49.,10.,65" or [0, 49.5, 10, 65]
     | level: (1000.,) or "1000/2000" or ("1000.50", "2000.60")
-    | time_components: "year:2000,2004,2008|month:01,02" or {"year": (2000, 2004, 2008),
-    |                                                        "months": (1, 2)}
+    | time_components: "year:2000,2004,2008|month:01,02" or {"year": (2000, 2004, 2008), "months": (1, 2)}
     | output_dir: "/cache/wps/procs/req0111"
     | output_type: "netcdf"
     | split_method: "time:auto"

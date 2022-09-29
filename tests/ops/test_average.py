@@ -1,13 +1,9 @@
 import os
-import sys
-from unittest.mock import Mock
 
 import pytest
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
 
-import clisops
-from clisops import CONFIG
 from clisops.ops.average import average_over_dims, average_time
 
 from .._common import C3S_CORDEX_EUR_ZG500, CMIP5_TAS, CMIP6_SICONC_DAY
@@ -147,7 +143,7 @@ def test_average_multiple_dims_xarray():
     assert "lon" not in result[0]
 
 
-def test_average_no_dims(tmpdir):
+def test_average_no_dims():
     with pytest.raises(InvalidParameterValue) as exc:
         average_over_dims(
             CMIP5_TAS,
@@ -288,7 +284,7 @@ def test_average_time_no_freq():
         # average over time
         average_time(
             CMIP6_SICONC_DAY,
-            freq=None,
+            freq=None,  # noqa
             output_type="xarray",
         )
     assert str(exc.value) == "At least one frequency for averaging must be provided"
