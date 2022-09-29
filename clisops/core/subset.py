@@ -798,7 +798,7 @@ def shape_bbox_indexer(ds, poly):
         else:
             native_ind = xarray.core.indexing.map_index_queries(
                 ds, ind, method="nearest"
-            ).indexers
+            ).dim_indexers
     else:
         # For curvilinear grids, finding the closest points require a bit more work.
         # Note that this code is not exercised for now.
