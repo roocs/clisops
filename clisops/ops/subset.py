@@ -6,7 +6,7 @@ from loguru import logger
 from roocs_utils.parameter import parameterise
 from roocs_utils.parameter.area_parameter import AreaParameter
 from roocs_utils.parameter.level_parameter import LevelParameter
-from roocs_utils.parameter.param_utils import Interval, Series
+from roocs_utils.parameter.param_utils import Interval, Series, TimeComponents
 from roocs_utils.parameter.time_components_parameter import TimeComponentsParameter
 from roocs_utils.parameter.time_parameter import TimeParameter
 
@@ -184,7 +184,9 @@ def subset(
             Interval,
         ]
     ] = None,
-    time_components: Optional[Union[str, Dict, TimeComponentsParameter]] = None,
+    time_components: Optional[
+        Union[str, Dict, TimeComponents, TimeComponentsParameter]
+    ] = None,
     output_dir: Optional[Union[str, Path]] = None,
     output_type="netcdf",
     split_method="time:auto",

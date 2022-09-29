@@ -18,7 +18,7 @@ try:
     import xesmf
 
     if parse_version(xesmf.__version__) < parse_version("0.6.2"):
-        raise ImportError
+        raise ImportError()
 except ImportError:
     xesmf = None
 
@@ -200,6 +200,7 @@ class TestAverageTime:
 
         with pytest.raises(InvalidParameterValue) as exc:
             average.average_time(ds, freq=None)  # noqa
+
         assert str(exc.value) == "At least one frequency for averaging must be provided"
 
     def test_incorrect_freq(self):
@@ -217,6 +218,7 @@ class TestAverageTime:
 
         with pytest.raises(InvalidParameterValue) as exc:
             average.average_time(ds, freq=0)  # noqa
+
         assert str(exc.value) == "At least one frequency for averaging must be provided"
 
     def test_no_time(self):
