@@ -1105,7 +1105,7 @@ def test_curvilinear_ds_no_data_in_bbox():
     assert (
         str(exc.value)
         == "There were no valid data points found in the requested subset. "
-           "Please expand the area covered by the bounding box."
+        "Please expand the area covered by the bounding box."
     )
 
 

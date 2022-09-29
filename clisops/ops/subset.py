@@ -6,9 +6,9 @@ from loguru import logger
 from roocs_utils.parameter import parameterise
 from roocs_utils.parameter.area_parameter import AreaParameter
 from roocs_utils.parameter.level_parameter import LevelParameter
+from roocs_utils.parameter.param_utils import Interval, Series
 from roocs_utils.parameter.time_components_parameter import TimeComponentsParameter
 from roocs_utils.parameter.time_parameter import TimeParameter
-from roocs_utils.parameter.param_utils import Interval, Series
 
 from clisops.core import (
     subset_bbox,
@@ -178,7 +178,10 @@ def subset(
     ] = None,
     level: Optional[
         Union[
-            str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter, Interval
+            str,
+            Tuple[Union[int, float, str], Union[int, float, str]],
+            LevelParameter,
+            Interval,
         ]
     ] = None,
     time_components: Optional[Union[str, Dict, TimeComponentsParameter]] = None,
