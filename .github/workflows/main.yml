@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.8]
+        python-version: [3.9]
     steps:
       - uses: actions/checkout@v3
       - name: Setup conda with Python ${{ matrix.python-version }}
@@ -76,6 +76,10 @@ jobs:
             mamba env create -f environment.yml
             source activate clisops
             pip install -e ".[dev]"
+      - name: Install xarray@main
+        run: |
+            source activate clisops
+            pip install git+https://github.com/pydata/xarray.git@main#egg=xarray
       - name: Test with conda
         run: |
             source activate clisops
