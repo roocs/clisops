@@ -1,7 +1,7 @@
 Version History
 ===============
 
-v0.9.3 (unreleased)
+v0.9.3 (2022-10-03)
 -------------------
 
 Bug Fixes
@@ -12,7 +12,7 @@ Other Changes
 -------------
 * Fixed a handful of static type hints that were sending out warnings, despite proper use. (#251).
 * Replaced all skipped doctests with sphinx-compatible python code blocks to prevent errors in downstream projects. (#251).
-* Adjusted GitHub Actions builds to ensure that the `conda-xesmf` run uses the lastest `xarray` available. (#251).
+* Adjusted GitHub Actions builds to ensure that the `conda-xesmf` run uses the latest `xarray` available. (#251).
 
 v0.9.2 (2022-09-06)
 -------------------
