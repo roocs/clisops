@@ -49,7 +49,7 @@ def check_dir(func: FunctionType, dr: Union[str, Path]):
 
 
 def _logging_examples() -> None:
-    """Testing module"""
+    """Testing module."""
     logger.trace("0")
     logger.debug("1")
     logger.info("2")

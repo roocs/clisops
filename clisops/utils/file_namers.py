@@ -6,14 +6,14 @@ from clisops.utils.output_utils import get_format_extension
 
 
 def get_file_namer(name):
-    """Returns the correct filenamer from the provided name"""
+    """Returns the correct filenamer from the provided name."""
     namers = {"standard": StandardFileNamer, "simple": SimpleFileNamer}
 
     return namers.get(name, StandardFileNamer)
 
 
 class _BaseFileNamer:
-    """File namer base class"""
+    """File namer base class."""
 
     def __init__(self, replace=None, extra=""):
         self._count = 0
@@ -28,8 +28,7 @@ class _BaseFileNamer:
 
 
 class SimpleFileNamer(_BaseFileNamer):
-    """
-    Simple file namer class.
+    """Simple file namer class.
 
     Generates numbered file names.
     """
@@ -38,8 +37,7 @@ class SimpleFileNamer(_BaseFileNamer):
 
 
 class StandardFileNamer(SimpleFileNamer):
-    """
-    Standard file namer class.
+    """Standard file namer class.
 
     Generates file names based on input dataset.
     """
@@ -79,10 +77,7 @@ class StandardFileNamer(SimpleFileNamer):
             return None
 
     def _resolve_derived_attrs(self, ds, attrs, template, fmt=None):
-        """
-        Finds var_id, time_range and format_extension of dataset and output to
-        generate output file name.
-        """
+        """Finds var_id, time_range and format_extension of dataset and output to generate output file name."""
         if "__derive__var_id" in template:
             attrs["__derive__var_id"] = xu.get_main_variable(ds)
 

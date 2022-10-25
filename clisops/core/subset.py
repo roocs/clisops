@@ -35,6 +35,7 @@ __all__ = [
     "create_weight_masks",
     "distance",
     "subset_bbox",
+    "shape_bbox_indexer",
     "subset_gridpoint",
     "subset_shape",
     "subset_time",
@@ -230,8 +231,7 @@ def check_start_end_levels(func):
 def check_lons(func):
     @wraps(func)
     def func_checker(*args, **kwargs):
-        """
-        Reformat user-specified "lon" or "lon_bnds" values based on the lon dimensions of a supplied Dataset or DataArray.
+        """Reformat user-specified "lon" or "lon_bnds" values based on the lon dimensions of a supplied Dataset or DataArray.
 
         Examines an xarray object longitude dimensions and depending on extent (either -180 to +180 or 0 to +360),
         will reformat user-specified lon values to be synonymous with xarray object boundaries.
@@ -275,9 +275,7 @@ def check_lons(func):
 def check_levels_exist(func):
     @wraps(func)
     def func_checker(*args, **kwargs):
-        """
-        Check the requested levels exist in the input Dataset/DataArray.
-        If not: raise an Exception.
+        """Check the requested levels exist in the input Dataset/DataArray and, if not, raise an Exception.
 
         if the requested levels are not sorted in the order of the actual array then
         re-sort them to match the array in the input data.
@@ -313,11 +311,9 @@ def check_levels_exist(func):
 def check_datetimes_exist(func):
     @wraps(func)
     def func_checker(*args, **kwargs):
-        """
-        Check the requested datetimes exist in the input Dataset/DataArray.
-        If not: raise an Exception.
+        """Check the requested datetimes exist in the input Dataset/DataArray and, if not, raise an Exception.
 
-        if the requested datetimes are not sorted in the order of the actual array then
+        If the requested datetimes are not sorted in the order of the actual array then
         re-sort them to match the array in the input data.
 
         Modifies the "time_values" list in `kwargs` in place, if required.
@@ -356,8 +352,7 @@ def check_datetimes_exist(func):
 def convert_lat_lon_to_da(func):
     @wraps(func)
     def func_checker(*args, **kwargs):
-        """
-        Transform input lat, lon to DataArrays.
+        """Transform input lat, lon to DataArrays.
 
         Input can be int, float or any iterable.
         Expects a DataArray as first argument and checks is dim "site" already exists,
@@ -392,8 +387,7 @@ def convert_lat_lon_to_da(func):
 def wrap_lons_and_split_at_greenwich(func):
     @wraps(func)
     def func_checker(*args, **kwargs):
-        """
-        Split and reproject polygon vectors in a GeoDataFrame whose values cross the Greenwich Meridian.
+        """Split and reproject polygon vectors in a GeoDataFrame whose values cross the Greenwich Meridian.
 
         Begins by examining whether the geometry bounds the supplied cross longitude = 0 and if so, proceeds to split
         the polygons at the meridian into new polygons and erase a small buffer to prevent invalid geometries when
@@ -410,7 +404,7 @@ def wrap_lons_and_split_at_greenwich(func):
 
         if wrap_lons:
             if (np.min(x_dim) < 0 and np.max(x_dim) >= 360) or (
-                np.min(x_dim) < -180 and np.max >= 180
+                np.min(x_dim) < -180 and np.max(x_dim) >= 180
             ):
                 # TODO: This should raise an exception, right?
                 warnings.warn(
@@ -490,16 +484,16 @@ def create_mask(
     Parameters
     ----------
     x_dim : xarray.DataArray
-      X or longitudinal dimension of xarray object. Can also be given through `ds_in`.
+        X or longitudinal dimension of xarray object. Can also be given through `ds_in`.
     y_dim : xarray.DataArray
-      Y or latitudinal dimension of xarray object. Can also be given through `ds_in`.
+        Y or latitudinal dimension of xarray object. Can also be given through `ds_in`.
     poly : gpd.GeoDataFrame
-      GeoDataFrame used to create the xarray.DataArray mask. If its index doesn't have a
-      integer dtype, it will be reset to integers, which will be used in the mask.
+        A GeoDataFrame used to create the xarray.DataArray mask. If its index doesn't have an
+        integer dtype, it will be reset to integers, which will be used in the mask.
     wrap_lons : bool
-      Shift vector longitudes by -180,180 degrees to 0,360 degrees; Default = False
-    check_overlap: bool
-      Perform a check to verify if shapes contain overlapping geometries.
+        Shift vector longitudes by -180,180 degrees to 0,360 degrees; Default = False
+    check_overlap : bool
+        Perform a check to verify if shapes contain overlapping geometries.
 
     Returns
     -------
@@ -507,22 +501,23 @@ def create_mask(
 
     Examples
     --------
-    >>> import geopandas as gpd  # doctest: +SKIP
-    >>> import xarray as xr  # doctest: +SKIP
-    >>> from clisops.core.subset import create_mask  # doctest: +SKIP
-    >>> ds = xr.open_dataset(path_to_tasmin_file)  # doctest: +SKIP
-    >>> polys = gpd.read_file(path_to_multi_shape_file)  # doctest: +SKIP
-    ...
-    # Get a mask from all polygons in the shape file
-    >>> mask = create_mask(x_dim=ds.lon, y_dim=ds.lat, poly=polys)  # doctest: +SKIP
-    >>> ds = ds.assign_coords(regions=mask)  # doctest: +SKIP
-    ...
-    # Operations can be applied to each region with `groupby`. Ex:
-    >>> ds = ds.groupby('regions').mean()  # doctest: +SKIP
-    ...
-    # Extra step to retrieve the names of those polygons stored in another column (here "id")
-    >>> region_names = xr.DataArray(polys.id, dims=('regions',))  # doctest: +SKIP
-    >>> ds = ds.assign_coords(regions_names=region_names)  # doctest: +SKIP
+    .. code-block:: python
+
+        import geopandas as gpd
+        from clisops.core.subset import create_mask
+        ds = xr.open_dataset(path_to_tasmin_file)
+        polys = gpd.read_file(path_to_multi_shape_file)
+
+        # Get a mask from all polygons in the shape file
+        mask = create_mask(x_dim=ds.lon, y_dim=ds.lat, poly=polys)
+        ds = ds.assign_coords(regions=mask)
+
+        # Operations can be applied to each region with `groupby`. Ex:
+        ds = ds.groupby('regions').mean()
+
+        # Extra step to retrieve the names of those polygons stored in another column (here "id")
+        region_names = xr.DataArray(polys.id, dims=('regions',))
+        ds = ds.assign_coords(regions_names=region_names)
     """
     if check_overlap:
         _check_has_overlaps(polygons=poly)
@@ -589,12 +584,12 @@ def _rectilinear_grid_exterior_polygon(ds):
     Parameters
     ----------
     ds : xarray.Dataset
-      CF-compliant input dataset.
+        CF-compliant input dataset.
 
     Returns
     -------
     shapely.geometry.Polygon
-      Grid cell boundary.
+        Grid cell boundary.
     """
 
     # Add bounds if not present
@@ -635,16 +630,16 @@ def _curvilinear_grid_exterior_polygon(ds, mode="bbox"):
     Parameters
     ----------
     ds : xarray.Dataset
-      CF-compliant input dataset.
+        CF-compliant input dataset.
     mode : {bbox, cell_union}
-      Calculation mode. `bbox` takes the min and max longitude and latitude bounds and rounds them to 0.1 degree.
-      `cell_union` merges all grid cell polygons and finds the exterior. Also rounds and simplifies the coordinates
-      to smooth projection errors.
+        Calculation mode. `bbox` takes the min and max longitude and latitude bounds and rounds them to 0.1 degree.
+        `cell_union` merges all grid cell polygons and finds the exterior. Also rounds and simplifies the coordinates
+        to smooth projection errors.
 
     Returns
     -------
     shapely.geometry.Polygon
-      Grid cell boundary.
+        Grid cell boundary.
     """
     import math
 
@@ -702,6 +697,8 @@ def _curvilinear_grid_exterior_polygon(ds, mode="bbox"):
         x, y = np.around(pts.xy, 1)
         y = np.clip(y, -90, 90)
         pts = zip(x, y)
+    else:
+        raise NotImplementedError(f"mode: {mode}")
 
     return Polygon(pts)
 
@@ -709,18 +706,17 @@ def _curvilinear_grid_exterior_polygon(ds, mode="bbox"):
 def grid_exterior_polygon(ds):
     """Return a polygon tracing the grid's exterior.
 
-    This function is only accurate for a geographic lat/lon projection.
-    For projected grids, it's a rough approximation.
+    This function is only accurate for a geographic lat/lon projection. For projected grids, it's a rough approximation.
 
     Parameters
     ----------
     ds : xarray.Dataset
-      CF-compliant input dataset.
+        CF-compliant input dataset.
 
     Returns
     -------
     shapely.geometry.Polygon
-      Grid cell boundary.
+        Grid cell boundary.
 
     Notes
     -----
@@ -742,20 +738,19 @@ def is_rectilinear(ds):
 
 
 def shape_bbox_indexer(ds, poly):
-    """
-    Return a spatial indexer that selects the indices of the grid cells covering the given geometries.
+    """Return a spatial indexer that selects the indices of the grid cells covering the given geometries.
 
     Parameters
     ----------
     ds : xr.Dataset
-      Input dataset.
+        Input dataset.
     poly : gpd.GeoDataFrame
-      Shapes to cover.
+        Shapes to cover.
 
     Returns
     -------
     dict
-      xarray indexer along native dataset coordinates, to be used as an argument to `isel`.
+        xarray indexer along native dataset coordinates, to be used as an argument to `isel`.
 
     Examples
     --------
@@ -791,7 +786,7 @@ def shape_bbox_indexer(ds, poly):
     # Find indices nearest the rectangle' corners
     # Note that the nearest indices might be inside the shape, so we'll need to add a *halo* around those indices.
     if rectilinear:
-        if version.parse(xarray.__version__) < version.Version("2022.06.0"):
+        if version.parse(xarray.__version__) < version.Version("2022.6.0"):
             warnings.warn(
                 "CLISOPS will require xarray >= 2022.06 in the next major release. "
                 "Please update your environment dependencies.",
@@ -803,7 +798,7 @@ def shape_bbox_indexer(ds, poly):
         else:
             native_ind = xarray.core.indexing.map_index_queries(
                 ds, ind, method="nearest"
-            ).indexers
+            ).dim_indexers
     else:
         # For curvilinear grids, finding the closest points require a bit more work.
         # Note that this code is not exercised for now.
@@ -843,12 +838,12 @@ def create_weight_masks(
     Parameters
     ----------
     ds_in : Union[xarray.DataArray, xarray.Dataset]
-      xarray object containing the grid information, as understood by xESMF.
-      For 2D lat/lon coordinates, the bounds arrays are required,
+        xarray object containing the grid information, as understood by xESMF.
+        For 2D lat/lon coordinates, the bounds arrays are required,
     poly : gpd.GeoDataFrame
-      GeoDataFrame used to create the xarray.DataArray mask.
-      One mask will be created for each row in the dataframe.
-      Will be converted to EPSG:4326 if needed.
+        GeoDataFrame used to create the xarray.DataArray mask.
+        One mask will be created for each row in the dataframe.
+        Will be converted to EPSG:4326 if needed.
 
     Returns
     -------
@@ -865,7 +860,7 @@ def create_weight_masks(
     >>> polys = gpd.read_file(path_to_multi_shape_file)  # doctest: +SKIP
     ...
     # Get a weight mask for each polygon in the shape file
-    >>> mask = create_weight_mask(x_dim=ds.lon, y_dim=ds.lat, poly=polys)  # doctest: +SKIP
+    >>> mask = create_weight_masks(x_dim=ds.lon, y_dim=ds.lat, poly=polys)  # doctest: +SKIP
     """
     try:
         from xesmf import SpatialAverager
@@ -929,36 +924,37 @@ def subset_shape(
     Parameters
     ----------
     ds : Union[xarray.DataArray, xarray.Dataset]
-      Input values.
+        Input values.
     shape : Union[str, Path, gpd.GeoDataFrame]
-      Path to shape file, or directly a geodataframe. Supports formats compatible with geopandas.
+        Path to a shape file, or GeoDataFrame directly. Supports GeoPandas-compatible formats.
     raster_crs : Optional[Union[str, int]]
-      EPSG number or PROJ4 string.
+        EPSG number or PROJ4 string.
     shape_crs : Optional[Union[str, int]]
-      EPSG number or PROJ4 string.
+        EPSG number or PROJ4 string.
     buffer : Optional[Union[int, float]]
-      Buffer the shape in order to select a larger region stemming from it. Units are based on the shape degrees/metres.
+        Buffer the shape in order to select a larger region stemming from it.
+        Units are based on the shape degrees/metres.
     start_date : Optional[str]
-      Start date of the subset.
-      Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
-      Defaults to first day of input data-array.
+        Start date of the subset.
+        Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
+        Defaults to first day of input data-array.
     end_date : Optional[str]
-      End date of the subset.
-      Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
-      Defaults to last day of input data-array.
+        End date of the subset.
+        Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
+        Defaults to last day of input data-array.
     first_level : Optional[Union[int, float]]
-      First level of the subset.
-      Can be either an integer or float.
-      Defaults to first level of input data-array.
+        First level of the subset.
+        Can be either an integer or float.
+        Defaults to first level of input data-array.
     last_level : Optional[Union[int, float]]
-      Last level of the subset.
-      Can be either an integer or float.
-      Defaults to last level of input data-array.
+        Last level of the subset.
+        Can be either an integer or float.
+        Defaults to last level of input data-array.
 
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
-      A subset of `ds`
+        A subset of `ds`
 
     Notes
     -----
@@ -968,19 +964,21 @@ def subset_shape(
 
     Examples
     --------
-    >>> import xarray as xr  # doctest: +SKIP
-    >>> from clisops.core.subset import subset_shape  # doctest: +SKIP
-    >>> pr = xr.open_dataset(path_to_pr_file).pr  # doctest: +SKIP
-    ...
-    # Subset data array by shape
-    >>> prSub = subset_shape(pr, shape=path_to_shape_file)  # doctest: +SKIP
-    ...
-    # Subset data array by shape and single year
-    >>> prSub = subset_shape(pr, shape=path_to_shape_file, start_date='1990-01-01', end_date='1990-12-31')  # doctest: +SKIP
-    ...
-    # Subset multiple variables in a single dataset
-    >>> ds = xr.open_mfdataset([path_to_tasmin_file, path_to_tasmax_file])  # doctest: +SKIP
-    >>> dsSub = subset_shape(ds, shape=path_to_shape_file)  # doctest: +SKIP
+    .. code-block:: python
+
+        import xarray as xr
+        from clisops.core.subset import subset_shape
+        pr = xr.open_dataset(path_to_pr_file).pr
+
+        # Subset data array by shape
+        prSub = subset_shape(pr, shape=path_to_shape_file)
+
+        # Subset data array by shape and single year
+        prSub = subset_shape(pr, shape=path_to_shape_file, start_date='1990-01-01', end_date='1990-12-31')
+
+        # Subset multiple variables in a single dataset
+        ds = xr.open_mfdataset([path_to_tasmin_file, path_to_tasmax_file])
+        dsSub = subset_shape(ds, shape=path_to_shape_file)
     """
     wgs84 = CRS(4326)
     # PROJ4 definition for WGS84 with longitudes ranged between -180/+180.
@@ -1006,8 +1004,8 @@ def subset_shape(
     lon_bnds = (minx, maxx)
     lat_bnds = (miny, maxy)
 
-    # If polygon doesn't cross prime meridian, subset bbox first to reduce processing time
-    # Only case not implemented is when lon_bnds cross the 0 deg meridian but dataset grid has all positive lons
+    # If polygon doesn't cross prime meridian, subset bbox first to reduce processing time.
+    # Only case not implemented is when lon_bnds cross the 0 deg meridian but dataset grid has all positive lons.
     try:
         ds_copy = subset_bbox(ds_copy, lon_bnds=lon_bnds, lat_bnds=lat_bnds)
     except ValueError as e:
@@ -1084,7 +1082,7 @@ def subset_shape(
     sp_dims = set(mask_2d.dims)  # Spatial dimensions
 
     # Find the outer mask. When subsetting unconnected shapes,
-    # we dont want to drop the inner NaN regions, it may cause problems downstream.
+    # we don't want to drop the inner NaN regions, it may cause problems downstream.
     inner_mask = xarray.full_like(mask_2d, True, dtype=bool)
     for dim in sp_dims:
         # For each dimension, propagate shape indexes in either directions
@@ -1149,51 +1147,54 @@ def subset_bbox(
     Parameters
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
-      Input data.
+        Input data.
     lon_bnds : Union[np.array, Tuple[Optional[float], Optional[float]]]
-      List of minimum and maximum longitudinal bounds. Optional. Defaults to all longitudes in original data-array.
+        List of minimum and maximum longitudinal bounds. Optional. Defaults to all longitudes in original data-array.
     lat_bnds : Union[np.array, Tuple[Optional[float], Optional[float]]]
-      List of minimum and maximum latitudinal bounds. Optional. Defaults to all latitudes in original data-array.
+        List of minimum and maximum latitudinal bounds. Optional. Defaults to all latitudes in original data-array.
     start_date : Optional[str]
-      Start date of the subset.
-      Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
-      Defaults to first day of input data-array.
+        Start date of the subset.
+        Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
+        Defaults to first day of input data-array.
     end_date : Optional[str]
-      End date of the subset.
-      Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
-      Defaults to last day of input data-array.
+        End date of the subset.
+        Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
+        Defaults to last day of input data-array.
     first_level : Optional[Union[int, float]]
-      First level of the subset.
-      Can be either an integer or float.
-      Defaults to first level of input data-array.
+        First level of the subset.
+        Can be either an integer or float.
+        Defaults to first level of input data-array.
     last_level : Optional[Union[int, float]]
-      Last level of the subset.
-      Can be either an integer or float.
-      Defaults to last level of input data-array.
+        Last level of the subset.
+        Can be either an integer or float.
+        Defaults to last level of input data-array.
     time_values: Optional[Sequence[str]]
-      A list of datetime strings to subset.
+        A list of datetime strings to subset.
     level_values: Optional[Union[Sequence[float], Sequence[int]]]
-      A list of level values to select.
+        A list of level values to select.
 
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
-      Subsetted xarray.DataArray or xarray.Dataset
+        Subsetted xarray.DataArray or xarray.Dataset
 
-    Note
-    ----
-        subset_bbox expects the lower and upper bounds to be provided in ascending order.
-        If the actual coordinate values are descending then this will be detected
-        and your selection reversed before the data subset is returned.
+    Notes
+    -----
+    subset_bbox expects the lower and upper bounds to be provided in ascending order.
+    If the actual coordinate values are descending then this will be detected
+    and your selection reversed before the data subset is returned.
 
     Examples
     --------
-    >>> import xarray as xr  # doctest: +SKIP
-    >>> from clisops.core.subset import subset_bbox  # doctest: +SKIP
-    >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
-    ...
-    # Subset lat lon
-    >>> prSub = subset_bbox(ds.pr, lon_bnds=[-75, -70], lat_bnds=[40, 45])  # doctest: +SKIP
+    .. code-block:: python
+
+        import xarray as xr
+        from clisops.core.subset import subset_bbox
+
+        ds = xr.open_dataset(path_to_pr_file)
+
+        # Subset lat lon
+        prSub = subset_bbox(ds.pr, lon_bnds=[-75, -70], lat_bnds=[40, 45])
     """
     lat = get_lat(da).name
     lon = get_lon(da).name
@@ -1311,14 +1312,14 @@ def assign_bounds(
     Parameters
     ----------
     bounds : Tuple[Optional[float], Optional[float]]
-      Boundaries.
+        Boundaries.
     coord : xarray.Coordinate
-      Grid coordinates.
+        Grid coordinates.
 
     Returns
     -------
     tuple
-      Lower and upper grid boundaries.
+        Lower and upper grid boundaries.
 
     """
     if bounds[0] > bounds[1]:
@@ -1410,48 +1411,51 @@ def subset_gridpoint(
     Parameters
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
-      Input data.
+        Input data.
     lon : Optional[Union[float, Sequence[float], xarray.DataArray]]
-      Longitude coordinate(s). Must be of the same length as lat.
+        Longitude coordinate(s). Must be of the same length as lat.
     lat : Optional[Union[float, Sequence[float], xarray.DataArray]]
-      Latitude coordinate(s). Must be of the same length as lon.
+        Latitude coordinate(s). Must be of the same length as lon.
     start_date : Optional[str]
-      Start date of the subset.
-      Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
-      Defaults to first day of input data-array.
+        Start date of the subset.
+        Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
+        Defaults to first day of input data-array.
     end_date : Optional[str]
-      End date of the subset.
-      Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
-      Defaults to last day of input data-array.
+        End date of the subset.
+        Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
+        Defaults to last day of input data-array.
     first_level : Optional[Union[int, float]]
-      First level of the subset.
-      Can be either an integer or float.
-      Defaults to first level of input data-array.
+        First level of the subset.
+        Can be either an integer or float.
+        Defaults to first level of input data-array.
     last_level : Optional[Union[int, float]]
-      Last level of the subset.
-      Can be either an integer or float.
-      Defaults to last level of input data-array.
+        Last level of the subset.
+        Can be either an integer or float.
+        Defaults to last level of input data-array.
     tolerance : Optional[float]
-      Masks values if the distance to the nearest gridpoint is larger than tolerance in meters.
+        Masks values if the distance to the nearest gridpoint is larger than tolerance in meters.
     add_distance: bool
 
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
-      Subsetted xarray.DataArray or xarray.Dataset
+         Subsetted xarray.DataArray or xarray.Dataset
 
     Examples
     --------
-    >>> import xarray as xr  # doctest: +SKIP
-    >>> from clisops.core.subset import subset_gridpoint  # doctest: +SKIP
-    >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
-    ...
-    # Subset lat lon point
-    >>> prSub = subset_gridpoint(ds.pr, lon=-75,lat=45)  # doctest: +SKIP
-    ...
-    # Subset multiple variables in a single dataset
-    >>> ds = xr.open_mfdataset([path_to_tasmax_file, path_to_tasmin_file])  # doctest: +SKIP
-    >>> dsSub = subset_gridpoint(ds, lon=-75, lat=45)  # doctest: +SKIP
+    .. code-block:: python
+
+        import xarray as xr
+        from clisops.core.subset import subset_gridpoint
+
+        ds = xr.open_dataset(path_to_pr_file)
+
+        # Subset lat lon point
+        prSub = subset_gridpoint(ds.pr, lon=-75,lat=45)
+
+        # Subset multiple variables in a single dataset
+        ds = xr.open_mfdataset([path_to_tasmax_file, path_to_tasmin_file])
+        dsSub = subset_gridpoint(ds, lon=-75, lat=45)
     """
     if lat is None or lon is None:
         raise ValueError("Insufficient coordinates provided to locate grid point(s).")
@@ -1524,47 +1528,51 @@ def subset_time(
     end_date: Optional[str] = None,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
     """Subset input DataArray or Dataset based on start and end years.
+
     Return a subset of a DataArray or Dataset for dates falling within the provided bounds.
 
     Parameters
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
-      Input data.
+        Input data.
     start_date : Optional[str]
-      Start date of the subset.
-      Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
-      Defaults to first day of input data-array.
+        Start date of the subset.
+        Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
+        Defaults to first day of input data-array.
     end_date : Optional[str]
-      End date of the subset.
-      Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
-      Defaults to last day of input data-array.
+        End date of the subset.
+        Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
+        Defaults to last day of input data-array.
 
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
-      Subsetted xarray.DataArray or xarray.Dataset
+        Subsetted xarray.DataArray or xarray.Dataset
 
     Examples
     --------
-    >>> import xarray as xr  # doctest: +SKIP
-    >>> from clisops.core.subset import subset_time  # doctest: +SKIP
-    >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
-    ...
-    # Subset complete years
-    >>> prSub = subset_time(ds.pr,start_date='1990',end_date='1999')  # doctest: +SKIP
-    ...
-    # Subset single complete year
-    >>> prSub = subset_time(ds.pr,start_date='1990',end_date='1990')  # doctest: +SKIP
-    ...
-    # Subset multiple variables in a single dataset
-    >>> ds = xr.open_mfdataset([path_to_tasmax_file, path_to_tasmin_file])  # doctest: +SKIP
-    >>> dsSub = subset_time(ds,start_date='1990',end_date='1999')  # doctest: +SKIP
-    ...
-    # Subset with year-month precision - Example subset 1990-03-01 to 1999-08-31 inclusively
-    >>> txSub = subset_time(ds.tasmax,start_date='1990-03',end_date='1999-08')  # doctest: +SKIP
-    ...
-    # Subset with specific start_dates and end_dates
-    >>> tnSub = subset_time(ds.tasmin,start_date='1990-03-13',end_date='1990-08-17')  # doctest: +SKIP
+    .. code-block:: python
+
+        import xarray as xr
+        from clisops.core.subset import subset_time
+
+        ds = xr.open_dataset(path_to_pr_file)
+
+        # Subset complete years
+        prSub = subset_time(ds.pr,start_date='1990',end_date='1999')
+
+        # Subset single complete year
+        prSub = subset_time(ds.pr,start_date='1990',end_date='1990')
+
+        # Subset multiple variables in a single dataset
+        ds = xr.open_mfdataset([path_to_tasmax_file, path_to_tasmin_file])
+        dsSub = subset_time(ds,start_date='1990',end_date='1999')
+
+        # Subset with year-month precision - Example subset 1990-03-01 to 1999-08-31 inclusively
+        txSub = subset_time(ds.tasmax,start_date='1990-03',end_date='1999-08')
+
+        # Subset with specific start_dates and end_dates
+        tnSub = subset_time(ds.tasmin,start_date='1990-03-13',end_date='1990-08-17')
 
     Notes
     -----
@@ -1579,28 +1587,33 @@ def subset_time_by_values(
     time_values: Optional[Sequence[str]] = None,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
     """Subset input DataArray or Dataset based on a sequence of datetime strings.
+
     Return a subset of a DataArray or Dataset for datetimes matching those requested.
 
     Parameters
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
-      Input data.
-    time_values: Optional[Sequence[str]] = None
+        Input data.
+    time_values: Optional[Sequence[str]]
+        Values for time. Default: ``None``
 
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
-      Subsetted xarray.DataArray or xarray.Dataset
+        Subsetted xarray.DataArray or xarray.Dataset
 
     Examples
     --------
-    >>> import xarray as xr  # doctest: +SKIP
-    >>> from clisops.core.subset import subset_time_by_values  # doctest: +SKIP
-    >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
-    ...
-    # Subset a selection of datetimes
-    >>> times = ["2015-01-01", "2018-12-05", "2021-06-06"]
-    >>> prSub = subset_time_by_values(ds.pr, time_values=times)  # doctest: +SKIP
+    .. code-block:: python
+
+        import xarray as xr
+        from clisops.core.subset import subset_time_by_values
+
+        ds = xr.open_dataset(path_to_pr_file)
+
+        # Subset a selection of datetimes
+        times = ["2015-01-01", "2018-12-05", "2021-06-06"]
+        prSub = subset_time_by_values(ds.pr, time_values=times)
 
     Notes
     -----
@@ -1615,7 +1628,7 @@ def subset_time_by_components(
     da: Union[xarray.DataArray, xarray.Dataset],
     *,
     time_components: Union[Dict, None] = None,
-):
+) -> xarray.DataArray:
     """Subsets by one or more time components (year, month, day etc).
 
     Parameters
@@ -1630,13 +1643,15 @@ def subset_time_by_components(
 
     Examples
     --------
-    >>> import xarray as xr  # doctest: +SKIP
-    >>> from clisops.core.subset import subset_time_by_components  # doctest: +SKIP
-    ...
-    To select all Winter months (Dec, Jan, Feb) or [12, 1, 2]:
-    >>> da = xr.open_dataset(path_to_file).pr  # doctest: +SKIP
-    >>> winter_dict = {"month": [12, 1, 2]}
-    >>> res = subset_time_by_components(da, time_components=winter_dict)  # doctest: +SKIP
+    .. code-block:: python
+
+        import xarray as xr
+        from clisops.core.subset import subset_time_by_components
+
+        # To select all Winter months (Dec, Jan, Feb) or [12, 1, 2]:
+        da = xr.open_dataset(path_to_file).pr
+        winter_dict = {"month": [12, 1, 2]}
+        res = subset_time_by_components(da, time_components=winter_dict)
     """
     # Create a set of indices that match the requested time components
     req_indices = set(range(len(da.time.values)))
@@ -1659,45 +1674,49 @@ def subset_time_by_components(
 @check_start_end_levels
 def subset_level(
     da: Union[xarray.DataArray, xarray.Dataset],
-    first_level: Optional[Union[int, float]] = None,
-    last_level: Optional[Union[int, float]] = None,
+    first_level: Optional[Union[int, float, str]] = None,
+    last_level: Optional[Union[int, float, str]] = None,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
     """Subset input DataArray or Dataset based on first and last levels.
+
     Return a subset of a DataArray or Dataset for levels falling within the provided bounds.
 
     Parameters
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
-      Input data.
-    first_level : Optional[Union[int, float]]
-      First level of the subset (specified as the value, not the index).
-      Can be either an integer or float.
-      Defaults to first level of input data-array.
-    last_level : Optional[Union[int, float]]
-      Last level of the subset (specified as the value, not the index).
-      Can be either an integer or float.
-      Defaults to last level of input data-array.
+        Input data.
+    first_level : Optional[Union[int, float, str]]
+        First level of the subset (specified as the value, not the index).
+        Can be either an integer or float.
+        Defaults to first level of input data-array.
+    last_level : Optional[Union[int, float, str]]
+        Last level of the subset (specified as the value, not the index).
+        Can be either an integer or float.
+        Defaults to last level of input data-array.
 
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
-      Subsetted xarray.DataArray or xarray.Dataset
+        Subsetted xarray.DataArray or xarray.Dataset
 
     Examples
     --------
-    >>> import xarray as xr  # doctest: +SKIP
-    >>> from clisops.core.subset import subset_level  # doctest: +SKIP
-    >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
-    ...
-    # Subset complete levels
-    >>> prSub = subset_level(ds.pr,first_level=0,last_level=30)  # doctest: +SKIP
-    ...
-    # Subset single level
-    >>> prSub = subset_level(ds.pr,first_level=1000,last_level=1000)  # doctest: +SKIP
-    ...
-    # Subset multiple variables in a single dataset
-    >>> ds = xr.open_mfdataset([path_to_tasmax_file, path_to_tasmin_file])  # doctest: +SKIP
-    >>> dsSub = subset_time(ds,first_level=1000.0,last_level=850.0)  # doctest: +SKIP
+    .. code-block:: python
+
+        import xarray as xr
+        from clisops.core.subset import subset_level
+
+        ds = xr.open_dataset(path_to_pr_file)
+
+        # Subset complete levels
+        prSub = subset_level(ds.pr,first_level=0,last_level=30)
+
+        # Subset single level
+        prSub = subset_level(ds.pr,first_level=1000,last_level=1000)
+
+        # Subset multiple variables in a single dataset
+        ds = xr.open_mfdataset([path_to_tasmax_file, path_to_tasmin_file])
+        dsSub = subset_time(ds,first_level=1000.0,last_level=850.0)
 
     Notes
     -----
@@ -1720,29 +1739,33 @@ def subset_level_by_values(
     level_values: Optional[Union[Sequence[float], Sequence[int]]] = None,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
     """Subset input DataArray or Dataset based on a sequence of vertical level values.
+
     Return a subset of a DataArray or Dataset for levels matching those requested.
 
     Parameters
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
-      Input data.
-    level_values: Optional[Union[Sequence[float], Sequence[int]]]
-      A list of level values to select.
+        Input data.
+    level_values : Optional[Union[Sequence[float], Sequence[int]]]
+        A list of level values to select.
 
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
-      Subsetted xarray.DataArray or xarray.Dataset
+        Subsetted xarray.DataArray or xarray.Dataset
 
     Examples
     --------
-    >>> import xarray as xr  # doctest: +SKIP
-    >>> from clisops.core.subset import subset_level_by_values  # doctest: +SKIP
-    >>> ds = xr.open_dataset(path_to_pr_file)  # doctest: +SKIP
-    ...
-    # Subset a selection of levels
-    >>> levels = [1000., 850., 250., 100.]
-    >>> prSub = subset_level_by_values(ds.pr, level_values=levels)  # doctest: +SKIP
+    .. code-block:: python
+
+        import xarray as xr
+        from clisops.core.subset import subset_level_by_values
+
+        ds = xr.open_dataset(path_to_pr_file)
+
+        # Subset a selection of levels
+        levels = [1000., 850., 250., 100.]
+        prSub = subset_level_by_values(ds.pr, level_values=levels)
 
     Notes
     -----
@@ -1766,27 +1789,29 @@ def distance(
     Parameters
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
-      Input data.
+        Input data.
     lon : Union[float, Sequence[float], xarray.DataArray]
-      Longitude coordinate.
+        Longitude coordinate.
     lat : Union[float, Sequence[float], xarray.DataArray]
-      Latitude coordinate.
+        Latitude coordinate.
 
     Returns
     -------
     xarray.DataArray
-      Distance in meters to point.
+        Distance in meters to point.
 
     Examples
     --------
-    >>> import xarray as xr  # doctest: +SKIP
-    >>> from clisops.core.subset import distance  # doctest: +SKIP
-    ...
-    To get the indices from closest point, use:
-    >>> da = xr.open_dataset(path_to_pr_file).pr  # doctest: +SKIP
-    >>> d = distance(da, lon=-75, lat=45)  # doctest: +SKIP
-    >>> k = d.argmin()  # doctest: +SKIP
-    >>> i, j, _ = np.unravel_index(k, d.shape)  # doctest: +SKIP
+    .. code-block:: python
+
+        import xarray as xr
+        from clisops.core.subset import distance
+
+        # To get the indices from the closest point, use:
+        da = xr.open_dataset(path_to_pr_file).pr
+        d = distance(da, lon=-75, lat=45)
+        k = d.argmin()
+        i, j, _ = np.unravel_index(k, d.shape)
     """
     ptdim = lat.dims[0]
 

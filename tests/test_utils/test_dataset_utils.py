@@ -1,4 +1,4 @@
-import cf_xarray as cfxr
+import cf_xarray as cfxr  # noqa
 import numpy as np
 import pytest
 import xarray as xr
@@ -272,7 +272,7 @@ def test_detect_coordinate_and_bounds():
 
 
 def test_detect_gridtype():
-    "Test the function detect_gridtype"
+    """Test the function detect_gridtype."""
     ds_a = xr.open_dataset(CMIP6_UNSTR_ICON_A, use_cftime=True)
     ds_b = xr.open_dataset(CMIP6_TOS_ONE_TIME_STEP, use_cftime=True)
     ds_c = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
@@ -305,7 +305,7 @@ def test_detect_gridtype():
 
 
 def test_crosses_0_meridian():
-    "Test the _crosses_0_meridian function"
+    """Test the _crosses_0_meridian function"""
     # Case 1 - longitude crossing 180° meridian
     lon = np.arange(160.0, 200.0, 1.0)
 
@@ -329,7 +329,7 @@ def test_crosses_0_meridian():
 
 
 def test_convert_interval_between_lon_frames():
-    "Test the helper function _convert_interval_between_lon_frames"
+    """Test the helper function _convert_interval_between_lon_frames"""
     # Convert from 0,360 to -180,180 longitude frame and vice versa
     assert clidu._convert_interval_between_lon_frames(20, 60) == (20, 60)
     assert clidu._convert_interval_between_lon_frames(190, 200) == (-170, -160)
@@ -349,7 +349,7 @@ def test_convert_interval_between_lon_frames():
 
 
 def test_convert_lon_frame_bounds():
-    "Test the function cf_convert_between_lon_frames"
+    """Test the function cf_convert_between_lon_frames"""
     # Load tutorial dataset defined on [200,330]
     ds = xr.tutorial.open_dataset("air_temperature")
     assert ds["lon"].min() == 200.0
@@ -364,7 +364,7 @@ def test_convert_lon_frame_bounds():
     assert conv["lon"].values[0] == -160.0
     assert conv["lon"].values[-1] == -30.0
 
-    # Check bounds are containing the respective cell centers
+    # Check that bounds contain the respective cell centers
     assert np.all(conv["lon"].values[:] > conv["lon_bounds"].values[0, :])
     assert np.all(conv["lon"].values[:] < conv["lon_bounds"].values[1, :])
 

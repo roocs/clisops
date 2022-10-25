@@ -1,6 +1,6 @@
 def create_time_bounds(ds, freq):
-    """
-    Generate time bounds for datasets that have been temporally averaged.
+    """Generate time bounds for datasets that have been temporally averaged.
+
     Averaging frequencies supported are yearly, monthly and daily.
     """
     # get datetime class

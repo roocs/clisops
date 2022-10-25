@@ -3,11 +3,15 @@ clisops - climate simulation operations
 
 .. image:: https://img.shields.io/pypi/v/clisops.svg
    :target: https://pypi.python.org/pypi/clisops
-   :alt: Pypi
+   :alt: PyPI
+
+.. image:: https://img.shields.io/conda/vn/conda-forge/clisops.svg
+   :target: https://anaconda.org/conda-forge/clisops
+   :alt: Conda Forge
 
 .. image:: https://github.com/roocs/clisops/workflows/build/badge.svg
-    :target: https://github.com/roocs/clisops/actions
-    :alt: Build Status
+   :target: https://github.com/roocs/clisops/actions
+   :alt: Build Status
 
 .. image:: https://readthedocs.org/projects/clisops/badge/?version=latest
    :target: https://clisops.readthedocs.io/en/latest/?badge=latest

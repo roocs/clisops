@@ -3,7 +3,7 @@ import warnings
 from pathlib import Path
 from typing import Sequence, Tuple, Union
 
-import cf_xarray
+import cf_xarray  # noqa
 import geopandas as gpd
 import numpy as np
 import xarray as xr
@@ -37,19 +37,19 @@ def average_shape(
     Parameters
     ----------
     ds : xarray.Dataset
-      Input values, coordinate attributes must be CF-compliant.
+        Input values, coordinate attributes must be CF-compliant.
     shape : Union[str, Path, gpd.GeoDataFrame]
-      Path to shape file, or directly a geodataframe. Supports formats compatible with geopandas.
-      Will be converted to EPSG:4326 if needed.
+        Path to shape file, or directly a geodataframe. Supports formats compatible with geopandas.
+        Will be converted to EPSG:4326 if needed.
     variable : Union[str, Sequence[str], None]
-      Variables to average. If None, average over all data variables.
+        Variables to average. If None, average over all data variables.
 
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
-      `ds` spatially-averaged over the polygon(s) in `shape`.
-      Has a new `geom` dimension corresponding to the index of the input geodataframe.
-      Non-geometry columns of the geodataframe are copied as auxiliary coordinates.
+        `ds` spatially-averaged over the polygon(s) in `shape`.
+        Has a new `geom` dimension corresponding to the index of the input geodataframe.
+        Non-geometry columns of the geodataframe are copied as auxiliary coordinates.
 
     Notes
     -----
@@ -62,16 +62,19 @@ def average_shape(
 
     Examples
     --------
-    >>> import xarray as xr  # doctest: +SKIP
-    >>> from clisops.core.average import average_shape  # doctest: +SKIP
-    >>> pr = xr.open_dataset(path_to_pr_file).pr  # doctest: +SKIP
-    ...
-    # Average data array over shape
-    >>> prAvg = average_shape(pr, shape=path_to_shape_file)  # doctest: +SKIP
-    ...
-    # Average multiple variables in a single dataset
-    >>> ds = xr.open_mfdataset([path_to_tasmin_file, path_to_tasmax_file])  # doctest: +SKIP
-    >>> dsAvg = average_shape(ds, shape=path_to_shape_file)  # doctest: +SKIP
+    .. code-block:: python
+
+        import xarray as xr  # doctest: +SKIP
+        from clisops.core.average import average_shape
+
+        pr = xr.open_dataset(path_to_pr_file).pr
+
+        # Average data array over shape
+        prAvg = average_shape(pr, shape=path_to_shape_file)
+
+        # Average multiple variables in a single dataset
+        ds = xr.open_mfdataset([path_to_tasmin_file, path_to_tasmax_file])
+        dsAvg = average_shape(ds, shape=path_to_shape_file)
     """
     try:
         from xesmf import SpatialAverager
@@ -140,7 +143,7 @@ def average_shape(
 
 def average_over_dims(
     ds: Union[xr.DataArray, xr.Dataset],
-    dims: Tuple[str] = None,
+    dims: Sequence[str] = None,
     ignore_undetected_dims: bool = False,
 ) -> Union[xr.DataArray, xr.Dataset]:
     """
@@ -149,27 +152,30 @@ def average_over_dims(
     Parameters
     ----------
     ds : Union[xr.DataArray, xr.Dataset]
-      Input values.
-    dims : Tuple[str] = None
-      The dimensions over which to apply the average. If None, none of the dimensions are averaged over. Dimensions
-      must be one of ["time", "level", "latitude", "longitude"].
-    ignore_undetected_dims: bool
-      If the dimensions specified are not found in the dataset, an Exception will be raised if set to True.
-      If False, an exception will not be raised and the other dimensions will be averaged over. Default = False
+        Input values.
+    dims : Sequence[{"time", "level", "latitude", "longitude"}]
+        The dimensions over which to apply the average. If None, none of the dimensions are averaged over. Dimensions
+        must be one of ["time", "level", "latitude", "longitude"].
+    ignore_undetected_dims : bool
+        If the dimensions specified are not found in the dataset, an Exception will be raised if set to True.
+        If False, an exception will not be raised and the other dimensions will be averaged over. Default = False
 
     Returns
     -------
     Union[xr.DataArray, xr.Dataset]
-      New Dataset or DataArray object averaged over the indicated dimensions.
-      The indicated dimensions will have been removed.
+        New Dataset or DataArray object averaged over the indicated dimensions.
+        The indicated dimensions will have been removed.
 
     Examples
     --------
-    >>> from clisops.core.average import average_over_dims  # doctest: +SKIP
-    >>> pr = xr.open_dataset(path_to_pr_file).pr  # doctest: +SKIP
-    ...
-    # Average data array over latitude and longitude
-    >>> prAvg = average_over_dims(pr, dims=['latitude', 'longitude'], ignore_undetected_dims=True)  # doctest: +SKIP
+    .. code-block:: python
+
+        from clisops.core.average import average_over_dims
+
+        pr = xr.open_dataset(path_to_pr_file).pr
+
+        # Average data array over latitude and longitude
+        prAvg = average_over_dims(pr, dims=['latitude', 'longitude'], ignore_undetected_dims=True)
     """
 
     if not dims:
@@ -251,11 +257,14 @@ def average_time(
 
     Examples
     --------
-    >>> from clisops.core.average import average_time  # doctest: +SKIP
-    >>> pr = xr.open_dataset(path_to_pr_file).pr  # doctest: +SKIP
-    ...
-    # Average data array over each month
-    >>> prAvg = average_time(pr, freq='month')  # doctest: +SKIP
+    .. code-block:: python
+
+        from clisops.core.average import average_time
+
+        pr = xr.open_dataset(path_to_pr_file).pr
+
+        # Average data array over each month
+        prAvg = average_time(pr, freq='month')
     """
 
     if not freq:
