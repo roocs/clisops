@@ -615,12 +615,12 @@ def _rectilinear_grid_exterior_polygon(ds):
         y = ds.cf.get_bounds("latitude")  # lat_bnds
 
     # Take the grid corner coordinates
-    xmin = x[0, 0]
-    xmax = x[-1, -1]
-    ymin = y[0, 0]
-    ymax = y[-1, -1]
+    x_min = x[0, 0]
+    x_max = x[-1, -1]
+    y_min = y[0, 0]
+    y_max = y[-1, -1]
 
-    pts = [(xmin, ymin), (xmin, ymax), (xmax, ymax), (xmax, ymin)]
+    pts = [(x_min, y_min), (x_min, y_max), (x_max, y_max), (x_max, y_min)]
     return Polygon(pts)
 
 
@@ -663,12 +663,12 @@ def _curvilinear_grid_exterior_polygon(ds, mode="bbox"):
             x = ds.lon_b
             y = ds.lat_b
 
-        xmin = round_down(x.min())
-        xmax = round_up(x.max())
-        ymin = round_down(y.min())
-        ymax = round_up(y.max())
+        x_min = round_down(x.min())
+        x_max = round_up(x.max())
+        y_min = round_down(y.min())
+        y_max = round_up(y.max())
 
-        pts = [(xmin, ymin), (xmin, ymax), (xmax, ymax), (xmax, ymin)]
+        pts = [(x_min, y_min), (x_min, y_max), (x_max, y_max), (x_max, y_min)]
 
     elif mode == "cell_union":
         # x and y should be vertices.
@@ -909,6 +909,7 @@ def subset_shape(
     raster_crs: Optional[Union[str, int]] = None,
     shape_crs: Optional[Union[str, int]] = None,
     buffer: Optional[Union[int, float]] = None,
+    touching: bool = False,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     first_level: Optional[Union[float, int]] = None,
@@ -933,7 +934,9 @@ def subset_shape(
         EPSG number or PROJ4 string.
     buffer : Optional[Union[int, float]]
         Buffer the shape in order to select a larger region stemming from it.
-        Units are based on the shape degrees/metres.
+        Units are based on the shape distance (degrees/metres).
+    touching : bool
+        Include grid pixels that are touching the provided shape. Default: False.
     start_date : Optional[str]
         Start date of the subset.
         Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
@@ -1129,6 +1132,8 @@ def subset_bbox(
     da: Union[xarray.DataArray, xarray.Dataset],
     lon_bnds: Union[np.array, Tuple[Optional[float], Optional[float]]] = None,
     lat_bnds: Union[np.array, Tuple[Optional[float], Optional[float]]] = None,
+    buffer: Optional[Union[int, float]] = None,
+    touching: bool = False,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     first_level: Optional[Union[float, int]] = None,
@@ -1152,6 +1157,11 @@ def subset_bbox(
         List of minimum and maximum longitudinal bounds. Optional. Defaults to all longitudes in original data-array.
     lat_bnds : Union[np.array, Tuple[Optional[float], Optional[float]]]
         List of minimum and maximum latitudinal bounds. Optional. Defaults to all latitudes in original data-array.
+    buffer : Optional[Union[int, float]]
+        Buffer the bbox in order to select a larger region stemming from it.
+        Units are based on the grid distance (degrees/metres).
+    touching : bool
+        Include grid pixels that are touching the outer boundaries of the bbox. Default: False.
     start_date : Optional[str]
         Start date of the subset.
         Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
@@ -1278,7 +1288,7 @@ def subset_bbox(
 
     else:
         raise (
-            Exception(
+            TypeError(
                 f'{subset_bbox.__name__} requires input data with "lon" and "lat" dimensions, coordinates, or variables.'
             )
         )
@@ -1356,17 +1366,6 @@ def _check_has_overlaps(polygons: gpd.GeoDataFrame):
         )
 
 
-def _check_has_overlaps_old(polygons: gpd.GeoDataFrame):
-    for i, (inda, pola) in enumerate(polygons.iterrows()):
-        for (indb, polb) in polygons.iloc[i + 1 :].iterrows():
-            if pola.geometry.intersects(polb.geometry):
-                warnings.warn(
-                    f"List of shapes contains overlap between {inda} and {indb}. Points will be assigned to {inda}.",
-                    UserWarning,
-                    stacklevel=5,
-                )
-
-
 def _check_crs_compatibility(shape_crs: CRS, raster_crs: CRS):
     """If CRS definitions are not WGS84 or incompatible, raise operation warnings."""
     wgs84 = CRS(4326)
@@ -1394,6 +1393,8 @@ def subset_gridpoint(
     da: Union[xarray.DataArray, xarray.Dataset],
     lon: Optional[Union[float, Sequence[float], xarray.DataArray]] = None,
     lat: Optional[Union[float, Sequence[float], xarray.DataArray]] = None,
+    buffer: Optional[Union[int, float]] = None,
+    touching: bool = False,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     first_level: Optional[Union[float, int]] = None,
@@ -1401,12 +1402,12 @@ def subset_gridpoint(
     tolerance: Optional[float] = None,
     add_distance: bool = False,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
-    """Extract one or more nearest gridpoint(s) from datarray based on lat lon coordinate(s).
+    """Extract one or more of the nearest grid point(s) from datarray based on lat lon coordinate(s).
 
     Return a subsetted data array (or Dataset) for the grid point(s) falling nearest the input longitude and latitude
     coordinates. Optionally subset the data array for years falling within provided date bounds.
     Time series can optionally be subsetted by dates.
-    If 1D sequences of coordinates are given, the gridpoints will be concatenated along the new dimension "site".
+    If 1D sequences of coordinates are given, the grid points will be concatenated along the new dimension "site".
 
     Parameters
     ----------
@@ -1416,6 +1417,11 @@ def subset_gridpoint(
         Longitude coordinate(s). Must be of the same length as lat.
     lat : Optional[Union[float, Sequence[float], xarray.DataArray]]
         Latitude coordinate(s). Must be of the same length as lon.
+    buffer : Optional[Union[int, float]]
+        Buffer the grid point in order to select a larger region stemming from it.
+        Units are based on the grid distance (degrees/metres).
+    touching : bool
+        If `buffer` is set, include grid pixels that are touching the outer boundaries of buffer. Default: False.
     start_date : Optional[str]
         Start date of the subset.
         Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
@@ -1498,7 +1504,7 @@ def subset_gridpoint(
             dist = xarray.concat(dists, dim=ptdim)
     else:
         raise (
-            Exception(
+            ValueError(
                 f'{subset_gridpoint.__name__} requires input data with "lon" and "lat" coordinates or data variables.'
             )
         )
@@ -1594,7 +1600,7 @@ def subset_time_by_values(
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
         Input data.
-    time_values: Optional[Sequence[str]]
+    time_values : Optional[Sequence[str]]
         Values for time. Default: ``None``
 
     Returns
@@ -1635,7 +1641,7 @@ def subset_time_by_components(
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
       Input data.
-    time_components: Union[Dict, None] = None
+    time_components : Union[Dict, None] = None
 
     Returns
     -------
