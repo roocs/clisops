@@ -5,23 +5,24 @@ channels:
 dependencies:
  - python >=3.8
  - pip
- - bottleneck>=1.3.1,<1.4
- - cf_xarray>=0.7.0
- - cftime>=1.4.1
- - dask>=2.6.0
- - gdal<3.5
- - geopandas>=0.7
- - loguru>=0.5.3
- - netCDF4>=1.4
- - numpy>=1.16
+ - bottleneck >=1.3.1,<1.4
+ - cf_xarray >=0.7.0
+ - cftime >=1.4.1
+ - dask >=2.6.0
+ - gdal <3.5
+ - geopandas >=0.7
+ - loguru >=0.5.3
+ - netCDF4 >=1.4
+ - numpy >=1.16
  - packaging
- - pandas>=1.0.3,<1.4
- - poppler>=0.67
- - pygeos>=0.9
- - pyproj>=2.5
+ - pandas >=1.0.3,<1.4
+ - poppler >=0.67
+ - pygeos >=0.9
+ - pyproj >=2.5
  - pooch
- - requests>=2.0
- - roocs-utils>=0.6.2,<0.7
- - shapely>=1.6
- - xarray>=0.15
- - xesmf>=0.6.2
+ - requests >=2.0
+ - roocs-utils >=0.6.2,<0.7
+ - scipy >=1.8
+ - shapely >=1.6
+ - xarray >=0.15
+ - xesmf >=0.6.2
