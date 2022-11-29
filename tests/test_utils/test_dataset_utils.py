@@ -1,5 +1,6 @@
 import cf_xarray as cfxr  # noqa
 import numpy as np
+import packaging.version
 import pytest
 import xarray as xr
 from pkg_resources import parse_version
@@ -365,8 +366,16 @@ def test_convert_lon_frame_bounds():
     assert conv["lon"].values[-1] == -30.0
 
     # Check that bounds contain the respective cell centers
-    assert np.all(conv["lon"].values[:] > conv["lon_bounds"].values[0, :])
-    assert np.all(conv["lon"].values[:] < conv["lon_bounds"].values[1, :])
+    if packaging.version.parse(xr.__version__) >= packaging.version.parse("2022.11.0"):
+        assert np.all(
+            conv["lon"].values[:] > conv["lon_bounds"].values[:, 0]
+        )  # xarray >=2022.11.0 reorders dim values
+        assert np.all(
+            conv["lon"].values[:] < conv["lon_bounds"].values[:, 1]
+        )  # xarray >=2022.11.0 reorders dim values
+    else:
+        assert np.all(conv["lon"].values[:] > conv["lon_bounds"].values[0, :])
+        assert np.all(conv["lon"].values[:] < conv["lon_bounds"].values[1, :])
 
     # Convert only lon_interval
     conv, ll, lu = clidu.cf_convert_between_lon_frames(dsb, (-180, -10))
