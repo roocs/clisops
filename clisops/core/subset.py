@@ -1774,7 +1774,7 @@ def subset_level_by_values(
     input dataset.
     """
     level = xu.get_coord_by_type(da, "level")
-    return da.sel(**{level.name: level_values})
+    return da.sel(**{level.name: level_values}, method="nearest")
 
 
 @convert_lat_lon_to_da
