@@ -1418,6 +1418,30 @@ def test_subset_level_by_values_with_gaps(tmpdir, load_esgf_test_data):
     assert_vars_equal("plev", *ds_list)
 
 
+def test_subset_level_by_values_and_bbox(tmpdir, load_esgf_test_data):
+    some_levels = [60000, 50000, 40000, 30000, 25000, 20000, 15000, 10000, 7000, 5000]
+    area = (20, 30.0, 150, 70.0)
+
+    shuffled_1 = _shuffle(some_levels)
+    shuffled_2 = _shuffle(some_levels)
+
+    # Get various outputs and compare they are the same
+    ds_list = [
+        subset(
+            ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray", level=level, area=area
+        )[0]
+        for level in [
+            level_series(some_levels),
+            level_interval(some_levels[0], some_levels[-1]),
+            level_series(list(reversed(some_levels))),
+            level_series(shuffled_1),
+            level_series(shuffled_2),
+        ]
+    ]
+
+    assert_vars_equal("plev", *ds_list)
+
+
 def test_subset_time_by_values_all(tmpdir, load_esgf_test_data):
     all_times = [str(tm) for tm in xr.open_dataset(CMIP6_TA).time.values]
 
