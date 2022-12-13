@@ -192,7 +192,8 @@ class Grid:
         self.source = None
         self.hash = None
         self.coll_mask = None
-        self.contains_collapsing_cells = None
+        self.contains_collapsed_cells = None
+        self.contains_duplicated_cells = None
 
         # Create grid_instructor as empty tuple if None
         grid_instructor = grid_instructor or tuple()
@@ -235,9 +236,6 @@ class Grid:
         # Unstagger the grid if necessary (to be done before halo removal - not yet implemented)
         self._grid_unstagger()
 
-        # Cut off halo (duplicate grid rows / columns)
-        self._grid_remove_halo()
-
         # Lon/Lat dimension sizes
         self.nlat, self.nlon, self.ncells = self.detect_shape()
 
@@ -252,6 +250,10 @@ class Grid:
         if isinstance(self.ds, xr.Dataset):
             self._set_data_vars_and_coords()
 
+        # Detect duplicated grid cells / halos
+        if self.contains_duplicated_cells is None:
+            self.contains_duplicated_cells = self._grid_detect_duplicated_cells()
+
         # Compute bounds if not specified and if possible
         if (not self.lat_bnds or not self.lon_bnds) and compute_bounds:
             self._compute_bounds()
@@ -265,8 +267,8 @@ class Grid:
         self.hash = self._compute_hash()
 
         # Detect collapsing grid cells
-        if self.lat_bnds and self.lon_bnds and self.contains_collapsing_cells is None:
-            self._detect_collapsed_grid_cells()
+        if self.lat_bnds and self.lon_bnds and self.contains_collapsed_cells is None:
+            self._grid_detect_collapsed_cells()
 
         self.title = self._get_title()
 
@@ -295,7 +297,8 @@ class Grid:
             + "Bounds?           {}\n".format(
                 self.lat_bnds is not None and self.lon_bnds is not None
             )
-            + f"Collapsing cells? {self.contains_collapsing_cells}\n"
+            + f"Collapsed cells? {self.contains_collapsed_cells}\n"
+            + f"Duplicated cells? {self.contains_duplicated_cells}\n"
             + f"Permanent Mask:   {self.mask}\n"
             + f"md5 hash:         {self.hash}"
         )
@@ -472,31 +475,10 @@ class Grid:
         # All in all a quite impossible task to automatise this process.
         pass
 
-    def _grid_remove_halo(self):
+    def _grid_detect_duplicated_cells(self):
         """
-        Detect and remove a possible grid halo.
-
-        Can only remove fully duplicated rows or columns. Assumes the halo column/row is a 1:1 copy of,
-        the original column/row, even though in practice it seems many grids are maldefined in the halo
-        region and it matters whether to keep the "original" or halo cells.
+        Detect a possible grid halo / duplicated cells.
         """
-        # todo
-        # If dimension is not named after the coordinate variable, get dimension name and then isel.
-        # Always assuming for 2D coordinate variables, the first dimension is latitude, the second longitude
-        # Plan:
-        # Detect duplicated cells and check if they occupy entire rows / columns
-        # If single duplicated cells are found, raise Error
-        # If duplicated rows/columns are found, remove them with xarray.Dataset.isel()
-
-        # This might be moved out of this class to be a general util function,
-        # as something similar is required for subsetting and averaging.
-
-        # In this class, as a single Grid object does not have the info whether
-        #  it is an input or an output grid, it is not checked whether the extent
-        #  of the output grid domain requires the halo to be removed or if partial row/column
-        #  halos would prevent the remapping process. For each duplicated grid point one would
-        #  have to check if it falls into the domain of the output grid / subset_bbox / area to
-        #  average over.
 
         # Create array of (ilat, ilon) tuples
         if self.ds[self.lon].ndim == 2 or (
@@ -514,7 +496,7 @@ class Grid:
         else:
             latlon_halo = list()
 
-        # For 1D regular_lat_lon - find duplicates - remove them assuming dimensions and coordinate variables have the same name
+        # For 1D regular_lat_lon
         if isinstance(latlon_halo, list):
             dup_rows = [
                 i
@@ -526,64 +508,17 @@ class Grid:
                 for i in list(range(self.ds[self.lon].shape[0]))
                 if i not in np.unique(self.ds[self.lon], return_index=True)[1]
             ]
-            if dup_cols != []:
-                lat_dim = self.ds[self.lat].dims[0]
-                self.ds = self.ds.isel(
-                    {
-                        lat_dim: [
-                            i
-                            for i in range(0, self.ds[self.lat].shape[0])
-                            if i not in dup_cols
-                        ]
-                    }
-                )
-                warnings.warn(
-                    "The selected dataset contains duplicate grid cells. "
-                    "The following %i duplicated columns will be removed: %s"
-                    % (len(dup_cols), ", ".join([str(i) for i in dup_cols]))
-                )
-            if dup_rows != []:
-                lon_dim = self.ds[self.lon].dims[0]
-                self.ds = self.ds.isel(
-                    {
-                        lon_dim: [
-                            i
-                            for i in range(0, self.ds[self.lon].shape[0])
-                            if i not in dup_rows
-                        ]
-                    }
-                )
-                warnings.warn(
-                    "The selected dataset contains duplicate grid cells. "
-                    "The following %i duplicated rows will be removed: %s"
-                    % (len(dup_rows), ", ".join([str(i) for i in dup_rows]))
-                )
-            return
-        # For 1D unstructured - find duplicates - remove them using xarray.Dataset.isel
+            if dup_cols != [] or dup_rows != []:
+                return True
+
+        # For 1D unstructured
         elif self.type == "unstructured" and self.ds[self.lon].ndim == 1:
             mask_duplicates = self._create_duplicate_mask(latlon_halo)
             dup_cells = np.where(mask_duplicates is True)[0]
             if dup_cells.size > 0:
-                # ncells dimension name:
-                ncells_dim = self.ds[self.lon].dims[0]
-                self.ds = self.ds.isel(
-                    {
-                        ncells_dim: [
-                            i
-                            for i in range(0, self.ds[self.lon].shape[0])
-                            if i not in dup_cells
-                        ]
-                    }
-                )
-                warnings.warn(
-                    "The selected dataset contains duplicate grid cells. "
-                    "The following %i duplicated cells will be removed: %s"
-                    % (len(dup_cells), _list_ten(dup_cells))
-                )
-            return
-        # For 2D coordinate variables - find duplicates - remove them using xarray.Dataset.isel
-        #    ... assuming lat is the first dimension and lon is the second
-        #        dimension of the 2D coordinate variables
+                return True
+
+        # For 2D coordinate variables
         else:
             mask_duplicates = self._create_duplicate_mask(latlon_halo)
             # All duplicate rows indices:
@@ -610,45 +545,14 @@ class Grid:
             for j in range(mask_duplicates.shape[1]):
                 if any(mask_duplicates[:, j]):
                     dup_part_cols.append(j)
-            if 1 == 2 and dup_part_cols != [] or dup_part_rows != [] and 1 == 2:
-                raise Exception(
-                    "The selected dataset contains dupliated grid cells. "
-                    "Several rows or columns of the grid are partially duplicated and thus cannot be removed."
-                )
-            else:
-                if dup_cols != []:
-                    warnings.warn(
-                        "The selected dataset contains duplicate grid cells. "
-                        "The following %i duplicated columns will be removed: %s"
-                        % (len(dup_cols), ", ".join([str(i) for i in dup_cols]))
-                    )
-                    lon_dim = self.ds[self.lon].dims[1]
-                    self.ds = self.ds.isel(
-                        {
-                            lon_dim: [
-                                i
-                                for i in range(0, self.ds[self.lon].shape[1])
-                                if i not in dup_cols
-                            ]
-                        }
-                    )
-                if dup_rows != []:
-                    warnings.warn(
-                        "The selected dataset contains duplicate grid cells. "
-                        "The following %i duplicated rows will be removed: %s"
-                        % (len(dup_rows), ", ".join([str(i) for i in dup_rows]))
-                    )
-                    lat_dim = self.ds[self.lat].dims[0]
-                    self.ds = self.ds.isel(
-                        {
-                            lat_dim: [
-                                i
-                                for i in range(0, self.ds[self.lat].shape[0])
-                                if i not in dup_rows
-                            ]
-                        }
-                    )
-            return
+            if (
+                dup_part_cols != []
+                or dup_part_rows != []
+                or dup_cols != []
+                or dup_rows != []
+            ):
+                return True
+        return False
 
     def _create_duplicate_mask(self, arr):
         "Create duplicate mask helper function"
@@ -885,7 +789,7 @@ class Grid:
         # In general one might be better off with the adaptive masking and this would be
         # just a nice to have thing in case of reformatting and storing the grid on disk.
 
-        # ds_in_LR_mask["mask"]=xr.where(~np.isnan(ds_LR['tos'].isel(time=0)), 1, 0).astype(int)
+        # ds["mask"]=xr.where(~np.isnan(ds['var'].isel(time=0)), 1, 0).astype(int)
         return
 
     def detect_shape(self):
@@ -963,7 +867,7 @@ class Grid:
             )
             return
 
-    def _detect_collapsed_grid_cells(self):
+    def _grid_detect_collapsed_cells(self):
         "Detect collapsing grid cells. Requires defined bounds."
         mask_lat = self._create_collapse_mask(self.ds[self.lat_bnds].data)
         mask_lon = self._create_collapse_mask(self.ds[self.lon_bnds].data)
@@ -975,7 +879,7 @@ class Grid:
         ):
             mask_lon, mask_lat = np.meshgrid(mask_lon, mask_lat)
         self.coll_mask = mask_lat | mask_lon
-        self.contains_collapsing_cells = bool(np.any(self.coll_mask))
+        self.contains_collapsed_cells = bool(np.any(self.coll_mask))
 
     def _create_collapse_mask(self, arr):
         "Grid cells collapsing to lines or points"
@@ -1296,17 +1200,14 @@ class Grid:
         The bounds will be attached as coords to the xarray.Dataset of the Grid object.
         If no bounds can be created, a warning is issued.
         """
-        #
-        # todo: Duplicated cells should be removed before computing bounds
-        #       or the possiblity of duplicated cells has to be considered.
-        #       Yet this is not yet 100% properly done by the method _remove_halo().
-        #       In cases where duplicated cells cannot be removed one might add a boolean
-        #       attribute to state whether duplicated cells exist (in which case no bounds would be
-        #       calculated).
-        #
-        # todo: This can be a public method as well, but then collapsing grid cells have to be detected
-        #       and the hash recomputed within this function.
-        #
+        # todo: This can be a public method as well, but then collapsing grid cells have
+        #       to be detected within this function.
+
+        # Bounds cannot be computed if there are duplicated cells
+        if self.contains_duplicated_cells:
+            raise Exception(
+                "This grid contains duplicated cell centers. Therefore bounds cannot be computed."
+            )
 
         # Bounds are only possible for xarray.Datasets
         if not isinstance(self.ds, xr.Dataset):
@@ -1539,8 +1440,8 @@ class Weights:
         self.ignore_degenerate = (
             True
             if (
-                self.grid_in.contains_collapsing_cells
-                or self.grid_out.contains_collapsing_cells
+                self.grid_in.contains_collapsed_cells
+                or self.grid_out.contains_collapsed_cells
             )
             else None
         )
@@ -1585,6 +1486,11 @@ class Weights:
             locstream_in = True
         if self.grid_out.type == "unstructured":
             locstream_out = True
+        if any([locstream_in, locstream_out]) and self.method != "nearest_s2d":
+            raise Exception(
+                "For unstructured grids, the only supported remapping method that is currently supported "
+                "is nearest neighbour."
+            )
 
         # Read weights from cache (= reuse weights) if they are not currently written
         #  to the cache by another process
@@ -1846,6 +1752,17 @@ def regrid(
         raise InvalidParameterValue(
             "The target Grid object 'grid_out' has to be built from an xarray.Dataset"
             " and not an xarray.DataArray."
+        )
+
+    # Duplicated cells / Halo
+    if grid_in.contains_duplicated_cells:
+        warnings.warn(
+            "The grid of the selected dataset contains duplicated cells. "
+            "For the conservative remapping method, "
+            "duplicated grid cells contribute to the resulting value, "
+            "which is in most parts counter-acted by the applied re-normalization. "
+            "However, please be wary with the results and consider removing / masking "
+            "the duplicated cells before remapping."
         )
 
     # Create attrs

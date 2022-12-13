@@ -68,6 +68,8 @@ def test_grid_init_ds_tas_regular(load_esgf_test_data):
     assert grid.lon == ds.lon.name
     assert grid.type == "regular_lat_lon"
     assert grid.extent == "global"
+    assert not grid.contains_collapsed_cells
+    assert not grid.contains_duplicated_cells
     assert grid.lat_bnds == ds.lat_bnds.name
     assert grid.lon_bnds == ds.lon_bnds.name
     assert grid.nlat == 80
@@ -89,6 +91,8 @@ def test_grid_init_da_tas_regular(load_esgf_test_data):
     assert grid.lon == da.lon.name
     assert grid.type == "regular_lat_lon"
     assert grid.extent == "global"
+    assert grid.contains_collapsed_cells is None
+    assert grid.contains_duplicated_cells is False
     assert grid.lat_bnds is None
     assert grid.lon_bnds is None
     assert grid.nlat == 80
@@ -108,9 +112,11 @@ def test_grid_init_ds_tos_curvilinear(load_esgf_test_data):
     assert grid.extent == "global"
     assert grid.lat_bnds == "vertices_latitude"
     assert grid.lon_bnds == "vertices_longitude"
-    assert grid.nlat == 402  # 404 incl halo  # this is number of 'j's
-    assert grid.nlon == 800  # 802 incl halo  # this is the number of 'i's
-    assert grid.ncells == 321600  # 324008 incl halo
+    assert grid.contains_collapsed_cells
+    assert grid.contains_duplicated_cells
+    assert grid.nlat == 404  # 402 w/o halo  # this is number of 'j's
+    assert grid.nlon == 802  # 800 w/o halo  # this is the number of 'i's
+    assert grid.ncells == 324008  # 321600 w/o halo
 
     # not implemented yet
     # assert self.mask
@@ -126,10 +132,12 @@ def test_grid_init_ds_tas_unstructured(load_esgf_test_data):
     assert grid.lon == ds.longitude.name
     assert grid.type == "unstructured"
     assert grid.extent == "global"
+    assert not grid.contains_collapsed_cells
+    assert not grid.contains_duplicated_cells
     assert grid.lat_bnds == "latitude_bnds"
     assert grid.lon_bnds == "longitude_bnds"
     assert grid.ncells == 20480
-    print(grid.contains_collapsing_cells)
+    print(grid.contains_collapsed_cells)
 
     # not implemented yet
     # assert self.mask
@@ -146,6 +154,8 @@ def test_grid_instructor_global():
     assert grid.lon == "lon"
     assert grid.type == "regular_lat_lon"
     assert grid.extent == "global"
+    assert not grid.contains_collapsed_cells
+    assert not grid.contains_duplicated_cells
 
     # check that grid_from_instructor sets the format to xESMF
     grid._grid_from_instructor(grid_instructor)
@@ -172,6 +182,8 @@ def test_grid_instructor_2d_regional_change_lon():
     assert grid.lon == "lon"
     assert grid.type == "regular_lat_lon"
     assert grid.extent == "regional"
+    assert not grid.contains_collapsed_cells
+    assert not grid.contains_duplicated_cells
 
     # check that grid_from_instructor sets the format to xESMF
     grid._grid_from_instructor(grid_instructor)
@@ -203,6 +215,9 @@ def test_grid_instructor_2d_regional_change_lat():
     #  detected as "global"
     assert grid.extent == "global"
 
+    assert not grid.contains_collapsed_cells
+    assert not grid.contains_duplicated_cells
+
     assert grid.lat_bnds == "lat_bnds"
     assert grid.lon_bnds == "lon_bnds"
     assert grid.nlat == 74
@@ -224,6 +239,8 @@ def test_grid_instructor_2d_regional_change_lon_and_lat():
     assert grid.lon == "lon"
     assert grid.type == "regular_lat_lon"
     assert grid.extent == "regional"
+    assert not grid.contains_collapsed_cells
+    assert not grid.contains_duplicated_cells
 
     # check that grid_from_instructor sets the format to xESMF
     grid._grid_from_instructor(grid_instructor)
@@ -250,6 +267,8 @@ def test_grid_instructor_2d_global():
     assert grid.lon == "lon"
     assert grid.type == "regular_lat_lon"
     assert grid.extent == "global"
+    assert not grid.contains_collapsed_cells
+    assert not grid.contains_duplicated_cells
 
     # check that grid_from_instructor sets the format to xESMF
     grid._grid_from_instructor(grid_instructor)
@@ -275,6 +294,8 @@ def test_from_grid_id():
     assert grid.lon == "lon"
     assert grid.type == "regular_lat_lon"
     assert grid.extent == "global"
+    assert not grid.contains_collapsed_cells
+    assert not grid.contains_duplicated_cells
     assert grid.lat_bnds == "lat_bnds"
     assert grid.lon_bnds == "lon_bnds"
     assert grid.nlat == 145
@@ -410,7 +431,7 @@ def test_to_netcdf(load_esgf_test_data, tmp_path):
     assert gA.type == gB.type
     assert gA.extent == gB.extent
     assert gA.source == gB.source
-    assert gA.contains_collapsing_cells == gB.contains_collapsing_cells
+    assert gA.contains_collapsed_cells == gB.contains_collapsed_cells
     assert sorted(list(gA.ds.attrs.keys()) + ["clisops"]) == sorted(
         list(gB.ds.attrs.keys())
     )
@@ -425,17 +446,34 @@ def test_to_netcdf(load_esgf_test_data, tmp_path):
     assert "coordinates" not in dsB.attrs.keys()
 
 
-def test_detect_collapsing_cells(load_esgf_test_data):
-    "Test that collapsing cells are properly identified"
-    # todo: the used datasets might not be appropriate when the halo gets more properly removed
+def test_detect_collapsed_cells(load_esgf_test_data):
+    "Test that collapsed cells are properly identified"
     dsA = xr.open_dataset(CMIP6_OCE_HALO_CNRM, use_cftime=True)
     dsB = xr.open_dataset(CMIP6_TOS_ONE_TIME_STEP, use_cftime=True)
+    dsC = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
 
     gA = Grid(ds=dsA)
     gB = Grid(ds=dsB)
+    gC = Grid(ds=dsC)
 
-    assert gA.contains_collapsing_cells
-    assert not gB.contains_collapsing_cells
+    assert gA.contains_collapsed_cells
+    assert gB.contains_collapsed_cells
+    assert not gC.contains_collapsed_cells
+
+
+def test_detect_duplicated_cells(load_esgf_test_data):
+    "Test that collapsed cells are properly identified"
+    dsA = xr.open_dataset(CMIP6_OCE_HALO_CNRM, use_cftime=True)
+    dsB = xr.open_dataset(CMIP6_TOS_ONE_TIME_STEP, use_cftime=True)
+    dsC = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+
+    gA = Grid(ds=dsA)
+    gB = Grid(ds=dsB)
+    gC = Grid(ds=dsC)
+
+    assert gA.contains_duplicated_cells
+    assert gB.contains_duplicated_cells
+    assert not gC.contains_duplicated_cells
 
 
 def test_subsetted_grid(load_esgf_test_data):
@@ -457,6 +495,8 @@ def test_subsetted_grid(load_esgf_test_data):
     assert grid.lon == ds.lon.name
     assert grid.type == "regular_lat_lon"
     assert grid.extent == "regional"
+    assert not grid.contains_collapsed_cells
+    assert not grid.contains_duplicated_cells
 
     assert grid.lat_bnds == ds.lat_bnds.name
     assert grid.lon_bnds == ds.lon_bnds.name
@@ -523,7 +563,7 @@ def test_centers_within_bounds_curvilinear(load_esgf_test_data):
     g = Grid(ds=ds, compute_bounds=True)
     assert g.lat_bnds is not None
     assert g.lon_bnds is not None
-    assert g.contains_collapsing_cells is False
+    assert g.contains_collapsed_cells is False
 
     # Check that there are bounds values smaller and greater than the cell center values
     ones = np.ones((g.nlat, g.nlon), dtype=int)
@@ -558,7 +598,7 @@ def test_centers_within_bounds_regular_lat_lon():
     g = Grid(grid_id="0pt25deg_era5_lsm", compute_bounds=True)
     assert g.lat_bnds is not None
     assert g.lon_bnds is not None
-    assert bool(g.contains_collapsing_cells) is False
+    assert bool(g.contains_collapsed_cells) is False
 
     # Check that there are bounds values smaller and greater than the cell center values
     ones_lat = np.ones((g.nlat,), dtype=int)
@@ -680,9 +720,11 @@ class TestWeights:
         assert w.regridder.filename == "conservative_80x180_120x240.nc"
 
     def test_from_id(self):
+        "Test creating a Weights object by reading weights from disk, identified by the id."
         pass
 
     def test_from_disk(self):
+        "Test creating a Weights object by reading an xESMF or other weights file from disk."
         pass
 
     def test_conservative_no_bnds(self, load_esgf_test_data, tmp_path):
@@ -705,14 +747,101 @@ class TestWeights:
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
-def test_Weights_init_with_collapsing_cells(tmp_path, load_esgf_test_data):
-    "Test the creation of remapping weights for a grid containing collapsing cells"
-    # todo: the used dataset might not be appropriate if the halo gets more properly removed
+def test_Weights_compute(tmp_path, load_esgf_test_data):
+    "Test the generation of Weights with the _compute method."
+    g = Grid(grid_id="1deg")
+    g_out = Grid(grid_id="2deg_lsm")
+
+    weights_cache_init(Path(tmp_path, "weights"))
+
+    # Exception should be raised if input and output grid are evaluated as equal
+    with pytest.raises(
+        Exception,
+        match="The selected source and target grids are the same. No regridding operation required.",
+    ):
+        Weights(
+            g,
+            Grid(grid_instructor=(0.0, 360.0, 1.0, -90.0, 90.0, 1.0)),
+            method="bilinear",
+        )
+
+    # Exception should be raised for conservative method if input or output grid do not contain bounds
+    with pytest.raises(
+        Exception,
+        match="For conservative remapping, horizontal grid bounds have to be defined for the source and target grids.",
+    ):
+        Weights(g, g_out, method="conservative")
+
+    # Test computation and cache storage
+    g_out = Grid(grid_id="2deg_lsm", compute_bounds=True)
+    w = Weights(g, g_out, method="nearest_s2d")
+    assert w.id == w._read_info_from_cache("uid")
+    assert w.tool == w._read_info_from_cache("tool")
+    assert w.regridder.periodic == w.periodic
+    assert w._read_info_from_cache("method") == "nearest_s2d"
+    assert w.regridder.method == w.method
+    assert w.format == "xESMF"
+    assert w.regridder.filename == "nearest_s2d_180x360_90x180_peri.nc"
+    assert not w.regridder.reuse_weights
+    assert w.regridder.ignore_degenerate is None
+    assert w.regridder.n_in == 180 * 360
+    assert w.regridder.n_out == 90 * 180
+    assert w.ignore_degenerate is None
+    assert w.filename == "weights_" + w.id + ".nc"
+
+    # Test weight reusage
+    z = Weights(g, g_out, method="nearest_s2d")
+    assert z.regridder.reuse_weights
+
+
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
+def test_Weights_compute_unstructured(tmp_path, load_esgf_test_data):
+    "Test the generation of Weights for unstructured grids with the _compute method."
+    ds = xr.open_dataset(CMIP6_UNSTR_ICON_A, use_cftime=True)
+    g = Grid(ds=ds)
+    g_out = Grid(grid_id="2deg_lsm", compute_bounds=True)
+
+    weights_cache_init(Path(tmp_path, "weights"))
+
+    # Exception should be raised for other than nearest_s2d remapping method
+    with pytest.raises(
+        Exception,
+        match="For unstructured grids, the only supported remapping method that is currently supported is nearest neighbour.",
+    ):
+        Weights(g, g_out, method="conservative")
+
+    # Check translated xesmf settings
+    w = Weights(g, g_out, method="nearest_s2d")
+    assert w.regridder.sequence_in
+    assert not w.regridder.sequence_out
+    assert w.regridder.ignore_degenerate is None
+    assert w.regridder.n_in == g.ncells
+    assert w.regridder.n_out == 90 * 180
+
+
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
+def test_Weights_generate_id(tmp_path, load_esgf_test_data):
+    "Test the generation of Weight ids."
+    g = Grid(grid_id="1deg")
+    g_out = Grid(grid_id="2pt5deg")
+
+    weights_cache_init(Path(tmp_path, "weights"))
+    w = Weights(g, g_out, method="bilinear")
+
+    assert w.id == w._generate_id()
+    assert w.id == "_".join([g.hash, g_out.hash, "peri", "no-degen", "bilinear"])
+
+
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
+def test_Weights_init_with_collapsed_cells(tmp_path, load_esgf_test_data):
+    "Test the creation of remapping weights for a grid containing collapsed cells"
     # ValueError: ESMC_FieldRegridStore failed with rc = 506. Please check the log files (named "*ESMF_LogFile").
     ds = xr.open_dataset(CMIP6_OCE_HALO_CNRM, use_cftime=True)
 
     g = Grid(ds=ds)
     g_out = Grid(grid_instructor=(10.0,))
+
+    assert g.contains_collapsed_cells
 
     weights_cache_init(Path(tmp_path, "weights"))
     Weights(g, g_out, method="bilinear")

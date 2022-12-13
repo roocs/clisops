@@ -1,7 +1,7 @@
 import warnings
 from typing import Optional
 
-import cf_xarray  # noqa
+import cf_xarray as cfxr  # noqa
 import cftime
 import numpy as np
 import xarray as xr

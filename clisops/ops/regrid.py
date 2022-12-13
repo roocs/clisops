@@ -24,7 +24,9 @@ class Regrid(Operation):
     """Class for regridding operation, extends clisops.ops.base_operation.Operation."""
 
     def _get_grid_in(
-        self, grid_desc: Union[xr.Dataset, xr.DataArray], compute_bounds: bool
+        self,
+        grid_desc: Union[xr.Dataset, xr.DataArray],
+        compute_bounds: bool,
     ):
         """
         Create clisops.core.regrid.Grid object as input grid of the regridding operation.
@@ -94,6 +96,7 @@ class Regrid(Operation):
 
         # Compute bounds only when required
         compute_bounds = "conservative" in method
+
         # Create and check source and target grids
         grid_in = self._get_grid_in(self.ds, compute_bounds)
         grid_out = self._get_grid_out(grid, compute_bounds)
@@ -117,9 +120,7 @@ class Regrid(Operation):
             "keep_attrs": keep_attrs,
         }
 
-        # In case there was a Halo removed, the shape of grid_in.ds and self.ds would not match anymore
-        #  An alternative would be to store the halo information (duplicated rows, columns) in an attribute,
-        #  and then remove those rows and columns from self.ds?
+        # Input grid / Dataset
         self.ds = self.params.get("grid_in").ds
 
         # Theres no __str__() method for the Regridder object, so I used its filename attribute,

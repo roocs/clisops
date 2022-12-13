@@ -14,8 +14,8 @@ roocs-grids @ git+https://github.com/roocs/roocs-grids.git@main#egg=roocs-grids
 # Optional (if using regridding)
 # pangeo-xesmf>=0.6.3
 pooch
-#cf-xarray>0.7.4
-cf-xarray @ git+https://github.com/xarray-contrib/cf-xarray/@main#egg=cf-xarray
+cf-xarray>=0.7.5
+#cf-xarray @ git+https://github.com/xarray-contrib/cf-xarray/@main#egg=cf-xarray
 bottleneck>=1.3.1
 requests>=2.0
 roocs-utils>=0.6.2,<0.7

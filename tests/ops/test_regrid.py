@@ -194,7 +194,10 @@ def test_regrid_halo_simple(load_esgf_test_data, tmp_path):
         output_type="xarray",
     )[0]
 
-    assert ds_out.attrs["regrid_operation"] == "conservative_402x800_36x72"
+    ## if halo removed
+    # assert ds_out.attrs["regrid_operation"] == "conservative_402x800_36x72"
+    ## if halo present
+    assert ds_out.attrs["regrid_operation"] == "conservative_404x802_36x72"
 
 
 @pytest.mark.xfail

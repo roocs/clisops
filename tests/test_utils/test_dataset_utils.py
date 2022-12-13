@@ -29,6 +29,7 @@ from .._common import (
     CMIP6_OCE_HALO_CNRM,
     CMIP6_SICONC,
     CMIP6_TAS_ONE_TIME_STEP,
+    CMIP6_TAS_PRECISION_A,
     CMIP6_TOS_ONE_TIME_STEP,
     CMIP6_UNSTR_ICON_A,
     CORDEX_TAS_ONE_TIMESTEP,
@@ -467,3 +468,53 @@ def test_convert_lon_frame_shifted_no_bounds():
 
 
 # todo: add a few more tests of cf_convert_lon_frame using xe.util functions to create regional and global datasets
+
+
+def test_calculate_bounds_curvilinear(load_esgf_test_data):
+    "Test for bounds calculation for curvilinear grid"
+
+    # Load CORDEX dataset (curvilinear grid)
+    ds = xr.open_dataset(CORDEX_TAS_ONE_TIMESTEP).isel(
+        {"rlat": range(100, 120), "rlon": range(100, 120)}
+    )
+
+    # Drop bounds variables and compute them
+    ds_nb = ds.drop_vars(["lon_vertices", "lat_vertices"])
+    ds_nb = clidu.generate_bounds_curvilinear(ds_nb, lat="lat", lon="lon")
+
+    # Sort every cells vertices values
+    for i in range(1, 19):
+        for j in range(1, 19):
+            ds.lat_vertices[i, j, :] = np.sort(ds.lat_vertices.values[i, j, :])
+            ds.lon_vertices[i, j, :] = np.sort(ds.lon_vertices.values[i, j, :])
+            ds_nb.lat_bnds[i, j, :] = np.sort(ds_nb.lat_bnds.values[i, j, :])
+            ds_nb.lon_bnds[i, j, :] = np.sort(ds_nb.lon_bnds.values[i, j, :])
+
+    # Assert all values are close (discard cells at edge of selected grid area)
+    xr.testing.assert_allclose(
+        ds.lat_vertices.isel({"rlat": range(1, 19), "rlon": range(1, 19)}),
+        ds_nb.lat_bnds.isel({"rlat": range(1, 19), "rlon": range(1, 19)}),
+        rtol=1e-06,
+        atol=0,
+    )
+    xr.testing.assert_allclose(
+        ds.lon_vertices.isel({"rlat": range(1, 19), "rlon": range(1, 19)}),
+        ds_nb.lon_bnds.isel({"rlat": range(1, 19), "rlon": range(1, 19)}),
+        rtol=1e-06,
+        atol=0,
+    )
+
+
+def test_calculate_bounds_rectilinear(load_esgf_test_data):
+    "Test for bounds calculation for rectilinear grid"
+
+    # Load CORDEX dataset (curvilinear grid)
+    ds = xr.open_dataset(CMIP6_TAS_PRECISION_A)
+
+    # Drop bounds variables and compute them
+    ds_nb = ds.drop_vars(["lon_bnds", "lat_bnds"])
+    ds_nb = clidu.generate_bounds_rectilinear(ds_nb, lat="lat", lon="lon")
+
+    # Assert all values are close
+    xr.testing.assert_allclose(ds.lat_bnds, ds_nb.lat_bnds, rtol=1e-06, atol=0)
+    xr.testing.assert_allclose(ds.lon_bnds, ds_nb.lon_bnds, rtol=1e-06, atol=0)
