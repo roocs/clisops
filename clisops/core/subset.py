@@ -1287,13 +1287,13 @@ def subset_bbox(
         da = subset_time(da, start_date=start_date, end_date=end_date)
 
     elif time_values:
-        da = subset_time_by_values(da, time_values)
+        da = subset_time_by_values(da, time_values=time_values)
 
     if first_level or last_level:
         da = subset_level(da, first_level=first_level, last_level=last_level)
 
     elif level_values:
-        da = subset_level_by_values(da, level_values)
+        da = subset_level_by_values(da, level_values=level_values)
 
     if da[lat].size == 0 or da[lon].size == 0:
         raise ValueError(
