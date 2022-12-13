@@ -5,8 +5,7 @@ v0.9.4 (2022-12-13)
 -------------------
 
 Bug Fixes
----------
-
+^^^^^^^^^
 * Fixed `core.subset_bbox` when using `level_values` (#263).
 * Fixed `core.subset_level_by_values` using xarray method *nearest* (#262).
 * Updated a test expectation to support newer xarray behaviour (#259).
@@ -15,11 +14,11 @@ v0.9.3 (2022-10-03)
 -------------------
 
 Bug Fixes
----------
+^^^^^^^^^
 * Fixed a bug associated with the new xarray (2022.6.0+) accessor for native indexers that was introduced in (#241). (#250, #251).
 
 Other Changes
--------------
+^^^^^^^^^^^^^
 * Fixed a handful of static type hints that were sending out warnings, despite proper use. (#251).
 * Replaced all skipped doctests with sphinx-compatible python code blocks to prevent errors in downstream projects. (#251).
 * Adjusted GitHub Actions builds to ensure that the `conda-xesmf` run uses the latest `xarray` available. (#251).
