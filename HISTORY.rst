@@ -1,6 +1,16 @@
 Version History
 ===============
 
+v0.9.4 (2022-12-13)
+-------------------
+
+Bug Fixes
+---------
+
+* Fixed `core.subset_bbox` when using `level_values` (#263).
+* Fixed `core.subset_level_by_values` using xarray method *nearest* (#262).
+* Updated a test expectation to support newer xarray behaviour (#259).
+
 v0.9.3 (2022-10-03)
 -------------------
 
