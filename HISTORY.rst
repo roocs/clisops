@@ -1,6 +1,14 @@
 Version History
 ===============
 
+v0.9.5 (2022-12-14)
+-------------------
+
+Bug Fixes
+^^^^^^^^^
+
+* Fixed `core.subset.check_levels_exist` decorator by rounding (precision 4) level values like 1000.00000001 (#265).
+
 v0.9.4 (2022-12-13)
 -------------------
 
