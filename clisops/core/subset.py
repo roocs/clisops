@@ -286,7 +286,8 @@ def check_levels_exist(func):
 
         req_levels = set(kwargs.get("level_values", set()))
         da_levels = xu.get_coord_by_type(da, "level")
-        levels = {lev for lev in da_levels.values}
+        # round levels to precision 4. There might be level values like 1000.00000001 ... which would not match to 1000
+        levels = {round(lev, 4) for lev in da_levels.values}
 
         if not req_levels.issubset(levels):
             mismatch_levels = req_levels.difference(levels)
