@@ -28,6 +28,7 @@ from .._common import (
     CMIP6_ATM_VERT_ONE_TIMESTEP,
     CMIP6_GFDL_EXTENT,
     CMIP6_OCE_HALO_CNRM,
+    CMIP6_STAGGERED_UCOMP,
     CMIP6_TAS_ONE_TIME_STEP,
     CMIP6_TAS_PRECISION_A,
     CMIP6_TAS_PRECISION_B,
@@ -555,6 +556,24 @@ def test_calculate_bounds_curvilinear(load_esgf_test_data):
     assert g.lon_bnds is not None
 
 
+def test_calculate_bounds_duplicated_cells(load_esgf_test_data):
+    "Test for bounds calculation for curvilinear grid"
+    ds = xr.open_dataset(CORDEX_TAS_NO_BOUNDS).isel(
+        {"rlat": range(10), "rlon": range(10)}
+    )
+
+    # create duplicated cells
+    ds["lat"][:, 0] = ds["lat"][:, 1]
+    ds["lon"][:, 0] = ds["lon"][:, 1]
+
+    # assert raised exception
+    with pytest.raises(
+        Exception,
+        match="This grid contains duplicated cell centers. Therefore bounds cannot be computed.",
+    ):
+        Grid(ds=ds, compute_bounds=True)
+
+
 def test_centers_within_bounds_curvilinear(load_esgf_test_data):
     "Test for bounds calculation for curvilinear grid"
     ds = xr.open_dataset(CORDEX_TAS_NO_BOUNDS).isel(
@@ -996,3 +1015,78 @@ class TestRegrid:
         w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="bilinear")
         r = regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=-1.0)
         print(r)
+
+    def test_duplicated_cells_warning_issued(self, load_esgf_test_data, tmp_path):
+        self._setup()
+        weights_cache_init(Path(tmp_path, "weights"))
+        w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="conservative")
+
+        # Cheat regrid into thinking, grid_in contains duplicated cells
+        self.grid_in.contains_duplicated_cells = True
+
+        with pytest.warns(
+            UserWarning,
+            match="The grid of the selected dataset contains duplicated cells. "
+            "For the conservative remapping method, "
+            "duplicated grid cells contribute to the resulting value, "
+            "which is in most parts counter-acted by the applied re-normalization. "
+            "However, please be wary with the results and consider removing / masking "
+            "the duplicated cells before remapping.",
+        ) as issuedWarnings:
+            r = regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.0)
+            if not issuedWarnings:
+                raise Exception(
+                    "No warning issued regarding the duplicated cells in the grid."
+                )
+            else:
+                assert len(issuedWarnings) == 1
+            print(r)
+
+
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
+def test_duplicated_cells_renormalization(load_esgf_test_data, tmp_path):
+    # todo: Should probably be an xesmf test as well, will do PR there in the future
+    ds = xr.open_dataset(CMIP6_STAGGERED_UCOMP, use_cftime=True)
+
+    # some internal xesmf code to create array of ones
+    missing = np.isnan(ds.tauuo)
+    ds["tauuo"] = (~missing).astype("d")
+
+    grid_in = Grid(ds=ds)
+    assert grid_in.contains_collapsed_cells is True
+    assert grid_in.contains_duplicated_cells is True
+
+    # Make sure all values that are not missing, are equal to one
+    assert grid_in.ncells == ds["tauuo"].where(~missing, 1.0).sum()
+    # Make sure all values that are missing are equal to 0
+    assert 0.0 == ds["tauuo"].where(missing, 0.0).sum()
+
+    grid_out = Grid(grid_instructor=(0, 360, 1.5, -90, 90, 1.5))
+    weights_cache_init(Path(tmp_path, "weights"))
+    w = Weights(grid_in=grid_in, grid_out=grid_out, method="conservative")
+
+    # Remap using adaptive masking
+    r1 = regrid(grid_in, grid_out, w, adaptive_masking_threshold=0.5)
+
+    # Remap using default setting (na_thres = 0.5)
+    r2 = regrid(grid_in, grid_out, w)
+
+    # Make sure both options yield equal results
+    xr.testing.assert_equal(r1, r2)
+
+    # Remap without using adaptive masking - internally, then adaptive masking is used
+    #   with threshold 0., to still renormalize contributions from duplicated cells
+    #   but not from masked cells or out-of-source-domain area
+    r3 = regrid(grid_in, grid_out, w, adaptive_masking_threshold=-1.0)
+
+    # Make sure, contributions from duplicated cells (i.e. values > 1) are renormalized
+    assert r2["tauuo"].where(r2["tauuo"] > 1.0, 0.0).sum() == 0.0
+    assert r3["tauuo"].where(r2["tauuo"] > 1.0, 0.0).sum() == 0.0
+
+    # Make sure xesmf behaves as expected:
+    #   test that deactivated adaptive masking in xesmf will yield results > 1
+    #   and else, contributions from duplicated cells will be renormalized
+    r4 = w.regridder(ds["tauuo"], skipna=False)
+    r5 = w.regridder(ds["tauuo"], skipna=True, na_thres=0.0)
+    assert r4.where(r4 > 1.0, 0.0).sum() > 0.0
+    assert r5.where(r5 > 1.0, 0.0).sum() == 0.0

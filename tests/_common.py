@@ -299,7 +299,7 @@ CMIP6_UNTAGGED_MISSVALS = Path(
 # CMIP6 datasets defined on a staggered grid (u and v component)
 CMIP6_STAGGERED_UCOMP = Path(
     MINI_ESGF_CACHE_DIR,
-    "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tauvo/gn/v20200909/tauuo_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
+    "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tauuo/gn/v20200909/tauuo_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
 ).as_posix()
 
 CMIP6_STAGGERED_VCOMP = Path(

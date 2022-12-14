@@ -1801,12 +1801,16 @@ def regrid(
                 ]
             ):
                 continue
-            if (
-                weights.regridder.method
-                in ["conservative", "conservative_normed", "patch"]
-                and adaptive_masking_threshold >= 0.0
-                and adaptive_masking_threshold <= 1.0
-            ):
+            if weights.regridder.method in [
+                "conservative",
+                "conservative_normed",
+                "patch",
+            ]:
+                # Renormalize at least contributions from duplicated cells, if adaptive masking is deactivated
+                if (
+                    adaptive_masking_threshold < 0 or adaptive_masking_threshold > 1
+                ) and grid_in.contains_duplicated_cells:
+                    adaptive_masking_threshold = 0.0
                 grid_out.ds[data_var] = weights.regridder(
                     grid_in.ds[data_var],
                     skipna=True,
