@@ -12,7 +12,7 @@ dependencies:
 - geopandas>=0.7
 - loguru>=0.5.3
 - netCDF4>=1.4
-- numpy>=1.16,<1.22
+- numpy>=1.16
 - pandas>=1.0.3,<1.4
 - poppler>=0.67
 - pygeos>=0.9
@@ -21,7 +21,7 @@ dependencies:
 - requests>=2.0
 - roocs-utils>=0.6.2,<0.7
 - shapely>=1.6
-- xarray>=0.15,<2022.6.0
+- xarray>=0.15
 - xesmf>=0.6.3
 - jupyterlab
 - matplotlib>=3.5.2

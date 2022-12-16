@@ -572,8 +572,9 @@ def reformat_xESMF_to_CF(ds, keep_attrs=False):
     lat_vertices = cfxr.vertices_to_bounds(ds.lat_b, ("bnds", "lat", "lon")).values
     lon_vertices = cfxr.vertices_to_bounds(ds.lon_b, ("bnds", "lat", "lon")).values
 
-    lat_vertices = np.moveaxis(lat_vertices, 0, -1)
-    lon_vertices = np.moveaxis(lon_vertices, 0, -1)
+    # No longer necessary as of cf_xarray v0.7.5
+    # lat_vertices = np.moveaxis(lat_vertices, 0, -1)
+    # lon_vertices = np.moveaxis(lon_vertices, 0, -1)
 
     # From (N, M, 4) shaped vertices to (N, 2)  and (M, 2) shaped bounds
     lat_bnds[:, 0] = np.min(lat_vertices[:, 0, :], axis=1)
