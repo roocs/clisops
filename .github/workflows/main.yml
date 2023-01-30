@@ -22,7 +22,7 @@ jobs:
         with:
           python-version: "3.8"
       - name: Install tox
-        run: pip install tox
+        run: pip install "tox~=3.0"
       - name: Run linting suite
         run: tox -e ${{ matrix.tox-env }}
 
@@ -48,7 +48,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install tox
-      run: pip install tox
+      run: pip install "tox~=3.0"
     - name: Test with tox
       run: tox -e ${{ matrix.tox-env }}
       continue-on-error: ${{ matrix.allowed_to_fail }}

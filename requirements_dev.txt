@@ -3,7 +3,7 @@ bumpversion
 wheel
 watchdog
 flake8
-tox
+tox~=3.0
 pytest-cov
 Sphinx
 sphinx-rtd-theme>=1.0
