@@ -9,10 +9,10 @@ Sphinx
 sphinx-rtd-theme
 twine
 pytest
-pytest-loguru
+pytest-loguru>=0.2.0
 pytest-runner
 pre-commit>=2.9.0
-black>=21.12b0
+black>=22.12
 nbsphinx
 nbconvert
 ipython
