@@ -61,10 +61,8 @@ jobs:
         include:
           - python-version: "3.9"
             upstream: true
-            allowed_to_fail: true
           - python-version: "3.10"
             upstream: false
-            allowed_to_fail: false
     defaults:
       run:
         shell: bash -l {0}
@@ -90,4 +88,3 @@ jobs:
       - name: Test with conda
         run: |
             pytest --cov tests
-        continue-on-error:  ${{ matrix.allowed_to_fail }}
