@@ -13,7 +13,7 @@ dependencies:
  - geopandas>=0.7
  - loguru>=0.5.3
  - netCDF4>=1.4
- - numba
+ - numba  # needed for xesmf v0.6.3, see: https://github.com/conda-forge/xesmf-feedstock/pull/24
  - numpy>=1.16
  - packaging
  - pandas>=1.0.3,<1.4
