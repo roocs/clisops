@@ -53,12 +53,16 @@ jobs:
       run: tox -e ${{ matrix.tox-env }}
       continue-on-error: ${{ matrix.allowed_to_fail }}
 
-  conda-xesmf:
+  conda:
     needs: black
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.9]
+        include:
+          - python-version: "3.9"
+            upstream: true
+          - python-version: "3.10"
+            upstream: false
     defaults:
       run:
         shell: bash -l {0}
@@ -78,6 +82,7 @@ jobs:
         run: |
             pip install -e ".[dev]"
       - name: Install xarray@main
+        if: ${{ matrix.upstream }}
         run: |
             pip install git+https://github.com/pydata/xarray.git@main#egg=xarray
       - name: Test with conda
