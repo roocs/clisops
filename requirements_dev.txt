@@ -6,7 +6,7 @@ flake8
 tox
 pytest-cov
 Sphinx
-sphinx-rtd-theme
+sphinx-rtd-theme>=1.0
 twine
 pytest
 pytest-loguru>=0.2.0
