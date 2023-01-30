@@ -131,28 +131,6 @@ def test_plus_minus_180_equal(load_esgf_test_data):
     np.testing.assert_allclose(ds_minus.rlds.values, ds_plus.rlds.values)
 
 
-@pytest.mark.skip(reason="rolling now done within subset")
-def test_convert_lon_coords(tmpdir, load_esgf_test_data):
-    # test reassigning coords to convert to -180 to 180 for comparison
-    ds, lon = setup_test()
-
-    ds.coords[lon.name] = (ds.coords[lon.name] + 180) % 360 - 180
-    ds = ds.sortby(ds[lon.name])
-
-    assert isclose(ds.lon.values.min(), -180, abs_tol=10**2)
-    assert isclose(ds.lon.values.max(), 180, abs_tol=10**2)
-
-    result = subset(
-        ds=ds,
-        area=(-50.0, -90.0, 100.0, 90.0),
-        output_dir=tmpdir,
-        output_type="nc",
-        file_namer="simple",
-    )
-
-    assert result
-
-
 def test_roll_compare_roll_coords(load_esgf_test_data):
     ds, lon = setup_test()
     # work out how much to roll by
