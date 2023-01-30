@@ -1,12 +1,17 @@
 Version History
 ===============
 
+Other Changes
+^^^^^^^^^^^^^
+* Removed some obsolete tests and adjusted pytest to always report in colour (#272).
+* Updated requirements and CI to explicitly use `tox` v3.0 (until `tox-conda` is compatible with `tox` v4.0) (#272).
+* Split conda CI builds to explicitly test against xarray/stable and xarray/dev (#272).
+
 v0.9.5 (2022-12-14)
 -------------------
 
 Bug Fixes
 ^^^^^^^^^
-
 * Fixed `core.subset.check_levels_exist` decorator by rounding (precision 4) level values like 1000.00000001 (#265).
 
 v0.9.4 (2022-12-13)
