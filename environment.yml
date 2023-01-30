@@ -24,5 +24,6 @@ dependencies:
  - requests>=2.0
  - roocs-utils>=0.6.2,<0.7
  - shapely>=1.6
+ - sparse>=0.8.0  # needed for xesmf v0.6.3, see: https://github.com/conda-forge/xesmf-feedstock/pull/24
  - xarray>=0.15
  - xesmf>=0.6.2
