@@ -27,6 +27,7 @@ jobs:
         run: tox -e ${{ matrix.tox-env }}
 
   pypi:
+    name: Pip with Python${{ matrix.python-version }}
     needs: black
     runs-on: ubuntu-latest
     strategy:
@@ -34,16 +35,13 @@ jobs:
         include:
           - python-version: "3.8"
             tox-env: py38
-            allowed_to_fail: false
           - python-version: "3.9"
             tox-env: py39
-            allowed_to_fail: false
           - python-version: "3.10"
             tox-env: py310
-            allowed_to_fail: false
     steps:
     - uses: actions/checkout@v3
-    - name: Set up Python ${{ matrix.python-version }}
+    - name: Set up Python${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
@@ -54,6 +52,7 @@ jobs:
       continue-on-error: ${{ matrix.allowed_to_fail }}
 
   conda:
+    name: Anaconda Build with Python${{ matrix.python-version }} (upstream=${{ matrix.upstream }})
     needs: black
     runs-on: ubuntu-latest
     strategy:
@@ -69,16 +68,18 @@ jobs:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Conda (Micromamba) with Python ${{ matrix.python-version }}
+      - name: Setup Conda (Micromamba) with Python${{ matrix.python-version }}
         uses: mamba-org/provision-with-micromamba@main
         with:
           cache-downloads: true
           environment-file: environment.yml
           extra-specs: |
+            mamba
             python=${{ matrix.python-version }}
-      - name: Install mamba
+      - name: Conda and Mamba versions
         run: |
-            conda install -c conda-forge mamba
+            conda --version
+            mamba --version
       - name: Install CLISOPS
         run: |
             pip install -e ".[dev]"

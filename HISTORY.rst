@@ -1,6 +1,9 @@
 Version History
 ===============
 
+v0.9.6 (unreleased)
+-------------------
+
 Other Changes
 ^^^^^^^^^^^^^
 * Removed some obsolete tests and adjusted pytest to always report in colour (#272).
