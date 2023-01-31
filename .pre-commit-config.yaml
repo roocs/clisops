@@ -11,6 +11,7 @@ repos:
         exclude: setup.cfg
     -   id: check-yaml
     -   id: debug-statements
+    -   id: mixed-line-ending
 -   repo: https://github.com/psf/black
     rev: 22.12.0
     hooks:
