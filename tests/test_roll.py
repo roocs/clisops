@@ -131,78 +131,6 @@ def test_plus_minus_180_equal(load_esgf_test_data):
     np.testing.assert_allclose(ds_minus.rlds.values, ds_plus.rlds.values)
 
 
-@pytest.mark.skip(reason="rolling now done within subset")
-def test_xarray_roll_lon(tmpdir, load_esgf_test_data):
-    ds, lon = setup_test()
-
-    # work out how much to roll by
-    offset = calculate_offset(180)
-
-    ds_roll = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=True)
-
-    # testing after rolling still raises an error
-    with pytest.raises(NotImplementedError):
-        subset(
-            ds=ds_roll,
-            area=(-50.0, -90.0, 100.0, 90.0),
-            output_dir=tmpdir,
-            output_type="nc",
-            file_namer="simple",
-        )
-
-
-@pytest.mark.skip(reason="rolling now done within subset")
-def test_convert_lon_coords(tmpdir, load_esgf_test_data):
-    # test reassigning coords to convert to -180 to 180 for comparison
-    ds, lon = setup_test()
-
-    ds.coords[lon.name] = (ds.coords[lon.name] + 180) % 360 - 180
-    ds = ds.sortby(ds[lon.name])
-
-    assert isclose(ds.lon.values.min(), -180, abs_tol=10**2)
-    assert isclose(ds.lon.values.max(), 180, abs_tol=10**2)
-
-    result = subset(
-        ds=ds,
-        area=(-50.0, -90.0, 100.0, 90.0),
-        output_dir=tmpdir,
-        output_type="nc",
-        file_namer="simple",
-    )
-
-    assert result
-
-
-@pytest.mark.skip(reason="rolling now done within subset")
-def test_roll_convert_lon_coords(load_esgf_test_data):
-    ds, lon = setup_test()
-    # work out how much to roll by
-    offset = calculate_offset(180)
-
-    ds_roll = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=False)
-
-    # check roll with roll_coords=False actually does something
-    np.testing.assert_raises(
-        AssertionError,
-        np.testing.assert_array_equal,
-        ds_roll.rlds.values,
-        ds.rlds.values,
-    )
-
-    ds_roll.coords[lon.name] = ds_roll.coords[lon.name] - 180
-
-    assert isclose(ds_roll.lon.values.min(), -180, abs_tol=10**2)
-    assert isclose(ds_roll.lon.values.max(), 180, abs_tol=10**2)
-
-    result = subset(
-        ds=ds_roll,
-        area=(-50.0, -90.0, 100.0, 90.0),
-        output_type="xarray",
-    )
-
-    assert result
-
-
 def test_roll_compare_roll_coords(load_esgf_test_data):
     ds, lon = setup_test()
     # work out how much to roll by
@@ -236,53 +164,6 @@ def test_roll_compare_roll_coords(load_esgf_test_data):
         ds_roll_coords.lon.values,
         ds_not_roll_coords.lon.values,
     )
-
-
-@pytest.mark.skip(reason="rolling now done within subset")
-def test_compare_methods(load_esgf_test_data):
-
-    # run subset with rolling then assigning
-    ds, lon = setup_test()
-
-    # work out how much to roll by
-    offset = calculate_offset(180)
-
-    ds_roll = ds.roll(
-        shifts={f"{lon.name}": offset}, roll_coords=False
-    )  # roll coords set to false
-
-    ds_roll.coords[lon.name] = ds_roll.coords[lon.name] - 180
-
-    assert isclose(ds_roll.lon.values.min(), -180, abs_tol=10**2)
-    assert isclose(ds_roll.lon.values.max(), 180, abs_tol=10**2)
-
-    result1 = subset(
-        ds=ds_roll,
-        area=(-50.0, -90.0, 100.0, 90.0),
-        output_type="xarray",
-    )
-
-    assert result1
-
-    # run subset assign then sort by
-    ds, lon = setup_test()
-
-    ds.coords[lon.name] = (ds.coords[lon.name] + 180) % 360 - 180
-    ds = ds.sortby(ds[lon.name])
-
-    assert isclose(ds.lon.values.min(), -180, abs_tol=10**2)
-    assert isclose(ds.lon.values.max(), 180, abs_tol=10**2)
-
-    result2 = subset(
-        ds=ds,
-        area=(-50.0, -90.0, 100.0, 90.0),
-        output_type="xarray",
-    )
-
-    assert result2
-
-    # data of main variable is the same
-    np.testing.assert_allclose(result1[0].rlds.values, result2[0].rlds.values)
 
 
 @pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
