@@ -21,7 +21,6 @@ class Average(Operation):
         self.params = {"dims": dims, "ignore_undetected_dims": ignore_undetected_dims}
 
     def _get_file_namer(self):
-
         if self.params.get("dims", None):
             dims = [convert_coord_to_axis(dim) for dim in self.params["dims"]]
             extra = f"_avg-{''.join(sorted(dims))}"
