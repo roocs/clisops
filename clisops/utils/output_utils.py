@@ -90,7 +90,6 @@ def get_time_slices(
     end=None,
     file_size_limit: str = None,
 ) -> List[Tuple[str, str]]:
-
     """
     Take an xarray Dataset or DataArray, assume it can be split on the time axis
     into a sequence of slices. Optionally, take a start and end date to specify
@@ -148,7 +147,6 @@ def get_time_slices(
     final_indx = n_times - 1
 
     while indx <= final_indx:
-
         start_indx = indx
         indx += slice_length
         end_indx = indx - 1
@@ -235,7 +233,6 @@ def get_output(ds, output_type, output_dir, namer):
     #  - https://github.com/roocs/rook/issues/55
     #  - https://docs.dask.org/en/latest/scheduling.html
     with dask.config.set(scheduler="synchronous"):
-
         writer = getattr(chunked_ds, format_writer)
         delayed_obj = writer(target_path, compute=False)
         delayed_obj.compute()
@@ -243,7 +240,6 @@ def get_output(ds, output_type, output_dir, namer):
     # If "output_staging_dir" is set, then pause, move the output file,
     # and clean up the temporary directory
     if os.path.isdir(staging_dir):
-
         shutil.move(target_path, output_path)
         # Sleeping, to allow file system caching/syncing delays
         time.sleep(3)

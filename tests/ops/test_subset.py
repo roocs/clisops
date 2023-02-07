@@ -230,7 +230,6 @@ def test_subset_4D_data_all_argument_permutations(load_esgf_test_data, tmpdir):
 
     # Test each set of inputs, check the output shape (slice) is correct
     for _, inputs in test_inputs:
-
         expected_shape = initial_shape[:]
         tm, level, bbox = inputs
 
@@ -435,7 +434,6 @@ def test_subset_with_lat_lon_single_values(load_esgf_test_data):
 
 
 def test_area_within_area_subset_chunked(load_esgf_test_data):
-
     start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
     area = (0.0, 10.0, 175.0, 90.0)
 
@@ -605,7 +603,6 @@ def test_coord_variables_subsetted_rlat_rlon():
 
 
 def test_time_invariant_subset_standard_name(load_esgf_test_data, tmpdir):
-
     result = subset(
         ds=CMIP6_MRSOFC,
         area=(5.0, 10.0, 360.0, 90.0),
@@ -634,7 +631,6 @@ def test_longitude_and_latitude_coords_only(load_esgf_test_data, tmpdir):
 
 
 def test_time_invariant_subset_simple_name(load_esgf_test_data, tmpdir):
-
     result = subset(
         ds=CMIP6_MRSOFC,
         area=(5.0, 10.0, 360.0, 90.0),
@@ -647,7 +643,6 @@ def test_time_invariant_subset_simple_name(load_esgf_test_data, tmpdir):
 
 
 def test_time_invariant_subset_with_time(load_esgf_test_data):
-
     with pytest.raises(AttributeError) as exc:
         subset(
             ds=CMIP6_MRSOFC,
@@ -703,7 +698,6 @@ def test_do_not_cross_prime_meridian(tmpdir):
 
 @pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_0_360_no_cross(tmpdir):
-
     ds = _load_ds(
         "/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803"
         "/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc"
@@ -907,7 +901,6 @@ class TestSubset:
 
 
 def test_end_date_nudged_backwards():
-
     # use no leap dataset
     ds = _load_ds(CMIP6_SICONC_DAY)
 
@@ -932,7 +925,6 @@ def test_end_date_nudged_backwards():
 
 
 def test_start_date_nudged_forwards():
-
     # use no leap dataset
     ds = _load_ds(CMIP6_SICONC_DAY)
 
@@ -957,7 +949,6 @@ def test_start_date_nudged_forwards():
 
 
 def test_end_date_nudged_backwards_monthly_data():
-
     # use no leap dataset
     ds = _load_ds(CMIP6_SICONC)
 
@@ -982,7 +973,6 @@ def test_end_date_nudged_backwards_monthly_data():
 
 
 def test_start_date_nudged_backwards_monthly_data():
-
     # use no leap dataset
     ds = _load_ds(CMIP6_SICONC)
 
@@ -1007,7 +997,6 @@ def test_start_date_nudged_backwards_monthly_data():
 
 
 def test_no_lon_in_range():
-
     with pytest.raises(Exception) as exc:
         subset(
             ds=CMIP6_RLDS_ONE_TIME_STEP,
@@ -1024,7 +1013,6 @@ def test_no_lon_in_range():
 
 
 def test_no_lat_in_range():
-
     with pytest.raises(Exception) as exc:
         subset(
             ds=CMIP6_RLDS_ONE_TIME_STEP,
@@ -1041,7 +1029,6 @@ def test_no_lat_in_range():
 
 
 def test_no_lat_lon_in_range():
-
     with pytest.raises(Exception) as exc:
         subset(
             ds=CMIP6_RLDS_ONE_TIME_STEP,
@@ -1094,7 +1081,6 @@ def test_curvilinear_ds_no_data_in_bbox_real_data_swap_lat():
 
 
 def test_curvilinear_ds_no_data_in_bbox():
-
     with pytest.raises(ValueError) as exc:
         subset(
             ds=CMIP6_TOS_ONE_TIME_STEP,
@@ -1110,7 +1096,6 @@ def test_curvilinear_ds_no_data_in_bbox():
 
 
 def test_curvilinear_increase_lon_of_bbox():
-
     result = subset(
         ds=CMIP6_TOS_ONE_TIME_STEP,
         area="1,40,4,4",
@@ -1308,7 +1293,6 @@ class TestReverseBounds:
         np.testing.assert_array_equal(result[0].o3, result_rev[0].o3)
 
     def test_reverse_time(self, load_esgf_test_data):
-
         result = subset(
             ds=CMIP5_TAS,
             time=time_interval("2021-01-01/2050-12-31"),

@@ -164,7 +164,7 @@ def test_unknown_dim():
         )
     assert (
         str(exc.value)
-        == "Dimensions for averaging must be one of ['time', 'level', 'latitude', 'longitude']"
+        == "Dimensions for averaging must be one of ['time', 'level', 'latitude', 'longitude', 'realization']"
     )
 
 

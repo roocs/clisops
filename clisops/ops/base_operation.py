@@ -139,7 +139,6 @@ class Operation:
 
         # Loop through each time slice
         for tslice in time_slices:
-
             # If there is only one time slice, and it is None:
             # - then just set the result Dataset to the processed Dataset
             if tslice is None:
