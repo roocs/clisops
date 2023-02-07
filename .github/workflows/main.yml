@@ -11,7 +11,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        tox-env: [black]
+        tox-env:
+          - black
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.11.0
@@ -48,8 +49,12 @@ jobs:
     - name: Install tox
       run: pip install "tox~=3.0"
     - name: Test with tox
-      run: tox -e ${{ matrix.tox-env }}
-      continue-on-error: ${{ matrix.allowed_to_fail }}
+      run: tox -e ${{ matrix.tox-env }}-coveralls
+      env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_FLAG_NAME: run-${{ matrix.tox-env }}
+          COVERALLS_PARALLEL: true
+          COVERALLS_SERVICE_NAME: github
 
   conda:
     name: Anaconda Build with Python${{ matrix.python-version }} (upstream=${{ matrix.upstream }})
@@ -90,3 +95,17 @@ jobs:
       - name: Test with conda
         run: |
             pytest --cov tests
+
+  finish:
+    needs:
+      - pypi
+    runs-on: ubuntu-latest
+    container: python:3-slim
+    steps:
+      - name: Coveralls Finished
+        run: |
+          pip install --upgrade coveralls
+          coveralls --finish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COVERALLS_SERVICE_NAME: github
