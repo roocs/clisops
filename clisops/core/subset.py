@@ -819,7 +819,7 @@ def shape_bbox_indexer(ds, poly):
     # Create slices, adding a halo around selection to account for `nearest` grid cell center approximation.
     out = {}
     halo = 2
-    for (k, v) in native_ind.items():
+    for k, v in native_ind.items():
         vmin = np.clip(v.min() - halo, 0, ds[k].size)
         vmax = np.clip(v.max() + halo + 1, 0, ds[k].size)
         out[k] = slice(vmin, vmax)
@@ -1202,7 +1202,6 @@ def subset_bbox(
 
     # Rectilinear case (lat and lon are the 1D dimensions)
     if (lat in da.dims) or (lon in da.dims):
-
         if lat in da.dims and lat_bnds is not None:
             lat_bnds = _check_desc_coords(coord=da[lat], bounds=lat_bnds, dim=lat)
             da = da.sel({lat: slice(*lat_bnds)})
@@ -1274,7 +1273,6 @@ def subset_bbox(
                 if set(da[lat].dims).issubset(da[var].dims):
                     da[var] = da[var].where(lon_cond & lat_cond, drop=True)
         else:
-
             da = da.where(lon_cond & lat_cond, drop=True)
 
     else:
@@ -1359,7 +1357,7 @@ def _check_has_overlaps(polygons: gpd.GeoDataFrame):
 
 def _check_has_overlaps_old(polygons: gpd.GeoDataFrame):
     for i, (inda, pola) in enumerate(polygons.iterrows()):
-        for (indb, polb) in polygons.iloc[i + 1 :].iterrows():
+        for indb, polb in polygons.iloc[i + 1 :].iterrows():
             if pola.geometry.intersects(polb.geometry):
                 warnings.warn(
                     f"List of shapes contains overlap between {inda} and {indb}. Points will be assigned to {inda}.",

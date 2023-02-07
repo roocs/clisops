@@ -51,7 +51,6 @@ def dataset_roll_using_offset(a, offset):
 
 
 class TestLonRoll_0_360:
-
     # offset = 359
     def test_to_minus_359_0(self):
         a = np.arange(start=0, stop=360, step=1)
@@ -114,7 +113,6 @@ class TestLonRoll_0_360:
 
 
 class TestLonRoll_minus_90_270:
-
     # offset = 269
     def test_to_minus_359_0(self):
         a = np.arange(start=-90, stop=270, step=1)
@@ -177,7 +175,6 @@ class TestLonRoll_minus_90_270:
 
 
 class TestLonRoll_minus_180_180:
-
     # offset = 179
     def test_to_minus_359_0(self):
         a = np.arange(start=-180, stop=180, step=1)
@@ -240,7 +237,6 @@ class TestLonRoll_minus_180_180:
 
 
 class TestLonRoll_minus_270_90:
-
     # offset = 89
     def test_to_minus_359_0(self):
         a = np.arange(start=-270, stop=90, step=1)
@@ -303,7 +299,6 @@ class TestLonRoll_minus_270_90:
 
 
 class TestLonRoll_minus_360_0:
-
     # offset = 0
     def test_to_minus_359_0(self):
         a = np.arange(start=-359, stop=1, step=1)

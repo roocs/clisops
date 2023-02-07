@@ -225,7 +225,6 @@ class TestSubsetGridPoint:
         assert ("distance" in out.coords) ^ (not add_distance)
 
     def test_irregular(self):
-
         da = xr.open_dataset(self.nc_2dlonlat).tasmax
         lon = -72.4
         lat = 46.1
@@ -693,7 +692,6 @@ class TestSubsetShape:
         else:
             ii = np.arange(0, len(imask[0]))
         for i in zip(imask[0][ii], imask[1][ii]):
-
             if flag_2d:
                 lat1 = sub.lat[i[0], i[1]]
                 lon1 = sub.lon[i[0], i[1]]

@@ -28,7 +28,6 @@ def _open(coll):
 
 
 def test_get_time_slices_single_slice(load_esgf_test_data):
-
     tas = _open(CMIP5_TAS)
 
     test_data = [
@@ -48,13 +47,11 @@ def test_get_time_slices_single_slice(load_esgf_test_data):
         n_times,
         slices,
     ) in test_data:
-
         resp = get_time_slices(ds, split_method, file_size_limit=limit)
         assert resp[0] == slices
 
 
 def test_get_time_slices_multiple_slices(load_esgf_test_data):
-
     tas = _open(CMIP5_TAS)
 
     test_data = [
@@ -78,7 +75,6 @@ def test_get_time_slices_multiple_slices(load_esgf_test_data):
 
     split_method = "time:auto"
     for ds, limit, n_times, first, second, last in test_data:
-
         resp = get_time_slices(ds, split_method, file_size_limit=limit)
         assert resp[0] == first
         assert resp[-1] == last
