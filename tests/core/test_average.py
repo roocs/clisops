@@ -142,7 +142,7 @@ class TestAverageOverDims:
             average.average_over_dims(ds, ["wrong", "latitude"])
         assert (
             str(exc.value)
-            == "Dimensions for averaging must be one of ['time', 'level', 'latitude', 'longitude']"
+            == "Dimensions for averaging must be one of ['time', 'level', 'latitude', 'longitude', 'realization']"
         )
 
     def test_undetected_dim(self):
@@ -173,7 +173,7 @@ class TestAverageOverDims:
             average.average_over_dims(ds, [0, "time"])
         assert (
             str(exc.value)
-            == "Dimensions for averaging must be one of ['time', 'level', 'latitude', 'longitude']"
+            == "Dimensions for averaging must be one of ['time', 'level', 'latitude', 'longitude', 'realization']"
         )
 
 
