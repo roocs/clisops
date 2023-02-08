@@ -13,6 +13,10 @@ clisops - climate simulation operations
    :target: https://github.com/roocs/clisops/actions
    :alt: Build Status
 
+.. image:: https://coveralls.io/repos/github/roocs/clisops/badge.svg?branch=master
+   :target: https://coveralls.io/github/roocs/clisops?branch=master
+   :alt: Coverage
+
 .. image:: https://readthedocs.org/projects/clisops/badge/?version=latest
    :target: https://clisops.readthedocs.io/en/latest/?badge=latest
    :alt: Documentation
