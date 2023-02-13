@@ -52,7 +52,6 @@ class Subset(Operation):
         # For each required parameter, check if the parameter can be accessed as a tuple
         # If not: then use the dictionary representation for it
         for param_name in ["time", "area", "level", "time_components"]:
-
             param_value = parameters.get(param_name)
             if param_value.value is not None:
                 args.update(param_value.asdict())
