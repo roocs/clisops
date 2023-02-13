@@ -804,7 +804,6 @@ def generate_bounds_curvilinear(ds, lat, lon):
     count = 0
     for ilat in range(ds[lon].shape[0]):
         for ilon in range(ds[lon].shape[1]):
-
             lons_cor[count] = lons_crnr[ilat, ilon]
             lons_cor[count + 1] = lons_crnr[ilat, ilon + 1]
             lons_cor[count + 2] = lons_crnr[ilat + 1, ilon + 1]

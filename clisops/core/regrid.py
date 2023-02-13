@@ -587,7 +587,6 @@ class Grid:
         # todo: Extend for other formats for regular_lat_lon, curvilinear / rotated_pole, unstructured
 
         if self.format == "CF":
-
             # 1D coordinate variables
             if self.ds[self.lat].ndim == 1 and self.ds[self.lon].ndim == 1:
                 lat_1D = self.ds[self.lat].dims[0]
