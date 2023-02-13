@@ -221,9 +221,9 @@ def test_grid_instructor_2d_regional_change_lat():
 
     assert grid.lat_bnds == "lat_bnds"
     assert grid.lon_bnds == "lon_bnds"
-    assert grid.nlat == 74
+    assert grid.nlat == 73
     assert grid.nlon == 240
-    assert grid.ncells == 17760
+    assert grid.ncells == 17520
 
     # not implemented yet
     # assert self.mask
@@ -249,9 +249,9 @@ def test_grid_instructor_2d_regional_change_lon_and_lat():
 
     assert grid.lat_bnds == "lat_bnds"
     assert grid.lon_bnds == "lon_bnds"
-    assert grid.nlat == 74
+    assert grid.nlat == 73
     assert grid.nlon == 127
-    assert grid.ncells == 9398
+    assert grid.ncells == 9271
 
     # not implemented yet
     # assert self.mask

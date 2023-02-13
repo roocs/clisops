@@ -25,7 +25,7 @@ dependencies:
  - shapely>=1.6
  - sparse>=0.8.0  # needed for xesmf v0.6.3, see: https://github.com/conda-forge/xesmf-feedstock/pull/24
  - xarray>=0.15
- - xesmf>=0.6.3
+ - xesmf>=0.7.0
  - pip:
    - roocs-grids @ git+https://github.com/roocs/roocs-grids.git@main#egg=roocs-grids
 #   - cf-xarray @ git+https://github.com/xarray-contrib/cf-xarray/@main#egg=cf-xarray
