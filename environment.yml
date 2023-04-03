@@ -15,7 +15,7 @@ dependencies:
  - numba  # needed for xesmf v0.6.3, see: https://github.com/conda-forge/xesmf-feedstock/pull/24
  - numpy >=1.16
  - packaging
- - pandas >=1.5.3,<2.0.0
+ - pandas >=1.0.3
  - poppler >=0.67
  - pyproj >=3.3.0
  - pooch
