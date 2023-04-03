@@ -2,6 +2,11 @@ default_language_version:
     python: python3
 
 repos:
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v3.3.1
+    hooks:
+    -   id: pyupgrade
+        args: [ '--py38-plus' ]
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
@@ -13,7 +18,7 @@ repos:
     -   id: debug-statements
     -   id: mixed-line-ending
 -   repo: https://github.com/psf/black
-    rev: 23.1.0
+    rev: 23.3.0
     hooks:
     -   id: black
         args: ["--target-version", "py38"]
@@ -32,20 +37,15 @@ repos:
 #    hooks:
 #    -   id: pydocstyle
 #        args: ["--convention=numpy"]
--   repo: https://github.com/asottile/pyupgrade
-    rev: v3.3.1
-    hooks:
-    -   id: pyupgrade
-        args: ['--py38-plus']
--   repo: meta
-    hooks:
-    -   id: check-hooks-apply
-    -   id: check-useless-excludes
 -   repo: https://github.com/kynan/nbstripout
     rev: 0.6.1
     hooks:
     -   id: nbstripout
         files: ".ipynb"
+-   repo: meta
+    hooks:
+    -   id: check-hooks-apply
+    -   id: check-useless-excludes
 
 ci:
   autofix_commit_msg: |
@@ -55,5 +55,5 @@ ci:
   autoupdate_branch: ''
   autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
   autoupdate_schedule: weekly
-  skip: []
+  skip: [ ]
   submodules: false
