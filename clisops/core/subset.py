@@ -9,9 +9,9 @@ from typing import Dict, Optional, Sequence, Tuple, Union
 import cf_xarray  # noqa
 import geopandas as gpd
 import numpy as np
-import pandas as pd
 import xarray
 from packaging import version
+from pandas import DataFrame
 from pandas.api.types import is_integer_dtype  # noqa
 from pyproj import Geod
 from pyproj.crs import CRS
@@ -442,24 +442,19 @@ def wrap_lons_and_split_at_greenwich(func):
                         feat.difference(buffered) for feat in split_polygons.geoms
                     ]
 
-                    # Cannot assign iterable with `at` (pydata/pandas#26333) so a small hack:
-                    # Load split features into a new GeoDataFrame with WGS84 CRS
-                    # split_gdf = gpd.GeoDataFrame(
-                    #     geometry=[unary_union(buffered_split_polygons)],
-                    #     crs=CRS(4326),
-                    # )
-                    # poly.at[[index], "geometry"] = split_gdf.geometry.values
-
                     split_features[index] = [unary_union(buffered_split_polygons)]
 
             if split_flag:
-                split_df = pd.DataFrame.from_dict(
-                    split_features, orient="index", columns=["geometry"]
+                split_df = DataFrame.from_dict(
+                    split_features,
+                    orient="index",
+                    columns=["geometry"],
                 )
-                split_gdf = gpd.GeoDataFrame(
-                    split_df, geometry=split_df.geometry, crs=CRS(4326)
-                )
+                split_gdf = gpd.GeoDataFrame(split_df, geometry=split_df.geometry)
                 poly.update(split_gdf)
+
+            # Set CRS on polygon for correct reprojection
+            poly = poly.set_crs(CRS(4326))
 
             # Reproject features in WGS84 CSR to use 0 to 360 as longitudinal values
             wrapped_lons = CRS.from_string(
