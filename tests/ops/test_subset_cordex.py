@@ -11,7 +11,7 @@ from .._common import (
 )
 
 
-def test_subset_cordex_afr(load_esgf_test_data, tmpdir):
+def test_subset_cordex_afr(tmpdir):
     """Test subset on cordex data AFR domain"""
 
     result = subset(
@@ -29,7 +29,7 @@ def test_subset_cordex_afr(load_esgf_test_data, tmpdir):
     )
 
 
-def test_subset_cordex_nam(load_esgf_test_data, tmpdir):
+def test_subset_cordex_nam(tmpdir):
     """Test subset on cordex data NAM domain"""
 
     result = subset(
@@ -47,7 +47,7 @@ def test_subset_cordex_nam(load_esgf_test_data, tmpdir):
     )
 
 
-def test_subset_cordex_eur(load_esgf_test_data, tmpdir):
+def test_subset_cordex_eur(tmpdir):
     """Test subset on cordex data EUR domain"""
 
     result = subset(
@@ -65,7 +65,7 @@ def test_subset_cordex_eur(load_esgf_test_data, tmpdir):
     )
 
 
-def test_subset_cordex_ant(load_esgf_test_data, tmpdir):
+def test_subset_cordex_ant(tmpdir):
     """Test subset on cordex data ANT domain"""
 
     result = subset(

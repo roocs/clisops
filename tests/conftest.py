@@ -271,7 +271,7 @@ def cmip6_o3():
 
 
 # Fixture to load mini-esgf-data repository used by roocs tests
-@pytest.fixture
+@pytest.fixture(scope="session", autouse=True)
 def load_esgf_test_data():
     """
     This fixture ensures that the required test data repository

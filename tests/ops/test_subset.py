@@ -186,7 +186,7 @@ def test_subset_with_time_and_area(cmip5_tas_file, tmpdir):
     assert ds.lat.values.tolist() == [35]
 
 
-def test_subset_4D_data_all_argument_permutations(load_esgf_test_data, tmpdir):
+def test_subset_4D_data_all_argument_permutations(tmpdir):
     """Tests clisops subset function with:
     - no args (collection only)
     - time only
@@ -253,7 +253,7 @@ def test_subset_4D_data_all_argument_permutations(load_esgf_test_data, tmpdir):
         assert ds.ta.shape == tuple(expected_shape)
 
 
-def test_subset_with_multiple_files_tas(load_esgf_test_data, tmpdir):
+def test_subset_with_multiple_files_tas(tmpdir):
     """Tests with multiple tas files"""
     result = subset(
         ds=CMIP5_TAS,
@@ -266,7 +266,7 @@ def test_subset_with_multiple_files_tas(load_esgf_test_data, tmpdir):
     _check_output_nc(result)
 
 
-def test_subset_with_multiple_files_zostoga(load_esgf_test_data, tmpdir):
+def test_subset_with_multiple_files_zostoga(tmpdir):
     """Tests with multiple zostoga files"""
     result = subset(
         ds=CMIP5_ZOSTOGA,
@@ -278,7 +278,7 @@ def test_subset_with_multiple_files_zostoga(load_esgf_test_data, tmpdir):
     _check_output_nc(result)
 
 
-def test_subset_with_multiple_files_rh(load_esgf_test_data, tmpdir):
+def test_subset_with_multiple_files_rh(tmpdir):
     """Tests with multiple rh files"""
     result = subset(
         ds=CMIP5_RH,
@@ -602,7 +602,7 @@ def test_coord_variables_subsetted_rlat_rlon():
     assert np.all(out.lat.values[mask1.values] <= area[3])
 
 
-def test_time_invariant_subset_standard_name(load_esgf_test_data, tmpdir):
+def test_time_invariant_subset_standard_name(tmpdir):
     result = subset(
         ds=CMIP6_MRSOFC,
         area=(5.0, 10.0, 360.0, 90.0),
@@ -614,7 +614,7 @@ def test_time_invariant_subset_standard_name(load_esgf_test_data, tmpdir):
     _check_output_nc(result, fname="mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc")
 
 
-def test_longitude_and_latitude_coords_only(load_esgf_test_data, tmpdir):
+def test_longitude_and_latitude_coords_only(tmpdir):
     """Test subset suceeds when latitude and longitude are coordinates not dims and are not called lat/lon"""
 
     result = subset(
@@ -630,7 +630,7 @@ def test_longitude_and_latitude_coords_only(load_esgf_test_data, tmpdir):
     )
 
 
-def test_time_invariant_subset_simple_name(load_esgf_test_data, tmpdir):
+def test_time_invariant_subset_simple_name(tmpdir):
     result = subset(
         ds=CMIP6_MRSOFC,
         area=(5.0, 10.0, 360.0, 90.0),
