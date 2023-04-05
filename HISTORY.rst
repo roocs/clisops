@@ -1,7 +1,7 @@
 Version History
 ===============
 
-v0.9.6 (unreleased)
+v0.9.6 (2023-04-05)
 -------------------
 
 Bug Fixes
