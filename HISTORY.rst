@@ -4,12 +4,17 @@ Version History
 v0.9.6 (unreleased)
 -------------------
 
+Bug Fixes
+^^^^^^^^^
+* Fixed an issue with the `pytest` fixtures that was needlessly calling ``load_esgf_test_data`` multiple times while tests were running (#278).
+* Corrected a temporary workaround for updating split geometries that was causing issues with modern `pandas` versions (#278).
+
 Other Changes
 ^^^^^^^^^^^^^
 * Removed some obsolete tests and adjusted pytest to always report in colour (#272).
-* Updated requirements and CI to explicitly use `tox` v3.0 (until `tox-conda` is compatible with `tox` v4.0) (#272).
 * Split conda CI builds to explicitly test against xarray/stable and xarray/dev (#272).
 * GitHub CI now reports coverage statistics to Coveralls.io (#276).
+* Updated `geopandas` (>=0.11), `pyproj` (>=3.3.0), `shapely` (>=1.9), `tox` (>=4.0), `xarray` (>=0.21), and `xesmf` (>=0.6.3) to use more modern versions (#278).
 
 v0.9.5 (2022-12-14)
 -------------------

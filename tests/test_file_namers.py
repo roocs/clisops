@@ -31,7 +31,7 @@ def test_SimpleFileNamer_no_fmt():
             s.get_file_name(*args)
 
 
-def test_SimpleFileNamer_with_chunking(load_esgf_test_data, tmpdir):
+def test_SimpleFileNamer_with_chunking(tmpdir):
     start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
     area = (0.0, 10.0, 175.0, 90.0)
 
@@ -68,7 +68,7 @@ def test_StandardFileNamer_no_project_match():
         s.get_file_name(mock_ds)
 
 
-def test_StandardFileNamer_cmip5(load_esgf_test_data):
+def test_StandardFileNamer_cmip5():
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
