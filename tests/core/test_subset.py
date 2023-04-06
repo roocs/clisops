@@ -844,8 +844,8 @@ class TestSubsetShape:
             x_dim=ds.lon, y_dim=ds.lat, poly=regions, wrap_lons=True
         )
         vals, counts = np.unique(mask.values[mask.notnull()], return_counts=True)
-        assert all(vals == [0, 1, 2])
-        assert all(counts == [58, 250, 22])
+        np.testing.assert_array_equal(vals, [0, 1, 2])
+        np.testing.assert_array_equal(counts, [58, 250, 22])
 
     @pytest.mark.skipif(
         xesmf is None, reason="xESMF >= 0.6.2 is needed for average_shape."

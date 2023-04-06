@@ -155,22 +155,6 @@ def ndq_series():
     )
 
 
-# @pytest.fixture
-# def per_doy():
-#     def _per_doy(values, calendar="standard", units="kg m-2 s-1"):
-#         n = calendars[calendar]
-#         if len(values) != n:
-#             raise ValueError(
-#                 "Values must be same length as number of days in calendar."
-#             )
-#         coords = xr.IndexVariable("dayofyear", np.arange(1, n + 1))
-#         return xr.DataArray(
-#             values, coords=[coords], attrs={"calendar": calendar, "units": units}
-#         )
-#
-#     return _per_doy
-
-
 @pytest.fixture
 def areacella():
     """Return a rectangular grid of grid cell area."""
@@ -287,7 +271,7 @@ def cmip6_o3():
 
 
 # Fixture to load mini-esgf-data repository used by roocs tests
-@pytest.fixture
+@pytest.fixture(scope="session", autouse=True)
 def load_esgf_test_data():
     """
     This fixture ensures that the required test data repository
