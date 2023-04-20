@@ -14,7 +14,7 @@ dependencies:
  - numba  # needed for xesmf v0.6.3, see: https://github.com/conda-forge/xesmf-feedstock/pull/24
  - numpy >=1.16
  - packaging
- - pandas >=1.0.3
+ - pandas >=1.0.3,<2.0
  - poppler >=0.67
  - pyproj >=3.3.0
  - pooch
@@ -22,7 +22,7 @@ dependencies:
  - roocs-utils >=0.6.4,<0.7
  - shapely >=1.9
  - sparse >=0.8.0  # needed for xesmf v0.6.3, see: https://github.com/conda-forge/xesmf-feedstock/pull/24
- - xarray >=0.21
+ - xarray >=0.21,<2023.3.0
  - xesmf >=0.7.1
  - pip:
    - roocs-grids @ git+https://github.com/roocs/roocs-grids.git@main#egg=roocs-grids

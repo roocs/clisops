@@ -8,7 +8,7 @@ loguru>=0.5.3
 netCDF4>=1.4
 numpy>=1.16
 packaging
-pandas>=1.0.3
+pandas>=1.0.3,<2.0
 pooch
 pyproj>=3.3.0
 requests>=2.0
@@ -16,4 +16,4 @@ roocs-grids @ git+https://github.com/roocs/roocs-grids.git@main#egg=roocs-grids
 roocs-utils>=0.6.4,<0.7
 # roocs-utils @ git+https://github.com/roocs/roocs-utils.git@master#egg=roocs-utils
 shapely>=1.9
-xarray>=0.21
+xarray>=0.21,<2023.3.0
