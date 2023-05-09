@@ -1025,8 +1025,8 @@ class TestSubsetLevel:
 
 
 class TestGridPolygon:
+    @pytest.mark.skipif(xesmf is None, reason="Requires xESMF >= 0.6.2")
     def test_rectilinear(self):
-        pytest.importorskip("xesmf", "0.6.2")
         # CF-Compliant with bounds
         ds = xesmf.util.cf_grid_2d(-200, -100, 20, -60, 60, 10)
         poly = subset._rectilinear_grid_exterior_polygon(ds)
@@ -1061,9 +1061,9 @@ class TestGridPolygon:
 
 
 class TestShapeBboxIndexer:
+    @pytest.mark.skipif(xesmf is None, reason="Requires xESMF >= 0.6.2")
     def test_rectilinear(self):
         # Create small polygon fitting in one cell.
-        pytest.importorskip("xesmf", "0.6.2")
         x, y = -150, 35
         p = Point(x, y)
         ds = xesmf.util.cf_grid_2d(-200, 0, 20, -60, 60, 10)
@@ -1074,16 +1074,25 @@ class TestShapeBboxIndexer:
             inds = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=[pb]))
             assert pb.within(subset.grid_exterior_polygon(ds.isel(inds)))
 
+    @pytest.mark.skipif(xesmf is None, reason="Requires xESMF >= 0.6.2")
     def test_complex_geometries(self):
         """Test with geometries that cannot be simplified to a single polygon using `unary_union`."""
+
         import shapely.wkt
 
         p1 = shapely.wkt.loads(
-            "POLYGON((-65.5563 49.257, -64.2166 48.5017, -70.8387 45.2339, -74.6375 44.9993, "
-            "-65.5563 49.257))"
+            "POLYGON((-65.5563 49.257, -64.2166 48.5017, -70.8387 45.2339, -74.6375 44.9993, -65.5563 49.257))"
         )
         p2 = shapely.wkt.loads(
-            "POLYGON ((-58.64 51.2, -78.7115 46.326, -78.1958 62.2551, -64.5341 60.309, -58.64 51.2), (-78.5687 58.6447, -78.5675 58.646, -78.5762 58.6482, -78.5698 58.6445, -78.5687 58.6447), (-78.5539 58.6486, -78.5515 58.646, -78.5468 58.6507, -78.5515 58.6511, -78.5539 58.6486), (-78.5375 58.6513, -78.5353 58.6496, -78.5331 58.6503, -78.5357 58.6512, -78.5375 58.6513), (-78.517 58.6497, -78.5082 58.6452, -78.5068 58.6456, -78.5112 58.6484, -78.517 58.6497), (-78.5387 58.6484, -78.5411 58.6509, -78.5466 58.6485, -78.5355 58.6459, -78.5387 58.6484), (-78.5542 58.6516, -78.5543 58.6539, -78.5614 58.6544, -78.5571 58.6516, -78.5542 58.6516), (-78.5508 58.6622, -78.561 58.6648, -78.5642 58.664, -78.5559 58.6609, -78.5508 58.6622), (-78.5814 58.6764, -78.5831 58.675, -78.5802 58.6739, -78.5807 58.6761, -78.5814 58.6764))"
+            "POLYGON ((-58.64 51.2, -78.7115 46.326, -78.1958 62.2551, -64.5341 60.309, -58.64 51.2), "
+            "(-78.5687 58.6447, -78.5675 58.646, -78.5762 58.6482, -78.5698 58.6445, -78.5687 58.6447), "
+            "(-78.5539 58.6486, -78.5515 58.646, -78.5468 58.6507, -78.5515 58.6511, -78.5539 58.6486), "
+            "(-78.5375 58.6513, -78.5353 58.6496, -78.5331 58.6503, -78.5357 58.6512, -78.5375 58.6513), "
+            "(-78.517 58.6497, -78.5082 58.6452, -78.5068 58.6456, -78.5112 58.6484, -78.517 58.6497), "
+            "(-78.5387 58.6484, -78.5411 58.6509, -78.5466 58.6485, -78.5355 58.6459, -78.5387 58.6484), "
+            "(-78.5542 58.6516, -78.5543 58.6539, -78.5614 58.6544, -78.5571 58.6516, -78.5542 58.6516), "
+            "(-78.5508 58.6622, -78.561 58.6648, -78.5642 58.664, -78.5559 58.6609, -78.5508 58.6622), "
+            "(-78.5814 58.6764, -78.5831 58.675, -78.5802 58.6739, -78.5807 58.6761, -78.5814 58.6764))"
         )
 
         ds = xesmf.util.cf_grid_2d(-200, 0, 20, 0, 65, 10)
@@ -1092,10 +1101,10 @@ class TestShapeBboxIndexer:
         assert p1.within(env)
         assert p2.within(env)
 
+    @pytest.mark.skipif(xesmf is None, reason="Requires xESMF >= 0.6.2")
     def test_curvilinear(self):
         """This checks that a grid along lon/lat and a rotated grid are indexed identically for a geometry and a
         rotated geometry."""
-        pytest.importorskip("xesmf", "0.6.2")
         from shapely.affinity import rotate
 
         ds = xesmf.util.grid_2d(0, 100, 10, 0, 60, 6)
