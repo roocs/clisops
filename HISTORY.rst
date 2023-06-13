@@ -7,7 +7,7 @@ v.10.0 (unreleased)
 Bug Fixes
 ^^^^^^^^^
 * Fixed bug in `core.subset.shape_bbox_indexer` with the union of invalid geometries. Added regression test. (Issue #280)
-
+* Added support in `core.subset.shape_bbox_indexer` for Point and MultiPoint geometries. (Issue #283)
 
 v0.9.6 (2023-04-05)
 -------------------

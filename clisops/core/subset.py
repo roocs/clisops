@@ -755,7 +755,7 @@ def shape_bbox_indexer(ds, poly):
     ds : xr.Dataset
         Input dataset.
     poly : gpd.GeoDataFrame
-        Shapes to cover.
+        Shapes to cover. Can be of type Polygon, MultiPolygon, Point, or MultiPoint.
 
     Returns
     -------
@@ -788,10 +788,21 @@ def shape_bbox_indexer(ds, poly):
     if rectilinear:
         hull = hull.minimum_rotated_rectangle
 
-    # Create index from edge vertices (last item is just a copy of the first to close the polygon)
-    elon, elat = map(np.array, zip(*hull.boundary.coords[:-1]))
+    if hasattr(hull.boundary, "geoms"):
+        # Handle cases with 1 point. Putting the same point twice to avoid issues with zip later.
+        if len(hull.boundary.geoms) == 0:
+            coords = hull.xy, hull.xy
+        # Handle cases with 2 points
+        elif len(hull.boundary.geoms) <= 2:
+            # Extract the lon, lat coordinates from the points themselves
+            coords = [geom.xy for geom in hull.boundary.geoms]
+    # Handle typical polygon case
+    else:
+        # Extract the edge vertices (last item is just a copy of the first to close the polygon)
+        coords = hull.boundary.coords[:-1]
 
     # Create envelope coordinates
+    elon, elat = map(np.array, zip(*coords))
     ind = {ds.cf["longitude"].name: elon, ds.cf["latitude"].name: elat}
 
     # Find indices nearest the rectangle' corners
@@ -799,7 +810,7 @@ def shape_bbox_indexer(ds, poly):
     if is_rectilinear(ds):
         if version.parse(xarray.__version__) < version.Version("2022.6.0"):
             warnings.warn(
-                "CLISOPS will require xarray >= 2022.06 in the next major release. "
+                "CLISOPS will require xarray >= 2022.06 in the next minor release. "
                 "Please update your environment dependencies.",
                 DeprecationWarning,
             )

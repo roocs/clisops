@@ -1088,7 +1088,6 @@ class TestShapeBboxIndexer:
         assert p1.within(env)
         assert p2.within(env)
 
-
     def test_curvilinear(self):
         """This checks that a grid along lon/lat and a rotated grid are indexed identically for a geometry and a
         rotated geometry."""
@@ -1105,6 +1104,27 @@ class TestShapeBboxIndexer:
         i = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=[geom]))
         ri = subset.shape_bbox_indexer(rds, gpd.GeoDataFrame(geometry=[rgeom]))
         assert ri == i
+
+
+    def test_multipoints(self):
+        """Test with a MultiPoint geometry."""
+        pytest.importorskip("xesmf", "0.6.2")
+        from shapely.geometry import MultiPoint, Point
+
+        ds = xesmf.util.cf_grid_2d(-200, 0, 20, -60, 60, 10)
+
+        coords = (-150, 35), (-100, 40), (-125, 55)
+
+        for n in range(1, 4):
+            geom = [Point(coords[i]) for i in range(n)]
+            inds = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=geom))
+            assert MultiPoint(geom).within(subset.grid_exterior_polygon(ds.isel(inds)))
+
+        for n in range(1, 4):
+            geom = MultiPoint([coords[i] for i in range(n)])
+            inds = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=[geom]))
+            assert geom.within(subset.grid_exterior_polygon(ds.isel(inds)))
+
 
 
 def rotated_grid_2d(lon0_b, lon1_b, d_lon, lat0_b, lat1_b, d_lat, angle):
