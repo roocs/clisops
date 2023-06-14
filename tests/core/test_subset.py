@@ -1076,6 +1076,7 @@ class TestShapeBboxIndexer:
 
     def test_complex_geometries(self):
         """Test with geometries that cannot be simplified to a single polygon using `unary_union`."""
+        pytest.importorskip("xesmf", "0.6.2")
         import shapely.wkt
 
         p1 = shapely.wkt.loads(
