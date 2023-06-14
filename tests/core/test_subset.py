@@ -1121,6 +1121,10 @@ class TestShapeBboxIndexer:
         for n in range(1, 4):
             geom = [Point(coords[i]) for i in range(n)]
             inds = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=geom))
+            inds2 = subset.shape_bbox_indexer(ds, geom)
+            assert inds2 == inds
+            inds3 = subset.shape_bbox_indexer(ds, gpd.points_from_xy(*zip(*coords[:n])))
+            assert inds3 == inds3
             assert MultiPoint(geom).within(subset.grid_exterior_polygon(ds.isel(inds)))
 
         for n in range(1, 4):

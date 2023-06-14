@@ -754,7 +754,7 @@ def shape_bbox_indexer(ds, poly):
     ----------
     ds : xr.Dataset
         Input dataset.
-    poly : gpd.GeoDataFrame
+    poly : gpd.GeoDataFrame, pd.array.GeometryArray, or list of shapely geometries.
         Shapes to cover. Can be of type Polygon, MultiPolygon, Point, or MultiPoint.
 
     Returns
@@ -771,13 +771,19 @@ def shape_bbox_indexer(ds, poly):
     -----
     This is used in particular to restrict the domain of a dataset before computing the weights for a spatial average.
     """
-    # Note that this function is somewhat redundant with functionality found in rioxarray (see `clip` and `Window`).
-    geom = poly.geometry
-
     # Cling wrap around shapes: GeoSeries -> Polygon
     # The first `convex_hull` is necessary to remove any holes in the polygon.
     # The `GeoSeries.unary_union` is necessary to merge all shapes into a single polygon.
-    hull = geom.convex_hull.unary_union.convex_hull
+
+    if isinstance(poly, gpd.GeoDataFrame):
+        # Note that this function is somewhat redundant with functionality found in rioxarray (see `clip` and `Window`).
+        geom = poly.geometry
+        hull = geom.convex_hull.unary_union.convex_hull
+    elif isinstance(poly, gpd.array.GeometryArray):
+        hull = poly.convex_hull.unary_union().convex_hull
+    elif isinstance(poly, (list, tuple)):
+        hpoly = [p.convex_hull for p in poly]
+        hull = unary_union(hpoly).convex_hull
 
     # If polygon sits on the grid boundary, we need to roll the grid's coordinates and this is not supported.
     if not grid_exterior_polygon(ds).contains(hull):
