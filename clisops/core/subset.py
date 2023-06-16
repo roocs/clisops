@@ -825,7 +825,7 @@ def shape_bbox_indexer(ds, poly):
 
     # Find indices nearest the rectangle' corners
     # Note that the nearest indices might be inside the shape, so we'll need to add a *halo* around those indices.
-    if is_rectilinear(ds):
+    if rectilinear:
         if version.parse(xarray.__version__) < version.Version("2022.6.0"):
             warnings.warn(
                 "CLISOPS will require xarray >= 2022.06 in the next minor release. "
