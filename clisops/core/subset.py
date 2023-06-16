@@ -669,9 +669,14 @@ def _curvilinear_grid_exterior_polygon(ds, mode="bbox"):
             x = ds.cf.get_bounds("longitude")  # lon_bnds
             y = ds.cf.get_bounds("latitude")  # lat_bnds
         except KeyError:
-            # xesmf convention
-            x = ds.lon_b
-            y = ds.lat_b
+            try:
+                # xesmf convention
+                x = ds.lon_b
+                y = ds.lat_b
+            except KeyError:
+                # Fall-back to grid centers
+                x = ds.cf.coordinates["longitude"]
+                y = ds.cf.coordinates["latitude"]
 
         xmin = round_down(x.min())
         xmax = round_up(x.max())
@@ -754,7 +759,7 @@ def shape_bbox_indexer(ds, poly):
     ----------
     ds : xr.Dataset
         Input dataset.
-    poly : gpd.GeoDataFrame, pd.array.GeometryArray, or list of shapely geometries.
+    poly : gpd.GeoDataFrame, gpd.GeoSeries, pd.array.GeometryArray, or list of shapely geometries.
         Shapes to cover. Can be of type Polygon, MultiPolygon, Point, or MultiPoint.
 
     Returns
@@ -775,7 +780,7 @@ def shape_bbox_indexer(ds, poly):
     # The first `convex_hull` is necessary to remove any holes in the polygon.
     # The `GeoSeries.unary_union` is necessary to merge all shapes into a single polygon.
 
-    if isinstance(poly, gpd.GeoDataFrame):
+    if isinstance(poly, (gpd.GeoDataFrame, gpd.GeoSeries)):
         # Note that this function is somewhat redundant with functionality found in rioxarray (see `clip` and `Window`).
         geom = poly.geometry
         hull = geom.convex_hull.unary_union.convex_hull
@@ -784,6 +789,10 @@ def shape_bbox_indexer(ds, poly):
     elif isinstance(poly, (list, tuple)):
         hpoly = [p.convex_hull for p in poly]
         hull = unary_union(hpoly).convex_hull
+    else:
+        raise ValueError(
+            "poly must be a GeoDataFrame, GeoSeries, GeometryArray, or list of shapely geometries."
+        )
 
     # If polygon sits on the grid boundary, we need to roll the grid's coordinates and this is not supported.
     if not grid_exterior_polygon(ds).contains(hull):
@@ -794,14 +803,17 @@ def shape_bbox_indexer(ds, poly):
     if rectilinear:
         hull = hull.minimum_rotated_rectangle
 
+    # If the geometries are one or two points, it's hull does not form a polygon, and we need to handle the special
+    # cases for one and two points.
     if hasattr(hull.boundary, "geoms"):
         # Handle cases with 1 point. Putting the same point twice to avoid issues with zip later.
         if len(hull.boundary.geoms) == 0:
             coords = hull.xy, hull.xy
         # Handle cases with 2 points
-        elif len(hull.boundary.geoms) <= 2:
+        else:
             # Extract the lon, lat coordinates from the points themselves
             coords = [geom.xy for geom in hull.boundary.geoms]
+
     # Handle typical polygon case
     else:
         # Extract the edge vertices (last item is just a copy of the first to close the polygon)

@@ -1088,6 +1088,8 @@ class TestShapeBboxIndexer:
 
         ds = xesmf.util.cf_grid_2d(-200, 0, 20, 0, 65, 10)
         inds = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=[p1, p2]))
+        assert inds["lon"] == slice(4, 10)
+        assert inds["lat"] == slice(2, 7)
         env = subset.grid_exterior_polygon(ds.isel(inds))
         assert p1.within(env)
         assert p2.within(env)
@@ -1106,7 +1108,7 @@ class TestShapeBboxIndexer:
 
         # The subsetted grid should have the same dimensions as the subsetted rotated grid.
         i = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=[geom]))
-        ri = subset.shape_bbox_indexer(rds, gpd.GeoDataFrame(geometry=[rgeom]))
+        ri = subset.shape_bbox_indexer(rds, gpd.GeoSeries([rgeom]))
         assert ri == i
 
     def test_multipoints(self):
