@@ -669,9 +669,14 @@ def _curvilinear_grid_exterior_polygon(ds, mode="bbox"):
             x = ds.cf.get_bounds("longitude")  # lon_bnds
             y = ds.cf.get_bounds("latitude")  # lat_bnds
         except KeyError:
-            # xesmf convention
-            x = ds.lon_b
-            y = ds.lat_b
+            try:
+                # xesmf convention
+                x = ds.lon_b
+                y = ds.lat_b
+            except KeyError:
+                # Fall-back to grid centers
+                x = ds.cf.coordinates["longitude"]
+                y = ds.cf.coordinates["latitude"]
 
         xmin = round_down(x.min())
         xmax = round_up(x.max())
@@ -754,8 +759,8 @@ def shape_bbox_indexer(ds, poly):
     ----------
     ds : xr.Dataset
         Input dataset.
-    poly : gpd.GeoDataFrame
-        Shapes to cover.
+    poly : gpd.GeoDataFrame, gpd.GeoSeries, pd.array.GeometryArray, or list of shapely geometries.
+        Shapes to cover. Can be of type Polygon, MultiPolygon, Point, or MultiPoint.
 
     Returns
     -------
@@ -771,26 +776,51 @@ def shape_bbox_indexer(ds, poly):
     -----
     This is used in particular to restrict the domain of a dataset before computing the weights for a spatial average.
     """
-    rectilinear = is_rectilinear(ds)
+    # Cling wrap around shapes: GeoSeries -> Polygon
+    # The first `convex_hull` is necessary to remove any holes in the polygon.
+    # The `GeoSeries.unary_union` is necessary to merge all shapes into a single polygon.
 
-    # Union of all geometries -> shapely.geometry.Polygon
-    geom = poly.geometry.unary_union
-
-    # Shape envelope
-    if rectilinear:
-        envelope = geom.minimum_rotated_rectangle
+    if isinstance(poly, (gpd.GeoDataFrame, gpd.GeoSeries)):
+        # Note that this function is somewhat redundant with functionality found in rioxarray (see `clip` and `Window`).
+        geom = poly.geometry
+        hull = geom.convex_hull.unary_union.convex_hull
+    elif isinstance(poly, gpd.array.GeometryArray):
+        hull = poly.convex_hull.unary_union().convex_hull
+    elif isinstance(poly, (list, tuple)):
+        hpoly = [p.convex_hull for p in poly]
+        hull = unary_union(hpoly).convex_hull
     else:
-        # For curvilinear grids, the convex hull seems safer than the rotated_rectangle.
-        envelope = geom.convex_hull
+        raise ValueError(
+            "poly must be a GeoDataFrame, GeoSeries, GeometryArray, or list of shapely geometries."
+        )
 
-    # If polygon sits on the grid boundary, we need to roll the grid's coordinates and this is not supported.
-    if not grid_exterior_polygon(ds).contains(envelope):
+    # If polygon straddles the grid boundary, we need to roll the grid's coordinates and this is not supported.
+    if not grid_exterior_polygon(ds).contains(hull):
         return {}
 
-    # Create index from edge vertices (last item is just a copy of the first to close the polygon)
-    elon, elat = map(np.array, zip(*envelope.boundary.coords[:-1]))
+    # If the grid is rectilinear, we can use the minimum rotated rectangle to simplify the outline further.
+    rectilinear = is_rectilinear(ds)
+    if rectilinear:
+        hull = hull.minimum_rotated_rectangle
+
+    # If the geometries are one or two points, it's hull does not form a polygon, and we need to handle the special
+    # cases for one and two points.
+    if hasattr(hull.boundary, "geoms"):
+        # Handle cases with 1 point. Putting the same point twice to avoid issues with zip later.
+        if len(hull.boundary.geoms) == 0:
+            coords = hull.xy, hull.xy
+        # Handle cases with 2 points
+        else:
+            # Extract the lon, lat coordinates from the points themselves
+            coords = [geom.xy for geom in hull.boundary.geoms]
+
+    # Handle typical polygon case
+    else:
+        # Extract the edge vertices (last item is just a copy of the first to close the polygon)
+        coords = hull.boundary.coords[:-1]
 
     # Create envelope coordinates
+    elon, elat = map(np.array, zip(*coords))
     ind = {ds.cf["longitude"].name: elon, ds.cf["latitude"].name: elat}
 
     # Find indices nearest the rectangle' corners
@@ -798,7 +828,7 @@ def shape_bbox_indexer(ds, poly):
     if rectilinear:
         if version.parse(xarray.__version__) < version.Version("2022.6.0"):
             warnings.warn(
-                "CLISOPS will require xarray >= 2022.06 in the next major release. "
+                "CLISOPS will require xarray >= 2022.06 in the next minor release. "
                 "Please update your environment dependencies.",
                 DeprecationWarning,
             )
@@ -811,7 +841,6 @@ def shape_bbox_indexer(ds, poly):
             ).dim_indexers
     else:
         # For curvilinear grids, finding the closest points require a bit more work.
-        # Note that this code is not exercised for now.
         from scipy.spatial import cKDTree
 
         # These are going to be 2D grids.

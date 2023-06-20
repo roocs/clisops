@@ -1,12 +1,17 @@
 Version History
 ===============
 
-v0.9.7 (unreleased)
+v0.10.0 (unreleased)
 -------------------
 
 New Features
 ^^^^^^^^^^^^
 * ``clisops.ops.regrid``, ``clisops.core.regrid``, ``clisops.core.Weights`` and ``clisops.core.Grid`` added (#TBA). Allowing the remapping of geospatial data on various grids by applying the `xESMF <https://pangeo-xesmf.readthedocs.io/en/latest/>`_ regridder.
+
+Bug Fixes
+^^^^^^^^^
+* Fixed bug in `core.subset.shape_bbox_indexer` with the union of invalid geometries. Added regression test. (Issue #280)
+* Added support in `core.subset.shape_bbox_indexer` for Point and MultiPoint geometries. (Issue #283)
 
 v0.9.6 (2023-04-05)
 -------------------
