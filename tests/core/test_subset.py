@@ -1074,6 +1074,33 @@ class TestShapeBboxIndexer:
             inds = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=[pb]))
             assert pb.within(subset.grid_exterior_polygon(ds.isel(inds)))
 
+    def test_complex_geometries(self):
+        """Test with geometries that cannot be simplified to a single polygon using `unary_union`."""
+        pytest.importorskip("xesmf", "0.6.2")
+        import shapely.wkt
+
+        p1 = shapely.wkt.loads(
+            "POLYGON((-65.5563 49.257, -64.2166 48.5017, -70.8387 45.2339, -74.6375 44.9993, "
+            "-65.5563 49.257))"
+        )
+        p2 = shapely.wkt.loads(
+            "POLYGON ((-58.64 51.2, -78.7115 46.326, -78.1958 62.2551, -64.5341 60.309, -58.64 51.2), (-78.5687 58.6447, -78.5675 58.646, -78.5762 58.6482, -78.5698 58.6445, -78.5687 58.6447), (-78.5539 58.6486, -78.5515 58.646, -78.5468 58.6507, -78.5515 58.6511, -78.5539 58.6486), (-78.5375 58.6513, -78.5353 58.6496, -78.5331 58.6503, -78.5357 58.6512, -78.5375 58.6513), (-78.517 58.6497, -78.5082 58.6452, -78.5068 58.6456, -78.5112 58.6484, -78.517 58.6497), (-78.5387 58.6484, -78.5411 58.6509, -78.5466 58.6485, -78.5355 58.6459, -78.5387 58.6484), (-78.5542 58.6516, -78.5543 58.6539, -78.5614 58.6544, -78.5571 58.6516, -78.5542 58.6516), (-78.5508 58.6622, -78.561 58.6648, -78.5642 58.664, -78.5559 58.6609, -78.5508 58.6622), (-78.5814 58.6764, -78.5831 58.675, -78.5802 58.6739, -78.5807 58.6761, -78.5814 58.6764))"
+        )
+
+        ds = xesmf.util.cf_grid_2d(-200, 0, 20, 0, 71, 10)
+        inds = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=[p1, p2]))
+        assert "lon" in inds and "lat" in inds, "Expected lon and lat in indexer."
+        env = subset.grid_exterior_polygon(ds.isel(inds))
+        assert p1.within(env)
+        assert p2.within(env)
+
+        # inds should be empty is region is not contained in grid exterior geometry
+        ds = xesmf.util.cf_grid_2d(
+            -200, 0, 20, 0, 61, 10
+        )  # polygon goes up to 62, grid stops at 60
+        inds = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=[p1, p2]))
+        assert inds == {}
+
     def test_curvilinear(self):
         """This checks that a grid along lon/lat and a rotated grid are indexed identically for a geometry and a
         rotated geometry."""
@@ -1088,8 +1115,31 @@ class TestShapeBboxIndexer:
 
         # The subsetted grid should have the same dimensions as the subsetted rotated grid.
         i = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=[geom]))
-        ri = subset.shape_bbox_indexer(rds, gpd.GeoDataFrame(geometry=[rgeom]))
+        ri = subset.shape_bbox_indexer(rds, gpd.GeoSeries([rgeom]))
         assert ri == i
+
+    def test_multipoints(self):
+        """Test with a MultiPoint geometry."""
+        pytest.importorskip("xesmf", "0.6.2")
+        from shapely.geometry import MultiPoint, Point
+
+        ds = xesmf.util.cf_grid_2d(-200, 0, 20, -60, 60, 10)
+
+        coords = (-150, 35), (-100, 40), (-125, 55)
+
+        for n in range(1, 4):
+            geom = [Point(coords[i]) for i in range(n)]
+            inds = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=geom))
+            inds2 = subset.shape_bbox_indexer(ds, geom)
+            assert inds2 == inds
+            inds3 = subset.shape_bbox_indexer(ds, gpd.points_from_xy(*zip(*coords[:n])))
+            assert inds3 == inds3
+            assert MultiPoint(geom).within(subset.grid_exterior_polygon(ds.isel(inds)))
+
+        for n in range(1, 4):
+            geom = MultiPoint([coords[i] for i in range(n)])
+            inds = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=[geom]))
+            assert geom.within(subset.grid_exterior_polygon(ds.isel(inds)))
 
 
 def rotated_grid_2d(lon0_b, lon1_b, d_lon, lat0_b, lat1_b, d_lat, angle):

@@ -92,6 +92,9 @@ jobs:
         if: ${{ matrix.upstream }}
         run: |
             pip install git+https://github.com/pydata/xarray.git@main#egg=xarray
+      - name: List installed packages
+        run: |
+            conda list
       - name: Test with conda
         run: |
             pytest --cov tests
