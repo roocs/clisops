@@ -794,7 +794,7 @@ def shape_bbox_indexer(ds, poly):
             "poly must be a GeoDataFrame, GeoSeries, GeometryArray, or list of shapely geometries."
         )
 
-    # If polygon sits on the grid boundary, we need to roll the grid's coordinates and this is not supported.
+    # If polygon straddles the grid boundary, we need to roll the grid's coordinates and this is not supported.
     if not grid_exterior_polygon(ds).contains(hull):
         return {}
 
