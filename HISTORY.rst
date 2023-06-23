@@ -1,7 +1,7 @@
 Version History
 ===============
 
-v.10.0 (unreleased)
+v0.9.7 (2023-06-23)
 -------------------
 
 Bug Fixes
