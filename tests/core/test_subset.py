@@ -668,6 +668,16 @@ class TestSubsetBbox:
             not in [str(q.message) for q in record]
         )
 
+    def test_locstream(self):
+        da = xr.DataArray(
+            [1, 2, 3, 4],
+            dims=('site',),
+            coords={'lat': (('site',), [10, 30, 20, 40]), 'lon': (('site',), [-50, -80, -70, -100])}
+        )
+        sub = subset.subset_bbox(da, lon_bnds=[-95, -65], lat_bnds=[15, 35])
+        exp = da.isel(site=[1, 2])
+        xr.testing.assert_identical(sub, exp)
+
 
 class TestSubsetShape:
     nc_file = get_file("cmip5/tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc")
@@ -881,6 +891,18 @@ class TestSubsetShape:
         )
         sub = subset.subset_shape(da, shape=shape)
         assert sub.notnull().sum() == 3
+
+    def test_locstream(self):
+        da = xr.DataArray(
+            [1, 2, 3, 4],
+            dims=('site',),
+            coords={'lat': (('site',), [10, 30, 20, 40]), 'lon': (('site',), [-50, -80, -70, -100])}
+        )
+        poly = Polygon([[-90, 15], [-65, 15], [-65, 35], [-90, 35]])
+        shape = gpd.GeoDataFrame(geometry=[poly])
+        sub = subset.subset_shape(da, shape=shape)
+        exp = da.isel(site=[1, 2])
+        xr.testing.assert_identical(sub, exp)
 
 
 class TestDistance:

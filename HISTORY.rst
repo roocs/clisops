@@ -8,6 +8,7 @@ Bug Fixes
 ^^^^^^^^^
 * Fixed bug in `core.subset.shape_bbox_indexer` with the union of invalid geometries. Added regression test. (Issue #280)
 * Added support in `core.subset.shape_bbox_indexer` for Point and MultiPoint geometries. (Issue #283)
+* Fixed `core.subset.subset_bbox` and `core.subset.subset_shape` for datasets with 1D longitude and latitude (ex : Station data).
 
 v0.9.6 (2023-04-05)
 -------------------

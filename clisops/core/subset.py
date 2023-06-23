@@ -534,7 +534,7 @@ def create_mask(
     if wrap_lons:
         warnings.warn("Wrapping longitudes at 180 degrees.")
 
-    if len(x_dim.shape) == 1 & len(y_dim.shape) == 1:
+    if len(x_dim.shape) == 1 and len(y_dim.shape) == 1 and x_dim.dims != y_dim.dims:
         # create a 2d grid of lon, lat values
         lon1, lat1 = np.meshgrid(
             np.asarray(x_dim.values), np.asarray(y_dim.values), indexing="ij"
@@ -1247,6 +1247,13 @@ def subset_bbox(
         if lon in da.dims and lon_bnds is not None:
             lon_bnds = _check_desc_coords(coord=da[lon], bounds=lon_bnds, dim=lon)
             da = da.sel({lon: slice(*lon_bnds)})
+    # Locstream case (lat and lon are 1D, sharing the dimension)
+    elif da[lat].ndim == 1 and da[lon].ndim == 1 and da[lon].dims == da[lat].dims:
+        mask = (
+            (da[lat] < max(lat_bnds)) & (da[lat] > min(lat_bnds))
+            & (da[lon] < max(lon_bnds)) & (da[lon] > min(lon_bnds))
+        )
+        da = da.sel({da[lat].dims[0]: mask})
 
     # Curvilinear case (lat and lon are coordinates, not dimensions)
     elif ((lat in da.coords) and (lon in da.coords)) or (
@@ -1309,9 +1316,9 @@ def subset_bbox(
             # same 2d coordinates as lat (or lon)
             for var in da.data_vars:
                 if set(da[lat].dims).issubset(da[var].dims):
-                    da[var] = da[var].where(lon_cond & lat_cond, drop=True)
+                    da[var] = da[var].where(lon_cond & lat_cond)
         else:
-            da = da.where(lon_cond & lat_cond, drop=True)
+            da = da.where(lon_cond & lat_cond)
 
     else:
         raise (
