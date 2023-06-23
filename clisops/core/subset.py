@@ -1250,8 +1250,10 @@ def subset_bbox(
     # Locstream case (lat and lon are 1D, sharing the dimension)
     elif da[lat].ndim == 1 and da[lon].ndim == 1 and da[lon].dims == da[lat].dims:
         mask = (
-            (da[lat] < max(lat_bnds)) & (da[lat] > min(lat_bnds))
-            & (da[lon] < max(lon_bnds)) & (da[lon] > min(lon_bnds))
+            (da[lat] < max(lat_bnds))
+            & (da[lat] > min(lat_bnds))
+            & (da[lon] < max(lon_bnds))
+            & (da[lon] > min(lon_bnds))
         )
         da = da.sel({da[lat].dims[0]: mask})
 

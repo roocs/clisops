@@ -671,8 +671,11 @@ class TestSubsetBbox:
     def test_locstream(self):
         da = xr.DataArray(
             [1, 2, 3, 4],
-            dims=('site',),
-            coords={'lat': (('site',), [10, 30, 20, 40]), 'lon': (('site',), [-50, -80, -70, -100])}
+            dims=("site",),
+            coords={
+                "lat": (("site",), [10, 30, 20, 40]),
+                "lon": (("site",), [-50, -80, -70, -100]),
+            },
         )
         sub = subset.subset_bbox(da, lon_bnds=[-95, -65], lat_bnds=[15, 35])
         exp = da.isel(site=[1, 2])
@@ -895,8 +898,11 @@ class TestSubsetShape:
     def test_locstream(self):
         da = xr.DataArray(
             [1, 2, 3, 4],
-            dims=('site',),
-            coords={'lat': (('site',), [10, 30, 20, 40]), 'lon': (('site',), [-50, -80, -70, -100])}
+            dims=("site",),
+            coords={
+                "lat": (("site",), [10, 30, 20, 40]),
+                "lon": (("site",), [-50, -80, -70, -100]),
+            },
         )
         poly = Polygon([[-90, 15], [-65, 15], [-65, 35], [-90, 35]])
         shape = gpd.GeoDataFrame(geometry=[poly])
