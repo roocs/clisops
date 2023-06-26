@@ -9,7 +9,6 @@ from typing import Dict, Optional, Sequence, Tuple, Union
 import cf_xarray  # noqa
 import geopandas as gpd
 import numpy as np
-import shapely as shp
 import xarray
 from packaging import version
 from pandas import DataFrame
