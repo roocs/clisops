@@ -9,6 +9,7 @@ from typing import Dict, Optional, Sequence, Tuple, Union
 import cf_xarray  # noqa
 import geopandas as gpd
 import numpy as np
+import shapely as shp
 import xarray
 from packaging import version
 from pandas import DataFrame
@@ -18,14 +19,12 @@ from pyproj.crs import CRS
 from pyproj.exceptions import CRSError
 from roocs_utils.utils.time_utils import to_isoformat
 from roocs_utils.xarray_utils import xarray_utils as xu
-import shapely as shp
 from shapely import vectorized
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import split, unary_union
 from xarray.core.utils import get_temp_dimname
 
 from clisops.utils.dataset_utils import adjust_date_to_calendar
-
 
 __all__ = [
     "create_mask",
@@ -551,15 +550,11 @@ def create_mask(
     geoms = poly.geometry.values
     mask = np.full(lat1.shape, np.nan)
     for val, geom in zip(poly.index[::-1], geoms[::-1]):
-        contained = (
-            vectorized
-            .contains(geom, lon1.flatten(), lat1.flatten())
-            .reshape(lat1.shape)
+        contained = vectorized.contains(geom, lon1.flatten(), lat1.flatten()).reshape(
+            lat1.shape
         )
-        touched = (
-            vectorized
-            .touches(geom, lon1.flatten(), lat1.flatten())
-            .reshape(lat1.shape)
+        touched = vectorized.touches(geom, lon1.flatten(), lat1.flatten()).reshape(
+            lat1.shape
         )
         intersection = np.logical_or(contained, touched)
         mask[intersection] = val
