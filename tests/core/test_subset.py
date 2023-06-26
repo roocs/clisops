@@ -847,7 +847,7 @@ class TestSubsetShape:
         assert ds_sub.notnull().sum() == 58 + 250 + 22
         assert ds_sub.tas.shape == (12, 14, 128)
 
-    def test_vectorize_touches_polygons(self, toggle_pygeos):
+    def test_vectorize_touches_polygons(self):
         """Check that points touching the polygon are included in subset."""
         # Create simple polygon
         poly = Polygon([[0, 0], [1, 0], [1, 1]])
