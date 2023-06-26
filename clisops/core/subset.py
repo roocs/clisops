@@ -18,17 +18,13 @@ from pyproj.crs import CRS
 from pyproj.exceptions import CRSError
 from roocs_utils.utils.time_utils import to_isoformat
 from roocs_utils.xarray_utils import xarray_utils as xu
+import shapely as shp
 from shapely import vectorized
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import split, unary_union
 from xarray.core.utils import get_temp_dimname
 
 from clisops.utils.dataset_utils import adjust_date_to_calendar
-
-try:
-    import pygeos  # noqa
-except ImportError:
-    pygeos = None
 
 
 __all__ = [
@@ -552,35 +548,20 @@ def create_mask(
     if not is_integer_dtype(poly.index.dtype):
         poly = poly.reset_index()
 
-    if pygeos is not None:
-        # Vectorized creation of Point geometries
-        pts = pygeos.points(lon1, lat1)[np.newaxis, ...]
-        # Preparation for optimized computation
-        pygeos.prepare(pts)
-
-        geoms = pygeos.from_shapely(poly.geometry.values)[:, np.newaxis, np.newaxis]
-        pygeos.prepare(geoms)
-    else:
-        geoms = poly.geometry.values
-
-    # Do for all geometries
-    # For the pygeos case, this is slightly slower than going directly 3D,
-    # but keeps memory usage at an acceptable level with large polygon collections.
+    geoms = poly.geometry.values
     mask = np.full(lat1.shape, np.nan)
     for val, geom in zip(poly.index[::-1], geoms[::-1]):
-        if pygeos is not None:
-            # Get "covers" and remove singleton first dim
-            intersection = pygeos.covers(geom, pts)[0, ...]
-        else:
-            # Slow way because of the "touches"
-            contained = vectorized.contains(
-                geom, lon1.flatten(), lat1.flatten()
-            ).reshape(lat1.shape)
-            touched = vectorized.touches(geom, lon1.flatten(), lat1.flatten()).reshape(
-                lat1.shape
-            )
-            intersection = np.logical_or(contained, touched)
-
+        contained = (
+            vectorized
+            .contains(geom, lon1.flatten(), lat1.flatten())
+            .reshape(lat1.shape)
+        )
+        touched = (
+            vectorized
+            .touches(geom, lon1.flatten(), lat1.flatten())
+            .reshape(lat1.shape)
+        )
+        intersection = np.logical_or(contained, touched)
         mask[intersection] = val
 
     mask = xarray.DataArray(mask, dims=dims_out, coords=coords_out)

@@ -9,6 +9,10 @@ Bug Fixes
 * Fixed bug in `core.subset.shape_bbox_indexer` with the union of invalid geometries. Added regression test. (Issue #280)
 * Added support in `core.subset.shape_bbox_indexer` for Point and MultiPoint geometries. (Issue #283)
 
+Other Changes
+^^^^^^^^^^^^^
+* Shapely 2.0 is now faster than pygeos for ``create_mask``. Remove pygeos as extra dependency and pin shapely.
+
 v0.9.6 (2023-04-05)
 -------------------
 
