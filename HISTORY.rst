@@ -10,6 +10,10 @@ Bug Fixes
 * Added support in `core.subset.shape_bbox_indexer` for Point and MultiPoint geometries. (Issue #283)
 * Fixed `core.subset.subset_bbox` and `core.subset.subset_shape` for datasets with 1D longitude and latitude (ex : Station data).
 
+Other Changes
+^^^^^^^^^^^^^
+* Shapely 2.0 is now faster than pygeos for ``create_mask``. Remove pygeos as extra dependency and pin shapely.
+
 v0.9.6 (2023-04-05)
 -------------------
 

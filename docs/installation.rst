@@ -29,9 +29,6 @@ you through the process.
    on packages (ESMF, ESMpy) unavailable on windows.  It can still be installed on osx/linux through `conda` or
    directly [from source](https://github.com/pangeo-data/xESMF/).
 
-Another optional dependency is [pygeos](https://pygeos.readthedocs.io/en/latest/index.html). If installed,
-the performance of `core.subset.create_mask` and `core.subset.subset_shape` are greatly improved.
-
 From sources
 ------------
 
