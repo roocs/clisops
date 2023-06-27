@@ -1,7 +1,7 @@
 Version History
 ===============
 
-v0.9.7 (2023-06-23)
+v0.10.0 (2023-06-27)
 -------------------
 
 New Features
@@ -16,7 +16,7 @@ Bug Fixes
 
 Other Changes
 ^^^^^^^^^^^^^
-* Shapely 2.0 is now faster than pygeos for ``create_mask``. Remove pygeos as extra dependency and pin shapely.
+* Shapely 2.0 is now faster than pygeos for ``create_mask``. Removed pygeos from extra dependencies and pinned shapely above 2.0.
 
 v0.9.6 (2023-04-05)
 -------------------
