@@ -16,27 +16,6 @@ try:
 except ImportError:
     xesmf = None
 
-try:
-    import pygeos
-except ImportError:
-    pygeos = None
-
-
-@pytest.fixture(params=[True, False])
-def toggle_pygeos(request):
-    if request.param:
-        if pygeos is None:
-            pytest.skip("pygeos not installed")
-        else:
-            yield request.param
-    else:
-        # Do not use pygeos
-        mod = subset.pygeos
-        # Monkeypatch core.subset to imitate the absence of pygeos.
-        subset.pygeos = None
-        yield request.param
-        subset.pygeos = mod
-
 
 class TestSubsetTime:
     nc_poslons = get_file("cmip3/tas.sresb1.giss_model_e_r.run1.atm.da.nc")
@@ -836,7 +815,7 @@ class TestSubsetShape:
         with xr.open_dataset(filename_or_obj=tmp_netcdf_filename) as f:
             assert {"tas", "crs"}.issubset(set(f.data_vars))
 
-    def test_mask_multiregions(self, toggle_pygeos):
+    def test_mask_multiregions(self):
         ds = xr.open_dataset(self.nc_file)
         regions = gpd.read_file(self.multi_regions_geojson)
         regions.set_index("id")
@@ -868,7 +847,7 @@ class TestSubsetShape:
         assert ds_sub.notnull().sum() == 58 + 250 + 22
         assert ds_sub.tas.shape == (12, 14, 128)
 
-    def test_vectorize_touches_polygons(self, toggle_pygeos):
+    def test_vectorize_touches_polygons(self):
         """Check that points touching the polygon are included in subset."""
         # Create simple polygon
         poly = Polygon([[0, 0], [1, 0], [1, 1]])

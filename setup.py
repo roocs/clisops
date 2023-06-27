@@ -35,7 +35,7 @@ docs_requirements = [
     "matplotlib",
 ]
 
-extra_requirements = ["xesmf>=0.6.2", "pygeos>=0.9"]
+extra_requirements = ["xesmf>=0.6.2"]
 
 setup(
     version=about["__version__"],
