@@ -1,8 +1,12 @@
 Version History
 ===============
 
-v.10.0 (unreleased)
--------------------
+v0.10.0 (2023-06-27)
+--------------------
+
+New Features
+^^^^^^^^^^^^
+* Added support for Python 3.11 (#287).
 
 Bug Fixes
 ^^^^^^^^^
@@ -12,7 +16,7 @@ Bug Fixes
 
 Other Changes
 ^^^^^^^^^^^^^
-* Shapely 2.0 is now faster than pygeos for ``create_mask``. Remove pygeos as extra dependency and pin shapely.
+* Shapely 2.0 is now faster than pygeos for ``create_mask``. Removed pygeos from extra dependencies and pinned shapely above 2.0.
 
 v0.9.6 (2023-04-05)
 -------------------
@@ -266,7 +270,6 @@ Other Changes
 * Using file caching to gather ``xclim`` test data.
 * Change made to ``core.subset.subset_bbox._check_desc_coords`` to cope with subsetting when only one latitude or longitude exists in the input dataset
 
-
 v0.5.0 (2020-12-17)
 -------------------
 
@@ -299,7 +302,6 @@ Breaking Changes
 
 New Features
 ^^^^^^^^^^^^
-
 * ``subset_level`` added.
 * PR template.
 * Config file now exists at ``clisops.etc.roocs.ini``. This can be overwritten by setting the environment variable
@@ -317,13 +319,11 @@ New Features
 
 Bug Fixes
 ^^^^^^^^^
-
 * Nudging time values to nearest available in dataset to fix a bug where subsetting failed when the exact date
   did not exist in the dataset.
 
 Other Changes
 ^^^^^^^^^^^^^
-
 * ``cfunits`` dependency removed - not needed.
 * requirements.txt and environment.yml synced.
 * Documentation updated to include API.
@@ -345,14 +345,12 @@ Other Changes
 ^^^^^^^^^^^^^
 * Update testdata and subset module (#34).
 
-
 v0.2.1 (2020-07-08)
 -------------------
 
 Other Changes
 ^^^^^^^^^^^^^
 * Fixed docs version (#25).
-
 
 v0.2.0 (2020-06-19)
 -------------------
@@ -368,7 +366,6 @@ Other Changes
 * Updated travis CI according to xclim requirements.
 * Now employing PEP8 + Black compatible autoformatting.
 * Pre-commit is now used to launch code formatting inspections for local development.
-
 
 v0.1.0 (2020-04-22)
 -------------------
