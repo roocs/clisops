@@ -1,7 +1,7 @@
 Version History
 ===============
 
-v0.10.0 (2023-06-27)
+v0.10.0 (2023-06-28)
 --------------------
 
 New Features
@@ -10,13 +10,13 @@ New Features
 
 Bug Fixes
 ^^^^^^^^^
-* Fixed bug in `core.subset.shape_bbox_indexer` with the union of invalid geometries. Added regression test. (Issue #280)
-* Added support in `core.subset.shape_bbox_indexer` for Point and MultiPoint geometries. (Issue #283)
-* Fixed `core.subset.subset_bbox` and `core.subset.subset_shape` for datasets with 1D longitude and latitude (ex : Station data).
+* Fixed bug in `core.subset.shape_bbox_indexer` with the union of invalid geometries. Added regression test. (#280)
+* Added support in `core.subset.shape_bbox_indexer` for Point and MultiPoint geometries. (#283)
+* Fixed `core.subset.subset_bbox` and `core.subset.subset_shape` for datasets with 1D longitude and latitude (ex: Station data). (#288)
 
 Other Changes
 ^^^^^^^^^^^^^
-* Shapely 2.0 is now faster than pygeos for ``create_mask``. Removed pygeos from extra dependencies and pinned shapely above 2.0.
+* Shapely 2.0 is now faster than pygeos for ``create_mask``. Removed pygeos from extra dependencies and pinned shapely above 2.0. (#289)
 
 v0.9.6 (2023-04-05)
 -------------------
