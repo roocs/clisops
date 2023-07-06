@@ -1134,6 +1134,10 @@ def subset_shape(
 
     # inner_mask including the shapes
     inner_mask = mask_2d.notnull() | inner_mask
+    # in the locstream case inner_mask remains all True, but all non-polygon values can be dropped,
+    # so here "outside inner_mask" is everything outside the polygon.
+    if len(sp_dims) == 1:
+        inner_mask = mask_2d.notnull()
 
     # loop through variables
     for v in ds_copy.data_vars:
