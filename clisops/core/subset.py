@@ -1107,11 +1107,12 @@ def subset_shape(
         # True in the inner zone, False in the outer
         inner_mask = inner_mask & (left != 0) & (right != 0)
 
-    # inner_mask including the shapes
-    inner_mask = mask_2d.notnull() | inner_mask
-    # in the locstream case inner_mask remains all True, but all non-polygon values can be dropped,
-    # so here "outside inner_mask" is everything outside the polygon.
-    if len(sp_dims) == 1:
+    if len(sp_dims) > 1:
+        # inner_mask including the shapes
+        inner_mask = mask_2d.notnull() | inner_mask
+    else:
+        # in the locstream case inner_mask remains all True, but all non-polygon values can be dropped,
+        # so here "outside inner_mask" is everything outside the polygon.
         inner_mask = mask_2d.notnull()
 
     # loop through variables
