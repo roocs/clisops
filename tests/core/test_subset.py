@@ -876,17 +876,17 @@ class TestSubsetShape:
 
     def test_locstream(self):
         da = xr.DataArray(
-            [1, 2, 3, 4],
+            [1, 2, 3, 4, 5, 6, 7, 8, 9],
             dims=("site",),
             coords={
-                "lat": (("site",), [10, 30, 20, 40]),
-                "lon": (("site",), [-50, -80, -70, -100]),
+                "lat": (("site",), [55, 55, 55, 40, 40, 40, 25, 25, 25]),
+                "lon": (("site",), [-80, -70, -60, -80, -70, -60, -80, -70, -60]),
             },
         )
-        poly = Polygon([[-90, 15], [-65, 15], [-65, 35], [-90, 35]])
+        poly = Polygon([[-90, 40], [-70, 20], [-50, 40], [-70, 60]])
         shape = gpd.GeoDataFrame(geometry=[poly])
         sub = subset.subset_shape(da, shape=shape)
-        exp = da.isel(site=[1, 2])
+        exp = da.isel(site=[1, 3, 4, 5, 7])
         xr.testing.assert_identical(sub, exp)
 
 
