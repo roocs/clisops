@@ -76,7 +76,7 @@ Ready to contribute? Here's how to set up `clisops` for local development.
         $ mkvirtualenv clisops
 
         # For Anaconda/Miniconda environments:
-        $ conda create -n clisops python=3.7
+        $ conda create -n clisops python=(3.8, 3.9, 3.10, etc.)
 
         $ cd clisops/
         $ pip install -e .
@@ -91,19 +91,19 @@ Ready to contribute? Here's how to set up `clisops` for local development.
     Now you can make your changes locally!
 
 #.
-    When you are done making changes, check that you verify your changes with `black` and run the tests, including testing other Python versions with `tox`:
+    When you are done making changes, check that you verify your changes with `flake8` and `black` and run the tests, including testing other Python versions with `tox`:
 
     ..code-block:: shell
 
         # For virtualenv environments:
-        $ pip install flake8 black pytest tox
+        $ pip install flake8 black pytest pytest-loguru tox
 
         # For Anaconda/Miniconda environments:
-        $ conda install -c conda-forge black pytest tox
+        $ conda install -c conda-forge flake8 black pytest pytest-loguru tox
 
         $ flake8 clisops tests
-        $ black --target-python py38 clisops tests
-        $ python setup.py test # (or pytest)
+        $ black clisops tests
+        $ pytest
         $ tox
 
 #.
@@ -115,7 +115,7 @@ Ready to contribute? Here's how to set up `clisops` for local development.
         $ pip install pre-commit
 
         # For Anaconda/Miniconda environments:
-        $ conda install -c conda-forge pre_commit
+        $ conda install -c conda-forge pre-commit
 
         $ pre-commit install
         $ pre-commit run --all-files
@@ -220,7 +220,6 @@ Tips
 To run a subset of tests::
 
     $ pytest tests.test_clisops
-
 
 Versioning
 ----------
