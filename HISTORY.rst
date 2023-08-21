@@ -1,6 +1,13 @@
 Version History
 ===============
 
+v0.10.1 (2023-08-21)
+--------------------
+
+Bug Fixes
+^^^^^^^^^
+* Fixed an issue with the type hinting for subset functions that were broken due to changes in xarray 2023.08. (#295).
+
 v0.10.0 (2023-06-28)
 --------------------
 
