@@ -4,15 +4,13 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import xarray as xr
+from _common import CMIP5_RH, CMIP6_SICONC_DAY, TESTS_DATA
 from pkg_resources import parse_version
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils import xarray_utils as xu
 
 from clisops.core import average
 from clisops.utils import get_file
-
-from .._common import CMIP5_RH, CMIP6_SICONC_DAY
-from .._common import XCLIM_TESTS_DATA as TESTS_DATA
 
 try:
     import xesmf
@@ -25,16 +23,19 @@ except ImportError:
 
 @pytest.mark.skipif(xesmf is None, reason="xESMF >= 0.6.2 is needed for average_shape.")
 class TestAverageShape:
+    # Fetch remote netcdf files
     nc_file = get_file("cmip5/tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc")
     lons_2d_nc_file = get_file("cmip6/sic_SImon_CCCma-CanESM5_ssp245_r13i1p2f1_2020.nc")
     nc_file_neglons = get_file("NRCANdaily/nrcan_canada_daily_tasmax_1990.nc")
-    meridian_geojson = os.path.join(TESTS_DATA, "cmip5", "meridian.json")
-    meridian_multi_geojson = os.path.join(TESTS_DATA, "cmip5", "meridian_multi.json")
-    poslons_geojson = os.path.join(TESTS_DATA, "cmip5", "poslons.json")
-    eastern_canada_geojson = os.path.join(TESTS_DATA, "cmip5", "eastern_canada.json")
-    southern_qc_geojson = os.path.join(TESTS_DATA, "cmip5", "southern_qc_geojson.json")
-    small_geojson = os.path.join(TESTS_DATA, "cmip5", "small_geojson.json")
-    multi_regions_geojson = os.path.join(TESTS_DATA, "cmip5", "multi_regions.json")
+
+    # Fetch local JSON files
+    meridian_geojson = os.path.join(TESTS_DATA, "meridian.json")
+    meridian_multi_geojson = os.path.join(TESTS_DATA, "meridian_multi.json")
+    poslons_geojson = os.path.join(TESTS_DATA, "poslons.json")
+    eastern_canada_geojson = os.path.join(TESTS_DATA, "eastern_canada.json")
+    southern_qc_geojson = os.path.join(TESTS_DATA, "southern_qc_geojson.json")
+    small_geojson = os.path.join(TESTS_DATA, "small_geojson.json")
+    multi_regions_geojson = os.path.join(TESTS_DATA, "multi_regions.json")
 
     def test_wraps(self, tmp_netcdf_filename):
         ds = xr.open_dataset(self.nc_file)

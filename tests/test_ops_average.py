@@ -2,11 +2,10 @@ import os
 
 import pytest
 import xarray as xr
+from _common import C3S_CORDEX_EUR_ZG500, CMIP5_TAS, CMIP6_SICONC_DAY
 from roocs_utils.exceptions import InvalidParameterValue
 
 from clisops.ops.average import average_over_dims, average_time
-
-from .._common import C3S_CORDEX_EUR_ZG500, CMIP5_TAS, CMIP6_SICONC_DAY
 
 
 def _check_output_nc(result, fname="output_001.nc"):
@@ -201,7 +200,7 @@ def test_aux_variables():
     Have to create a netcdf file with auxiliary variable
     """
 
-    ds = _load_ds("tests/ops/file.nc")
+    ds = _load_ds("tests/data/test_file.nc")
 
     assert "do_i_get_written" in ds.variables
 

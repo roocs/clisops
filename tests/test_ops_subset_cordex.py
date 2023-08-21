@@ -1,14 +1,13 @@
-from roocs_utils.parameter.param_utils import time_interval
-
-from clisops.ops.subset import subset
-
-from .._common import (
+from _common import (
     C3S_CORDEX_AFR_TAS,
     C3S_CORDEX_ANT_SFC_WIND,
     C3S_CORDEX_EUR_ZG500,
     C3S_CORDEX_NAM_PR,
     _check_output_nc,
 )
+from roocs_utils.parameter.param_utils import time_interval
+
+from clisops.ops.subset import subset
 
 
 def test_subset_cordex_afr(tmpdir):

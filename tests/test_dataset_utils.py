@@ -3,10 +3,7 @@ import numpy as np
 import packaging.version
 import pytest
 import xarray as xr
-
-import clisops.utils.dataset_utils as clidu
-
-from .._common import (
+from _common import (
     C3S_CORDEX_AFR_TAS,
     C3S_CORDEX_ANT_SFC_WIND,
     CMIP6_GFDL_EXTENT,
@@ -18,6 +15,8 @@ from .._common import (
     CMIP6_UNSTR_ICON_A,
     CORDEX_TAS_ONE_TIMESTEP,
 )
+
+import clisops.utils.dataset_utils as clidu
 
 
 def test_add_day():
