@@ -46,9 +46,9 @@ def average_over_dims(
     dims: Optional[Union[Sequence[str], DimensionParameter]] = None,
     ignore_undetected_dims: bool = False,
     output_dir: Optional[Union[str, Path]] = None,
-    output_type="netcdf",
-    split_method="time:auto",
-    file_namer="standard",
+    output_type: str = "netcdf",
+    split_method: str = "time:auto",
+    file_namer: str = "standard",
 ) -> List[Union[xr.Dataset, str]]:
     """
 
@@ -62,10 +62,10 @@ def average_over_dims(
     ignore_undetected_dims : bool
         If the dimensions specified are not found in the dataset, an Exception will be raised if set to True.
         If False, an exception will not be raised and the other dimensions will be averaged over. Default = False
-    output_dir: Optional[Union[str, Path]]
-    output_type: {"netcdf", "nc", "zarr", "xarray"}
-    split_method: {"time:auto"}
-    file_namer: {"standard", "simple"}
+    output_dir : Optional[Union[str, Path]]
+    output_type : {"netcdf", "nc", "zarr", "xarray"}
+    split_method : {"time:auto"}
+    file_namer : {"standard", "simple"}
 
     Returns
     -------
@@ -120,12 +120,12 @@ class AverageTime(Operation):
 
 
 def average_time(
-    ds,
+    ds: Union[xr.Dataset, str],
     freq: str,
     output_dir: Optional[Union[str, Path]] = None,
-    output_type="netcdf",
-    split_method="time:auto",
-    file_namer="standard",
+    output_type: str = "netcdf",
+    split_method: str = "time:auto",
+    file_namer: str = "standard",
 ) -> List[Union[xr.Dataset, str]]:
     """
 

@@ -27,7 +27,6 @@ docs_requirements = [
     "sphinx",
     "sphinx-rtd-theme",
     "nbsphinx",
-    "pandoc",
     "ipython",
     "ipython_genutils",
     "ipykernel",
