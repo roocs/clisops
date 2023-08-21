@@ -100,7 +100,6 @@ jobs:
       - name: Check versions
         run: |
           conda list
-          xclim show_version_info
       - name: Test with conda
         run: |
           pytest --cov tests
