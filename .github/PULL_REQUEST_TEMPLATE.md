@@ -13,4 +13,4 @@
 ### Does this PR introduce a breaking change?: <!--(Has there been an API change? New dependencies?)-->
 
 
-### Other information:** <!--(Relevant discussion threads? Outside documentation pages?)-->
+### Other information: <!--(Relevant discussion threads? Outside documentation pages?)-->

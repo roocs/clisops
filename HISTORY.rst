@@ -14,8 +14,12 @@ Bug Fixes
 ^^^^^^^^^
 * The ``tests`` folder has been flattened and namespace files haves been removed in order to prevent `pip` from recognizing the folder as its own package. (#296).
 * The contribution guidelines were duplicated in two locations and contained conflicting information. The guidelines have now been consolidated into a single location and updated to reflect package changes. (#296).
+
+Other Changes
+^^^^^^^^^^^^^
 * GitHub Workflows for pure Python builds now use `tox` (4.0) to run tests. (#296).
 * GitHub Workflows for conda builds now test `clisops` using the ``mamba-org/setup-micromamba`` action. (#296).
+* The `travis.yml` file has been removed. (#296).
 
 v0.10.1 (2023-08-21)
 --------------------
