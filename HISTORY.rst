@@ -1,6 +1,13 @@
 Version History
 ===============
 
+v0.11.0 (unreleased)
+--------------------
+
+New Features
+^^^^^^^^^^^^
+* CLISOPS now uses `pyproject.toml` files (using the `flit` backend) for package configuration. (#296)
+
 v0.10.1 (2023-08-21)
 --------------------
 
