@@ -4,6 +4,16 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray as xr
+from roocs_utils.exceptions import InvalidParameterValue
+from roocs_utils.parameter import area_parameter, time_parameter
+from roocs_utils.parameter.param_utils import (
+    level_interval,
+    level_series,
+    time_components,
+    time_interval,
+    time_series,
+)
+
 from _common import (
     C3S_CMIP5_TOS,
     C3S_CMIP5_TSICE,
@@ -22,16 +32,6 @@ from _common import (
     _check_output_nc,
     assert_vars_equal,
 )
-from roocs_utils.exceptions import InvalidParameterValue
-from roocs_utils.parameter import area_parameter, time_parameter
-from roocs_utils.parameter.param_utils import (
-    level_interval,
-    level_series,
-    time_components,
-    time_interval,
-    time_series,
-)
-
 from clisops import CONFIG
 from clisops.ops.subset import Subset, subset
 from clisops.utils.output_utils import _format_time  # noqa

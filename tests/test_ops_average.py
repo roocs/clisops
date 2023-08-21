@@ -2,9 +2,9 @@ import os
 
 import pytest
 import xarray as xr
-from _common import C3S_CORDEX_EUR_ZG500, CMIP5_TAS, CMIP6_SICONC_DAY
 from roocs_utils.exceptions import InvalidParameterValue
 
+from _common import C3S_CORDEX_EUR_ZG500, CMIP5_TAS, CMIP6_SICONC_DAY
 from clisops.ops.average import average_over_dims, average_time
 
 

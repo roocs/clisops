@@ -93,7 +93,7 @@ jobs:
       - name: Install CLISOPS
         run: |
           python -m pip install --no-user --editable ".[dev]"
-      - name: Install xarray@main
+      - name: Install upstream dependencies
         if: ${{ matrix.upstream }}
         run: |
           python -m pip install -r requirements_upstream.txt

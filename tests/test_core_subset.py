@@ -4,9 +4,9 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import xarray as xr
-from _common import TESTS_DATA
 from shapely.geometry import Point, Polygon
 
+from _common import TESTS_DATA
 from clisops.core import subset
 from clisops.utils import get_file
 

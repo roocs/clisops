@@ -4,8 +4,9 @@ from math import isclose
 import numpy as np
 import pytest
 import xarray as xr
-from _common import CMIP6_RLDS_ONE_TIME_STEP
 from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
+
+from _common import CMIP6_RLDS_ONE_TIME_STEP
 
 
 def open_dataset():

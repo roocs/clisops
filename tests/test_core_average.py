@@ -4,11 +4,11 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import xarray as xr
-from _common import CMIP5_RH, CMIP6_SICONC_DAY, TESTS_DATA
 from pkg_resources import parse_version
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils import xarray_utils as xu
 
+from _common import CMIP5_RH, CMIP6_SICONC_DAY, TESTS_DATA
 from clisops.core import average
 from clisops.utils import get_file
 
