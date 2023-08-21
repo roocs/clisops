@@ -31,8 +31,7 @@ def average_shape(
 ) -> Union[xr.DataArray, xr.Dataset]:
     """Average a DataArray or Dataset spatially using vector shapes.
 
-    Return a DataArray or Dataset averaged over each Polygon given.
-    Requires xESMF >= 0.5.0.
+    Return a DataArray or Dataset averaged over each Polygon given. Requires xESMF >= 0.5.0.
 
     Parameters
     ----------
@@ -146,8 +145,7 @@ def average_over_dims(
     dims: Sequence[str] = None,
     ignore_undetected_dims: bool = False,
 ) -> Union[xr.DataArray, xr.Dataset]:
-    """
-    Average a DataArray or Dataset over the dimensions specified.
+    """Average a DataArray or Dataset over the dimensions specified.
 
     Parameters
     ----------
@@ -240,14 +238,13 @@ def average_time(
     ds: Union[xr.DataArray, xr.Dataset],
     freq: str,
 ) -> Union[xr.DataArray, xr.Dataset]:
-    """
-    Average a DataArray or Dataset over the time frequency specified.
+    """Average a DataArray or Dataset over the time frequency specified.
 
     Parameters
     ----------
     ds : Union[xr.DataArray, xr.Dataset]
       Input values.
-    freq: str
+    freq : str
       The frequency to average over. One of "month", "year".
 
     Returns
