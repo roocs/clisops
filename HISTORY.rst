@@ -6,7 +6,16 @@ v0.11.0 (unreleased)
 
 New Features
 ^^^^^^^^^^^^
-* CLISOPS now uses `pyproject.toml` files (using the `flit` backend) for package configuration. (#296)
+* `clisops` has adopted `PEP 517 <https://peps.python.org/pep-0517/>`_ and `PEP 621 <https://peps.python.org/pep-0621/>`_ and now uses ``pyproject.toml`` files (using the `flit` backend) for package configuration. (#296).
+* Metadata has been modified to reflect current development status and scope of CLISOPS. (#296).
+* New file (``requirements_upstream.txt``) and Makefile recipe (``"$ make upstream"``) for tracking and easily installing upstream dependencies. (#296).
+
+Bug Fixes
+^^^^^^^^^
+* The ``tests`` folder has been flattened and namespace files haves been removed in order to prevent `pip` from recognizing the folder as its own package. (#296).
+* The contribution guidelines were duplicated in two locations and contained conflicting information. The guidelines have now been consolidated into a single location and updated to reflect package changes. (#296).
+* GitHub Workflows for pure Python builds now use `tox` (4.0) to run tests. (#296).
+* GitHub Workflows for conda builds now test `clisops` using the ``mamba-org/setup-micromamba`` action. (#296).
 
 v0.10.1 (2023-08-21)
 --------------------
