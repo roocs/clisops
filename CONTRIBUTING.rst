@@ -63,14 +63,14 @@ Ready to contribute? Here's how to set up `clisops` for local development.
 #.
     Clone your fork locally:
 
-    ..code-block:: shell
+    .. code-block:: shell
 
         $ git clone git@github.com:roocs/clisops.git
 
 #.
     Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development:
 
-    ..code-block:: shell
+    .. code-block:: shell
 
         # For virtualenv environments:
         $ mkvirtualenv clisops
@@ -84,7 +84,7 @@ Ready to contribute? Here's how to set up `clisops` for local development.
 #.
     Create a branch for local development:
 
-    ..code-block:: shell
+    .. code-block:: shell
 
         $ git checkout -b name-of-your-bugfix-or-feature
 
@@ -93,7 +93,7 @@ Ready to contribute? Here's how to set up `clisops` for local development.
 #.
     When you are done making changes, check that you verify your changes with `flake8` and `black` and run the tests, including testing other Python versions with `tox`:
 
-    ..code-block:: shell
+    .. code-block:: shell
 
         # For virtualenv environments:
         $ pip install flake8 black pytest pytest-loguru tox
@@ -109,7 +109,7 @@ Ready to contribute? Here's how to set up `clisops` for local development.
 #.
     Before committing your changes, we ask that you install `pre-commit` in your virtualenv. `Pre-commit` runs git hooks that ensure that your code resembles that of the project and catches and corrects any small errors or inconsistencies when you `git commit`:
 
-    ..code-block:: shell
+    .. code-block:: shell
 
         # For virtualenv environments:
         $ pip install pre-commit
@@ -123,7 +123,7 @@ Ready to contribute? Here's how to set up `clisops` for local development.
 #.
     Commit your changes and push your branch to GitHub:
 
-    ..code-block:: shell
+    .. code-block:: shell
 
         $ git add *
 
@@ -217,7 +217,9 @@ Before you submit a pull request, please follow these guidelines:
 Tips
 ----
 
-To run a subset of tests::
+To run a subset of tests:
+
+.. code-block:: shell
 
     $ pytest tests.test_clisops
 
@@ -246,7 +248,7 @@ A reminder for the maintainers on how to deploy.
 Make sure all your changes are committed (**including an entry in HISTORY.rst**).
 Then run:
 
-..code-block:: bash
+.. code-block:: shell
 
     $ bumpversion <option> # possible options: major / minor / patch / release
     $ git push
@@ -260,11 +262,13 @@ The Manual Approach
 
 From the command line in your distribution, simply run the following from the clone's main dev branch:
 
-# To build the packages (sources and wheel)
-$ flit build
+.. code-block:: shell
 
-# To upload to PyPI
-$ flit publish
+    # To build the packages (sources and wheel)
+    $ flit build
+
+    # To upload to PyPI
+    $ flit publish
 
 The new version based off of the version checked out will now be available via pip ($ pip install clisops).
 
