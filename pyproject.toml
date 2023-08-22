@@ -148,7 +148,8 @@ exclude = [
   "docs/clisops*.rst",
   "docs/modules.rst",
   "docs/notebooks/.ipynb_checkpoints",
-  "environment.yml"
+  "environment.yml",
+  "notebooks"
 ]
 
 [tool.isort]
