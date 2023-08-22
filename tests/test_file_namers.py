@@ -2,10 +2,10 @@ import pytest
 import xarray as xr
 from roocs_utils.parameter.param_utils import time_interval
 
+from _common import C3S_CORDEX_NAM_PR, CMIP5_TAS, CMIP6_SICONC
 from clisops import CONFIG
 from clisops.ops.subset import subset
 from clisops.utils.file_namers import get_file_namer
-from tests._common import C3S_CORDEX_NAM_PR, CMIP5_TAS, CMIP6_SICONC
 
 
 def test_SimpleFileNamer():

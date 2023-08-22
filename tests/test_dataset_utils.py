@@ -5,8 +5,7 @@ import pytest
 import xarray as xr
 
 import clisops.utils.dataset_utils as clidu
-
-from .._common import (
+from _common import (
     C3S_CORDEX_AFR_TAS,
     C3S_CORDEX_ANT_SFC_WIND,
     CMIP6_GFDL_EXTENT,

@@ -7,8 +7,8 @@ import xarray as xr
 from _pytest.logging import caplog as _caplog  # noqa
 from git import Repo
 
+from _common import MINI_ESGF_CACHE_DIR, write_roocs_cfg
 from clisops.utils import get_file
-from tests._common import MINI_ESGF_CACHE_DIR, write_roocs_cfg
 
 write_roocs_cfg()
 

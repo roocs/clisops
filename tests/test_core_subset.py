@@ -6,10 +6,9 @@ import pytest
 import xarray as xr
 from shapely.geometry import Point, Polygon
 
+from _common import TESTS_DATA
 from clisops.core import subset
 from clisops.utils import get_file
-
-from .._common import XCLIM_TESTS_DATA as TESTS_DATA
 
 try:
     import xesmf
@@ -318,6 +317,7 @@ class TestSubsetBbox:
     nc_tasmax_file = get_file("NRCANdaily/nrcan_canada_daily_tasmax_1990.nc")
     nc_tasmin_file = get_file("NRCANdaily/nrcan_canada_daily_tasmin_1990.nc")
     nc_2dlonlat = get_file("CRCM5/tasmax_bby_198406_se.nc")
+
     lon = [-75.4, -68]
     lat = [44.1, 47.1]
     lonGCM = [-70.0, -60.0]
@@ -454,14 +454,6 @@ class TestSubsetBbox:
         subset.subset_bbox(da_rev.tasmax, lon_bnds=[-150, -100], lat_bnds=[10, 60])
         # We don't test for equality with previous datasets.
         # Without coords, sel defaults to isel which doesn't include the last element.
-
-    # TODO: this test doesn't seem to do anything : remove?
-    # Note - previous failure was from using a lon/lat bnds where there is no data. Changed below
-    # def test_irregular_straight_lon_lat(self):
-    #     ds = xr.open_dataset(self.nc_2dlonlat)
-    #     # pass
-    #     # N. AM data use appropriate zone to avoid fail
-    #     subset.subset_bbox(ds.tasmax, lon_bnds=[-100, -80], lat_bnds=[40, 45])
 
     # test datasets with descending coords
     def test_inverted_coords(self):
@@ -666,17 +658,17 @@ class TestSubsetShape:
     lons_2d_nc_file = get_file("CRCM5/tasmax_bby_198406_se.nc")
     nc_file_neglons = get_file("NRCANdaily/nrcan_canada_daily_tasmax_1990.nc")
 
-    meridian_geojson = os.path.join(TESTS_DATA, "cmip5", "meridian.json")
-    meridian_multi_geojson = os.path.join(TESTS_DATA, "cmip5", "meridian_multi.json")
-    poslons_geojson = os.path.join(TESTS_DATA, "cmip5", "poslons.json")
-    eastern_canada_geojson = os.path.join(TESTS_DATA, "cmip5", "eastern_canada.json")
-    southern_qc_geojson = os.path.join(TESTS_DATA, "cmip5", "southern_qc_geojson.json")
-    small_geojson = os.path.join(TESTS_DATA, "cmip5", "small_geojson.json")
-    multi_regions_geojson = os.path.join(TESTS_DATA, "cmip5", "multi_regions.json")
+    meridian_geojson = os.path.join(TESTS_DATA, "meridian.json")
+    meridian_multi_geojson = os.path.join(TESTS_DATA, "meridian_multi.json")
+    poslons_geojson = os.path.join(TESTS_DATA, "poslons.json")
+    eastern_canada_geojson = os.path.join(TESTS_DATA, "eastern_canada.json")
+    southern_qc_geojson = os.path.join(TESTS_DATA, "southern_qc_geojson.json")
+    small_geojson = os.path.join(TESTS_DATA, "small_geojson.json")
+    multi_regions_geojson = os.path.join(TESTS_DATA, "multi_regions.json")
 
     @staticmethod
     def compare_vals(ds, sub, vari, flag_2d=False):
-        # check subsetted values against original
+        # Check subsetted values against original.
         imask = np.where(~np.isnan(sub[vari].isel(time=0)))
         if len(imask[0]) > 70:
             np.random.RandomState = 42
@@ -1082,7 +1074,7 @@ class TestShapeBboxIndexer:
             assert pb.within(subset.grid_exterior_polygon(ds.isel(inds)))
 
     def test_complex_geometries(self):
-        """Test with geometries that cannot be simplified to a single polygon using `unary_union`."""
+        # Test with geometries that cannot be simplified to a single polygon using `unary_union`.
         pytest.importorskip("xesmf", "0.6.2")
         import shapely.wkt
 
@@ -1091,7 +1083,15 @@ class TestShapeBboxIndexer:
             "-65.5563 49.257))"
         )
         p2 = shapely.wkt.loads(
-            "POLYGON ((-58.64 51.2, -78.7115 46.326, -78.1958 62.2551, -64.5341 60.309, -58.64 51.2), (-78.5687 58.6447, -78.5675 58.646, -78.5762 58.6482, -78.5698 58.6445, -78.5687 58.6447), (-78.5539 58.6486, -78.5515 58.646, -78.5468 58.6507, -78.5515 58.6511, -78.5539 58.6486), (-78.5375 58.6513, -78.5353 58.6496, -78.5331 58.6503, -78.5357 58.6512, -78.5375 58.6513), (-78.517 58.6497, -78.5082 58.6452, -78.5068 58.6456, -78.5112 58.6484, -78.517 58.6497), (-78.5387 58.6484, -78.5411 58.6509, -78.5466 58.6485, -78.5355 58.6459, -78.5387 58.6484), (-78.5542 58.6516, -78.5543 58.6539, -78.5614 58.6544, -78.5571 58.6516, -78.5542 58.6516), (-78.5508 58.6622, -78.561 58.6648, -78.5642 58.664, -78.5559 58.6609, -78.5508 58.6622), (-78.5814 58.6764, -78.5831 58.675, -78.5802 58.6739, -78.5807 58.6761, -78.5814 58.6764))"
+            "POLYGON ((-58.64 51.2, -78.7115 46.326, -78.1958 62.2551, -64.5341 60.309, -58.64 51.2), "
+            "(-78.5687 58.6447, -78.5675 58.646, -78.5762 58.6482, -78.5698 58.6445, -78.5687 58.6447), "
+            "(-78.5539 58.6486, -78.5515 58.646, -78.5468 58.6507, -78.5515 58.6511, -78.5539 58.6486), "
+            "(-78.5375 58.6513, -78.5353 58.6496, -78.5331 58.6503, -78.5357 58.6512, -78.5375 58.6513), "
+            "(-78.517 58.6497, -78.5082 58.6452, -78.5068 58.6456, -78.5112 58.6484, -78.517 58.6497), "
+            "(-78.5387 58.6484, -78.5411 58.6509, -78.5466 58.6485, -78.5355 58.6459, -78.5387 58.6484), "
+            "(-78.5542 58.6516, -78.5543 58.6539, -78.5614 58.6544, -78.5571 58.6516, -78.5542 58.6516), "
+            "(-78.5508 58.6622, -78.561 58.6648, -78.5642 58.664, -78.5559 58.6609, -78.5508 58.6622), "
+            "(-78.5814 58.6764, -78.5831 58.675, -78.5802 58.6739, -78.5807 58.6761, -78.5814 58.6764))"
         )
 
         ds = xesmf.util.cf_grid_2d(-200, 0, 20, 0, 71, 10)
@@ -1109,8 +1109,7 @@ class TestShapeBboxIndexer:
         assert inds == {}
 
     def test_curvilinear(self):
-        """This checks that a grid along lon/lat and a rotated grid are indexed identically for a geometry and a
-        rotated geometry."""
+        # Check that grid along lon/lat and a rotated grid are indexed identically for geometry and rotated geometry.
         pytest.importorskip("xesmf", "0.6.2")
         from shapely.affinity import rotate
 
@@ -1126,7 +1125,7 @@ class TestShapeBboxIndexer:
         assert ri == i
 
     def test_multipoints(self):
-        """Test with a MultiPoint geometry."""
+        # Test with a MultiPoint geometry.
         pytest.importorskip("xesmf", "0.6.2")
         from shapely.geometry import MultiPoint, Point
 
@@ -1150,7 +1149,7 @@ class TestShapeBboxIndexer:
 
 
 def rotated_grid_2d(lon0_b, lon1_b, d_lon, lat0_b, lat1_b, d_lat, angle):
-    """Rotate lat lon by degree"""
+    # Rotate lat lon by degree.
     ds = xesmf.util.grid_2d(lon0_b, lon1_b, d_lon, lat0_b, lat1_b, d_lat)
 
     # Rotation matrix

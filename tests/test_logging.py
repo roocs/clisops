@@ -2,8 +2,8 @@ import sys
 
 import pytest
 
+from _common import ContextLogger
 from clisops.utils.common import _logging_examples, enable_logging  # noqa
-from tests._common import ContextLogger
 
 
 class TestLoggingFuncs:

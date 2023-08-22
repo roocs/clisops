@@ -6,9 +6,7 @@ import pytest
 import xarray as xr
 from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
-from clisops.ops.subset import subset
-
-from ._common import CMIP6_RLDS_ONE_TIME_STEP
+from _common import CMIP6_RLDS_ONE_TIME_STEP
 
 
 def open_dataset():
