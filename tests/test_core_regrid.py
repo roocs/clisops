@@ -12,18 +12,7 @@ from pkg_resources import parse_version
 from roocs_grids import get_grid_file
 
 import clisops.utils.dataset_utils as clidu
-from clisops import CONFIG
-from clisops.core.regrid import (
-    XESMF_MINIMUM_VERSION,
-    Grid,
-    Weights,
-    regrid,
-    weights_cache_flush,
-    weights_cache_init,
-)
-from clisops.ops.subset import subset
-from clisops.utils.output_utils import FileLock
-from tests._common import (
+from _common import (
     CMIP6_ATM_VERT_ONE_TIMESTEP,
     CMIP6_GFDL_EXTENT,
     CMIP6_OCE_HALO_CNRM,
@@ -35,6 +24,17 @@ from tests._common import (
     CMIP6_UNSTR_ICON_A,
     CORDEX_TAS_NO_BOUNDS,
 )
+from clisops import CONFIG
+from clisops.core.regrid import (
+    XESMF_MINIMUM_VERSION,
+    Grid,
+    Weights,
+    regrid,
+    weights_cache_flush,
+    weights_cache_init,
+)
+from clisops.ops.subset import subset
+from clisops.utils.output_utils import FileLock
 
 try:
     import xesmf
