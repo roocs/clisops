@@ -1,6 +1,13 @@
 Version History
 ===============
 
+v0.12.0 (unreleased)
+--------------------
+
+Bug Fixes
+^^^^^^^^^
+* Calling `subset_shape()` with a `locstream case` (#288) returned all coordinates inside `inner_mask` which is equivalent to the bounding box of the polygon, not the area inside the polygon. Fixed by defining the `inner_mask` in `subset_shape()` for the locstream case. (#292).
+
 v0.11.0 (2023-08-22)
 --------------------
 
@@ -14,7 +21,6 @@ Bug Fixes
 ^^^^^^^^^
 * The ``tests`` folder has been flattened and namespace files haves been removed in order to prevent `pip` from recognizing the folder as its own package. (#296).
 * The contribution guidelines were duplicated in two locations and contained conflicting information. The guidelines have now been consolidated into a single location and updated to reflect package changes. (#296).
-* The `subset_shape()` in the `locstream case` (#288) returned all lat/lon inside `inner_mask` which is equivalent to the bounding box of the polygon, not the area inside the polygon. Fixed by defining the `inner_mask` in `subset_shape()` for the locstream case. (#292).
 
 Other Changes
 ^^^^^^^^^^^^^
