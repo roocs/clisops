@@ -1,11 +1,11 @@
-"""Top-level package for clisops."""
+"""CLISOPS - Climate simulation operations."""
 import os
 import warnings
 
 from loguru import logger
 from roocs_utils.config import get_config
 
-from .__version__ import __author__, __email__, __version__
+from .__version__ import __author__, __copyright__, __email__, __license__, __version__
 from .utils.common import enable_logging
 
 

@@ -4,7 +4,7 @@ import re
 import warnings
 from functools import wraps
 from pathlib import Path
-from typing import Dict, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
 
 import cf_xarray  # noqa
 import geopandas as gpd
@@ -21,6 +21,7 @@ from roocs_utils.xarray_utils import xarray_utils as xu
 from shapely import vectorized
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import split, unary_union
+from xarray.core import indexing
 from xarray.core.utils import get_temp_dimname
 
 from clisops.utils.dataset_utils import adjust_date_to_calendar
@@ -41,21 +42,21 @@ __all__ = [
 ]
 
 
-def get_lat(ds):
+def get_lat(ds: Union[xarray.Dataset, xarray.DataArray]) -> xarray.DataArray:
     try:
         return ds.cf["latitude"]
     except KeyError:
         return ds.lat
 
 
-def get_lon(ds):
+def get_lon(ds: Union[xarray.Dataset, xarray.DataArray]) -> xarray.DataArray:
     try:
         return ds.cf["longitude"]
     except KeyError:
         return ds.lon
 
 
-def check_start_end_dates(func):
+def check_start_end_dates(func: Callable) -> Callable:
     @wraps(func)
     def func_checker(*args, **kwargs):
         """Verify that start and end dates are valid in a time subsetting function."""
@@ -138,7 +139,7 @@ def check_start_end_dates(func):
     return func_checker
 
 
-def check_start_end_levels(func):
+def check_start_end_levels(func: Callable) -> Callable:
     @wraps(func)
     def func_checker(*args, **kwargs):
         """Verify that first and last levels are valid in a level subsetting function."""
@@ -223,7 +224,7 @@ def check_start_end_levels(func):
     return func_checker
 
 
-def check_lons(func):
+def check_lons(func: Callable) -> Callable:
     @wraps(func)
     def func_checker(*args, **kwargs):
         """Reformat user-specified "lon" or "lon_bnds" values based on the lon dimensions of a supplied Dataset or DataArray.
@@ -267,7 +268,7 @@ def check_lons(func):
     return func_checker
 
 
-def check_levels_exist(func):
+def check_levels_exist(func: Callable) -> Callable:
     @wraps(func)
     def func_checker(*args, **kwargs):
         """Check the requested levels exist in the input Dataset/DataArray and, if not, raise an Exception.
@@ -304,7 +305,7 @@ def check_levels_exist(func):
     return func_checker
 
 
-def check_datetimes_exist(func):
+def check_datetimes_exist(func: Callable) -> Callable:
     @wraps(func)
     def func_checker(*args, **kwargs):
         """Check the requested datetimes exist in the input Dataset/DataArray and, if not, raise an Exception.
@@ -345,7 +346,7 @@ def check_datetimes_exist(func):
     return func_checker
 
 
-def convert_lat_lon_to_da(func):
+def convert_lat_lon_to_da(func: Callable) -> Callable:
     @wraps(func)
     def func_checker(*args, **kwargs):
         """Transform input lat, lon to DataArrays.
@@ -380,7 +381,7 @@ def convert_lat_lon_to_da(func):
     return func_checker
 
 
-def wrap_lons_and_split_at_greenwich(func):
+def wrap_lons_and_split_at_greenwich(func: Callable) -> Callable:
     @wraps(func)
     def func_checker(*args, **kwargs):
         """Split and reproject polygon vectors in a GeoDataFrame whose values cross the Greenwich Meridian.
@@ -480,7 +481,7 @@ def create_mask(
     poly: gpd.GeoDataFrame,
     wrap_lons: bool = False,
     check_overlap: bool = False,
-):
+) -> xarray.DataArray:
     """Create a mask with values corresponding to the features in a GeoDataFrame using vectorize methods.
 
     The returned mask's points have the value of the first geometry of `poly` they fall in.
@@ -563,7 +564,7 @@ def create_mask(
     return mask
 
 
-def _rectilinear_grid_exterior_polygon(ds):
+def _rectilinear_grid_exterior_polygon(ds: xarray.Dataset) -> Polygon:
     """Return a polygon tracing a rectilinear grid's exterior.
 
     Parameters
@@ -609,7 +610,9 @@ def _rectilinear_grid_exterior_polygon(ds):
     return Polygon(pts)
 
 
-def _curvilinear_grid_exterior_polygon(ds, mode="bbox"):
+def _curvilinear_grid_exterior_polygon(
+    ds: xarray.Dataset, mode: str = "bbox"
+) -> Polygon:
     """Return a polygon tracing a curvilinear grid's exterior.
 
     Parameters
@@ -693,7 +696,7 @@ def _curvilinear_grid_exterior_polygon(ds, mode="bbox"):
     return Polygon(pts)
 
 
-def grid_exterior_polygon(ds):
+def grid_exterior_polygon(ds: xarray.Dataset) -> Polygon:
     """Return a polygon tracing the grid's exterior.
 
     This function is only accurate for a geographic lat/lon projection. For projected grids, it's a rough approximation.
@@ -721,13 +724,16 @@ def grid_exterior_polygon(ds):
     return _curvilinear_grid_exterior_polygon(ds, mode="bbox")
 
 
-def is_rectilinear(ds):
+def is_rectilinear(ds: Union[xarray.Dataset, xarray.DataArray]) -> bool:
     """Return whether the grid is rectilinear or not."""
     sdims = {ds.cf["longitude"].name, ds.cf["latitude"].name}
     return sdims.issubset(ds.dims)
 
 
-def shape_bbox_indexer(ds, poly):
+def shape_bbox_indexer(
+    ds: xarray.Dataset,
+    poly: Union[gpd.GeoDataFrame, gpd.GeoSeries, gpd.array.GeometryArray],
+):
     """Return a spatial indexer that selects the indices of the grid cells covering the given geometries.
 
     Parameters
@@ -811,7 +817,7 @@ def shape_bbox_indexer(ds, poly):
                 ds, ind, method="nearest"
             )
         else:
-            native_ind = xarray.core.indexing.map_index_queries(
+            native_ind = indexing.map_index_queries(
                 ds, ind, method="nearest"
             ).dim_indexers
     else:
@@ -842,7 +848,7 @@ def shape_bbox_indexer(ds, poly):
 def create_weight_masks(
     ds_in: Union[xarray.DataArray, xarray.Dataset],
     poly: gpd.GeoDataFrame,
-):
+) -> xarray.DataArray:
     """Create weight masks corresponding to the features in a GeoDataFrame using xESMF.
 
     The returned masks values are the fraction of the corresponding polygon's area
@@ -1335,20 +1341,20 @@ def subset_bbox(
 
 
 def assign_bounds(
-    bounds: Tuple[Optional[float], Optional[float]], coord: xarray.Coordinate
-) -> tuple:
+    bounds: Tuple[Optional[float], Optional[float]], coord: xarray.DataArray
+) -> Tuple[Optional[float], Optional[float]]:
     """Replace unset boundaries by the minimum and maximum coordinates.
 
     Parameters
     ----------
     bounds : Tuple[Optional[float], Optional[float]]
         Boundaries.
-    coord : xarray.Coordinate
+    coord : xarray.DataArray
         Grid coordinates.
 
     Returns
     -------
-    tuple
+    Tuple[Optional[float], Optional[float]]
         Lower and upper grid boundaries.
 
     """
@@ -1360,20 +1366,37 @@ def assign_bounds(
     return bn, bx
 
 
-def in_bounds(bounds: Tuple[float, float], coord: xarray.Coordinate) -> bool:
-    """Check which coordinates are within the boundaries."""
+def in_bounds(bounds: Tuple[float, float], coord: xarray.DataArray) -> xarray.DataArray:
+    """Check which coordinates are within the boundaries.
+
+    Parameters
+    ----------
+    bounds : Tuple[float, float]
+        Boundaries.
+    coord : xarray.DataArray
+        Grid coordinates.
+
+    Returns
+    -------
+    xarray.DataArray
+
+    """
     bn, bx = bounds
     return (coord >= bn) & (coord <= bx)
 
 
-def _check_desc_coords(coord, bounds, dim):
+def _check_desc_coords(
+    coord: xarray.Dataset,
+    bounds: Union[Tuple[float, float], List[np.ndarray]],
+    dim: str,
+) -> Tuple[float, float]:
     """If Dataset coordinates are descending, and bounds are ascending, reverse bounds."""
     if np.all(coord.diff(dim=dim) < 0) and len(coord) > 1 and bounds[1] > bounds[0]:
         bounds = np.flip(bounds)
     return bounds
 
 
-def _check_has_overlaps(polygons: gpd.GeoDataFrame):
+def _check_has_overlaps(polygons: gpd.GeoDataFrame) -> None:
     non_overlapping = []
     for n, p in enumerate(polygons["geometry"][:-1], 1):
         if not any(p.overlaps(g) for g in polygons["geometry"][n:]):
@@ -1386,7 +1409,7 @@ def _check_has_overlaps(polygons: gpd.GeoDataFrame):
         )
 
 
-def _check_has_overlaps_old(polygons: gpd.GeoDataFrame):
+def _check_has_overlaps_old(polygons: gpd.GeoDataFrame) -> None:
     for i, (inda, pola) in enumerate(polygons.iterrows()):
         for indb, polb in polygons.iloc[i + 1 :].iterrows():
             if pola.geometry.intersects(polb.geometry):
@@ -1397,7 +1420,7 @@ def _check_has_overlaps_old(polygons: gpd.GeoDataFrame):
                 )
 
 
-def _check_crs_compatibility(shape_crs: CRS, raster_crs: CRS):
+def _check_crs_compatibility(shape_crs: CRS, raster_crs: CRS) -> None:
     """If CRS definitions are not WGS84 or incompatible, raise operation warnings."""
     wgs84 = CRS(4326)
     if not shape_crs.equals(raster_crs):
@@ -1431,7 +1454,7 @@ def subset_gridpoint(
     tolerance: Optional[float] = None,
     add_distance: bool = False,
 ) -> Union[xarray.DataArray, xarray.Dataset]:
-    """Extract one or more nearest gridpoint(s) from datarray based on lat lon coordinate(s).
+    """Extract one or more of the nearest gridpoint(s) from datarray based on lat lon coordinate(s).
 
     Return a subsetted data array (or Dataset) for the grid point(s) falling nearest the input longitude and latitude
     coordinates. Optionally subset the data array for years falling within provided date bounds.
@@ -1813,7 +1836,7 @@ def distance(
     *,
     lon: Union[float, Sequence[float], xarray.DataArray],
     lat: Union[float, Sequence[float], xarray.DataArray],
-):
+) -> Union[xarray.DataArray, xarray.Dataset]:
     """Return distance to a point in meters.
 
     Parameters

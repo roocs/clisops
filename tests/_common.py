@@ -7,15 +7,17 @@ import xarray as xr
 from _pytest.logging import LogCaptureFixture  # noqa
 from jinja2 import Template
 
-ROOCS_CFG = Path(tempfile.gettempdir(), "roocs.ini").as_posix()
 TESTS_HOME = Path(__file__).parent.absolute().as_posix()
+
 DEFAULT_CMIP5_ARCHIVE_BASE = Path(
     TESTS_HOME, "mini-esgf-data/test_data/badc/cmip5/data"
 ).as_posix()
-REAL_C3S_CMIP5_ARCHIVE_BASE = "/gws/nopw/j04/cp4cds1_vol1/data/"
 DEFAULT_CMIP6_ARCHIVE_BASE = Path(
     TESTS_HOME, "mini-esgf-data/test_data/badc/cmip6/data"
 ).as_posix()
+
+REAL_C3S_CMIP5_ARCHIVE_BASE = "/gws/nopw/j04/cp4cds1_vol1/data/"
+ROOCS_CFG = Path(tempfile.gettempdir(), "roocs.ini").as_posix()
 
 
 class ContextLogger:
@@ -70,7 +72,7 @@ def assert_vars_equal(var_id, *ds_list, extras=None):
 
 
 # This is now only required for json files
-XCLIM_TESTS_DATA = Path(TESTS_HOME, "xclim-testdata/testdata").as_posix()
+TESTS_DATA = Path(TESTS_HOME, "data").as_posix()
 MINI_ESGF_CACHE_DIR = Path.home() / ".mini-esgf-data"
 MINI_ESGF_MASTER_DIR = os.path.join(MINI_ESGF_CACHE_DIR, "master")
 

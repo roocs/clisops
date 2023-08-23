@@ -1,6 +1,34 @@
 Version History
 ===============
 
+v0.11.0 (2023-08-22)
+--------------------
+
+New Features
+^^^^^^^^^^^^
+* `clisops` has adopted `PEP 517 <https://peps.python.org/pep-0517/>`_ and `PEP 621 <https://peps.python.org/pep-0621/>`_ and now uses ``pyproject.toml`` files (using the `flit` backend) for package configuration. (#296).
+* Metadata has been modified to reflect current development status and scope of CLISOPS. (#296).
+* New file (``requirements_upstream.txt``) and Makefile recipe (``"$ make upstream"``) for tracking and easily installing upstream dependencies. (#296).
+
+Bug Fixes
+^^^^^^^^^
+* The ``tests`` folder has been flattened and namespace files haves been removed in order to prevent `pip` from recognizing the folder as its own package. (#296).
+* The contribution guidelines were duplicated in two locations and contained conflicting information. The guidelines have now been consolidated into a single location and updated to reflect package changes. (#296).
+
+Other Changes
+^^^^^^^^^^^^^
+* GitHub Workflows for pure Python builds now use `tox` (4.0) to run tests. (#296).
+* GitHub Workflows for conda builds now test `clisops` using the ``mamba-org/setup-micromamba`` action. (#296).
+* The `travis.yml` file has been removed. (#296).
+
+v0.10.1 (2023-08-21)
+--------------------
+
+Bug Fixes
+^^^^^^^^^
+* Fixed an issue with the type hinting for subset functions that were broken due to changes in `xarray` (2023.08). (#295).
+* Updated ReadTheDocs configuration to use `Mambaforge` (22.9) as engine for building documentation. (#295).
+
 v0.10.0 (2023-06-28)
 --------------------
 

@@ -1,4 +1,4 @@
-name: build
+name: CLISOPS Testing Suite
 
 on:
   push:
@@ -21,9 +21,9 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-python@v4
         with:
-          python-version: "3.8"
+          python-version: "3.9"
       - name: Install tox
-        run: pip install "tox~=3.0"
+        run: pip install tox~=4.0
       - name: Run linting suite
         run: tox -e ${{ matrix.tox-env }}
 
@@ -49,14 +49,16 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install tox
-      run: pip install "tox~=3.0"
+      run: |
+        python -m pip install tox~=4.0
     - name: Test with tox
-      run: tox -e ${{ matrix.tox-env }}
+      run: |
+        tox -e ${{ matrix.tox-env }}
       env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_FLAG_NAME: run-${{ matrix.tox-env }}
-          COVERALLS_PARALLEL: true
-          COVERALLS_SERVICE_NAME: github
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        COVERALLS_FLAG_NAME: run-${{ matrix.tox-env }}
+        COVERALLS_PARALLEL: true
+        COVERALLS_SERVICE_NAME: github
 
   conda:
     name: Anaconda Build with Python${{ matrix.python-version }} (upstream=${{ matrix.upstream }})
@@ -76,30 +78,31 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Setup Conda (Micromamba) with Python${{ matrix.python-version }}
-        uses: mamba-org/provision-with-micromamba@main
+        uses: mamba-org/setup-micromamba@v1
         with:
           cache-downloads: true
+          cache-environment: true
           environment-file: environment.yml
-          extra-specs: |
-            mamba
+          create-args: >-
+            conda
             python=${{ matrix.python-version }}
       - name: Conda and Mamba versions
         run: |
-            conda --version
-            mamba --version
+          conda --version
+          echo "micromamba: $(micromamba --version)"
       - name: Install CLISOPS
         run: |
-            pip install -e ".[dev]"
-      - name: Install xarray@main
+          python -m pip install --no-user --editable ".[dev]"
+      - name: Install upstream dependencies
         if: ${{ matrix.upstream }}
         run: |
-            pip install git+https://github.com/pydata/xarray.git@main#egg=xarray
-      - name: List installed packages
+          python -m pip install -r requirements_upstream.txt
+      - name: Check versions
         run: |
-            conda list
+          conda list
       - name: Test with conda
         run: |
-            pytest --cov tests
+          pytest --cov tests
 
   finish:
     needs:
