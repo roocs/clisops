@@ -8,6 +8,10 @@ New Features
 ^^^^^^^^^^^^
 * ``clisops.ops.regrid``, ``clisops.core.regrid``, ``clisops.core.Weights`` and ``clisops.core.Grid`` added (#TBA). Allowing the remapping of geospatial data on various grids by applying the `xESMF <https://pangeo-xesmf.readthedocs.io/en/latest/>`_ regridder.
 
+Bug Fixes
+^^^^^^^^^
+* Calling `subset_shape()` with a `locstream case` (#288) returned all coordinates inside `inner_mask` which is equivalent to the bounding box of the polygon, not the area inside the polygon. Fixed by defining the `inner_mask` in `subset_shape()` for the locstream case. (#292).
+
 v0.11.0 (2023-08-22)
 --------------------
 

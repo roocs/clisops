@@ -21,3 +21,4 @@ Contributors
 * David Huard <huard.david@ouranos.ca> `@huard <https://github.com/huard>`_
 * Travis Logan <logan.travis@ouranos.ca> `@tlogan2000 <https://github.com/tlogan2000>`_
 * Martin Schupfner <schupfner@dkrz.de> `@sol1105 <https://github.com/sol1105>`_
+* Marco Braun <Braun.Marco@ouranos.ca> `@vindelico <https://github.com/vindelico>`_
