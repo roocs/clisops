@@ -14,11 +14,7 @@ from roocs_utils.parameter.param_utils import (
     time_series,
 )
 
-from clisops import CONFIG
-from clisops.ops.subset import Subset, subset
-from clisops.utils.output_utils import _format_time  # noqa
-
-from .._common import (
+from _common import (
     C3S_CMIP5_TOS,
     C3S_CMIP5_TSICE,
     CMIP5_RH,
@@ -36,6 +32,9 @@ from .._common import (
     _check_output_nc,
     assert_vars_equal,
 )
+from clisops import CONFIG
+from clisops.ops.subset import Subset, subset
+from clisops.utils.output_utils import _format_time  # noqa
 
 
 def _load_ds(fpath):
@@ -482,7 +481,7 @@ def test_aux_variables():
     Have to create a netcdf file with auxiliary variable
     """
 
-    ds = _load_ds("tests/ops/file.nc")
+    ds = _load_ds("tests/data/test_file.nc")
 
     assert "do_i_get_written" in ds.variables
 

@@ -1,5 +1,6 @@
 from collections import ChainMap
 from pathlib import Path
+from typing import List, Union
 
 import xarray as xr
 from loguru import logger
@@ -11,9 +12,7 @@ from clisops.utils.output_utils import get_output, get_time_slices
 
 
 class Operation:
-    """
-    Base class for all Operations.
-    """
+    """Base class for all Operations."""
 
     def __init__(
         self,
@@ -124,9 +123,8 @@ class Operation:
                 ds[var].attrs.pop("coordinates", None)
         return ds
 
-    def process(self):
-        """
-        Main processing method used by all subclasses.
+    def process(self) -> List[Union[xr.Dataset, Path]]:
+        """Main processing method used by all subclasses.
 
         Returns
         -------

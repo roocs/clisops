@@ -1,25 +1,7 @@
 clisops - climate simulation operations
 =======================================
 
-.. image:: https://img.shields.io/pypi/v/clisops.svg
-   :target: https://pypi.python.org/pypi/clisops
-   :alt: PyPI
-
-.. image:: https://img.shields.io/conda/vn/conda-forge/clisops.svg
-   :target: https://anaconda.org/conda-forge/clisops
-   :alt: Conda Forge
-
-.. image:: https://github.com/roocs/clisops/workflows/build/badge.svg
-   :target: https://github.com/roocs/clisops/actions
-   :alt: Build Status
-
-.. image:: https://coveralls.io/repos/github/roocs/clisops/badge.svg?branch=master
-   :target: https://coveralls.io/github/roocs/clisops?branch=master
-   :alt: Coverage
-
-.. image:: https://readthedocs.org/projects/clisops/badge/?version=latest
-   :target: https://clisops.readthedocs.io/en/latest/?badge=latest
-   :alt: Documentation
+|pypi| |conda| |build| |coveralls| |docs| |black|
 
 The ``clisops`` package (pronounced "clie-sops") provides a python library for running
 *data-reduction* operations on `Xarray <http://xarray.pydata.org/>`_ data sets or files
@@ -74,6 +56,27 @@ This package was created with ``Cookiecutter`` and the ``audreyr/cookiecutter-py
 * Cookiecutter: https://github.com/audreyr/cookiecutter
 * cookiecutter-pypackage: https://github.com/audreyr/cookiecutter-pypackage
 
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+
+.. |pypi| image:: https://img.shields.io/pypi/v/clisops.svg
+   :target: https://pypi.python.org/pypi/clisops
+   :alt: PyPI
+
+.. |conda| image:: https://img.shields.io/conda/vn/conda-forge/clisops.svg
+   :target: https://anaconda.org/conda-forge/clisops
+   :alt: Conda Forge
+
+.. |build| image:: https://github.com/roocs/clisops/workflows/build/badge.svg
+   :target: https://github.com/roocs/clisops/actions
+   :alt: Build Status
+
+.. |coveralls| image:: https://coveralls.io/repos/github/roocs/clisops/badge.svg?branch=master
+   :target: https://coveralls.io/github/roocs/clisops?branch=master
+   :alt: Coverage
+
+.. |docs| image:: https://readthedocs.org/projects/clisops/badge/?version=latest
+   :target: https://clisops.readthedocs.io/en/latest/?badge=latest
+   :alt: Documentation
+
+.. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
    :target: https://github.com/python/black
-   :alt: Python Black
+   :alt: Black

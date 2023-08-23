@@ -3,7 +3,7 @@ import pytest
 import xarray as xr
 from numpy import array, nan
 
-from tests._common import CMIP5_TAS
+from _common import CMIP5_TAS
 
 nat = np.datetime64("NaT")
 

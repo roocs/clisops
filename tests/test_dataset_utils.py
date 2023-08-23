@@ -7,6 +7,19 @@ from pkg_resources import parse_version
 from roocs_grids import get_grid_file
 
 import clisops.utils.dataset_utils as clidu
+from _common import (
+    C3S_CORDEX_AFR_TAS,
+    C3S_CORDEX_ANT_SFC_WIND,
+    CMIP6_GFDL_EXTENT,
+    CMIP6_IITM_EXTENT,
+    CMIP6_OCE_HALO_CNRM,
+    CMIP6_SICONC,
+    CMIP6_TAS_ONE_TIME_STEP,
+    CMIP6_TAS_PRECISION_A,
+    CMIP6_TOS_ONE_TIME_STEP,
+    CMIP6_UNSTR_ICON_A,
+    CORDEX_TAS_ONE_TIMESTEP,
+)
 from clisops.core.regrid import XESMF_MINIMUM_VERSION
 
 try:
@@ -19,20 +32,6 @@ except ImportError:
 
 XESMF_IMPORT_MSG = (
     f"xESMF >= {XESMF_MINIMUM_VERSION} is needed for regridding functionalities."
-)
-
-from .._common import (
-    C3S_CORDEX_AFR_TAS,
-    C3S_CORDEX_ANT_SFC_WIND,
-    CMIP6_GFDL_EXTENT,
-    CMIP6_IITM_EXTENT,
-    CMIP6_OCE_HALO_CNRM,
-    CMIP6_SICONC,
-    CMIP6_TAS_ONE_TIME_STEP,
-    CMIP6_TAS_PRECISION_A,
-    CMIP6_TOS_ONE_TIME_STEP,
-    CMIP6_UNSTR_ICON_A,
-    CORDEX_TAS_ONE_TIMESTEP,
 )
 
 
@@ -367,8 +366,16 @@ def test_convert_lon_frame_bounds():
     assert conv["lon"].values[-1] == -30.0
 
     # Check that bounds contain the respective cell centers
-    assert np.all(conv["lon"].values[:] > conv["lon_bounds"].values[:, 0])
-    assert np.all(conv["lon"].values[:] < conv["lon_bounds"].values[:, 1])
+    if packaging.version.parse(xr.__version__) >= packaging.version.parse("2022.11.0"):
+        assert np.all(
+            conv["lon"].values[:] > conv["lon_bounds"].values[:, 0]
+        )  # xarray >=2022.11.0 reorders dim values
+        assert np.all(
+            conv["lon"].values[:] < conv["lon_bounds"].values[:, 1]
+        )  # xarray >=2022.11.0 reorders dim values
+    else:
+        assert np.all(conv["lon"].values[:] > conv["lon_bounds"].values[0, :])
+        assert np.all(conv["lon"].values[:] < conv["lon_bounds"].values[1, :])
 
     # Convert only lon_interval
     conv, ll, lu = clidu.cf_convert_between_lon_frames(dsb, (-180, -10))

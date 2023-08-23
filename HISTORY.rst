@@ -1,17 +1,57 @@
 Version History
 ===============
 
-v0.10.0 (unreleased)
--------------------
+v0.12.0 (unreleased)
+--------------------
 
 New Features
 ^^^^^^^^^^^^
 * ``clisops.ops.regrid``, ``clisops.core.regrid``, ``clisops.core.Weights`` and ``clisops.core.Grid`` added (#TBA). Allowing the remapping of geospatial data on various grids by applying the `xESMF <https://pangeo-xesmf.readthedocs.io/en/latest/>`_ regridder.
 
+v0.11.0 (2023-08-22)
+--------------------
+
+New Features
+^^^^^^^^^^^^
+* `clisops` has adopted `PEP 517 <https://peps.python.org/pep-0517/>`_ and `PEP 621 <https://peps.python.org/pep-0621/>`_ and now uses ``pyproject.toml`` files (using the `flit` backend) for package configuration. (#296).
+* Metadata has been modified to reflect current development status and scope of CLISOPS. (#296).
+* New file (``requirements_upstream.txt``) and Makefile recipe (``"$ make upstream"``) for tracking and easily installing upstream dependencies. (#296).
+
 Bug Fixes
 ^^^^^^^^^
-* Fixed bug in `core.subset.shape_bbox_indexer` with the union of invalid geometries. Added regression test. (Issue #280)
-* Added support in `core.subset.shape_bbox_indexer` for Point and MultiPoint geometries. (Issue #283)
+* The ``tests`` folder has been flattened and namespace files haves been removed in order to prevent `pip` from recognizing the folder as its own package. (#296).
+* The contribution guidelines were duplicated in two locations and contained conflicting information. The guidelines have now been consolidated into a single location and updated to reflect package changes. (#296).
+
+Other Changes
+^^^^^^^^^^^^^
+* GitHub Workflows for pure Python builds now use `tox` (4.0) to run tests. (#296).
+* GitHub Workflows for conda builds now test `clisops` using the ``mamba-org/setup-micromamba`` action. (#296).
+* The `travis.yml` file has been removed. (#296).
+
+v0.10.1 (2023-08-21)
+--------------------
+
+Bug Fixes
+^^^^^^^^^
+* Fixed an issue with the type hinting for subset functions that were broken due to changes in `xarray` (2023.08). (#295).
+* Updated ReadTheDocs configuration to use `Mambaforge` (22.9) as engine for building documentation. (#295).
+
+v0.10.0 (2023-06-28)
+--------------------
+
+New Features
+^^^^^^^^^^^^
+* Added support for Python 3.11 (#287).
+
+Bug Fixes
+^^^^^^^^^
+* Fixed bug in `core.subset.shape_bbox_indexer` with the union of invalid geometries. Added regression test. (#280)
+* Added support in `core.subset.shape_bbox_indexer` for Point and MultiPoint geometries. (#283)
+* Fixed `core.subset.subset_bbox` and `core.subset.subset_shape` for datasets with 1D longitude and latitude (ex: Station data). (#288)
+
+Other Changes
+^^^^^^^^^^^^^
+* Shapely 2.0 is now faster than pygeos for ``create_mask``. Removed pygeos from extra dependencies and pinned shapely above 2.0. (#289)
 
 v0.9.6 (2023-04-05)
 -------------------
@@ -265,7 +305,6 @@ Other Changes
 * Using file caching to gather ``xclim`` test data.
 * Change made to ``core.subset.subset_bbox._check_desc_coords`` to cope with subsetting when only one latitude or longitude exists in the input dataset
 
-
 v0.5.0 (2020-12-17)
 -------------------
 
@@ -298,7 +337,6 @@ Breaking Changes
 
 New Features
 ^^^^^^^^^^^^
-
 * ``subset_level`` added.
 * PR template.
 * Config file now exists at ``clisops.etc.roocs.ini``. This can be overwritten by setting the environment variable
@@ -316,13 +354,11 @@ New Features
 
 Bug Fixes
 ^^^^^^^^^
-
 * Nudging time values to nearest available in dataset to fix a bug where subsetting failed when the exact date
   did not exist in the dataset.
 
 Other Changes
 ^^^^^^^^^^^^^
-
 * ``cfunits`` dependency removed - not needed.
 * requirements.txt and environment.yml synced.
 * Documentation updated to include API.
@@ -344,14 +380,12 @@ Other Changes
 ^^^^^^^^^^^^^
 * Update testdata and subset module (#34).
 
-
 v0.2.1 (2020-07-08)
 -------------------
 
 Other Changes
 ^^^^^^^^^^^^^
 * Fixed docs version (#25).
-
 
 v0.2.0 (2020-06-19)
 -------------------
@@ -367,7 +401,6 @@ Other Changes
 * Updated travis CI according to xclim requirements.
 * Now employing PEP8 + Black compatible autoformatting.
 * Pre-commit is now used to launch code formatting inspections for local development.
-
 
 v0.1.0 (2020-04-22)
 -------------------
