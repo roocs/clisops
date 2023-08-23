@@ -15,16 +15,15 @@ dependencies:
  - numba  # needed for xesmf v0.6.3, see: https://github.com/conda-forge/xesmf-feedstock/pull/24
  - numpy >=1.16
  - packaging
- - pandas >=1.0.3,<2.0
+ - pandas >=1.0.3
  - poppler >=0.67
  - pyproj >=3.3.0
  - pooch
  - requests >=2.0
  - roocs-utils >=0.6.4,<0.7
  - shapely >=1.9
- - sparse >=0.8.0  # needed for xesmf v0.6.3, see: https://github.com/conda-forge/xesmf-feedstock/pull/24
- - xarray >=0.21,<2023.3.0
- - xesmf >=0.7.1
+ - xarray >=0.21
+ - xesmf >=0.7.0
  - sphinx
  - nbsphinx
  - ipython
@@ -34,7 +33,7 @@ dependencies:
  - jupyter_client
  - matplotlib>=3.5.2
  - cartopy>=0.20.2
- - GitPython
+ - gitpython
  - pip:
    - psy-maps
    - clisops @ git+https://github.com/roocs/clisops/@regrid-main#egg=clisops

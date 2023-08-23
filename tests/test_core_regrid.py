@@ -23,8 +23,7 @@ from clisops.core.regrid import (
 )
 from clisops.ops.subset import subset
 from clisops.utils.output_utils import FileLock
-
-from .._common import (
+from tests._common import (
     CMIP6_ATM_VERT_ONE_TIMESTEP,
     CMIP6_GFDL_EXTENT,
     CMIP6_OCE_HALO_CNRM,

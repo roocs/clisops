@@ -5,15 +5,14 @@ import pytest
 import xarray as xr
 from roocs_grids import get_grid_file, grid_dict
 
-from clisops.core.regrid import XESMF_MINIMUM_VERSION, weights_cache_init, xe
-from clisops.ops.regrid import regrid
-
-from .._common import (
+from _common import (
     CMIP5_MRSOS_ONE_TIME_STEP,
     CMIP6_ATM_VERT_ONE_TIMESTEP,
     CMIP6_OCE_HALO_CNRM,
     CMIP6_TOS_ONE_TIME_STEP,
 )
+from clisops.core.regrid import XESMF_MINIMUM_VERSION, weights_cache_init, xe
+from clisops.ops.regrid import regrid
 
 XESMF_IMPORT_MSG = (
     f"xESMF >= {XESMF_MINIMUM_VERSION} is needed for regridding functionalities."
