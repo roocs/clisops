@@ -1,10 +1,8 @@
 import os
-
-# import warnings
 from glob import glob
 from pathlib import Path
 
-# import cf_xarray as cfxr
+import cf_xarray  # noqa
 import numpy as np
 import pytest
 import xarray as xr

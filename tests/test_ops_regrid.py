@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import cf_xarray  # noqa
 import pytest
 import xarray as xr
 from roocs_grids import get_grid_file, grid_dict

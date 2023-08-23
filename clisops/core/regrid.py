@@ -10,20 +10,19 @@ from glob import glob
 from hashlib import md5
 from math import sqrt
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 
-import cf_xarray as cfxr
+import cf_xarray  # noqa
 import numpy as np
 import roocs_grids
 import xarray as xr
 from pkg_resources import parse_version
 from roocs_utils.exceptions import InvalidParameterValue
-from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
 import clisops.utils.dataset_utils as clidu
 from clisops import CONFIG
 from clisops import __version__ as clversion
-from clisops.utils.common import _list_ten, check_dir, require_module
+from clisops.utils.common import check_dir, require_module
 from clisops.utils.output_utils import FileLock, create_lock
 
 # Try importing xesmf and set to None if not found at correct version
@@ -48,13 +47,13 @@ require_xesmf = functools.partial(
 )
 
 
-def weights_cache_init(weights_dir: str):
+def weights_cache_init(weights_dir: str | Path):
     """
     Initialize global variable `weights_dir` as used by the Weights class.
 
     Parameters
     ----------
-    weights_dir: str
+    weights_dir : str or Path
         Directory name to initalize the local weights cache in.
         Will be created if it does not exist.
         Per default, this function is called upon import with weights_dir as defined in roocs.ini.
@@ -64,7 +63,7 @@ def weights_cache_init(weights_dir: str):
     None.
     """
     # Overwrite CONFIG entry with new value
-    CONFIG["clisops:grid_weights"]["local_weights_dir"] = weights_dir
+    CONFIG["clisops:grid_weights"]["local_weights_dir"] = str(weights_dir)
 
     # Create directory tree if required
     if not os.path.isdir(weights_dir):
@@ -141,8 +140,7 @@ def weights_cache_flush(
 
 
 class Grid:
-    """
-    Create a Grid object that is suitable to serve as source or target grid of the Weights class.
+    """Create a Grid object that is suitable to serve as source or target grid of the Weights class.
 
     Pre-processes coordinate variables of input dataset (eg. create or read dataset from input,
     reformat, generate bounds, identify duplicated and collapsing cells, determine zonal / east-west extent).
@@ -813,8 +811,7 @@ class Grid:
         )
 
     def detect_coordinate(self, coord_type):
-        """
-        Use cf_xarray to obtain the variable name of the requested coordinate.
+        """Use cf_xarray to obtain the variable name of the requested coordinate.
 
         Parameters
         ----------
@@ -844,8 +841,7 @@ class Grid:
             )
 
     def detect_bounds(self, coordinate):
-        """
-        Use cf_xarray to obtain the variable name of the requested coordinates bounds.
+        """Use cf_xarray to obtain the variable name of the requested coordinates bounds.
 
         Parameters
         ----------
@@ -890,8 +886,7 @@ class Grid:
         return mask.reshape(orig_shape)
 
     def _cap_precision(self, decimals):
-        """
-        Round horizontal coordinate variables to specified precision using numpy.around.
+        """Round horizontal coordinate variables to specified precision using numpy.around.
 
         Parameters
         ----------
@@ -932,8 +927,7 @@ class Grid:
                     self.ds[coord].encoding = encoding_dict[coord]
 
     def _compute_hash(self):
-        """
-        Compute md5 checksum of each component of the horizontal grid, incl. a potentially defined mask.
+        """Compute md5 checksum of each component of the horizontal grid, incl. a potentially defined mask.
 
         Stores the individual checksum of each component (lat, lon, lat_bnds, lon_bnds, mask)
         in a dictionary and returns an overall checksum.
@@ -965,8 +959,7 @@ class Grid:
         return md5("".join(self.hash_dict.values()).encode("utf-8")).hexdigest()
 
     def compare_grid(self, ds_or_Grid, verbose=False):
-        """
-        Compare two Grid objects.
+        """Compare two Grid objects.
 
         Will compare the checksum of two Grid objects, which depend on the lat and lon coordinate
         variables, their bounds and if defined, a mask.
@@ -1010,8 +1003,7 @@ class Grid:
         return grid_tmp.hash == self.hash
 
     def _drop_vars(self, keep_attrs=False):
-        """
-        Remove all non necessary (=non-horizontal) coords and data_vars of the Grids' xarray.Dataset.
+        """Remove all non-necessary (non-horizontal) coords and data_vars of the Grids' xarray.Dataset.
 
         Parameters
         ----------
@@ -1031,8 +1023,7 @@ class Grid:
         self.ds = self.ds.drop_vars(names=to_drop)
 
     def _transfer_coords(self, source_grid, keep_attrs=True):
-        """
-        Transfer all non-horizontal coordinates and optionally global attributes between two Grid objects.
+        """Transfer all non-horizontal coordinates and optionally global attributes between two Grid objects.
 
         Parameters
         ----------
@@ -1088,8 +1079,7 @@ class Grid:
         self.ds = self.ds.assign_coords(coord_dict)
 
     def _set_data_vars_and_coords(self):
-        """
-        (Re)set xarray.Dataset.coords appropriately.
+        """(Re)set xarray.Dataset.coords appropriately.
 
         After opening/creating an xarray.Dataset, likely coordinates can be found set as data_vars,
         and data_vars set as coords. This method (re)sets the coords. Dimensionless variables that
@@ -1193,8 +1183,7 @@ class Grid:
             self.ds = self.ds.reset_coords(list(set(to_datavar)))
 
     def _compute_bounds(self):
-        """
-        Compute bounds for regular (rectangular or curvilinear) grids.
+        """Compute bounds for regular (rectangular or curvilinear) grids.
 
         The bounds will be attached as coords to the xarray.Dataset of the Grid object.
         If no bounds can be created, a warning is issued.
@@ -1286,8 +1275,7 @@ class Grid:
         grid_format: str | None = "CF",
         keep_attrs: bool | None = True,
     ):
-        """
-        Store a copy of the horizontal Grid as netCDF file on disk.
+        """Store a copy of the horizontal Grid as netCDF file on disk.
 
         Define output folder, filename and output format (currently only 'CF' is supported).
         Does not overwrite an existing file.
@@ -1368,8 +1356,7 @@ class Grid:
 
 
 class Weights:
-    """
-    Creates remapping weights out of two Grid objects serving as source and target grid.
+    """Creates remapping weights out of two Grid objects serving as source and target grid.
 
     Reads weights from cache if possible. Reads weights from disk if specified (not yet implemented).
     In the latter case, the weight file format has to be supported, to reformat it to xESMF format.
@@ -1454,9 +1441,10 @@ class Weights:
             self._compute()
         else:
             # Read weights from disk
-            self._load_from_disk(self, filename=from_disk, format=format)
+            self._load_from_disk(filename=from_disk, format=format)
 
         # Reformat and cache the weights if required
+        # FIXME: This block seems to fail
         if not self.tool.startswith("xESMF"):
             self.format = self._detect_format()
             self._reformat("xESMF")
@@ -1543,8 +1531,7 @@ class Weights:
         self.regridder.filename = self.regridder._get_default_filename()
 
     def _generate_id(self):
-        """
-        Create an unique id for a Weights object.
+        """Create a unique id for a Weights object.
 
         The id consists of
         - hashes / checksums of source and target grid (namely lat, lon, lat_bnds, lon_bnds variables)
@@ -1579,7 +1566,7 @@ class Weights:
 
     @check_weights_dir
     def _save_to_cache(self, store_weights: FileLock | None | bool):
-        """Save Weights and source/target grids to cache (netCDF), incl. metadata (JSON)."""
+        """Save Weights and source/target grids to cache (netCDF), including metadata (JSON)."""
         # Read weights_dir from CONFIG
         weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
 
@@ -1645,8 +1632,7 @@ class Weights:
 
     @check_weights_dir
     def _read_info_from_cache(self, key: str):
-        """
-        Read info 'key' from cached metadata of current weightfile.
+        """Read info 'key' from cached metadata of current weight-file.
 
         Returns the value for the given key, unless the key does not exist in the metadata or the
         file cannot be read. In this case, None is returned.
@@ -1713,7 +1699,7 @@ def regrid(
     grid_out: Grid,
     weights: Weights,
     adaptive_masking_threshold: float | None = 0.5,
-    keep_attrs: bool | None = True,
+    keep_attrs: bool | str | None = True,
 ):
     """
     Perform regridding operation incl. dealing with dataset and variable attributes.
@@ -1721,7 +1707,7 @@ def regrid(
     Parameters
     ----------
     grid_in : Grid
-        Grid object of the source grid, eg. created out of source xarray.Dataset.
+        Grid object of the source grid, e.g. created out of source xarray.Dataset.
     grid_out : Grid
         Grid object of the target grid.
     weights : Weights
@@ -1730,12 +1716,12 @@ def regrid(
         (AMT) A value within the [0., 1.] interval that defines the maximum `RATIO` of missing_values amongst the total
         number of data values contributing to the calculation of the target grid cell value. For a fraction [0., AMT[
         of the contributing source data missing, the target grid cell will be set to missing_value, else, it will be
-        renormalized by the factor `1./(1.-RATIO)`. Thus, if AMT is set to 1, all source grid cells that contribute to a
-        target grid cell must be missing in order for the target grid cell to be defined as missing itself. Values greater
-        than 1 or less than 0 will cause adaptive masking to be turned off. This adaptive masking technique allows to reuse
-        generated weights for differently masked data (eg. land-sea masks or orographic masks that vary with depth / height).
-        The default is 0.5.
-    keep_attrs : bool / str, optional
+        re-normalized by the factor `1./(1.-RATIO)`. Thus, if AMT is set to 1, all source grid cells that contribute to
+        a target grid cell must be missing in order for the target grid cell to be defined as missing itself. Values
+        greater than 1 or less than 0 will cause adaptive masking to be turned off. This adaptive masking technique
+        allows to reuse generated weights for differently masked data (e.g. land-sea masks or orographic masks that vary
+        with depth / height). The default is 0.5.
+    keep_attrs : bool or str, optional
         Sets the global attributes of the resulting dataset, apart from the ones set by this routine:
         True: attributes of grid_in.ds will be in the resulting dataset.
         False: no attributes but the ones newly set by this routine
@@ -1805,7 +1791,7 @@ def regrid(
                 "conservative_normed",
                 "patch",
             ]:
-                # Renormalize at least contributions from duplicated cells, if adaptive masking is deactivated
+                # Re-normalize at least contributions from duplicated cells, if adaptive masking is deactivated
                 if (
                     adaptive_masking_threshold < 0 or adaptive_masking_threshold > 1
                 ) and grid_in.contains_duplicated_cells:
