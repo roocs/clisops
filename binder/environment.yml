@@ -22,7 +22,7 @@ dependencies:
  - roocs-utils >=0.6.4,<0.7
  - shapely >=1.9
  - xarray >=0.21,<2023.3.0 # https://github.com/pydata/xarray/issues/7794
- - xesmf >=0.8.4
+ - xesmf >=0.8.2
  - cartopy>=0.20.2
  - jupyterlab
  - GitPython
