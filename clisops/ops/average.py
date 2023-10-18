@@ -96,6 +96,11 @@ class AverageShape(Operation):
 
         self.params = {"shape": shape, "variable": variable}
 
+        if not shape:
+            raise InvalidParameterValue(
+                "At least one area for averaging must be provided"
+            )
+
     def _get_file_namer(self):
         extra = f"_avg-{'shape'}"
 
@@ -113,7 +118,7 @@ class AverageShape(Operation):
 
 
 def average_shape(
-    ds: Union[xr.Dataset, str],
+    ds: Union[xr.Dataset, Path, str],
     shape: Union[str, Path, gpd.GeoDataFrame],
     variable: Optional[Union[str, Sequence[str]]] = None,
     output_dir: Optional[Union[str, Path]] = None,
