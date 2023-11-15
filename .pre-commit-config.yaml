@@ -18,7 +18,7 @@ repos:
     -   id: debug-statements
     -   id: mixed-line-ending
 -   repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 23.10.0
+    rev: 23.11.0
     hooks:
     -   id: black
         args: ["--target-version", "py38"]
@@ -54,6 +54,6 @@ ci:
   autofix_prs: true
   autoupdate_branch: ''
   autoupdate_commit_msg: '[pre-commit.ci] pre-commit autoupdate'
-  autoupdate_schedule: weekly
+  autoupdate_schedule: quarterly
   skip: [ ]
   submodules: false
