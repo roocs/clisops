@@ -12,6 +12,11 @@ Bug Fixes
 ^^^^^^^^^
 * Calling `subset_shape()` with a `locstream case` (#288) returned all coordinates inside `inner_mask` which is equivalent to the bounding box of the polygon, not the area inside the polygon. Fixed by defining the `inner_mask` in `subset_shape()` for the locstream case. (#292).
 
+Other Changes
+^^^^^^^^^^^^^
+* Extending the removal of redundant _FillValue attributes to all data variables and coordinates.
+* Extending the removal of redundant coordinates in the coordinates variable attribute from bounds to all data variables.
+
 v0.11.0 (2023-08-22)
 --------------------
 
