@@ -549,7 +549,7 @@ class Grid:
         return False
 
     @staticmethod
-    def _create_duplicate_mask(self, arr):
+    def _create_duplicate_mask(arr):
         """Create duplicate mask helper function."""
         arr_flat = arr.ravel()
         mask = np.zeros_like(arr_flat, dtype=bool)

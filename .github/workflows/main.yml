@@ -68,12 +68,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        upstream:
-          - false
         include:
           - python-version: "3.9"
+            upstream: false
           - python-version: "3.10"
+            upstream: false
           - python-version: "3.11"
+            upstream: false
     defaults:
       run:
         shell: bash -l {0}
