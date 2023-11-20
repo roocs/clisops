@@ -16,6 +16,9 @@ Other Changes
 ^^^^^^^^^^^^^
 * Extending the removal of redundant _FillValue attributes to all data variables and coordinates.
 * Extending the removal of redundant coordinates in the coordinates variable attribute from bounds to all data variables.
+* GitHub Workflows for upstream dependencies are now examined a schedule or via `workflow_dispatch` (#243).
+* `black` steps are now called `lint` for clarity/inclusiveness of other linting hooks. (#243).
+* pre-commit hooks now include checks for TOML files, and for ReadTheDocs and GitHub Actions configuration files. (#243).
 
 v0.11.0 (2023-08-22)
 --------------------
