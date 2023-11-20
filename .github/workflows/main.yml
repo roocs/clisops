@@ -7,12 +7,13 @@ on:
   pull_request:
 
 jobs:
-  black:
+  lint:
+    name: Linting Suite
     runs-on: ubuntu-latest
     strategy:
       matrix:
         tox-env:
-          - black
+          - lint
     steps:
       - name: Cancel previous runs
         uses: styfle/cancel-workflow-action@0.11.0
@@ -28,8 +29,8 @@ jobs:
         run: tox -e ${{ matrix.tox-env }}
 
   pypi:
-    name: Pip with Python${{ matrix.python-version }}
-    needs: black
+    name: Python${{ matrix.python-version }} (PyPI + Tox)
+    needs: lint
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -61,8 +62,8 @@ jobs:
         COVERALLS_SERVICE_NAME: github
 
   conda:
-    name: Anaconda Build with Python${{ matrix.python-version }} (upstream=${{ matrix.upstream }})
-    needs: black
+    name: Python${{ matrix.python-version }} (Anaconda, upstream=${{ matrix.upstream }})
+    needs: lint
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
