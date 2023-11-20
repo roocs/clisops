@@ -861,7 +861,7 @@ class Grid:
             return
 
     def _grid_detect_collapsed_cells(self):
-        "Detect collapsing grid cells. Requires defined bounds."
+        """Detect collapsing grid cells. Requires defined bounds."""
         mask_lat = self._create_collapse_mask(self.ds[self.lat_bnds].data)
         mask_lon = self._create_collapse_mask(self.ds[self.lon_bnds].data)
         # for regular lat-lon grids, create 2D coordinate arrays
@@ -875,8 +875,8 @@ class Grid:
         self.contains_collapsed_cells = bool(np.any(self.coll_mask))
 
     @staticmethod
-    def _create_collapse_mask(self, arr):
-        "Grid cells collapsing to lines or points"
+    def _create_collapse_mask(arr):
+        """Grid cells collapsing to lines or points."""
         orig_shape = arr.shape[:-1]  # [nlon, nlat, nbnds] -> [nlon, nlat]
         arr_flat = arr.reshape(-1, arr.shape[-1])  # -> [nlon x nlat, nbnds]
         arr_set = np.apply_along_axis(lambda x: len(set(x)), -1, arr_flat)
