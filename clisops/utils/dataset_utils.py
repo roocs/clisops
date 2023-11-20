@@ -671,9 +671,8 @@ def detect_format(ds):
         raise Exception("The grid format is not supported.")
 
 
-def detect_shape(ds, lat, lon, grid_type):
-    """
-    Detect the shape of the grid.
+def detect_shape(ds, lat, lon, grid_type) -> tuple[int, int, int]:
+    """Detect the shape of the grid.
 
     Returns a tuple of (nlat, nlon, ncells). For an unstructured grid nlat and nlon are not defined
     and therefore the returned tuple will be (ncells, ncells, ncells).
@@ -691,11 +690,11 @@ def detect_shape(ds, lat, lon, grid_type):
 
     Returns
     -------
-    nlat : int
+    int
         Number of latitude points in the grid.
-    nlon : int
+    int
         Number of longitude points in the grid.
-    ncells : int
+    int
         Number of cells in the grid.
     """
     if grid_type not in ["regular_lat_lon", "curvilinear", "unstructured"]:
@@ -722,7 +721,7 @@ def detect_shape(ds, lat, lon, grid_type):
         raise Exception(
             f"The coordinate variables {lat} and {lon} are not 1- or 2-dimensional."
         )
-    return (nlat, nlon, ncells)
+    return nlat, nlon, ncells
 
 
 def generate_bounds_curvilinear(ds, lat, lon):

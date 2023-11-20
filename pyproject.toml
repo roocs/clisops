@@ -61,6 +61,7 @@ dependencies = [
   "pooch",
   "pyproj>=3.3.0",
   "requests>=2.0",
+  # roocs_grids is differently named on conda-forge
   "roocs_grids>=0.1.2",
   "roocs-utils>=0.6.4,<0.7",
   "shapely>=1.9",

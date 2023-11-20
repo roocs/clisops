@@ -10,7 +10,6 @@ from glob import glob
 from hashlib import md5
 from math import sqrt
 from pathlib import Path
-from typing import Union
 
 import cf_xarray  # noqa
 import numpy as np
@@ -21,7 +20,7 @@ from roocs_utils.exceptions import InvalidParameterValue
 
 import clisops.utils.dataset_utils as clidu
 from clisops import CONFIG
-from clisops import __version__ as clversion
+from clisops import __version__ as __clisops_version__
 from clisops.utils.common import check_dir, require_module
 from clisops.utils.output_utils import FileLock, create_lock
 
@@ -33,7 +32,7 @@ try:
 
     if parse_version(xe.__version__) < parse_version(XESMF_MINIMUM_VERSION):
         raise ValueError()
-except Exception:
+except (ModuleNotFoundError, ValueError):
     xe = None
 
 
@@ -47,20 +46,19 @@ require_xesmf = functools.partial(
 )
 
 
-def weights_cache_init(weights_dir: str | Path):
-    """
-    Initialize global variable `weights_dir` as used by the Weights class.
+def weights_cache_init(weights_dir: str | Path) -> None:
+    """Initialize global variable `weights_dir` as used by the Weights class.
 
     Parameters
     ----------
     weights_dir : str or Path
-        Directory name to initalize the local weights cache in.
+        Directory name to initialize the local weights cache in.
         Will be created if it does not exist.
         Per default, this function is called upon import with weights_dir as defined in roocs.ini.
 
     Returns
     -------
-    None.
+    None
     """
     # Overwrite CONFIG entry with new value
     CONFIG["clisops:grid_weights"]["local_weights_dir"] = str(weights_dir)
@@ -83,14 +81,13 @@ def weights_cache_flush(
     weights_dir_init: str | Path | None = "",
     dryrun: bool | None = False,
     verbose: bool | None = False,
-):
-    """
-    Flush and reinitialize the local weights cache.
+) -> None:
+    """Flush and reinitialize the local weights cache.
 
     Parameters
     ----------
     weights_dir_init : str, optional
-        Directory name to reinitalize the local weights cache in.
+        Directory name to reinitialize the local weights cache in.
         Will be created if it does not exist.
         The default is CONFIG["clisops:grid_weights"]["local_weights_dir"] as defined in roocs.ini
         (or as redefined by a manual weights_cache_init call).
@@ -102,8 +99,7 @@ def weights_cache_flush(
 
     Returns
     -------
-    None.
-
+    None
     """
     # Read weights_dir from CONFIG
     weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
@@ -151,7 +147,7 @@ class Grid:
         Uses horizontal coordinates of an xarray.Dataset or xarray.DataArray to create a Grid object.
         The default is None.
     grid_id : str, optional
-        Create the Grid object from a selection of pre-defined grids, eg. "1deg" or "2pt5deg".
+        Create the Grid object from a selection of pre-defined grids, e.g. "1deg" or "2pt5deg".
         The grids are provided via the roocs_grids package (https://github.com/roocs/roocs-grids).
         A special setting is "adaptive"/"auto", which requires the parameter 'ds' to be specified as well,
         and creates a regular lat-lon grid of the same extent and approximate resolution as the grid
@@ -196,7 +192,7 @@ class Grid:
         # Create grid_instructor as empty tuple if None
         grid_instructor = grid_instructor or tuple()
 
-        # Grid from dataset/dataarray, grid_instructor or grid_id
+        # Grid from Dataset/DataArray, grid_instructor or grid_id
         if isinstance(ds, (xr.Dataset, xr.DataArray)):
             if grid_id in ["auto", "adaptive"]:
                 self._grid_from_ds_adaptive(ds)
@@ -302,8 +298,8 @@ class Grid:
         )
         return info
 
-    def _get_title(self):
-        """Generate a title (str) for the Grid with more information than the basic string representation."""
+    def _get_title(self) -> str:
+        """Generate a title for the Grid with more information than the basic string representation."""
         if self.source.startswith("Predefined_"):
             return ".".join(
                 ga
@@ -319,8 +315,7 @@ class Grid:
                 return f"{self.extent} {self.type} {self.ncells} cells grid."
 
     def _grid_from_id(self, grid_id):
-        """Load pre-defined grid from netCDF file (uses roocs_grids)."""
-        # Load predefined grid files from disk
+        """Load pre-defined grid from netCDF file."""
         try:
             grid_file = roocs_grids.get_grid_file(grid_id)
             grid = xr.open_dataset(grid_file)
@@ -419,21 +414,20 @@ class Grid:
         # Create regular lat-lon grid with these specifics
         self._grid_from_instructor((xfirst, xlast, xinc, yfirst, ylast, yinc))
 
-    def grid_reformat(self, grid_format: str, keep_attrs: bool | None = False):
-        """
-        Reformat the xarray.Dataset attached to the Grid object to a target format.
+    def grid_reformat(self, grid_format: str, keep_attrs: bool = False):
+        """Reformat the Dataset attached to the Grid object to a target format.
 
         Parameters
         ----------
         grid_format : str
             Target format of the reformat operation. Yet supported are 'SCRIP', 'CF', 'xESMF'.
-        keep_attrs: bool
+        keep_attrs : bool
             Whether to keep the global attributes.
 
         Returns
         -------
         ds_ref : xarray.Dataset
-            Reformated dataset.
+            Reformatted dataset.
         """
         # todo: Extend for formats CF, xESMF, ESMF, UGRID, SCRIP
         #      If CF and self.type=="regular_lat_lon":
@@ -457,11 +451,16 @@ class Grid:
                 % (self.format, grid_format)
             )
 
-    def _grid_unstagger(self):
-        """Interpolate to cell center from cell edges, rotate vector variables in lat/lon direction, not yet implemented."""
+    def _grid_unstagger(self) -> None:
+        """Interpolate to cell center from cell edges, rotate vector variables in lat/lon direction.
+
+        Warning
+        -------
+        This method is not yet implemented.
+        """
         # todo
         # Plan:
-        # Check if it is vectoral and not scalar data (eg. by variable name? No other idea yet.)
+        # Check if it is vector and not scalar data (eg. by variable name? No other idea yet.)
         # Unstagger if needed.
         # a) Provide the unstaggered grid (from another dataset with scalar variable) or provide
         #    the other vector component? One of both might be required.
@@ -473,11 +472,8 @@ class Grid:
         # All in all a quite impossible task to automatise this process.
         pass
 
-    def _grid_detect_duplicated_cells(self):
-        """
-        Detect a possible grid halo / duplicated cells.
-        """
-
+    def _grid_detect_duplicated_cells(self) -> bool:
+        """Detect a possible grid halo / duplicated cells."""
         # Create array of (ilat, ilon) tuples
         if self.ds[self.lon].ndim == 2 or (
             self.ds[self.lon].ndim == 1 and self.type == "unstructured"
@@ -552,17 +548,17 @@ class Grid:
                 return True
         return False
 
+    @staticmethod
     def _create_duplicate_mask(self, arr):
-        "Create duplicate mask helper function"
+        """Create duplicate mask helper function."""
         arr_flat = arr.ravel()
         mask = np.zeros_like(arr_flat, dtype=bool)
         mask[np.unique(arr_flat, return_index=True)[1]] = True
         mask_duplicates = np.where(mask, False, True).reshape(arr.shape)
         return mask_duplicates
 
-    def detect_format(self):
-        """
-        Detect format of a dataset. Yet supported are 'CF', 'SCRIP', 'xESMF'.
+    def detect_format(self) -> str:
+        """Detect format of a dataset. Yet supported are 'CF', 'SCRIP', 'xESMF'.
 
         Returns
         -------
@@ -571,11 +567,10 @@ class Grid:
         """
         return clidu.detect_format(ds=self.ds)
 
-    def detect_type(self):
-        """
-        Detect type of the grid as one of "regular_lat_lon", "curvilinear", "unstructured".
+    def detect_type(self) -> str:
+        """Detect type of the grid as one of "regular_lat_lon", "curvilinear", or "unstructured".
 
-        Else will issue an Exception if grid type is not supported.
+        Otherwise, will issue an Exception if grid type is not supported.
 
         Returns
         -------
@@ -676,9 +671,8 @@ class Grid:
                 "Grid type can only be determined for datasets following the CF conventions."
             )
 
-    def detect_extent(self):
-        """
-        Determine the grid extent in zonal / east-west direction ('regional' or 'global').
+    def detect_extent(self) -> str:
+        """Determine the grid extent in zonal / east-west direction ('regional' or 'global').
 
         Returns
         -------
@@ -774,7 +768,12 @@ class Grid:
             return "regional"
 
     def _detect_mask(self):
-        """Not yet implemented, if at all necessary (eg. for reformating to SCRIP etc.)."""
+        """Detect mask helper function.
+
+        Warning
+        -------
+        Not yet implemented, if at all necessary (e.g. for reformatting to SCRIP etc.).
+        """
         # todo
         # Plan:
         # Depending on the format, the mask is stored as extra variable.
@@ -789,20 +788,19 @@ class Grid:
         # ds["mask"]=xr.where(~np.isnan(ds['var'].isel(time=0)), 1, 0).astype(int)
         return
 
-    def detect_shape(self):
-        """
-        Detect the shape of the grid.
+    def detect_shape(self) -> tuple[int, int, int]:
+        """Detect the shape of the grid.
 
         Returns a tuple of (nlat, nlon, ncells). For an unstructured grid nlat and nlon are not defined
         and therefore the returned tuple will be (ncells, ncells, ncells).
 
         Returns
         -------
-        nlat : int
+        int
             Number of latitude points in the grid.
-        nlon : int
+        int
             Number of longitude points in the grid.
-        ncells : int
+        int
             Number of cells in the grid.
         """
         # Call clisops.utils.dataset_utils function
@@ -810,7 +808,7 @@ class Grid:
             ds=self.ds, lat=self.lat, lon=self.lon, grid_type=self.type
         )
 
-    def detect_coordinate(self, coord_type):
+    def detect_coordinate(self, coord_type: str) -> str:
         """Use cf_xarray to obtain the variable name of the requested coordinate.
 
         Parameters
@@ -840,7 +838,7 @@ class Grid:
                 "A %s coordinate cannot be identified in the dataset." % coord_type
             )
 
-    def detect_bounds(self, coordinate):
+    def detect_bounds(self, coordinate: str) -> str | None:
         """Use cf_xarray to obtain the variable name of the requested coordinates bounds.
 
         Parameters
@@ -850,9 +848,9 @@ class Grid:
 
         Returns
         -------
-        str
-            Returns the variable name of the requested coordinate bounds,
-            returns None if the variable has no bounds or they cannot be identified.
+        str, optional
+            Returns the variable name of the requested coordinate bounds.
+            Returns None if the variable has no bounds or if they cannot be identified.
         """
         try:
             return self.ds.cf.bounds[coordinate][0]
@@ -876,6 +874,7 @@ class Grid:
         self.coll_mask = mask_lat | mask_lon
         self.contains_collapsed_cells = bool(np.any(self.coll_mask))
 
+    @staticmethod
     def _create_collapse_mask(self, arr):
         "Grid cells collapsing to lines or points"
         orig_shape = arr.shape[:-1]  # [nlon, nlat, nbnds] -> [nlon, nlat]
@@ -885,7 +884,7 @@ class Grid:
         mask[arr_set == 1] = True
         return mask.reshape(orig_shape)
 
-    def _cap_precision(self, decimals):
+    def _cap_precision(self, decimals: int) -> None:
         """Round horizontal coordinate variables to specified precision using numpy.around.
 
         Parameters
@@ -895,7 +894,7 @@ class Grid:
 
         Returns
         -------
-        None.
+        None
         """
         # todo: extend for vertical axis for vertical interpolation usecase
         # 6 decimals corresponds to hor. precision of ~ 0.1m (deg), 6m (rad)
@@ -926,11 +925,11 @@ class Grid:
                     self.ds[coord].attrs = attr_dict[coord]
                     self.ds[coord].encoding = encoding_dict[coord]
 
-    def _compute_hash(self):
-        """Compute md5 checksum of each component of the horizontal grid, incl. a potentially defined mask.
+    def _compute_hash(self) -> str:
+        """Compute md5 checksum of each component of the horizontal grid, including a potentially defined mask.
 
-        Stores the individual checksum of each component (lat, lon, lat_bnds, lon_bnds, mask)
-        in a dictionary and returns an overall checksum.
+        Stores the individual checksum of each component (lat, lon, lat_bnds, lon_bnds, mask) in a dictionary and
+        returns an overall checksum.
 
         Returns
         -------
@@ -958,7 +957,9 @@ class Grid:
         # Return overall checksum for all 5 components
         return md5("".join(self.hash_dict.values()).encode("utf-8")).hexdigest()
 
-    def compare_grid(self, ds_or_Grid, verbose=False):
+    def compare_grid(
+        self, ds_or_Grid: xr.Dataset | Grid, verbose: bool = False
+    ) -> bool:
         """Compare two Grid objects.
 
         Will compare the checksum of two Grid objects, which depend on the lat and lon coordinate
@@ -968,14 +969,13 @@ class Grid:
         ----------
         ds_or_Grid : xarray.Dataset or Grid
             Grid that the current Grid object shall be compared to.
-        verbose : str, optional
+        verbose : bool
             Whether to also print the result. The default is False.
 
         Returns
         -------
         bool
-            Returns True if the two Grids are considered identical within the defined precision,
-            else returns False.
+            Returns True if the two Grids are considered identical within the defined precision, else returns False.
         """
         # Create temporary Grid object if ds_or_Grid is an xarray object
         if isinstance(ds_or_Grid, xr.Dataset) or isinstance(ds_or_Grid, xr.DataArray):
@@ -1002,12 +1002,12 @@ class Grid:
         # Return the result as boolean
         return grid_tmp.hash == self.hash
 
-    def _drop_vars(self, keep_attrs=False):
+    def _drop_vars(self, keep_attrs: bool = False) -> None:
         """Remove all non-necessary (non-horizontal) coords and data_vars of the Grids' xarray.Dataset.
 
         Parameters
         ----------
-        keep_attrs : bool or str, optional
+        keep_attrs : bool
             Whether to keep the global attributes. The default is False.
         """
         to_keep = [
@@ -1022,7 +1022,9 @@ class Grid:
             self.ds.attrs = {}
         self.ds = self.ds.drop_vars(names=to_drop)
 
-    def _transfer_coords(self, source_grid, keep_attrs=True):
+    def _transfer_coords(
+        self, source_grid: Grid, keep_attrs: str | bool = True
+    ) -> None:
         """Transfer all non-horizontal coordinates and optionally global attributes between two Grid objects.
 
         Parameters
@@ -1038,7 +1040,7 @@ class Grid:
 
         Returns
         -------
-        None.
+        None
         """
         # Skip all coords with horizontal dimensions or
         #  coords with no dimensions that are not listed
@@ -1327,7 +1329,7 @@ class Grid:
                     if grid_tmp.format != grid_format:
                         grid_tmp.reformat(grid_format)
                     grid_tmp._drop_vars(keep_attrs=keep_attrs)
-                    grid_tmp.ds.attrs.update({"clisops": clversion})
+                    grid_tmp.ds.attrs.update({"clisops": __clisops_version__})
 
                     # Workaround for the following "features" of xarray:
                     # 1 # "When an xarray Dataset contains non-dimensional coordinates that do not
@@ -1405,7 +1407,7 @@ class Weights:
             )
 
         # Periodic in longitude
-        # todo: properly test / check the periodic attribute of the xESMF Regridder.
+        # TODO: properly test / check the periodic attribute of the xESMF Regridder.
         #  The grid.extent check done here might not be suitable to set the periodic attribute:
         #  global == is grid periodic in longitude
         self.periodic = False
@@ -1414,7 +1416,7 @@ class Weights:
                 self.periodic = True
         except AttributeError:
             # forced to False for conservative regridding in xesmf
-            #  todo: check if this is proper behaviour of xesmf
+            # TODO: check if this is proper behaviour of xesmf
             if self.method not in ["conservative", "conservative_normed"]:
                 warnings.warn(
                     "The grid extent could not be accessed. "
@@ -1444,7 +1446,7 @@ class Weights:
             self._load_from_disk(filename=from_disk, format=format)
 
         # Reformat and cache the weights if required
-        # FIXME: This block seems to fail
+        # FIXME: _detect_format() and _reformat() are not implemented yet
         if not self.tool.startswith("xESMF"):
             self.format = self._detect_format()
             self._reformat("xESMF")
@@ -1474,7 +1476,7 @@ class Weights:
         if self.grid_out.type == "unstructured":
             locstream_out = True
         if any([locstream_in, locstream_out]) and self.method != "nearest_s2d":
-            raise Exception(
+            raise NotImplementedError(
                 "For unstructured grids, the only supported remapping method that is currently supported "
                 "is nearest neighbour."
             )
@@ -1530,7 +1532,7 @@ class Weights:
         # The default filename is important for later use, so it needs to be reset.
         self.regridder.filename = self.regridder._get_default_filename()
 
-    def _generate_id(self):
+    def _generate_id(self) -> str:
         """Create a unique id for a Weights object.
 
         The id consists of
@@ -1541,7 +1543,7 @@ class Weights:
 
         Returns
         -------
-        wid : str
+        str
             The id as str.
         """
         peri_dict = {True: "peri", False: "unperi"}
@@ -1565,7 +1567,7 @@ class Weights:
         return wid
 
     @check_weights_dir
-    def _save_to_cache(self, store_weights: FileLock | None | bool):
+    def _save_to_cache(self, store_weights: FileLock | None | bool) -> None:
         """Save Weights and source/target grids to cache (netCDF), including metadata (JSON)."""
         # Read weights_dir from CONFIG
         weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
@@ -1631,7 +1633,7 @@ class Weights:
                     json.dump(weights_dic, weights_dic_path, sort_keys=True, indent=4)
 
     @check_weights_dir
-    def _read_info_from_cache(self, key: str):
+    def _read_info_from_cache(self, key: str) -> str | None:
         """Read info 'key' from cached metadata of current weight-file.
 
         Returns the value for the given key, unless the key does not exist in the metadata or the
@@ -1666,31 +1668,51 @@ class Weights:
                         f"Requested info {key} does not exist in the metadata"
                         " of the cached weights."
                     )
-                    return None
+                    return
         else:
-            return None
+            return
 
-    def save_to_disk(self, filename=None, wformat="xESMF"):
-        """Write weights to disk in a certain format, not yet implemented."""
+    def save_to_disk(self, filename=None, wformat: str = "xESMF") -> None:
+        """Write weights to disk in a certain format.
+
+        Warning
+        -------
+        This method is not yet implemented.
+        """
         # todo: if necessary, reformat weights, then save under specified path.
-        raise NotImplementedError
+        raise NotImplementedError()
 
-    def _load_from_disk(self, filename=None, format=None):
-        """Read and process weights from disk, not yet implemented."""
+    def _load_from_disk(self, filename=None, format=None) -> None:
+        """Read and process weights from disk.
+
+        Warning
+        -------
+        This method is not yet implemented.
+        """
         # todo: Reformat to other weight-file formats when loading/saving from disk
         # if format != "xESMF":
         #  read file, compare Grid and weight matrix dimensions,
         #  reformat to xESMF sparse matrix and initialize xesmf.Regridder,
         #  generate_id, set ignore_degenerate, periodic, method to unknown if cannot be determined
-        raise NotImplementedError
+        raise NotImplementedError()
 
-    def reformat(self, format_from: str, format_to: str):
-        """Reformat remapping weights. Not yet implemented."""
-        raise NotImplementedError
+    def reformat(self, format_from: str, format_to: str) -> None:
+        """Reformat remapping weights.
 
-    def _detect_format(self, ds: xr.Dataset | xr.DataArray):
-        """Detect format of remapping weights (read from disk), not yet implemented."""
-        raise NotImplementedError
+        Warning
+        -------
+        This method is not yet implemented.
+        """
+        raise NotImplementedError()
+
+    def _detect_format(self, ds: xr.Dataset | xr.DataArray) -> None:
+        """Detect format of remapping weights (read from disk).
+
+        Warning
+        -------
+        This method is not yet implemented.
+        """
+        raise NotImplementedError()
 
 
 @require_xesmf
@@ -1699,10 +1721,9 @@ def regrid(
     grid_out: Grid,
     weights: Weights,
     adaptive_masking_threshold: float | None = 0.5,
-    keep_attrs: bool | str | None = True,
-):
-    """
-    Perform regridding operation incl. dealing with dataset and variable attributes.
+    keep_attrs: bool | str = True,
+) -> xr.Dataset:
+    """Perform regridding operation including dealing with dataset and variable attributes.
 
     Parameters
     ----------
@@ -1721,7 +1742,7 @@ def regrid(
         greater than 1 or less than 0 will cause adaptive masking to be turned off. This adaptive masking technique
         allows to reuse generated weights for differently masked data (e.g. land-sea masks or orographic masks that vary
         with depth / height). The default is 0.5.
-    keep_attrs : bool or str, optional
+    keep_attrs : bool or str
         Sets the global attributes of the resulting dataset, apart from the ones set by this routine:
         True: attributes of grid_in.ds will be in the resulting dataset.
         False: no attributes but the ones newly set by this routine
@@ -1811,8 +1832,7 @@ def regrid(
     else:
         if (
             weights.regridder.method in ["conservative", "conservative_normed", "patch"]
-            and adaptive_masking_threshold >= 0.0
-            and adaptive_masking_threshold <= 1.0
+            and 0.0 <= adaptive_masking_threshold <= 1.0
         ):
             grid_out.ds[grid_in.ds.name] = weights.regridder(
                 grid_in.ds, skipna=True, na_thres=adaptive_masking_threshold
@@ -1820,6 +1840,7 @@ def regrid(
         else:
             grid_out.ds[grid_in.ds.name] = weights.regridder(grid_in.ds, skipna=False)
         if keep_attrs:
+            # FIXME: This will fail - data_var is undefined.
             grid_out.ds[data_var].attrs.update(grid_in.ds[data_var].attrs)
             grid_out.ds[data_var].encoding.update(grid_in.ds[data_var].encoding)
 
