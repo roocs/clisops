@@ -4,7 +4,7 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import xarray as xr
-from pkg_resources import parse_version
+from packaging.version import Version
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils import xarray_utils as xu
 
@@ -15,7 +15,7 @@ from clisops.utils import get_file
 try:
     import xesmf
 
-    if parse_version(xesmf.__version__) < parse_version("0.6.2"):
+    if Version(xesmf.__version__) < Version("0.6.2"):
         raise ImportError()
 except ImportError:
     xesmf = None

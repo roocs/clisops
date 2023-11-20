@@ -15,7 +15,7 @@ import cf_xarray  # noqa
 import numpy as np
 import roocs_grids
 import xarray as xr
-from pkg_resources import parse_version
+from packaging.version import Version
 from roocs_utils.exceptions import InvalidParameterValue
 
 import clisops.utils.dataset_utils as clidu
@@ -30,7 +30,7 @@ XESMF_MINIMUM_VERSION = "0.7.0"
 try:
     import xesmf as xe
 
-    if parse_version(xe.__version__) < parse_version(XESMF_MINIMUM_VERSION):
+    if Version(xe.__version__) < Version(XESMF_MINIMUM_VERSION):
         raise ValueError()
 except (ModuleNotFoundError, ValueError):
     xe = None

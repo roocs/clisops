@@ -3,7 +3,7 @@ import numpy as np
 import packaging.version
 import pytest
 import xarray as xr
-from pkg_resources import parse_version
+from packaging.version import Version
 from roocs_grids import get_grid_file
 
 import clisops.utils.dataset_utils as clidu
@@ -25,8 +25,8 @@ from clisops.core.regrid import XESMF_MINIMUM_VERSION
 try:
     import xesmf
 
-    if parse_version(xesmf.__version__) < parse_version(XESMF_MINIMUM_VERSION):
-        raise ImportError
+    if Version(xesmf.__version__) < Version(XESMF_MINIMUM_VERSION):
+        raise ImportError()
 except ImportError:
     xesmf = None
 

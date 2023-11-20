@@ -73,7 +73,7 @@ dev = [
   # Packaging
   "flit",
   # Dev tools and testing
-  "black>=23.7.0",
+  "black>=23.11.0",
   "bump2version",
   "flake8",
   "gitpython>=3.1.30",
@@ -118,6 +118,7 @@ target-version = [
 
 [tool.coverage.run]
 relative_files = true
+include = ["clisops/*"]
 omit = ["*/tests/*.py"]
 
 [tool.flit.sdist]
@@ -160,6 +161,7 @@ profile = "black"
 py_version = 38
 append_only = true
 known_first_party = "clisops,_common"
+skip = ["clisops/core/__init__.py"]
 
 [tool.pytest.ini_options]
 addopts = [

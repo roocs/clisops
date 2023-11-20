@@ -6,7 +6,7 @@ import cf_xarray  # noqa
 import numpy as np
 import pytest
 import xarray as xr
-from pkg_resources import parse_version
+from packaging.version import Version
 from roocs_grids import get_grid_file
 
 import clisops.utils.dataset_utils as clidu
@@ -37,7 +37,7 @@ from clisops.utils.output_utils import FileLock
 try:
     import xesmf
 
-    if parse_version(xesmf.__version__) < parse_version(XESMF_MINIMUM_VERSION):
+    if Version(xesmf.__version__) < Version(XESMF_MINIMUM_VERSION):
         raise ImportError
 except ImportError:
     xesmf = None
