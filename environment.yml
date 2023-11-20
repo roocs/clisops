@@ -19,7 +19,7 @@ dependencies:
  - poppler >=0.67
  - pyproj >=3.3.0
  - requests >=2.0
- - roocs_grids>=0.1.2
+ - roocs-grids>=0.1.2
  - roocs-utils >=0.6.4,<0.7
  - shapely >=1.9
  - xarray >=0.21,<2023.3.0 # https://github.com/pydata/xarray/issues/7794
