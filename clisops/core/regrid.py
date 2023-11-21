@@ -252,7 +252,7 @@ class Grid:
         if (not self.lat_bnds or not self.lon_bnds) and compute_bounds:
             self._compute_bounds()
 
-        # todo: possible step to use np.around(in_array, decimals [, out_array])
+        # TODO: possible step to use np.around(in_array, decimals [, out_array])
         # 6 decimals corresponds to precision of ~ 0.1m (deg), 6m (rad)
         self._cap_precision(coord_precision_hor)
 
@@ -361,7 +361,7 @@ class Grid:
     @require_xesmf
     def _grid_from_ds_adaptive(self, ds: xr.Dataset | xr.DataArray):
         """Create Grid of similar extent and resolution of input dataset."""
-        # todo: dachar/daops to deal with missing values occuring in the coordinate variables
+        # TODO: dachar/daops to deal with missing values occuring in the coordinate variables
         #       while no _FillValue/missing_value attribute is set
         #  -> FillValues else might get selected as minimum/maximum lat/lon value
         #     since they are not masked
@@ -429,10 +429,10 @@ class Grid:
         ds_ref : xarray.Dataset
             Reformatted dataset.
         """
-        # todo: Extend for formats CF, xESMF, ESMF, UGRID, SCRIP
+        # TODO: Extend for formats CF, xESMF, ESMF, UGRID, SCRIP
         #      If CF and self.type=="regular_lat_lon":
         #        ensure lat/lon are 1D each and bounds are nlat,2 and nlon,2
-        # todo: When 2D coordinates will be changed to 1D index coordinates
+        # TODO: When 2D coordinates will be changed to 1D index coordinates
         #       xarray.assign_coords might be necessary, or alternatively,
         #       define a new Dataset and move all data_vars and aux. coords across.
 
@@ -458,7 +458,7 @@ class Grid:
         -------
         This method is not yet implemented.
         """
-        # todo
+        # TODO
         # Plan:
         # Check if it is vector and not scalar data (eg. by variable name? No other idea yet.)
         # Unstagger if needed.
@@ -577,7 +577,7 @@ class Grid:
         str
             The detected grid type.
         """
-        # todo: Extend for other formats for regular_lat_lon, curvilinear / rotated_pole, unstructured
+        # TODO: Extend for other formats for regular_lat_lon, curvilinear / rotated_pole, unstructured
 
         if self.format == "CF":
             # 1D coordinate variables
@@ -631,7 +631,7 @@ class Grid:
             # 2D coordinate variables
             elif self.ds[self.lat].ndim == 2 and self.ds[self.lon].ndim == 2:
                 # Test for curvilinear or restructure lat/lon coordinate variables
-                # todo: Check if regular_lat_lon despite 2D
+                # TODO: Check if regular_lat_lon despite 2D
                 #  - requires additional function checking
                 #      lat[:,i]==lat[:,j] for all i,j
                 #      lon[i,:]==lon[j,:] for all i,j
@@ -679,10 +679,10 @@ class Grid:
         str
             'regional' or 'global'.
         """
-        # todo: support Units "rad" next to "degree ..."
-        # todo: additionally check that leftmost and rightmost lon_bnds touch for each row?
+        # TODO: support Units "rad" next to "degree ..."
+        # TODO: additionally check that leftmost and rightmost lon_bnds touch for each row?
         #
-        # todo: perform a roll if necessary in case the longitude values are not in the range (0,360)
+        # TODO: perform a roll if necessary in case the longitude values are not in the range (0,360)
         # - Grids that range for example from (-1. , 359.)
         # - Grids that are totally out of range, like GFDL (-300, 60)
         # ds=dataset_utils.check_lon_alignment(ds, (0,360)) # does not work yet for this purpose
@@ -704,7 +704,7 @@ class Grid:
             if self.type == "unstructured":
                 # Distribute the number of grid cells to nlat and nlon,
                 # in proportion to extent in zonal and meridional direction
-                # todo: Alternatively one can use the kdtree method to calculate the approx. resolution
+                # TODO: Alternatively one can use the kdtree method to calculate the approx. resolution
                 # once it is implemented here
                 xsize = int(
                     sqrt(abs(xlast - xfirst) / abs(ylast - yfirst) * self.ncells)
@@ -734,7 +734,7 @@ class Grid:
             min_range, max_range = (-180.0, 180.0)
         elif lon_min > -atol and lon_max < 360.0 + atol:
             min_range, max_range = (0.0, 360.0)
-        # todo: for shifted longitudes, eg. (-300,60)? I forgot what it was for but likely it is irrelevant
+        # TODO: for shifted longitudes, eg. (-300,60)? I forgot what it was for but likely it is irrelevant
         # elif lon_min < -180.0 - atol or lon_max > 360.0 + atol:
         #    raise Exception(
         #        "The longitude values have to be within the range (-180, 360)!"
@@ -774,7 +774,7 @@ class Grid:
         -------
         Not yet implemented, if at all necessary (e.g. for reformatting to SCRIP etc.).
         """
-        # todo
+        # TODO
         # Plan:
         # Depending on the format, the mask is stored as extra variable.
         # If self.format=="CF": An extra variable mask could be generated from missing values?
@@ -896,7 +896,7 @@ class Grid:
         -------
         None
         """
-        # todo: extend for vertical axis for vertical interpolation usecase
+        # TODO: extend for vertical axis for vertical interpolation usecase
         # 6 decimals corresponds to hor. precision of ~ 0.1m (deg), 6m (rad)
         coord_dict = {}
         attr_dict = {}
@@ -919,7 +919,7 @@ class Grid:
         # Restore the original attributes
         if coord_dict:
             self.ds = self.ds.assign_coords(coord_dict)
-            # Restore attrs and encoding - is there a proper way to do this?? (todo)
+            # Restore attrs and encoding - is there a proper way to do this?? (TODO)
             for coord in [self.lat_bnds, self.lon_bnds, self.lat, self.lon]:
                 if coord:
                     self.ds[coord].attrs = attr_dict[coord]
@@ -1190,7 +1190,7 @@ class Grid:
         The bounds will be attached as coords to the xarray.Dataset of the Grid object.
         If no bounds can be created, a warning is issued.
         """
-        # todo: This can be a public method as well, but then collapsing grid cells have
+        # TODO: This can be a public method as well, but then collapsing grid cells have
         #       to be detected within this function.
 
         # Bounds cannot be computed if there are duplicated cells
@@ -1446,8 +1446,11 @@ class Weights:
             self._load_from_disk(filename=from_disk, format=format)
 
         # Reformat and cache the weights if required
-        # FIXME: _detect_format() and _reformat() are not implemented yet
         if not self.tool.startswith("xESMF"):
+            raise NotImplementedError(
+                f"Reading and reformatting weight files generated by {self.tool} is not supported. "
+                "The only supported weight file format that is currently supported is xESMF."
+            )
             self.format = self._detect_format()
             self._reformat("xESMF")
 
@@ -1679,7 +1682,7 @@ class Weights:
         -------
         This method is not yet implemented.
         """
-        # todo: if necessary, reformat weights, then save under specified path.
+        # TODO: if necessary, reformat weights, then save under specified path.
         raise NotImplementedError()
 
     def _load_from_disk(self, filename=None, format=None) -> None:
@@ -1689,7 +1692,7 @@ class Weights:
         -------
         This method is not yet implemented.
         """
-        # todo: Reformat to other weight-file formats when loading/saving from disk
+        # TODO: Reformat to other weight-file formats when loading/saving from disk
         # if format != "xESMF":
         #  read file, compare Grid and weight matrix dimensions,
         #  reformat to xESMF sparse matrix and initialize xesmf.Regridder,
@@ -1773,14 +1776,15 @@ def regrid(
 
     # Create attrs
     attrs_append = {}
-    if "grid" in grid_in.ds.attrs:
-        attrs_append["grid_original"] = grid_in.ds.attrs["grid"]
-    if "grid_label" in grid_in.ds.attrs:
-        attrs_append["grid_label_original"] = grid_in.ds.attrs["grid_label"]
-    nom_res_o = grid_in.ds.attrs.pop("nominal_resolution", None)
-    if nom_res_o:
-        attrs_append["nominal_resolution_original"] = nom_res_o
-    # todo: should nominal_resolution of the target grid be calculated if not specified in the attr?
+    if isinstance(grid_in.ds, xr.Dataset):
+        if "grid" in grid_in.ds.attrs:
+            attrs_append["grid_original"] = grid_in.ds.attrs["grid"]
+        if "grid_label" in grid_in.ds.attrs:
+            attrs_append["grid_label_original"] = grid_in.ds.attrs["grid_label"]
+        nom_res_o = grid_in.ds.attrs.pop("nominal_resolution", None)
+        if nom_res_o:
+            attrs_append["nominal_resolution_original"] = nom_res_o
+    # TODO: should nominal_resolution of the target grid be calculated if not specified in the attr?
     nom_res_n = grid_out.ds.attrs.pop("nominal_resolution", None)
     if nom_res_n:
         attrs_append["nominal_resolution"] = nom_res_n
@@ -1791,7 +1795,7 @@ def regrid(
     else:
         grid_out._drop_vars(keep_attrs=False)
 
-    # todo: It might in general be sufficient to always act as if the threshold was
+    # TODO: It might in general be sufficient to always act as if the threshold was
     #  set correctly and let xesmf handle it. But then we might not allow it for
     #  the bilinear method, as the results do not look too great and I am still
     #  not sure/convinced adaptive_masking makes sense for this method.
@@ -1829,6 +1833,10 @@ def regrid(
             if keep_attrs:
                 grid_out.ds[data_var].attrs.update(grid_in.ds[data_var].attrs)
                 grid_out.ds[data_var].encoding.update(grid_in.ds[data_var].encoding)
+
+        # Transfer all non-horizontal coords (and optionally attrs) from grid_in.ds to grid_out.ds
+        grid_out._transfer_coords(grid_in, keep_attrs=keep_attrs)
+
     else:
         if (
             weights.regridder.method in ["conservative", "conservative_normed", "patch"]
@@ -1840,12 +1848,8 @@ def regrid(
         else:
             grid_out.ds[grid_in.ds.name] = weights.regridder(grid_in.ds, skipna=False)
         if keep_attrs:
-            # FIXME: This will fail - data_var is undefined.
-            grid_out.ds[data_var].attrs.update(grid_in.ds[data_var].attrs)
-            grid_out.ds[data_var].encoding.update(grid_in.ds[data_var].encoding)
-
-    # Transfer all non-horizontal coords (and optionally attrs) from grid_out.ds to grid_in.ds
-    grid_out._transfer_coords(grid_in, keep_attrs=keep_attrs)
+            grid_out.ds[grid_in.ds.name].attrs.update(grid_in.ds.attrs)
+            grid_out.ds[grid_in.ds.name].encoding.update(grid_in.ds.encoding)
 
     # Add new attrs
     grid_out.ds.attrs.update(attrs_append)

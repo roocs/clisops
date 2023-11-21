@@ -425,8 +425,7 @@ def add_hor_CF_coord_attrs(
 
 
 def reformat_SCRIP_to_CF(ds, keep_attrs=False):
-    """
-    Reformat dataset from SCRIP to CF format.
+    """Reformat dataset from SCRIP to CF format.
 
     Parameters
     ----------
@@ -544,8 +543,7 @@ def reformat_SCRIP_to_CF(ds, keep_attrs=False):
 
 
 def reformat_xESMF_to_CF(ds, keep_attrs=False):
-    """
-    Reformat dataset from xESMF to CF format.
+    """Reformat dataset from xESMF to CF format.
 
     Parameters
     ----------
@@ -613,8 +611,7 @@ def reformat_xESMF_to_CF(ds, keep_attrs=False):
 
 
 def detect_format(ds):
-    """
-    Detect format of a dataset. Yet supported are 'CF', 'SCRIP', 'xESMF'.
+    """Detect format of a dataset. Yet supported are 'CF', 'SCRIP', 'xESMF'.
 
     Parameters
     ----------
@@ -725,8 +722,7 @@ def detect_shape(ds, lat, lon, grid_type) -> Tuple[int, int, int]:
 
 
 def generate_bounds_curvilinear(ds, lat, lon):
-    """
-    Compute bounds for curvilinear grids.
+    """Compute bounds for curvilinear grids.
 
     Assumes 2D latitude and longitude coordinate variables. The bounds will be attached as coords
     to the xarray.Dataset of the Grid object. If no bounds can be created, a warning is issued.
@@ -832,8 +828,7 @@ def generate_bounds_curvilinear(ds, lat, lon):
 
 
 def generate_bounds_rectilinear(ds, lat, lon):
-    """
-    Compute bounds for rectilinear grids.
+    """Compute bounds for rectilinear grids.
 
     The bounds will be attached as coords to the xarray.Dataset of the Grid object.
     If no bounds can be created, a warning is issued. It is assumed but not ensured that no

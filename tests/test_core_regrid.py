@@ -1039,6 +1039,38 @@ class TestRegrid:
                 assert len(issuedWarnings) == 1
             print(r)
 
+    def test_regrid_dataarray(self, load_esgf_test_data, tmp_path):
+        self._setup()
+        weights_cache_init(Path(tmp_path, "weights"))
+        w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="nearest_s2d")
+        grid_da = Grid(self.grid_in.ds.tas)
+
+        vattrs = (
+            "regrid_method",
+            "standard_name",
+            "long_name",
+            "comment",
+            "units",
+            "cell_methods",
+            "cell_measures",
+            "history",
+        )
+        gattrs = (
+            "grid",
+            "grid_label",
+            "regrid_operation",
+            "regrid_tool",
+            "regrid_weights_uid",
+        )
+
+        r1 = regrid(grid_da, self.grid_out, w, keep_attrs=True)
+        assert vattrs == tuple(r1["tas"].attrs.keys())
+        assert gattrs == tuple(r1.attrs.keys())
+
+        r2 = regrid(grid_da, self.grid_out, w, keep_attrs=False)
+        assert ("regrid_method",) == tuple(r2["tas"].attrs.keys())
+        assert gattrs == tuple(r2.attrs.keys())
+
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_duplicated_cells_renormalization(load_esgf_test_data, tmp_path):

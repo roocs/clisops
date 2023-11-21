@@ -82,8 +82,7 @@ def enable_logging() -> List[int]:
 
 
 def _list_ten(list1d):
-    """
-    Convert list to string of 10 list elements equally distributed to beginning and end of the list.
+    """Convert list to string of 10 list elements equally distributed to beginning and end of the list.
 
     Parameters
     ----------

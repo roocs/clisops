@@ -41,6 +41,5 @@ dependencies:
  - pip
  - pip:
    - psy-maps
-   - clisops @ git+https://github.com/roocs/clisops/@regrid-main#egg=clisops
 #   - cf-xarray @ git+https://github.com/xarray-contrib/cf-xarray/@main#egg=cf-xarray
 #   - roocs-utils @ git+https://github.com/roocs/roocs-utils.git@master#egg=roocs-utils

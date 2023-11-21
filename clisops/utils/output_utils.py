@@ -251,8 +251,7 @@ def get_output(ds, output_type, output_dir, namer):
 
 
 class FileLock:
-    """
-    Create and release a lockfile.
+    """Create and release a lockfile.
 
     Adapted from https://github.com/cedadev/cmip6-object-store/cmip6_zarr/file_lock.py
     """
@@ -294,8 +293,7 @@ class FileLock:
 
 
 def create_lock(fname: Union[str, Path]):
-    """
-    Check whether lockfile already exists and else creates lockfile.
+    """Check whether lockfile already exists and else creates lockfile.
 
     Parameters
     ----------

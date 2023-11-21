@@ -33,7 +33,7 @@ dependencies:
  - nbsphinx
  - pandoc
  - sphinx
- - sphinx-rtd-theme
+ - sphinx-rtd-theme >=1.0
  # Upstream
  - pip
 # - pip:
