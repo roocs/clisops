@@ -24,6 +24,20 @@ dependencies:
  - shapely >=1.9
  - xarray >=0.21,<2023.3.0 # https://github.com/pydata/xarray/issues/7794
  - xesmf >=0.8.2
+  # Dev tools and testing
+ - black >=23.10.1
+ - bump-my-version
+ - flake8
+ - gitpython>=3.1.30
+ - ipython
+ - isort
+ - jinja2>=2.11
+ - pre-commit>=3.0.0
+ - pytest
+ - pytest-cov
+ - pytest-loguru>=0.2.0
+ - tox>=4.0
+ - watchdog
  # Documentation
  - ipykernel
  - ipython
@@ -35,7 +49,7 @@ dependencies:
  - sphinx
  - sphinx-rtd-theme >=1.0
  # Upstream
- - pip
+# - pip
 # - pip:
 #   - cf-xarray @ git+https://github.com/xarray-contrib/cf-xarray/@main#egg=cf-xarray
 #   - roocs-utils @ git+https://github.com/roocs/roocs-utils.git@master#egg=roocs-utils
