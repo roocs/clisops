@@ -1,10 +1,13 @@
+import warnings
 from datetime import datetime as dt
 from pathlib import Path
 from typing import List, Optional, Union
 
 import xarray as xr
 from loguru import logger
+from packaging.version import Version
 from roocs_utils.exceptions import InvalidParameterValue
+from xarray import __version__ as __xarray_version__
 
 from clisops.core import Grid, Weights
 from clisops.core import regrid as core_regrid
@@ -212,5 +215,12 @@ def regrid(
     | keep_attrs: True
 
     """
+    if Version(__xarray_version__) >= Version("23.3.0"):
+        warnings.warn(
+            "xarray version >= 23.3.0 is not supported for regridding operations "
+            "with cf-time indexed arrays. Please use xarray version < 23.3.0. "
+            "For more information, see: https://github.com/pydata/xarray/issues/7794."
+        )
+
     op = Regrid(**locals())
     return op.process()

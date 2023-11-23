@@ -11,13 +11,15 @@ repos:
     rev: v4.5.0
     hooks:
       - id: trailing-whitespace
-        exclude: setup.cfg
       - id: end-of-file-fixer
-        exclude: setup.cfg
       - id: check-toml
       - id: check-yaml
       - id: debug-statements
       - id: mixed-line-ending
+  - repo: https://github.com/pappasam/toml-sort
+    rev: v0.23.1
+    hooks:
+      - id: toml-sort-fix
   - repo: https://github.com/psf/black-pre-commit-mirror
     rev: 23.11.0
     hooks:
@@ -26,7 +28,7 @@ repos:
     rev: 6.1.0
     hooks:
       - id: flake8
-        args: [ '--config=setup.cfg' ]
+        args: [ '--config=.flake8' ]
   - repo: https://github.com/PyCQA/isort
     rev: 5.12.0
     hooks:
@@ -41,6 +43,11 @@ repos:
     hooks:
       - id: nbstripout
         files: ".ipynb"
+  - repo: https://github.com/keewis/blackdoc
+    rev: v0.3.9
+    hooks:
+      - id: blackdoc
+        additional_dependencies: [ 'black==23.11.0' ]
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.27.1
     hooks:
