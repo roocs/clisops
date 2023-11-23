@@ -9,3 +9,5 @@ from .subset import (
     subset_time_by_components,
     subset_time_by_values,
 )
+
+from .regrid import Grid, Weights, regrid, weights_cache_init, weights_cache_flush

@@ -18,6 +18,14 @@ Core average functionality
    :undoc-members:
    :show-inheritance:
 
+Core regrid functionality
+=========================
+
+.. automodule:: clisops.core.regrid
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 
 Subset operation
 ================
@@ -33,6 +41,15 @@ Average operations
 ==================
 
 .. automodule:: clisops.ops.average
+   :noindex:
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Regrid operation
+=================
+
+.. automodule:: clisops.ops.regrid
    :noindex:
    :members:
    :undoc-members:

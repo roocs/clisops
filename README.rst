@@ -30,6 +30,24 @@ The package provides the following operations:
 * average
 * regrid
 
+Online Demo
+-----------
+
+..
+  todo: Links have to be adjusted to the master or respective branch!
+
+You can try clisops online using Binder (just click on the binder link below),
+or view the notebooks on NBViewer.
+
+.. image:: https://mybinder.org/badge_logo.svg
+   :target: https://mybinder.org/v2/gh/roocs/clisops/master?filepath=notebooks
+   :alt: Binder Launcher
+
+.. image:: https://raw.githubusercontent.com/jupyter/design/master/logos/Badges/nbviewer_badge.svg
+   :target: https://nbviewer.jupyter.org/github/roocs/clisops/tree/master/notebooks/
+   :alt: NBViewer
+   :height: 20
+
 Credits
 -------
 

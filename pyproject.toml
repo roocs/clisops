@@ -48,7 +48,8 @@ dynamic = ["description", "version"]
 dependencies = [
   "bottleneck>=1.3.1",
   # cf-xarray is differently named on conda-forge
-  "cf-xarray>=0.7.0",
+  "cf-xarray>=0.8.6;python_version>='3.9'",
+  "cf-xarray>=0.7.5,<=0.8.0;python_version=='3.8'",
   "cftime>=1.4.1",
   "dask[complete]>=2.6",
   "geopandas>=0.11",
@@ -60,9 +61,11 @@ dependencies = [
   "pooch",
   "pyproj>=3.3.0",
   "requests>=2.0",
+  # roocs_grids is differently named on conda-forge
+  "roocs_grids>=0.1.2",
   "roocs-utils>=0.6.4,<0.7",
   "shapely>=1.9",
-  "xarray>=0.21",
+  "xarray>=0.21,<2023.3.0",
 ]
 
 [project.optional-dependencies]
@@ -70,7 +73,7 @@ dev = [
   # Packaging
   "flit",
   # Dev tools and testing
-  "black>=23.7.0",
+  "black>=23.11.0",
   "bump2version",
   "flake8",
   "gitpython>=3.1.30",
@@ -94,7 +97,7 @@ docs = [
   "sphinx",
   "sphinx-rtd-theme>=1.0",
 ]
-extra = ["xesmf>=0.6.2"]
+extra = ["xesmf>=0.8.2"]
 
 [project.urls]
 "Homepage" = "https://clisops.readthedocs.io/"
@@ -115,6 +118,7 @@ target-version = [
 
 [tool.coverage.run]
 relative_files = true
+include = ["clisops/*"]
 omit = ["*/tests/*.py"]
 
 [tool.flit.sdist]
@@ -157,6 +161,7 @@ profile = "black"
 py_version = 38
 append_only = true
 known_first_party = "clisops,_common"
+skip = ["clisops/core/__init__.py"]
 
 [tool.pytest.ini_options]
 addopts = [
