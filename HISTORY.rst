@@ -1,12 +1,12 @@
 Version History
 ===============
 
-v0.12.0 (unreleased)
+v0.12.0 (2023-11-23)
 --------------------
 
 New Features
 ^^^^^^^^^^^^
-* ``clisops.ops.regrid``, ``clisops.core.regrid``, ``clisops.core.Weights`` and ``clisops.core.Grid`` added (#TBA). Allowing the remapping of geospatial data on various grids by applying the `xESMF <https://pangeo-xesmf.readthedocs.io/en/latest/>`_ regridder.
+* ``clisops.ops.regrid``, ``clisops.core.regrid``, ``clisops.core.Weights`` and ``clisops.core.Grid`` added (#243). Allowing the remapping of geospatial data on various grids by applying the `xESMF <https://pangeo-xesmf.readthedocs.io/en/latest/>`_ regridder.
 
 Bug Fixes
 ^^^^^^^^^
@@ -14,8 +14,8 @@ Bug Fixes
 
 Other Changes
 ^^^^^^^^^^^^^
-* Extending the removal of redundant _FillValue attributes to all data variables and coordinates.
-* Extending the removal of redundant coordinates in the coordinates variable attribute from bounds to all data variables.
+* Extending the removal of redundant _FillValue attributes to all data variables and coordinates (#243).
+* Extending the removal of redundant coordinates in the coordinates variable attribute from bounds to all data variables (#243).
 * GitHub Workflows for upstream dependencies are now examined a schedule or via `workflow_dispatch` (#243).
 * `black` steps are now called `lint` for clarity/inclusiveness of other linting hooks. (#243).
 * pre-commit hooks now include checks for TOML files, and for ReadTheDocs and GitHub Actions configuration files. (#243).
