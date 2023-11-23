@@ -51,11 +51,12 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .pytest_cache
 
 lint: ## check style with flake8
-	flake8 clisops tests
 	black --check clisops tests
+	isort --check-only clisops tests
+	flake8 --config=.flake8 clisops tests
 
 test: ## run tests quickly with the default Python
-	pytest
+	python -m pytest
 
 test-all: ## run tests on every Python version with tox
 	tox
@@ -74,18 +75,18 @@ docs: ## generate Sphinx HTML documentation, including API docs
 servedocs: docs ## compile the docs watching for changes
 	watchmedo shell-command -p '*.md' -c '$(MAKE) -C docs html' -R -D .
 
-release: dist ## package and upload a release
-	flit publish dist/*
-
 dist: clean ## builds source and wheel package
-	flit build
+	python -m flit build
 	ls -l dist
 
+release: dist ## package and upload a release
+	python -m flit publish dist/*
+
 install: clean ## install the package to the active Python's site-packages
-	python -m pip install .
+	python -m flit install
 
 develop: clean ## install the package and development dependencies in editable mode to the active Python's site-packages
-	python -m pip install --no-user --editable ".[dev]"
+	python -m flit install --no-user --symlink
 
-upstream: clean develop ## install the GitHub-based development branches of dependencies in editable mode to the active Python's site-packages
+upstream: develop ## install the GitHub-based development branches of dependencies in editable mode to the active Python's site-packages
 	python -m pip install --no-user --requirement requirements_upstream.txt

@@ -145,6 +145,7 @@ Logging
 .. code-block:: python
 
     from loguru import logger
+
     logger.warning("This a warning message!")
 
 The mechanism for enabling log reporting in scripts/notebooks using ``loguru`` is as follows:
@@ -226,36 +227,40 @@ To run a subset of tests:
 Versioning
 ----------
 
+A reminder for the maintainers on how to bump the version.
+
 In order to update and release the library to PyPI, it's good to use a semantic versioning scheme.
+
 The method we use is as follows::
 
-    major.minor.patch-release
+    major.minor.patch
 
 **Major** releases denote major changes resulting in a stable API;
 
 **Minor** is to be used when adding a module, process or set of components;
 
 **Patch** should be used for bug fixes and optimizations;
+`])
 
-**Release** is a keyword used to specify the degree of production readiness (`beta` [, and optionally, `gamma`])
+Packaging/Deploying
+-------------------
 
-  An increment to the Major or Minor will reset the Release to `beta`. When a build is promoted above `beta` (ie: release-ready), it's a good idea to push this version towards PyPi.
+A reminder for the maintainers on how to deploy. This section is only relevant for maintainers when they are producing a new point release for the package.
 
-Deploying
----------
+#. Create a new branch from `master` (e.g. `prepare-release-v1.2.3`).
+#. Update the `HISTORY.rst` file to change the `unreleased` section to the current date.
+#. Create a pull request from your branch to `master`.
+#. Once the pull request is merged, create a new release on GitHub. On the main branch, run:
 
-A reminder for the maintainers on how to deploy.
-Make sure all your changes are committed (**including an entry in HISTORY.rst**).
-Then run:
+    .. code-block:: shell
 
-.. code-block:: shell
+        $ bump-my-version bump minor # In most cases, we will be releasing a minor version
+        $ git push
+        $ git push --tags
 
-    $ bumpversion <option> # possible options: major / minor / patch / release
-    $ git push
-    $ git push --tags
+    This will trigger the CI to build the package and upload it to TestPyPI. In order to upload to PyPI, this can be done by publishing a new version on GitHub. This will then trigger the workflow to build and upload the package to PyPI.
 
-Packaging
----------
+#. Once the release is published, it will go into a `staging` mode on Github Actions. Admins can then approve the release (an e-mail will be sent) and it will be published on PyPI.
 
 The Manual Approach
 ~~~~~~~~~~~~~~~~~~~
@@ -265,10 +270,10 @@ From the command line in your distribution, simply run the following from the cl
 .. code-block:: shell
 
     # To build the packages (sources and wheel)
-    $ flit build
+    $ python -m flit build
 
     # To upload to PyPI
-    $ flit publish
+    $ python -m flit publish dist/*
 
 The new version based off of the version checked out will now be available via pip ($ pip install clisops).
 
