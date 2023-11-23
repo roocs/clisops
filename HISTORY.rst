@@ -19,6 +19,10 @@ Other Changes
 * GitHub Workflows for upstream dependencies are now examined a schedule or via `workflow_dispatch` (#243).
 * `black` steps are now called `lint` for clarity/inclusiveness of other linting hooks. (#243).
 * pre-commit hooks now include checks for TOML files, and for ReadTheDocs and GitHub Actions configuration files. (#243).
+* pre-commit hooks now include sorting of TOML file sections and running `black` on docstring Python examples. (#306).
+* `clisops` now uses GitHub Actions with environments for handling deployment via Trusted Publishing. (#306).
+* Documentation has been updated to reflect the new GitHub Actions CI/CD workflow. (#306).
+* `bump2version` has been replaced with `bump-my-version` for handling versioning. (#306).
 
 v0.11.0 (2023-08-22)
 --------------------
