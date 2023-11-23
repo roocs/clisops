@@ -240,7 +240,6 @@ The method we use is as follows::
 **Minor** is to be used when adding a module, process or set of components;
 
 **Patch** should be used for bug fixes and optimizations;
-`])
 
 Packaging/Deploying
 -------------------
