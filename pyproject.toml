@@ -65,7 +65,7 @@ dependencies = [
   "roocs-utils>=0.6.4,<0.7",
   "shapely>=1.9",
   # https://github.com/pydata/xarray/issues/7794
-  "xarray>=0.21,<2023.3.0"
+  "xarray>=0.21"
 ]
 
 [project.optional-dependencies]
