@@ -19,31 +19,31 @@ dependencies:
  - poppler >=0.67
  - pyproj >=3.3.0
  - requests >=2.0
- - roocs-grids>=0.1.2
+ - roocs-grids >=0.1.2
  - roocs-utils >=0.6.4,<0.7
  - shapely >=1.9
- - xarray >=0.21,<2023.3.0 # https://github.com/pydata/xarray/issues/7794
+ - xarray >=0.21 # https://github.com/pydata/xarray/issues/7794
  - xesmf >=0.8.2
   # Dev tools and testing
  - black >=23.10.1
  - bump-my-version
  - flake8
- - gitpython>=3.1.30
+ - gitpython >=3.1.30
  - ipython
  - isort
- - jinja2>=2.11
- - pre-commit>=3.0.0
+ - jinja2 >=2.11
+ - pre-commit >=3.0.0
  - pytest
  - pytest-cov
- - pytest-loguru>=0.2.0
- - tox>=4.0
+ - pytest-loguru >=0.2.0
+ - tox >=4.0
  - watchdog
  # Documentation
  - ipykernel
  - ipython
  - ipython_genutils
  - jupyter_client
- - matplotlib
+ - matplotlib >=3.5.2
  - nbsphinx
  - pandoc
  - sphinx
