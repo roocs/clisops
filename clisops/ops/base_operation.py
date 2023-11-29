@@ -91,7 +91,8 @@ class Operation:
                 ds[var].attrs.pop("missing_value", None)
             else:
                 if fval != mval:
-                    raise Exception(
+                    # raise Exception(
+                    logger.warn(
                         f"The defined _FillValue and missing_value for '{var}' are not the same '{fval}' != '{mval}'."
                     )
         return ds
