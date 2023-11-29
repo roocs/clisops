@@ -92,7 +92,7 @@ class Operation:
             else:
                 if fval != mval:
                     # raise Exception(
-                    logger.warn(
+                    logger.warning(
                         f"The defined _FillValue and missing_value for '{var}' are not the same '{fval}' != '{mval}'."
                     )
         return ds
