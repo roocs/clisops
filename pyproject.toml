@@ -64,7 +64,6 @@ dependencies = [
   "roocs_grids>=0.1.2",
   "roocs-utils>=0.6.4,<0.7",
   "shapely>=1.9",
-  # https://github.com/pydata/xarray/issues/7794
   "xarray>=0.21"
 ]
 
@@ -98,7 +97,11 @@ docs = [
   "sphinx",
   "sphinx-rtd-theme>=1.0"
 ]
-extra = ["xesmf>=0.8.2"]
+extra = [
+  "xesmf>=0.8.2",
+  # See: https://github.com/pydata/xarray/issues/7794
+  "xarray>=0.21.0,<2023.3.0"
+]
 
 [project.urls]
 "Homepage" = "https://clisops.readthedocs.io/"

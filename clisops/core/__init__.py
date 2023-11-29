@@ -1,3 +1,5 @@
+"""Core functionality for clisops."""
+
 from .subset import (
     create_mask,
     subset_bbox,
