@@ -309,6 +309,12 @@ CMIP6_STAGGERED_VCOMP = Path(
     "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tauvo/gn/v20190710/tauvo_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc ",
 ).as_posix()
 
+# CMIP6 dataset to test fillvalue issue #308
+CMIP6_FILLVALUE = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/pool/data/CMIP6/data/CMIP6/CMIP/NCAR/CESM2-WACCM/historical/r1i1p1f1/day/tas/gn/v20190227/tas_day_CESM2-WACCM_historical_r1i1p1f1_gn_20000101-20091231.nc",
+).as_posix()
+
 # CORDEX dataset on regional curvilinear grid
 CORDEX_TAS_ONE_TIMESTEP = Path(
     MINI_ESGF_CACHE_DIR,
