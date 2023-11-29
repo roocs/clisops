@@ -1686,7 +1686,10 @@ def test_subset_cmip6_nc_consistent_bounds(cmip5_tas_file, tmpdir):
 
 
 def test_subset_cmip6_issue_308_fillvalue(tmpdir, load_esgf_test_data):
-    """Tests clisops subset function with a time subset and check the metadata"""
+    """Tests clisops subset function with a time subset and check the metadata.
+
+    Test is used for fillvalue issue #308.
+    """
     result = subset(
         ds=CMIP6_FILLVALUE,
         time=time_interval("2000-01-01T00:00:00", "2000-12-31T00:00:00"),
