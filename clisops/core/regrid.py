@@ -37,12 +37,12 @@ except (ModuleNotFoundError, ValueError):
     xe = None
 
 # FIXME: Remove this when xarray addresses https://github.com/pydata/xarray/issues/7794
-XARRAY_MAXIMUM_VERSION = "2023.03.0"
-if Version(__xarray_version__) > Version(XARRAY_MAXIMUM_VERSION):
+XARRAY_INCOMPATIBLE_VERSION = "2023.03.0"
+if Version(__xarray_version__) >= Version(XARRAY_INCOMPATIBLE_VERSION):
     warnings.warn(
-        f"xarray version > {XARRAY_MAXIMUM_VERSION} "
+        f"xarray version >= {XARRAY_INCOMPATIBLE_VERSION} "
         f"is not supported for regridding operations with cf-time indexed arrays. "
-        f"Please use xarray version <= {XARRAY_MAXIMUM_VERSION}. "
+        f"Please use xarray version < {XARRAY_INCOMPATIBLE_VERSION}. "
         "For more information, see: https://github.com/pydata/xarray/issues/7794."
     )
 
