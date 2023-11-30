@@ -1688,7 +1688,9 @@ def test_subset_cmip6_nc_consistent_bounds(cmip5_tas_file, tmpdir):
 def test_subset_cmip6_issue_308_fillvalue(tmpdir, load_esgf_test_data, capsys):
     """Tests clisops subset function with a time subset and check the metadata.
 
-    Test is used for fillvalue issue #308.
+    Notes
+    -----
+    This test is used for fillvalue issues. See: https://github.com/roocs/clisops/issues/308
     """
     from _common import ContextLogger
     from clisops.utils.common import enable_logging
