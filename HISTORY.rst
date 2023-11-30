@@ -6,7 +6,7 @@ v0.12.1 (2023-11-30)
 
 Other Changes
 ^^^^^^^^^^^^^
-* Instead of raising an exception, now aligning _FillValue and missing_value if the deviate from one another (#309).
+* Instead of raising an exception, now aligning _FillValue and missing_value if they deviate from one another (#309).
 
 v0.12.0 (2023-11-23)
 --------------------
