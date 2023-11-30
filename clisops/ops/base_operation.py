@@ -90,10 +90,14 @@ class Operation:
                 ds[var].encoding["missing_value"] = mval
                 ds[var].attrs.pop("missing_value", None)
             else:
+                # Issue 308 - Assert missing_value and _FillValue are the same
                 if fval != mval:
-                    # raise Exception(
+                    ds[var].encoding["_FillValue"] = mval
+                    ds[var].encoding["missing_value"] = mval
+                    ds[var].attrs.pop("missing_value", None)
+                    ds[var].attrs.pop("_FillValue", None)
                     logger.warning(
-                        f"The defined _FillValue and missing_value for '{var}' are not the same '{fval}' != '{mval}'."
+                        f"The defined _FillValue and missing_value for '{var}' are not the same '{fval}' != '{mval}'. Setting '{mval}' for both."
                     )
         return ds
 

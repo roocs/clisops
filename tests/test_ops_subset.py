@@ -1685,20 +1685,33 @@ def test_subset_cmip6_nc_consistent_bounds(cmip5_tas_file, tmpdir):
     assert "coordinates" not in res.time_bnds.encoding
 
 
-def test_subset_cmip6_issue_308_fillvalue(tmpdir, load_esgf_test_data):
+def test_subset_cmip6_issue_308_fillvalue(tmpdir, load_esgf_test_data, capsys):
     """Tests clisops subset function with a time subset and check the metadata.
 
     Test is used for fillvalue issue #308.
     """
-    result = subset(
-        ds=CMIP6_FILLVALUE,
-        time=time_interval("2000-01-01T00:00:00", "2000-12-31T00:00:00"),
-        output_dir=tmpdir,
-        output_type="nc",
-        file_namer="simple",
-    )
-    res = _load_ds(result)
-    # check fill value in bounds
-    assert "_FillValue" not in res.lat_bnds.encoding
-    assert "_FillValue" not in res.lon_bnds.encoding
-    assert "_FillValue" not in res.time_bnds.encoding
+    from _common import ContextLogger
+    from clisops.utils.common import enable_logging
+
+    with ContextLogger():
+        enable_logging()
+        result = subset(
+            ds=CMIP6_FILLVALUE,
+            time=time_interval("2000-01-01T00:00:00", "2000-12-31T00:00:00"),
+            output_dir=tmpdir,
+            output_type="nc",
+            file_namer="simple",
+        )
+        res = _load_ds(result)
+        # check fill value in bounds
+        assert "_FillValue" not in res.lat_bnds.encoding
+        assert "_FillValue" not in res.lon_bnds.encoding
+        assert "_FillValue" not in res.time_bnds.encoding
+        # xarray should set the appropriate dtype
+        assert res.tas.encoding["_FillValue"].dtype == np.float32
+        assert res.tas.encoding["missing_value"].dtype == np.float32
+        captured = capsys.readouterr()
+        assert (
+            "The defined _FillValue and missing_value for 'tas' are not the same '1.0000000200408773e+20' != '1e+20'. Setting '1e+20' for both."
+            in captured.err
+        )
