@@ -6,7 +6,9 @@ v0.12.1 (2023-11-30)
 
 Other Changes
 ^^^^^^^^^^^^^
-* Instead of raising an exception, now aligning _FillValue and missing_value if they deviate from one another (#309).
+* Warnings are now emitted if the user attempts to run the regridding utilities with a version of `xarray` that is not compatible with `cf-xarray`. (#310).
+* Dependency pins now constrain the `xarray` version when installing with `$ pip install ".[extra]"`. (#310).
+* Instead of raising an exception, now aligning _FillValue and missing_value if they deviate from one another. (#309).
 
 v0.12.0 (2023-11-23)
 --------------------
