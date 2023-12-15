@@ -755,6 +755,10 @@ class Grid:
         #        lon_min - approx_xres / 2.0,
         #        lon_max + approx_xres / 2.0,
         #    )
+        elif np.isclose(lon_min, lon_max):
+            raise Exception(
+                "Remapping zonal mean datasets or generally datasets without meridional extent is not supported."
+            )
         else:
             raise Exception(
                 "The longitude values have to be within the range (-180, 360)."

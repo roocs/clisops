@@ -12,6 +12,7 @@ from roocs_grids import get_grid_file
 import clisops.utils.dataset_utils as clidu
 from _common import (
     CMIP6_ATM_VERT_ONE_TIMESTEP,
+    CMIP6_ATM_VERT_ONE_TIMESTEP_ZONMEAN,
     CMIP6_GFDL_EXTENT,
     CMIP6_OCE_HALO_CNRM,
     CMIP6_STAGGERED_UCOMP,
@@ -20,7 +21,10 @@ from _common import (
     CMIP6_TAS_PRECISION_B,
     CMIP6_TOS_ONE_TIME_STEP,
     CMIP6_UNSTR_ICON_A,
+    CMIP6_ZONMEAN_A,
+    CMIP6_ZONMEAN_B,
     CORDEX_TAS_NO_BOUNDS,
+    CORDEX_TAS_ONE_TIMESTEP,
 )
 from clisops import CONFIG
 from clisops.core.regrid import (
@@ -120,6 +124,34 @@ def test_grid_init_ds_tos_curvilinear(load_esgf_test_data):
     # assert self.mask
 
 
+def test_grid_init_ds_tas_cordex(load_esgf_test_data):
+    ds = xr.open_dataset(CORDEX_TAS_ONE_TIMESTEP, use_cftime=True)
+    grid = Grid(ds=ds)
+    print(ds)
+
+    assert grid.format == "CF"
+    assert grid.source == "Dataset"
+    assert grid.lat == "lat"
+    assert grid.lon == "lon"
+    assert grid.type == "curvilinear"
+    assert grid.extent == "regional"
+    assert grid.lat_bnds == "lat_vertices"
+    assert grid.lon_bnds == "lon_vertices"
+    assert not grid.contains_collapsed_cells
+    assert not grid.contains_duplicated_cells
+    assert grid.nlat == 201
+    assert grid.nlon == 225
+    assert grid.ncells == 45225
+
+    ds = ds.drop(["lat", "lon", "lat_vertices", "lon_vertices"])
+    print(ds)
+    with pytest.raises(
+        Exception,
+        match="The grid format is not supported.",
+    ):
+        Grid(ds=ds)
+
+
 def test_grid_init_ds_tas_unstructured(load_esgf_test_data):
     ds = xr.open_dataset(CMIP6_UNSTR_ICON_A, use_cftime=True)
     grid = Grid(ds=ds)
@@ -139,6 +171,25 @@ def test_grid_init_ds_tas_unstructured(load_esgf_test_data):
 
     # not implemented yet
     # assert self.mask
+
+
+def test_grid_init_ds_zonmean(load_esgf_test_data):
+    dsA = xr.open_dataset(CMIP6_ZONMEAN_A, use_cftime=True)
+    dsB = xr.open_dataset(CMIP6_ATM_VERT_ONE_TIMESTEP_ZONMEAN, use_cftime=True)
+
+    # Zonal mean dataset without "lon" dimension
+    with pytest.raises(
+        Exception,
+        match="The grid format is not supported.",
+    ):
+        Grid(ds=dsA)
+
+    # Zonal mean dataset with "lon" singleton dimension
+    with pytest.raises(
+        Exception,
+        match="Remapping zonal mean datasets or generally datasets without meridional extent is not supported.",
+    ):
+        Grid(ds=dsB)
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)

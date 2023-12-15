@@ -200,7 +200,6 @@ def test_regrid_halo_simple(load_esgf_test_data, tmp_path):
     assert ds_out.attrs["regrid_operation"] == "conservative_404x802_36x72"
 
 
-@pytest.mark.xfail
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_halo_adv(load_esgf_test_data, tmp_path):
     "Test regridding of dataset with a more complex halo."
@@ -217,7 +216,6 @@ def test_regrid_halo_adv(load_esgf_test_data, tmp_path):
         output_type="xarray",
     )[0]
 
-    # After the halo can be properly removed (maybe 1049x1440), the test can be updated
     assert ds_out.attrs["regrid_operation"] == "conservative_1050x1442_36x72"
 
 
