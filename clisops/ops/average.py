@@ -71,8 +71,8 @@ def average_over_dims(
     Returns
     -------
     List[Union[xr.Dataset, str]]
-    A list of the outputs in the format selected; str corresponds to file paths if the
-    output format selected is a file.
+        A list of the outputs in the format selected; str corresponds to file paths if the
+        output format selected is a file.
 
     Examples
     --------
@@ -133,7 +133,7 @@ def average_shape(
     ds : Union[xr.Dataset, str]
         Xarray dataset.
     shape : Union[str, Path, gpd.GeoDataFrame]
-        Path to shape file, or directly a geodataframe. Supports formats compatible with geopandas.
+        Path to shape file, or directly a GeoDataFrame. Supports formats compatible with geopandas.
         Will be converted to EPSG:4326 if needed.
 
     variable : Optional[Union[str, Sequence[str], None]]
@@ -146,8 +146,8 @@ def average_shape(
     Returns
     -------
     List[Union[xr.Dataset, str]]
-    A list of the outputs in the format selected; str corresponds to file paths if the
-    output format selected is a file.
+        A list of the outputs in the format selected; str corresponds to file paths if the
+        output format selected is a file.
 
     Examples
     --------

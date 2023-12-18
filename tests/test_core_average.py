@@ -15,7 +15,7 @@ from clisops.utils import get_file
 try:
     import xesmf
 
-    if Version(xesmf.__version__) < Version("0.6.2"):
+    if Version(xesmf.__version__) < Version("0.8.2"):
         raise ImportError()
 except ImportError:
     xesmf = None

@@ -25,9 +25,11 @@ from clisops import __version__ as __clisops_version__
 from clisops.utils.common import check_dir, require_module
 from clisops.utils.output_utils import FileLock, create_lock
 
+from . import XESMF_MINIMUM_VERSION
+
 # Try importing xesmf and set to None if not found at correct version
 # If set to None, the `require_module` decorator will throw an exception
-XESMF_MINIMUM_VERSION = "0.7.0"
+
 try:
     import xesmf as xe
 

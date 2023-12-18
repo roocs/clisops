@@ -38,7 +38,7 @@ try:
     import xesmf
 
     if Version(xesmf.__version__) < Version(XESMF_MINIMUM_VERSION):
-        raise ImportError
+        raise ImportError("xESMF version is too old")
 except ImportError:
     xesmf = None
 
