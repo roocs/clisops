@@ -245,11 +245,9 @@ def test_average_multiple_shapes_xarray():
 
 
 def test_average_shape_no_shape():
+    # Run without JSON file
     with pytest.raises(InvalidParameterValue) as exc:
-        # Fetch local JSON file
-        meridian_geojson = os.path.join(TESTS_DATA, "meridian.json")
-
-        result = average_shape(
+        average_shape(
             ds=CMIP6_TAS_ONE_TIME_STEP,
             shape=None,  # noqa
             variable=None,
