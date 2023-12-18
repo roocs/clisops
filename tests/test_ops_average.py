@@ -229,6 +229,7 @@ def test_aux_variables():
     assert "do_i_get_written" in result[0].variables
 
 
+@pytest.mark.skipif(xesmf is None, reason="xesmf >= 0.6.2 is needed for average_shape.")
 def test_average_shape_xarray():
     # Fetch local JSON file
     meridian_geojson = os.path.join(TESTS_DATA, "meridian.json")
