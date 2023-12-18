@@ -102,7 +102,7 @@ class AverageShape(Operation):
             )
 
     def _get_file_namer(self):
-        extra = f"_avg-{'shape'}"
+        extra = "_avg-shape"
 
         namer = get_file_namer(self._file_namer)(extra=extra)
 
