@@ -4,8 +4,14 @@ import pytest
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
 
-from _common import C3S_CORDEX_EUR_ZG500, CMIP5_TAS, CMIP6_SICONC_DAY, CMIP6_TAS_ONE_TIME_STEP, TESTS_DATA
-from clisops.ops.average import average_over_dims, average_time, average_shape
+from _common import (
+    C3S_CORDEX_EUR_ZG500,
+    CMIP5_TAS,
+    CMIP6_SICONC_DAY,
+    CMIP6_TAS_ONE_TIME_STEP,
+    TESTS_DATA,
+)
+from clisops.ops.average import average_over_dims, average_shape, average_time
 
 
 def _check_output_nc(result, fname="output_001.nc"):
@@ -222,9 +228,9 @@ def test_average_shape_xarray():
         ds=CMIP6_TAS_ONE_TIME_STEP,
         shape=meridian_geojson,
         variable=None,
-        output_type='xarray'
+        output_type="xarray",
     )
-    assert 'geom' in result[0]
+    assert "geom" in result[0]
 
 
 def test_average_multiple_shapes_xarray():
@@ -232,9 +238,7 @@ def test_average_multiple_shapes_xarray():
     multi_regions_geojson = os.path.join(TESTS_DATA, "multi_regions.json")
 
     result = average_shape(
-        CMIP6_TAS_ONE_TIME_STEP,
-        multi_regions_geojson,
-        output_type='xarray'
+        CMIP6_TAS_ONE_TIME_STEP, multi_regions_geojson, output_type="xarray"
     )
 
     assert result[0].geom.size > int(1)
@@ -247,9 +251,9 @@ def test_average_shape_no_shape():
 
         result = average_shape(
             ds=CMIP6_TAS_ONE_TIME_STEP,
-            shape=None, # noqa
+            shape=None,  # noqa
             variable=None,
-            output_type='xarray'
+            output_type="xarray",
         )
     assert str(exc.value) == "At least one area for averaging must be provided"
 
@@ -265,7 +269,10 @@ def test_average_shape_nc(tmpdir):
         output_type="netcdf",
         file_namer="standard",
     )
-    _check_output_nc(result, fname="tas_Amon_FGOALS-g3_historical_r1i1p1f1_gn_18500116-18500116_avg-shape.nc")
+    _check_output_nc(
+        result,
+        fname="tas_Amon_FGOALS-g3_historical_r1i1p1f1_gn_18500116-18500116_avg-shape.nc",
+    )
 
 
 def test_average_over_years():

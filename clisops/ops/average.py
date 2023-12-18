@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import List, Optional, Sequence, Tuple, Union
 
+import geopandas as gpd
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.parameter.dimension_parameter import DimensionParameter
@@ -9,7 +10,6 @@ from roocs_utils.xarray_utils.xarray_utils import convert_coord_to_axis
 from clisops.core import average
 from clisops.ops.base_operation import Operation
 from clisops.utils.file_namers import get_file_namer
-import geopandas as gpd
 
 __all__ = ["average_over_dims", "average_time", "average_shape"]
 
