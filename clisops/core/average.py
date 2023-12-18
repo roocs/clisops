@@ -78,7 +78,7 @@ def average_shape(
     try:
         from xesmf import SpatialAverager
     except ImportError:
-        raise ValueError("Package xesmf >= 0.5.0 is required to use average_shape")
+        raise ValueError("Package xesmf >= 0.6.2 is required to use average_shape")
 
     if isinstance(ds, xr.DataArray):
         warnings.warn(

@@ -2,6 +2,7 @@ import os
 
 import pytest
 import xarray as xr
+from packaging.version import Version
 from roocs_utils.exceptions import InvalidParameterValue
 
 from _common import (
@@ -12,6 +13,14 @@ from _common import (
     TESTS_DATA,
 )
 from clisops.ops.average import average_over_dims, average_shape, average_time
+
+try:
+    import xesmf
+
+    if Version(xesmf.__version__) < Version("0.6.2"):
+        raise ImportError()
+except ImportError:
+    xesmf = None
 
 
 def _check_output_nc(result, fname="output_001.nc"):
@@ -233,6 +242,7 @@ def test_average_shape_xarray():
     assert "geom" in result[0]
 
 
+@pytest.mark.skipif(xesmf is None, reason="xesmf >= 0.6.2 is needed for average_shape.")
 def test_average_multiple_shapes_xarray():
     # Fetch local JSON file
     multi_regions_geojson = os.path.join(TESTS_DATA, "multi_regions.json")
@@ -244,6 +254,7 @@ def test_average_multiple_shapes_xarray():
     assert result[0].geom.size > int(1)
 
 
+@pytest.mark.skipif(xesmf is None, reason="xesmf >= 0.6.2 is needed for average_shape.")
 def test_average_shape_no_shape():
     # Run without JSON file
     with pytest.raises(InvalidParameterValue) as exc:
@@ -256,6 +267,7 @@ def test_average_shape_no_shape():
     assert str(exc.value) == "At least one area for averaging must be provided"
 
 
+@pytest.mark.skipif(xesmf is None, reason="xesmf >= 0.6.2 is needed for average_shape.")
 def test_average_shape_nc(tmpdir):
     # Fetch local JSON file
     meridian_geojson = os.path.join(TESTS_DATA, "meridian.json")
