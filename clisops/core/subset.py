@@ -510,6 +510,7 @@ def create_mask(
 
         import geopandas as gpd
         from clisops.core.subset import create_mask
+
         ds = xr.open_dataset(path_to_tasmin_file)
         polys = gpd.read_file(path_to_multi_shape_file)
 
@@ -518,10 +519,10 @@ def create_mask(
         ds = ds.assign_coords(regions=mask)
 
         # Operations can be applied to each region with `groupby`. Ex:
-        ds = ds.groupby('regions').mean()
+        ds = ds.groupby("regions").mean()
 
         # Extra step to retrieve the names of those polygons stored in another column (here "id")
-        region_names = xr.DataArray(polys.id, dims=('regions',))
+        region_names = xr.DataArray(polys.id, dims=("regions",))
         ds = ds.assign_coords(regions_names=region_names)
     """
     if check_overlap:
@@ -878,9 +879,10 @@ def create_weight_masks(
     >>> from clisops.core.subset import create_weight_masks  # doctest: +SKIP
     >>> ds = xr.open_dataset(path_to_tasmin_file)  # doctest: +SKIP
     >>> polys = gpd.read_file(path_to_multi_shape_file)  # doctest: +SKIP
-    ...
     # Get a weight mask for each polygon in the shape file
-    >>> mask = create_weight_masks(x_dim=ds.lon, y_dim=ds.lat, poly=polys)  # doctest: +SKIP
+    >>> mask = create_weight_masks(
+    ...     x_dim=ds.lon, y_dim=ds.lat, poly=polys
+    ... )  # doctest: +SKIP
     """
     try:
         from xesmf import SpatialAverager
@@ -988,13 +990,16 @@ def subset_shape(
 
         import xarray as xr
         from clisops.core.subset import subset_shape
+
         pr = xr.open_dataset(path_to_pr_file).pr
 
         # Subset data array by shape
         prSub = subset_shape(pr, shape=path_to_shape_file)
 
         # Subset data array by shape and single year
-        prSub = subset_shape(pr, shape=path_to_shape_file, start_date='1990-01-01', end_date='1990-12-31')
+        prSub = subset_shape(
+            pr, shape=path_to_shape_file, start_date="1990-01-01", end_date="1990-12-31"
+        )
 
         # Subset multiple variables in a single dataset
         ds = xr.open_mfdataset([path_to_tasmin_file, path_to_tasmax_file])
@@ -1504,7 +1509,7 @@ def subset_gridpoint(
         ds = xr.open_dataset(path_to_pr_file)
 
         # Subset lat lon point
-        prSub = subset_gridpoint(ds.pr, lon=-75,lat=45)
+        prSub = subset_gridpoint(ds.pr, lon=-75, lat=45)
 
         # Subset multiple variables in a single dataset
         ds = xr.open_mfdataset([path_to_tasmax_file, path_to_tasmin_file])
@@ -1612,20 +1617,20 @@ def subset_time(
         ds = xr.open_dataset(path_to_pr_file)
 
         # Subset complete years
-        prSub = subset_time(ds.pr,start_date='1990',end_date='1999')
+        prSub = subset_time(ds.pr, start_date="1990", end_date="1999")
 
         # Subset single complete year
-        prSub = subset_time(ds.pr,start_date='1990',end_date='1990')
+        prSub = subset_time(ds.pr, start_date="1990", end_date="1990")
 
         # Subset multiple variables in a single dataset
         ds = xr.open_mfdataset([path_to_tasmax_file, path_to_tasmin_file])
-        dsSub = subset_time(ds,start_date='1990',end_date='1999')
+        dsSub = subset_time(ds, start_date="1990", end_date="1999")
 
         # Subset with year-month precision - Example subset 1990-03-01 to 1999-08-31 inclusively
-        txSub = subset_time(ds.tasmax,start_date='1990-03',end_date='1999-08')
+        txSub = subset_time(ds.tasmax, start_date="1990-03", end_date="1999-08")
 
         # Subset with specific start_dates and end_dates
-        tnSub = subset_time(ds.tasmin,start_date='1990-03-13',end_date='1990-08-17')
+        tnSub = subset_time(ds.tasmin, start_date="1990-03-13", end_date="1990-08-17")
 
     Notes
     -----
@@ -1762,14 +1767,14 @@ def subset_level(
         ds = xr.open_dataset(path_to_pr_file)
 
         # Subset complete levels
-        prSub = subset_level(ds.pr,first_level=0,last_level=30)
+        prSub = subset_level(ds.pr, first_level=0, last_level=30)
 
         # Subset single level
-        prSub = subset_level(ds.pr,first_level=1000,last_level=1000)
+        prSub = subset_level(ds.pr, first_level=1000, last_level=1000)
 
         # Subset multiple variables in a single dataset
         ds = xr.open_mfdataset([path_to_tasmax_file, path_to_tasmin_file])
-        dsSub = subset_time(ds,first_level=1000.0,last_level=850.0)
+        dsSub = subset_time(ds, first_level=1000.0, last_level=850.0)
 
     Notes
     -----
@@ -1817,7 +1822,7 @@ def subset_level_by_values(
         ds = xr.open_dataset(path_to_pr_file)
 
         # Subset a selection of levels
-        levels = [1000., 850., 250., 100.]
+        levels = [1000.0, 850.0, 250.0, 100.0]
         prSub = subset_level_by_values(ds.pr, level_values=levels)
 
     Notes

@@ -12,7 +12,7 @@ authors = [
 ]
 maintainers = [
   {name = "Carsten Ehbrecht", email = "ehbrecht@dkrz.de"},
-  {name = "Trevor James Smith", email = "smith.trevorj@ouranos.ca"},
+  {name = "Trevor James Smith", email = "smith.trevorj@ouranos.ca"}
 ]
 readme = {file = "README.rst", content-type = "text/x-rst"}
 requires-python = ">=3.8.0"
@@ -26,11 +26,10 @@ classifiers = [
   "Intended Audience :: Science/Research",
   "License :: OSI Approved :: BSD License",
   "Natural Language :: English",
-  "Operating System :: Microsoft :: Windows",
-  "Operating System :: MacOS :: MacOS X",
-  "Operating System :: POSIX :: Linux",
+  "Operating System :: OS Independent",
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
@@ -48,7 +47,8 @@ dynamic = ["description", "version"]
 dependencies = [
   "bottleneck>=1.3.1",
   # cf-xarray is differently named on conda-forge
-  "cf-xarray>=0.7.0",
+  "cf-xarray>=0.8.6;python_version>='3.9'",
+  "cf-xarray>=0.7.5,<=0.8.0;python_version=='3.8'",
   "cftime>=1.4.1",
   "dask[complete]>=2.6",
   "geopandas>=0.11",
@@ -60,9 +60,11 @@ dependencies = [
   "pooch",
   "pyproj>=3.3.0",
   "requests>=2.0",
+  # roocs_grids is differently named on conda-forge
+  "roocs_grids>=0.1.2",
   "roocs-utils>=0.6.4,<0.7",
   "shapely>=1.9",
-  "xarray>=0.21",
+  "xarray>=0.21"
 ]
 
 [project.optional-dependencies]
@@ -70,18 +72,19 @@ dev = [
   # Packaging
   "flit",
   # Dev tools and testing
-  "black>=23.7.0",
-  "bump2version",
+  "black>=23.11.0",
+  "bump-my-version>=0.1.2",
   "flake8",
   "gitpython>=3.1.30",
   "ipython",
+  "isort",
   "jinja2>=2.11",
   "pre-commit>=3.0.0",
   "pytest",
   "pytest-cov",
   "pytest-loguru>=0.2.0",
   "tox>=4.0",
-  "watchdog",
+  "watchdog"
 ]
 docs = [
   "ipykernel",
@@ -92,9 +95,13 @@ docs = [
   "nbconvert",
   "nbsphinx",
   "sphinx",
-  "sphinx-rtd-theme>=1.0",
+  "sphinx-rtd-theme>=1.0"
 ]
-extra = ["xesmf>=0.6.2"]
+extra = [
+  "xesmf>=0.8.2",
+  # See: https://github.com/pydata/xarray/issues/7794
+  "xarray>=0.21.0,<2023.03.0"
+]
 
 [project.urls]
 "Homepage" = "https://clisops.readthedocs.io/"
@@ -113,8 +120,25 @@ target-version = [
   "py311"
 ]
 
+[tool.bumpversion]
+current_version = "0.12.1"
+commit = true
+tag = true
+allow_dirty = false
+
+[[tool.bumpversion.files]]
+filename = "clisops/__version__.py"
+search = "__version__ = \"{current_version}\""
+replace = "__version__ = \"{new_version}\""
+
+[[tool.bumpversion.files]]
+filename = "docs/conf.py"
+search = "version = \"{current_version}\""
+replace = "version = \"{new_version}\""
+
 [tool.coverage.run]
 relative_files = true
+include = ["clisops/*"]
 omit = ["*/tests/*.py"]
 
 [tool.flit.sdist]
@@ -138,7 +162,7 @@ include = [
   "tests/*.py",
   "tests/data/*.json",
   "tests/data/*.nc",
-  "tox.ini",
+  "tox.ini"
 ]
 exclude = [
   "**/*.py[co]",
@@ -157,14 +181,15 @@ profile = "black"
 py_version = 38
 append_only = true
 known_first_party = "clisops,_common"
+skip = ["clisops/core/__init__.py"]
 
 [tool.pytest.ini_options]
 addopts = [
   "--verbose",
-  "--color=yes",
+  "--color=yes"
 ]
 filterwarnings = ["ignore::UserWarning"]
 markers = [
-	"online: mark test to need internet connection",
-	"slow: mark test to be slow"
+  "online: mark test to need internet connection",
+  "slow: mark test to be slow"
 ]

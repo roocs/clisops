@@ -1,5 +1,4 @@
-# conda env create -f environment.yml
-name: clisops-docs
+name: clisops
 channels:
  - conda-forge
 dependencies:
@@ -20,26 +19,19 @@ dependencies:
  - poppler >=0.67
  - pyproj >=3.3.0
  - requests >=2.0
- - roocs-grids >=0.1.2
+ - roocs-grids>=0.1.2
  - roocs-utils >=0.6.4,<0.7
  - shapely >=1.9
  - xarray >=0.21,<2023.3.0 # https://github.com/pydata/xarray/issues/7794
  - xesmf >=0.8.2
- # Documentation
- - cartopy >=0.20.2
- - gitpython
- - ipykernel
- - ipython
- - ipython_genutils
- - jupyter_client
- - matplotlib >=3.5.2
- - nbsphinx
- - pandoc
- - sphinx
- - sphinx-rtd-theme >=1.0
+ - cartopy>=0.20.2
+ - jupyterlab
+ - GitPython
+ - matplotlib>=3.5.2
  # Upstream
  - pip
  - pip:
    - psy-maps
+   - clisops
 #   - cf-xarray @ git+https://github.com/xarray-contrib/cf-xarray/@main#egg=cf-xarray
 #   - roocs-utils @ git+https://github.com/roocs/roocs-utils.git@master#egg=roocs-utils

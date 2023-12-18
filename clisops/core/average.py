@@ -173,7 +173,9 @@ def average_over_dims(
         pr = xr.open_dataset(path_to_pr_file).pr
 
         # Average data array over latitude and longitude
-        prAvg = average_over_dims(pr, dims=['latitude', 'longitude'], ignore_undetected_dims=True)
+        prAvg = average_over_dims(
+            pr, dims=["latitude", "longitude"], ignore_undetected_dims=True
+        )
     """
 
     if not dims:
@@ -261,7 +263,7 @@ def average_time(
         pr = xr.open_dataset(path_to_pr_file).pr
 
         # Average data array over each month
-        prAvg = average_time(pr, freq='month')
+        prAvg = average_time(pr, freq="month")
     """
 
     if not freq:
