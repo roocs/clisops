@@ -13,5 +13,3 @@ from .subset import (
 )
 
 from .regrid import Grid, Weights, regrid, weights_cache_init, weights_cache_flush
-
-XESMF_MINIMUM_VERSION = "0.8.2"

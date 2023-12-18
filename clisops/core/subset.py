@@ -26,7 +26,7 @@ from xarray.core.utils import get_temp_dimname
 
 from clisops.utils.dataset_utils import adjust_date_to_calendar
 
-from . import XESMF_MINIMUM_VERSION
+from .regrid import XESMF_MINIMUM_VERSION
 
 __all__ = [
     "create_mask",
