@@ -704,6 +704,20 @@ class Grid:
         yfirst = float(self.ds[self.lat].min())
         ylast = float(self.ds[self.lat].max())
 
+        # Perform roll if necessary
+        if xfirst < 0:
+            self.ds, low, high = clidu.cf_convert_between_lon_frames(
+                self.ds, [-180.0, 180.0]
+            )
+        else:
+            self.ds, low, high = clidu.cf_convert_between_lon_frames(
+                self.ds, [0.0, 360.0]
+            )
+
+        # Determine min/max lon/lat values
+        xfirst = float(self.ds[self.lon].min())
+        xlast = float(self.ds[self.lon].max())
+
         # Approximate the grid resolution
         if self.ds[self.lon].ndim == 2 and self.ds[self.lat].ndim == 2:
             xsize = self.nlon
