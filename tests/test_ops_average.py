@@ -12,15 +12,18 @@ from _common import (
     CMIP6_TAS_ONE_TIME_STEP,
     TESTS_DATA,
 )
+from clisops.core.average import XESMF_MINIMUM_VERSION  # noqa
 from clisops.ops.average import average_over_dims, average_shape, average_time
 
 try:
     import xesmf
 
-    if Version(xesmf.__version__) < Version("0.6.2"):
-        raise ImportError()
+    if Version(xesmf.__version__) < Version(XESMF_MINIMUM_VERSION):
+        raise ImportError("xesmf version is too old")
 except ImportError:
     xesmf = None
+
+XESMF_IMPORT_MESSAGE = f"xesmf >= {XESMF_MINIMUM_VERSION} is needed for average_shape"
 
 
 def _check_output_nc(result, fname="output_001.nc"):
@@ -229,7 +232,7 @@ def test_aux_variables():
     assert "do_i_get_written" in result[0].variables
 
 
-@pytest.mark.skipif(xesmf is None, reason="xesmf >= 0.6.2 is needed for average_shape.")
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MESSAGE)
 def test_average_shape_xarray():
     # Fetch local JSON file
     meridian_geojson = os.path.join(TESTS_DATA, "meridian.json")
@@ -243,7 +246,7 @@ def test_average_shape_xarray():
     assert "geom" in result[0]
 
 
-@pytest.mark.skipif(xesmf is None, reason="xesmf >= 0.6.2 is needed for average_shape.")
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MESSAGE)
 def test_average_multiple_shapes_xarray():
     # Fetch local JSON file
     multi_regions_geojson = os.path.join(TESTS_DATA, "multi_regions.json")
@@ -255,7 +258,7 @@ def test_average_multiple_shapes_xarray():
     assert result[0].geom.size > int(1)
 
 
-@pytest.mark.skipif(xesmf is None, reason="xesmf >= 0.6.2 is needed for average_shape.")
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MESSAGE)
 def test_average_shape_no_shape():
     # Run without JSON file
     with pytest.raises(InvalidParameterValue) as exc:
@@ -268,7 +271,7 @@ def test_average_shape_no_shape():
     assert str(exc.value) == "At least one area for averaging must be provided"
 
 
-@pytest.mark.skipif(xesmf is None, reason="xesmf >= 0.6.2 is needed for average_shape.")
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MESSAGE)
 def test_average_shape_nc(tmpdir):
     # Fetch local JSON file
     meridian_geojson = os.path.join(TESTS_DATA, "meridian.json")
