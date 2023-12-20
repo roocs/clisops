@@ -2,10 +2,28 @@ import os
 
 import pytest
 import xarray as xr
+from packaging.version import Version
 from roocs_utils.exceptions import InvalidParameterValue
 
-from _common import C3S_CORDEX_EUR_ZG500, CMIP5_TAS, CMIP6_SICONC_DAY
-from clisops.ops.average import average_over_dims, average_time
+from _common import (
+    C3S_CORDEX_EUR_ZG500,
+    CMIP5_TAS,
+    CMIP6_SICONC_DAY,
+    CMIP6_TAS_ONE_TIME_STEP,
+    TESTS_DATA,
+)
+from clisops.core.average import XESMF_MINIMUM_VERSION  # noqa
+from clisops.ops.average import average_over_dims, average_shape, average_time
+
+try:
+    import xesmf
+
+    if Version(xesmf.__version__) < Version(XESMF_MINIMUM_VERSION):
+        raise ImportError("xesmf version is too old")
+except ImportError:
+    xesmf = None
+
+XESMF_IMPORT_MESSAGE = f"xesmf >= {XESMF_MINIMUM_VERSION} is needed for average_shape"
 
 
 def _check_output_nc(result, fname="output_001.nc"):
@@ -212,6 +230,63 @@ def test_aux_variables():
     )
 
     assert "do_i_get_written" in result[0].variables
+
+
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MESSAGE)
+def test_average_shape_xarray():
+    # Fetch local JSON file
+    meridian_geojson = os.path.join(TESTS_DATA, "meridian.json")
+
+    result = average_shape(
+        ds=CMIP6_TAS_ONE_TIME_STEP,
+        shape=meridian_geojson,
+        variable=None,
+        output_type="xarray",
+    )
+    assert "geom" in result[0]
+
+
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MESSAGE)
+def test_average_multiple_shapes_xarray():
+    # Fetch local JSON file
+    multi_regions_geojson = os.path.join(TESTS_DATA, "multi_regions.json")
+
+    result = average_shape(
+        CMIP6_TAS_ONE_TIME_STEP, multi_regions_geojson, output_type="xarray"
+    )
+
+    assert result[0].geom.size > int(1)
+
+
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MESSAGE)
+def test_average_shape_no_shape():
+    # Run without JSON file
+    with pytest.raises(InvalidParameterValue) as exc:
+        average_shape(
+            ds=CMIP6_TAS_ONE_TIME_STEP,
+            shape=None,  # noqa
+            variable=None,
+            output_type="xarray",
+        )
+    assert str(exc.value) == "At least one area for averaging must be provided"
+
+
+@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MESSAGE)
+def test_average_shape_nc(tmpdir):
+    # Fetch local JSON file
+    meridian_geojson = os.path.join(TESTS_DATA, "meridian.json")
+    result = average_shape(
+        ds=CMIP6_TAS_ONE_TIME_STEP,
+        shape=meridian_geojson,
+        variable=None,
+        output_dir=tmpdir,
+        output_type="netcdf",
+        file_namer="standard",
+    )
+    _check_output_nc(
+        result,
+        fname="tas_Amon_FGOALS-g3_historical_r1i1p1f1_gn_18500116-18500116_avg-shape.nc",
+    )
 
 
 def test_average_over_years():

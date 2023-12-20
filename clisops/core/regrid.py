@@ -27,7 +27,7 @@ from clisops.utils.output_utils import FileLock, create_lock
 
 # Try importing xesmf and set to None if not found at correct version
 # If set to None, the `require_module` decorator will throw an exception
-XESMF_MINIMUM_VERSION = "0.7.0"
+XESMF_MINIMUM_VERSION = "0.8.2"
 try:
     import xesmf as xe
 

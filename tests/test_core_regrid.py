@@ -44,7 +44,7 @@ try:
     import xesmf
 
     if Version(xesmf.__version__) < Version(XESMF_MINIMUM_VERSION):
-        raise ImportError
+        raise ImportError("xesmf version is too old")
 except ImportError:
     xesmf = None
 
@@ -58,7 +58,7 @@ except ImportError:
 
 
 XESMF_IMPORT_MSG = (
-    f"xESMF >= {XESMF_MINIMUM_VERSION} is needed for regridding functionalities."
+    f"xesmf >= {XESMF_MINIMUM_VERSION} is needed for regridding functionalities"
 )
 
 

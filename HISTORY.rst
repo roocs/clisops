@@ -4,6 +4,10 @@ Version History
 v0.12.2 (unreleased)
 --------------------
 
+New Features
+^^^^^^^^^^^^
+* ``clisops.ops.average.average_shape`` added (#312). Exposing average_shape from clisops.core to clisops.ops.
+
 Bug Fixes
 ^^^^^^^^^
 * Now also applying fix for datasets with shifted longitude frames (#218) for the regrid operator (#313).

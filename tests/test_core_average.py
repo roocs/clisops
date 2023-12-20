@@ -10,18 +10,22 @@ from roocs_utils.xarray_utils import xarray_utils as xu
 
 from _common import CMIP5_RH, CMIP6_SICONC_DAY, TESTS_DATA
 from clisops.core import average
+from clisops.core.regrid import XESMF_MINIMUM_VERSION
 from clisops.utils import get_file
 
 try:
     import xesmf
 
-    if Version(xesmf.__version__) < Version("0.6.2"):
+    if Version(xesmf.__version__) < Version(XESMF_MINIMUM_VERSION):
         raise ImportError()
 except ImportError:
     xesmf = None
 
 
-@pytest.mark.skipif(xesmf is None, reason="xESMF >= 0.6.2 is needed for average_shape.")
+@pytest.mark.skipif(
+    xesmf is None,
+    reason=f"xesmf >= {XESMF_MINIMUM_VERSION} is needed for average_shape",
+)
 class TestAverageShape:
     # Fetch remote netcdf files
     nc_file = get_file("cmip5/tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc")

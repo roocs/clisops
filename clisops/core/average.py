@@ -16,6 +16,7 @@ from roocs_utils.xarray_utils.xarray_utils import (
 
 from clisops.utils.time_utils import create_time_bounds
 
+from .regrid import XESMF_MINIMUM_VERSION
 from .subset import shape_bbox_indexer
 
 __all__ = ["average_over_dims", "average_shape", "average_time"]
@@ -31,14 +32,14 @@ def average_shape(
 ) -> Union[xr.DataArray, xr.Dataset]:
     """Average a DataArray or Dataset spatially using vector shapes.
 
-    Return a DataArray or Dataset averaged over each Polygon given. Requires xESMF >= 0.5.0.
+    Return a DataArray or Dataset averaged over each Polygon given. Requires xESMF.
 
     Parameters
     ----------
     ds : xarray.Dataset
         Input values, coordinate attributes must be CF-compliant.
     shape : Union[str, Path, gpd.GeoDataFrame]
-        Path to shape file, or directly a geodataframe. Supports formats compatible with geopandas.
+        Path to shape file, or directly a GeoDataFrame. Supports formats compatible with geopandas.
         Will be converted to EPSG:4326 if needed.
     variable : Union[str, Sequence[str], None]
         Variables to average. If None, average over all data variables.
@@ -47,8 +48,8 @@ def average_shape(
     -------
     Union[xarray.DataArray, xarray.Dataset]
         `ds` spatially-averaged over the polygon(s) in `shape`.
-        Has a new `geom` dimension corresponding to the index of the input geodataframe.
-        Non-geometry columns of the geodataframe are copied as auxiliary coordinates.
+        Has a new `geom` dimension corresponding to the index of the input GeoDataFrame.
+        Non-geometry columns of the GeoDataFrame are copied as auxiliary coordinates.
 
     Notes
     -----
@@ -78,7 +79,9 @@ def average_shape(
     try:
         from xesmf import SpatialAverager
     except ImportError:
-        raise ValueError("Package xesmf >= 0.5.0 is required to use average_shape")
+        raise ValueError(
+            f"Package xesmf {XESMF_MINIMUM_VERSION} is required to use `average_shape`."
+        )
 
     if isinstance(ds, xr.DataArray):
         warnings.warn(
@@ -152,8 +155,8 @@ def average_over_dims(
     ds : Union[xr.DataArray, xr.Dataset]
         Input values.
     dims : Sequence[{"time", "level", "latitude", "longitude"}]
-        The dimensions over which to apply the average. If None, none of the dimensions are averaged over. Dimensions
-        must be one of ["time", "level", "latitude", "longitude"].
+        The dimensions over which to apply the average. If None, none of the dimensions are averaged over.
+        Dimensions must be one of ["time", "level", "latitude", "longitude"].
     ignore_undetected_dims : bool
         If the dimensions specified are not found in the dataset, an Exception will be raised if set to True.
         If False, an exception will not be raised and the other dimensions will be averaged over. Default = False

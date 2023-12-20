@@ -26,6 +26,8 @@ from xarray.core.utils import get_temp_dimname
 
 from clisops.utils.dataset_utils import adjust_date_to_calendar
 
+from .regrid import XESMF_MINIMUM_VERSION
+
 __all__ = [
     "create_mask",
     "create_weight_masks",
@@ -854,7 +856,7 @@ def create_weight_masks(
 
     The returned masks values are the fraction of the corresponding polygon's area
     that is covered by the grid cell. Summing along the spatial dimension will give 1
-    for each geometry. Requires xESMF >= 0.5.0.
+    for each geometry. Requires xESMF.
 
     Parameters
     ----------
@@ -888,7 +890,7 @@ def create_weight_masks(
         from xesmf import SpatialAverager
     except ImportError:
         raise ValueError(
-            "Package xesmf >= 0.6.2 is required to use create_weight_masks"
+            f"Package xesmf >= {XESMF_MINIMUM_VERSION} is required to use create_weight_masks."
         )
 
     if poly.crs is not None:
