@@ -265,6 +265,12 @@ CMIP6_ATM_VERT_ONE_TIMESTEP = Path(
     "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/AERmon/o3/gn/v20190710/o3_AERmon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
 ).as_posix()
 
+# cdo zonmean of CMIP6 dataset with vertical axis (lon singleton dimension)
+CMIP6_ATM_VERT_ONE_TIMESTEP_ZONMEAN = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/AERmon/o3/gn/v20190710/o3_AERmon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001_zm.nc",
+).as_posix()
+
 # CMIP6 2nd dataset with weird range in its longitude coordinate (-280, 80)
 CMIP6_IITM_EXTENT = Path(
     MINI_ESGF_CACHE_DIR,
@@ -315,10 +321,26 @@ CMIP6_FILLVALUE = Path(
     "master/test_data/pool/data/CMIP6/data/CMIP6/CMIP/NCAR/CESM2-WACCM/historical/r1i1p1f1/day/tas/gn/v20190227/tas_day_CESM2-WACCM_historical_r1i1p1f1_gn_20000101-20091231.nc",
 ).as_posix()
 
+# CMIP6 zonal mean datasets
+CMIP6_ZONMEAN_A = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Omon/msftmz/gn/v20190710/msftmz_Omon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_191001.nc",
+).as_posix()
+
+CMIP6_ZONMEAN_B = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/badc/cmip6/data/CMIP6/CMIP/NCC/NorCPM1/historical/r22i1p1f1/Omon/msftmz/grz/v20200724/msftmz_Omon_NorCPM1_historical_r22i1p1f1_grz_185001.nc",
+).as_posix()
+
 # CORDEX dataset on regional curvilinear grid
 CORDEX_TAS_ONE_TIMESTEP = Path(
     MINI_ESGF_CACHE_DIR,
     "master/test_data/pool/data/CORDEX/data/cordex/output/EUR-22/GERICS/MPI-M-MPI-ESM-LR/rcp85/r1i1p1/GERICS-REMO2015/v1/mon/tas/v20191029/tas_EUR-22_MPI-M-MPI-ESM-LR_rcp85_r1i1p1_GERICS-REMO2015_v1_mon_202101.nc",
+).as_posix()
+
+CORDEX_TAS_ONE_TIMESTEP_ANT = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/pool/data/CORDEX/data/cordex/output/ANT-44/KNMI/ECMWF-ERAINT/evaluation/r1i1p1/DMI-HIRHAM5/v1/day/tas/v20201001/tas_ANT-44_ECMWF-ERAINT_evaluation_r1i1p1_DMI-HIRHAM5_v1_day_20060101.nc",
 ).as_posix()
 
 # CORDEX dataset on regional curvilinear grid without defined bounds

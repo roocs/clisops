@@ -12,7 +12,9 @@ from roocs_grids import get_grid_file
 import clisops.utils.dataset_utils as clidu
 from _common import (
     CMIP6_ATM_VERT_ONE_TIMESTEP,
+    CMIP6_ATM_VERT_ONE_TIMESTEP_ZONMEAN,
     CMIP6_GFDL_EXTENT,
+    CMIP6_IITM_EXTENT,
     CMIP6_OCE_HALO_CNRM,
     CMIP6_STAGGERED_UCOMP,
     CMIP6_TAS_ONE_TIME_STEP,
@@ -20,7 +22,11 @@ from _common import (
     CMIP6_TAS_PRECISION_B,
     CMIP6_TOS_ONE_TIME_STEP,
     CMIP6_UNSTR_ICON_A,
+    CMIP6_ZONMEAN_A,
+    CMIP6_ZONMEAN_B,
     CORDEX_TAS_NO_BOUNDS,
+    CORDEX_TAS_ONE_TIMESTEP,
+    CORDEX_TAS_ONE_TIMESTEP_ANT,
 )
 from clisops import CONFIG
 from clisops.core.regrid import (
@@ -120,6 +126,100 @@ def test_grid_init_ds_tos_curvilinear(load_esgf_test_data):
     # assert self.mask
 
 
+def test_grid_init_ds_tas_cordex(load_esgf_test_data):
+    ds = xr.open_dataset(CORDEX_TAS_ONE_TIMESTEP, use_cftime=True)
+    grid = Grid(ds=ds)
+    print(ds)
+
+    assert grid.format == "CF"
+    assert grid.source == "Dataset"
+    assert grid.lat == "lat"
+    assert grid.lon == "lon"
+    assert grid.type == "curvilinear"
+    assert grid.extent == "regional"
+    assert grid.lat_bnds == "lat_vertices"
+    assert grid.lon_bnds == "lon_vertices"
+    assert not grid.contains_collapsed_cells
+    assert not grid.contains_duplicated_cells
+    assert grid.nlat == 201
+    assert grid.nlon == 225
+    assert grid.ncells == 45225
+
+    ds = ds.drop(["lat", "lon", "lat_vertices", "lon_vertices"])
+    print(ds)
+    with pytest.raises(
+        Exception,
+        match="The grid format is not supported.",
+    ):
+        Grid(ds=ds)
+
+
+def test_grid_init_ds_tas_cordex_ant(load_esgf_test_data):
+    ds = xr.open_dataset(CORDEX_TAS_ONE_TIMESTEP_ANT, use_cftime=True)
+
+    # assert shifted lon frame
+    assert np.isclose(ds["lon"].min(), -165.7, atol=0.5)
+    assert np.isclose(ds["lon"].max(), 193.1, atol=0.5)
+
+    # Create Grid object
+    grid = Grid(ds=ds)
+
+    # assert fixed shifted lon frame and further attributes
+    assert np.isclose(grid.ds["lon"].min(), -180, atol=0.5)
+    assert np.isclose(grid.ds["lon"].max(), 180, atol=0.5)
+    assert grid.format == "CF"
+    assert grid.source == "Dataset"
+    assert grid.lat == "lat"
+    assert grid.lon == "lon"
+    assert grid.type == "curvilinear"
+    assert grid.extent == "global"  # only extent in longitude is checked
+    assert grid.lat_bnds is None
+    assert grid.lon_bnds is None
+    assert not grid.contains_collapsed_cells
+    assert not grid.contains_duplicated_cells
+    assert grid.nlat == 97
+    assert grid.nlon == 125
+    assert grid.ncells == 12125
+
+
+def test_grid_init_shifted_lon_frame_GFDL():
+    ds = xr.open_dataset(CMIP6_GFDL_EXTENT, use_cftime=True)
+
+    # confirm shifted lon frame
+    assert np.isclose(ds["lon"].min(), -300.0, atol=0.5)
+    assert np.isclose(ds["lon"].max(), 60.0, atol=0.5)
+
+    # Create Grid object
+    grid = Grid(ds=ds)
+
+    # assert fix of shifted lon frame
+    assert np.isclose(grid.ds["lon"].min(), -180.0, atol=0.5)
+    assert np.isclose(grid.ds["lon"].max(), 180.0, atol=0.5)
+    assert np.isclose(grid.ds["lon_bnds"].min(), -180.0, atol=0.5)
+    assert np.isclose(grid.ds["lon_bnds"].max(), 180.0, atol=0.5)
+
+    assert grid.type == "curvilinear"
+    assert grid.extent == "global"
+
+
+def test_grid_init_shifted_lon_frame_IITM():
+    ds = xr.open_dataset(CMIP6_IITM_EXTENT, use_cftime=True)
+
+    # confirm shifted lon frame
+    assert np.isclose(ds["longitude"].min(), -280.0, atol=1.0)
+    assert np.isclose(ds["longitude"].max(), 80.0, atol=1.0)
+
+    # Create Grid object
+    grid = Grid(ds=ds)
+
+    # assert fix of shifted lon frame
+    assert np.isclose(grid.ds["longitude"].min(), -180.0, atol=1.0)
+    assert np.isclose(grid.ds["longitude"].max(), 180.0, atol=1.0)
+
+    assert grid.type == "curvilinear"
+    assert grid.extent == "global"
+
+
 def test_grid_init_ds_tas_unstructured(load_esgf_test_data):
     ds = xr.open_dataset(CMIP6_UNSTR_ICON_A, use_cftime=True)
     grid = Grid(ds=ds)
@@ -139,6 +239,25 @@ def test_grid_init_ds_tas_unstructured(load_esgf_test_data):
 
     # not implemented yet
     # assert self.mask
+
+
+def test_grid_init_ds_zonmean(load_esgf_test_data):
+    dsA = xr.open_dataset(CMIP6_ZONMEAN_A, use_cftime=True)
+    dsB = xr.open_dataset(CMIP6_ATM_VERT_ONE_TIMESTEP_ZONMEAN, use_cftime=True)
+
+    # Zonal mean dataset without "lon" dimension
+    with pytest.raises(
+        Exception,
+        match="The grid format is not supported.",
+    ):
+        Grid(ds=dsA)
+
+    # Zonal mean dataset with "lon" singleton dimension
+    with pytest.raises(
+        Exception,
+        match="Remapping zonal mean datasets or generally datasets without meridional extent is not supported.",
+    ):
+        Grid(ds=dsB)
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)

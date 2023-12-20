@@ -9,6 +9,7 @@ from roocs_grids import get_grid_file, grid_dict
 from _common import (
     CMIP5_MRSOS_ONE_TIME_STEP,
     CMIP6_ATM_VERT_ONE_TIMESTEP,
+    CMIP6_IITM_EXTENT,
     CMIP6_OCE_HALO_CNRM,
     CMIP6_TOS_ONE_TIME_STEP,
 )
@@ -200,7 +201,6 @@ def test_regrid_halo_simple(load_esgf_test_data, tmp_path):
     assert ds_out.attrs["regrid_operation"] == "conservative_404x802_36x72"
 
 
-@pytest.mark.xfail
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_halo_adv(load_esgf_test_data, tmp_path):
     "Test regridding of dataset with a more complex halo."
@@ -217,8 +217,26 @@ def test_regrid_halo_adv(load_esgf_test_data, tmp_path):
         output_type="xarray",
     )[0]
 
-    # After the halo can be properly removed (maybe 1049x1440), the test can be updated
     assert ds_out.attrs["regrid_operation"] == "conservative_1050x1442_36x72"
+
+
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+def test_regrid_shifted_lon_frame(load_esgf_test_data, tmp_path):
+    "Test regridding of dataset with shifted longitude frame."
+    fpath = CMIP6_IITM_EXTENT
+    ds = xr.open_dataset(fpath).isel(time=0)
+
+    weights_cache_init(Path(tmp_path, "weights"))
+
+    ds_out = regrid(
+        ds,
+        method="bilinear",
+        adaptive_masking_threshold=-1,
+        grid=5,
+        output_type="xarray",
+    )[0]
+
+    assert ds_out.attrs["regrid_operation"] == "bilinear_200x360_36x72_peri"
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
