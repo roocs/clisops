@@ -338,6 +338,11 @@ CORDEX_TAS_ONE_TIMESTEP = Path(
     "master/test_data/pool/data/CORDEX/data/cordex/output/EUR-22/GERICS/MPI-M-MPI-ESM-LR/rcp85/r1i1p1/GERICS-REMO2015/v1/mon/tas/v20191029/tas_EUR-22_MPI-M-MPI-ESM-LR_rcp85_r1i1p1_GERICS-REMO2015_v1_mon_202101.nc",
 ).as_posix()
 
+CORDEX_TAS_ONE_TIMESTEP_ANT = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/pool/data/CORDEX/data/cordex/output/ANT-44/KNMI/ECMWF-ERAINT/evaluation/r1i1p1/DMI-HIRHAM5/v1/day/tas/v20201001/tas_ANT-44_ECMWF-ERAINT_evaluation_r1i1p1_DMI-HIRHAM5_v1_day_20060101.nc",
+).as_posix()
+
 # CORDEX dataset on regional curvilinear grid without defined bounds
 CORDEX_TAS_NO_BOUNDS = Path(
     MINI_ESGF_CACHE_DIR,
