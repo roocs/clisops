@@ -1,6 +1,17 @@
 Version History
 ===============
 
+v0.12.2 (unreleased)
+--------------------
+
+Bug Fixes
+^^^^^^^^^
+* Now also applying fix for datasets with shifted longitude frames (#218) for the regrid operator (#313).
+
+Other Changes
+^^^^^^^^^^^^^
+* Warnings are now emitted when the user attempts to regrid a zonal mean dataset (#313).
+
 v0.12.1 (2023-11-30)
 --------------------
 
