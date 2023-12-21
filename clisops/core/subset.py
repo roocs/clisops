@@ -1725,7 +1725,7 @@ def subset_time_by_components(
 
         t_comp_indices = da.groupby(f"time.{t_comp}").groups
         req_indices = req_indices.intersection(
-            {idx for tc in req_t_comp for idx in t_comp_indices[tc]}
+            {idx for tc in req_t_comp for idx in t_comp_indices.get(tc, [])}
         )
 
     return da.isel(time=sorted(req_indices))
