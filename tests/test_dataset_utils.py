@@ -272,6 +272,42 @@ def test_detect_coordinate_and_bounds():
     assert lon_d == clidu.detect_coordinate(ds_d, "longitude")
 
 
+def test_detect_coordinate_by_standard_name(tmpdir):
+    "Test coordinate detection for dataset where cf_xarray fails due to erroneous attributes"
+    ds = xr.open_mfdataset(C3S_CORDEX_AFR_TAS, use_cftime=True, combine="by_coords")
+    assert clidu.detect_coordinate(ds, "latitude") == "lat"
+    assert clidu.detect_coordinate(ds, "longitude") == "lon"
+
+    # Set illegal units attribute to confuse cf_xarray
+    ds.rlat.attrs["units"] = "degrees_north"
+    ds.rlon.attrs["units"] = "degrees_east"
+    with pytest.raises(
+        KeyError, match="Receive multiple variables for key 'latitude':"
+    ):
+        ds.cf["latitude"]
+    with pytest.raises(
+        KeyError, match="Receive multiple variables for key 'longitude':"
+    ):
+        ds.cf["longitude"]
+    assert clidu.detect_coordinate(ds, "latitude") == "lat"
+    assert clidu.detect_coordinate(ds, "longitude") == "lon"
+
+    # Additionally remove standard_name to also confuse roocs_utils
+    del ds.lat.attrs["standard_name"]
+    del ds.lon.attrs["standard_name"]
+    with pytest.raises(Exception) as exc:
+        clidu.detect_coordinate(ds, "latitude")
+    assert (
+        str(exc.value) == "'A latitude coordinate cannot be identified in the dataset.'"
+    )
+    with pytest.raises(Exception) as exc:
+        clidu.detect_coordinate(ds, "longitude")
+    assert (
+        str(exc.value)
+        == "'A longitude coordinate cannot be identified in the dataset.'"
+    )
+
+
 def test_detect_gridtype():
     """Test the function detect_gridtype."""
     ds_a = xr.open_dataset(CMIP6_UNSTR_ICON_A, use_cftime=True)

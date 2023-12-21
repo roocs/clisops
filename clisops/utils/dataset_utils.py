@@ -7,7 +7,7 @@ import numpy as np
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.utils.time_utils import str_to_AnyCalendarDateTime
-from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
+from roocs_utils.xarray_utils.xarray_utils import get_coord_by_attr, get_coord_by_type
 
 
 def calculate_offset(lon, first_element_value):
@@ -939,7 +939,9 @@ def detect_coordinate(ds, coord_type):
         coord = ds.cf[coord_type]
         # coord = get_coord_by_type(ds, coord_type, ignore_aux_coords=False)
     except KeyError:
-        raise KeyError(error_msg)
+        coord = get_coord_by_attr(ds, "standard_name", coord_type)
+        if coord is None:
+            raise KeyError(error_msg)
 
     # Return the name of the coordinate variable
     try:
