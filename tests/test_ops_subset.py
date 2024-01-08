@@ -18,6 +18,7 @@ from roocs_utils.parameter.param_utils import (
 from _common import (
     C3S_CMIP5_TOS,
     C3S_CMIP5_TSICE,
+    CMIP5_MRSOS_MULTIPLE_TIME_STEPS,
     CMIP5_RH,
     CMIP5_TAS,
     CMIP5_ZOSTOGA,
@@ -1511,6 +1512,18 @@ def test_subset_by_time_components_year_month(tmpdir, load_esgf_test_data):
         assert set(ds.time.dt.month.values) == {12, 1, 2}
 
 
+def test_subset_empty(tmpdir, load_esgf_test_data):
+    # Monthly mean dataset with 360-day calendar
+    with pytest.raises(Exception) as exc:
+        subset(
+            ds=CMIP5_TAS,
+            output_type="nc",
+            output_dir=tmpdir,
+            time_components="month:12,1,2|day:1,2,3,4,5",
+        )
+    assert str(exc.value) == "'No timesteps are matching the selection criteria.'"
+
+
 def test_subset_by_time_components_31_days_360_day(tmpdir, load_esgf_test_data):
     # Dataset with 360-day calendar
     tmpdir30 = Path(tmpdir, "ds30")
@@ -1519,13 +1532,13 @@ def test_subset_by_time_components_31_days_360_day(tmpdir, load_esgf_test_data):
     os.mkdir(tmpdir31)
 
     subset(
-        ds=CMIP5_TAS,
+        ds=CMIP5_MRSOS_MULTIPLE_TIME_STEPS,
         output_type="nc",
         output_dir=tmpdir30,
         time_components="month:12,1,2|day:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30",
     )
     subset(
-        ds=CMIP5_TAS,
+        ds=CMIP5_MRSOS_MULTIPLE_TIME_STEPS,
         output_type="nc",
         output_dir=tmpdir31,
         time_components="month:12,1,2|day:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31",
@@ -1534,7 +1547,7 @@ def test_subset_by_time_components_31_days_360_day(tmpdir, load_esgf_test_data):
     ds31 = xr.open_mfdataset(str(tmpdir31) + "/*.nc")
 
     assert ds30.identical(ds31)
-    assert ds30.dims["time"] == 884
+    assert ds30.dims["time"] == 8490
 
 
 def test_subset_by_time_components_month_day(tmpdir, load_esgf_test_data):

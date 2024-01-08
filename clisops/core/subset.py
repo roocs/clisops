@@ -1727,6 +1727,8 @@ def subset_time_by_components(
         req_indices = req_indices.intersection(
             {idx for tc in req_t_comp for idx in t_comp_indices.get(tc, [])}
         )
+    if not req_indices:
+        raise KeyError("No timesteps are matching the selection criteria.")
 
     return da.isel(time=sorted(req_indices))
 
