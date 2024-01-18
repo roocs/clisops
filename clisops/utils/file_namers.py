@@ -20,7 +20,7 @@ class _BaseFileNamer:
         self._replace = replace
         self._extra = extra
 
-    def get_file_name(self, ds, fmt=None):
+    def get_file_name(self, ds, fmt="nc"):
         """Generate numbered file names"""
         self._count += 1
         extension = get_format_extension(fmt)
@@ -56,7 +56,7 @@ class StandardFileNamer(SimpleFileNamer):
 
         if not template:
             # Default to parent class namer if no method found
-            return super().get_file_name(ds)
+            return super().get_file_name(ds, fmt)
 
         self._count += 1
 
