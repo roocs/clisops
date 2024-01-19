@@ -1,7 +1,7 @@
 import pytest
 import xarray as xr
-from roocs_utils.parameter.param_utils import time_interval
 from roocs_utils.exceptions import InvalidProject
+from roocs_utils.parameter.param_utils import time_interval
 
 from _common import C3S_CORDEX_NAM_PR, CMIP5_TAS, CMIP6_SICONC
 from clisops import CONFIG
