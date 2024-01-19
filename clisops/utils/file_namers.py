@@ -45,10 +45,7 @@ class StandardFileNamer(SimpleFileNamer):
     def _get_project(self, ds):
         """Gets the project name from the input dataset"""
 
-        try:
-            return get_project_name(ds)
-        except Exception:
-            return None
+        return get_project_name(ds)
 
     def get_file_name(self, ds, fmt="nc"):
         """Constructs file name."""
