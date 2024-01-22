@@ -6,6 +6,7 @@ v0.12.3 (unreleased)
 
 Bug Fixes
 ^^^^^^^^^
+* Fixed standard file-namer fallback method (#318).
 * Fixed KeyError for temporal subsetting by components if not all components can be found in the dataset (#316).
 * Raising KeyError for temporal subsetting by components when no time steps match the selection criteria (#316).
 * Coordinate detection for remapping operator via standard_name if detection via cf-xarray fails / is ambiguous (#316).
