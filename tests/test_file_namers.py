@@ -3,7 +3,13 @@ import xarray as xr
 from roocs_utils.exceptions import InvalidProject
 from roocs_utils.parameter.param_utils import time_interval
 
-from _common import C3S_CORDEX_NAM_PR, CMIP5_TAS, CMIP6_SICONC
+from _common import (
+    C3S_CORDEX_NAM_PR,
+    CMIP5_TAS,
+    CMIP6_SICONC,
+    ATLAS_v0_CORDEX_NAM,
+    ATLAS_v1_ERA5,
+)
 from clisops import CONFIG
 from clisops.ops.subset import subset
 from clisops.utils.file_namers import get_file_namer
@@ -184,6 +190,50 @@ def test_StandardFileNamer_c3s_cordex_use_default_attr_names(load_esgf_test_data
     ]
     del _ds.attrs["CORDEX_domain"]
     del _ds.attrs["driving_model_ensemble_member"]
+
+    for ds, expected in checks:
+        resp = s.get_file_name(ds)
+        assert resp == expected
+
+
+def test_StandardFileNamer_c3s_atlas_v0(load_esgf_test_data):
+    "Test C3S ATLAS v0 (c3s-ipcc-ar6-atlas) filenamer"
+    s = get_file_namer("standard")()
+
+    _ds = xr.open_mfdataset(
+        ATLAS_v0_CORDEX_NAM,
+        use_cftime=True,
+        combine="by_coords",
+    )
+
+    checks = [
+        (
+            _ds,
+            "TODO",
+        )
+    ]
+
+    for ds, expected in checks:
+        resp = s.get_file_name(ds)
+        assert resp == expected
+
+
+def test_StandardFileNamer_c3s_atlas_v1(load_esgf_test_data):
+    "Test C3S ATLAS v1 (c3s-cica-atlas) filenamer"
+    s = get_file_namer("standard")()
+
+    _ds = xr.open_mfdataset(
+        ATLAS_v1_ERA5,
+        use_cftime=True,
+        combine="by_coords",
+    )
+
+    checks = [
+        (
+            _ds,
+            "TODO",
+        )
+    ]
 
     for ds, expected in checks:
         resp = s.get_file_name(ds)

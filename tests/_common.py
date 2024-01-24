@@ -379,22 +379,22 @@ ATLAS_v1_CORDEX = Path(
 
 ATLAS_v1_EOBS_GRID = Path(
     MINI_ESGF_CACHE_DIR,
-    "master/test_data/pool/data/c3s-cica-atlas/E-OBS/t_E-OBS_mon_195001.nc"
+    "master/test_data/pool/data/c3s-cica-atlas/E-OBS/t_E-OBS_mon_195001.nc",
 ).as_posix()
 
 # ATLAS v0 datasets with full time series
 ATLAS_v0_CORDEX_NAM = Path(
     MINI_ESGF_CACHE_DIR,
-    "master/test_data/pool/data/c3s-ipcc-ar6-atlas/CORDEX-NAM/historical/rx1day_CORDEX-NAM_historical_mon_197001-200512.nc"
+    "master/test_data/pool/data/c3s-ipcc-ar6-atlas/CORDEX-NAM/historical/rx1day_CORDEX-NAM_historical_mon_197001-200512.nc",
 ).as_posix()
 
 ATLAS_v0_CMIP6 = Path(
     MINI_ESGF_CACHE_DIR,
     "master/test_data/pool/data/c3s-ipcc-ar6-atlas/CMIP6/ssp245/sst_CMIP6_ssp245_mon_201501-210012.nc",
-).as_posix(
+).as_posix()
 
 # ATLAS v0 datasets with full horizontal grid
 ATLAS_v1_CORDEX_ANT = Path(
     MINI_ESGF_CACHE_DIR,
-    "master/test_data/pool/data/c3s-ipcc-ar6-atlas/CORDEX-ANT/rcp45/tnn_CORDEX-ANT_rcp45_mon_200601.nc"
+    "master/test_data/pool/data/c3s-ipcc-ar6-atlas/CORDEX-ANT/rcp45/tnn_CORDEX-ANT_rcp45_mon_200601.nc",
 ).as_posix()
