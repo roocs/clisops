@@ -12,6 +12,9 @@ from _common import (
     CMIP6_IITM_EXTENT,
     CMIP6_OCE_HALO_CNRM,
     CMIP6_TOS_ONE_TIME_STEP,
+    ATLAS_v1_CORDEX,
+    ATLAS_v1_CORDEX_ANT,
+    ATLAS_v1_EOBS_GRID,
 )
 from clisops.core.regrid import XESMF_MINIMUM_VERSION, weights_cache_init, xe
 from clisops.ops.regrid import regrid
@@ -105,6 +108,74 @@ def test_regrid_regular_grid_to_all_roocs_grids(
     ds = xr.open_dataset(nc_file)
     assert "mrsos" in ds
     assert ds.mrsos.size > 100
+
+
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+@pytest.mark.parametrize(
+    "dset", ["ATLAS_v1_CORDEX", "ATLAS_v1_EOBS_GRID", "ATLAS_v1_CORDEX_ANT"]
+)
+def test_regrid_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
+    "Test regridding for several ATLAS datasets."
+
+    # Remove string deflation options if applicable
+    ds = xr.open_dataset(globals()[dset], use_cftime=True)
+    for cvar in [
+        "member_id",
+        "gcm_variant",
+        "gcm_model",
+        "gcm_institution",
+        "rcm_variant",
+        "rcm_model",
+        "rcm_institution",
+    ]:
+        for en in ["zlib", "shuffle", "complevel"]:
+            if cvar in ds:  # if en in ds[cvar].encoding:
+                del ds[cvar].encoding[en]
+
+    basename = os.path.splitext(os.path.basename(globals()[dset]))[0]
+    result = regrid(
+        ds=ds,
+        method="bilinear",
+        adaptive_masking_threshold=0.5,
+        grid="0pt5deg_lsm",
+        output_dir=tmpdir,
+        output_type="netcdf",
+        file_namer="standard",
+    )
+    # TODO assert correct filename
+    # print(basename)
+    # print(result)
+    nc_file = result[0]
+    assert os.path.basename(nc_file).startswith(f"{basename}_regrid-bilinear-")
+
+
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+def test_regrid_ATLAS_CORDEX(tmpdir, load_esgf_test_data):
+    "Test regridding for ATLAS CORDEX dataset."
+
+    # Remove string deflation options
+    # Will trigger KeyError if future netcdf-c versions will either omit variables with illegal filter
+    #  options or the filter options themselves
+    ds = xr.open_dataset(ATLAS_v1_CORDEX_ANT, use_cftime=True)
+    for cvar in ["member_id", "rcm_variant", "rcm_model", "rcm_institution"]:
+        for en in ["zlib", "shuffle", "complevel"]:
+            del ds[cvar].encoding[en]
+
+    basename = os.path.splitext(os.path.basename(ATLAS_v1_CORDEX_ANT))[0]
+    result = regrid(
+        ds=ds,
+        method="nearest_s2d",
+        adaptive_masking_threshold=0.5,
+        grid="1deg",
+        output_dir=tmpdir,
+        output_type="netcdf",
+        file_namer="standard",
+    )
+    # TODO assert correct filename
+    # print(basename)
+    # print(result)
+    nc_file = result[0]
+    assert os.path.basename(nc_file).startswith(f"{basename}_regrid-nearest_s2d-")
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)

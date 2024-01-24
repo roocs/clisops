@@ -32,6 +32,12 @@ from _common import (
     CMIP6_TASMIN,
     CMIP6_TOS,
     CMIP6_TOS_ONE_TIME_STEP,
+    ATLAS_v0_CMIP6,
+    ATLAS_v0_CORDEX_NAM,
+    ATLAS_v1_CMIP5,
+    ATLAS_v1_EOBS,
+    ATLAS_v1_EOBS_GRID,
+    ATLAS_v1_ERA5,
     _check_output_nc,
     assert_vars_equal,
 )
@@ -93,6 +99,51 @@ def test_subset_args_as_parameter_classes(cmip5_tas_file, tmpdir):
     _check_output_nc(result)
 
 
+@pytest.mark.parametrize(
+    "dset",
+    [
+        "ATLAS_v1_CMIP5",
+        "ATLAS_v1_EOBS",
+        "ATLAS_v1_ERA5",
+        "ATLAS_v0_CORDEX_NAM",
+        "ATLAS_v0_CMIP6",
+    ],
+)
+def test_subset_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
+    "Test temporal and spatial subset for several ATLAS datasets."
+
+    ds = xr.open_dataset(globals()[dset], use_cftime=True)
+
+    # Remove string deflation options if applicable
+    for cvar in [
+        "member_id",
+        "gcm_variant",
+        "gcm_model",
+        "gcm_institution",
+        "rcm_variant",
+        "rcm_model",
+        "rcm_institution",
+    ]:
+        for en in ["zlib", "shuffle", "complevel"]:
+            if cvar in ds:  # if en in ds[cvar].encoding:
+                del ds[cvar].encoding[en]
+
+    time = time_parameter.TimeParameter(
+        time_interval("2000-01-01T00:00:00", "2020-12-30T00:00:00")
+    )
+    area = area_parameter.AreaParameter((0, -90.0, 360.0, 90.0))
+
+    result = subset(
+        ds=ds,
+        time=time,
+        area=area,
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+    _check_output_nc(result)
+
+
 def test_subset_invalid_time(cmip5_tas_file, tmpdir):
     """Tests subset with invalid time param."""
     with pytest.raises(InvalidParameterValue):
@@ -137,6 +188,19 @@ def test_subset_area_simple_file_name(cmip5_tas_file, tmpdir):
         file_namer="simple",
     )
     _check_output_nc(result)
+
+
+def test_subset_area_project_file_name_atlas(load_esgf_test_data, tmpdir):
+    """Tests clisops subset function with a area subset (derived file name)."""
+
+    result = subset(
+        ds=ATLAS_v1_EOBS_GRID,
+        area=(0.0, 10.0, 10.0, 65.0),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="standard",
+    )
+    _check_output_nc(result, "TODO")
 
 
 def test_subset_area_project_file_name(cmip5_tas_file, tmpdir):
