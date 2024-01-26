@@ -62,7 +62,8 @@ dependencies = [
   "requests>=2.0",
   # roocs_grids is differently named on conda-forge
   "roocs_grids>=0.1.2",
-  "roocs-utils>=0.6.4,<0.7",
+  #"roocs-utils>=0.6.4,<0.7",
+  "roocs-utils@git+https://github.com/sol1105/roocs-utils#egg=atlas-get-project",
   "shapely>=1.9",
   "xarray>=0.21"
 ]

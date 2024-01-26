@@ -112,19 +112,12 @@ def test_regrid_regular_grid_to_all_roocs_grids(
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 @pytest.mark.parametrize(
-    "dset", ["ATLAS_v1_CORDEX", "ATLAS_v1_EOBS_GRID"]  # , "ATLAS_v0_CORDEX_ANT"]
+    "dset", ["ATLAS_v1_CORDEX", "ATLAS_v1_EOBS_GRID", "ATLAS_v0_CORDEX_ANT"]
 )
 def test_regrid_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
     "Test regridding for several ATLAS datasets."
 
     ds = xr.open_dataset(globals()[dset], use_cftime=True)
-
-    # Set project_id - necessary until project_id can be inferred in another way by roocs_utils
-    #  atlas v0 not yet supported by roocs_utils
-    if "_v1_" in dset:
-        ds.attrs["project_id"] = "c3s-cica-atlas"
-    else:
-        ds.attrs["project_id"] = "c3s-ipcc-ar6-atlas"
 
     # Remove string deflation options if applicable
     for cvar in [
@@ -154,15 +147,11 @@ def test_regrid_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
     )
 
 
-@pytest.mark.xfail(reason="Expected to fail until atlas v0 is supported by roocs_utils")
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_ATLAS_CORDEX(tmpdir, load_esgf_test_data):
     "Test regridding for ATLAS CORDEX dataset."
 
     ds = xr.open_dataset(ATLAS_v0_CORDEX_ANT, use_cftime=True)
-
-    # Set project_id - necessary until project_id can be inferred in another way by roocs_utils
-    ds.attrs["project_id"] = "c3s-ipcc-ar6-atlas"
 
     # Remove string deflation options
     # Will trigger KeyError if future netcdf-c versions will either omit variables with illegal filter

@@ -48,3 +48,5 @@ dependencies:
  - pandoc
  - sphinx
  - sphinx-rtd-theme >=1.0
+ - pip:
+   - roocs-utils @ git+https://github.com/sol1105/roocs-utils.git@atlas-get-project#egg=roocs-utils

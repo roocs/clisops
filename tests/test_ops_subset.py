@@ -190,9 +190,6 @@ def test_subset_area_simple_file_name(cmip5_tas_file, tmpdir):
     _check_output_nc(result)
 
 
-@pytest.mark.xfail(
-    reason="Expected to fail until atlas project name decuction from dataset is supported by roocs_utils"
-)
 def test_subset_area_project_file_name_atlas(load_esgf_test_data, tmpdir):
     """Tests clisops subset function with a area subset (derived file name)."""
     result = subset(
@@ -202,7 +199,7 @@ def test_subset_area_project_file_name_atlas(load_esgf_test_data, tmpdir):
         output_type="nc",
         file_namer="standard",
     )
-    _check_output_nc(result, "t_E-OBS_no-expt_mon.nc")
+    _check_output_nc(result, "t_E-OBS_no-expt_mon_19500101-19500101.nc")
 
 
 def test_subset_area_project_file_name(cmip5_tas_file, tmpdir):

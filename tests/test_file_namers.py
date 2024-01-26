@@ -196,7 +196,6 @@ def test_StandardFileNamer_c3s_cordex_use_default_attr_names(load_esgf_test_data
         assert resp == expected
 
 
-@pytest.mark.xfail(reason="Expected to fail until atlas v0 is supported by roocs_utils")
 def test_StandardFileNamer_c3s_atlas_v0(load_esgf_test_data):
     "Test C3S ATLAS v0 (c3s-ipcc-ar6-atlas) filenamer"
     s = get_file_namer("standard")()
@@ -206,7 +205,6 @@ def test_StandardFileNamer_c3s_atlas_v0(load_esgf_test_data):
         use_cftime=True,
         combine="by_coords",
     )
-    _ds.attrs["project_id"] = "c3s-ipcc-ar6-atlas"
 
     checks = [
         (
@@ -230,7 +228,6 @@ def test_StandardFileNamer_c3s_atlas_v1(load_esgf_test_data):
         use_cftime=True,
         combine="by_coords",
     )
-    _ds.attrs["project_id"] = "c3s-cica-atlas"
 
     checks = [
         (
