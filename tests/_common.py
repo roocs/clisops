@@ -394,7 +394,7 @@ ATLAS_v0_CMIP6 = Path(
 ).as_posix()
 
 # ATLAS v0 datasets with full horizontal grid
-ATLAS_v1_CORDEX_ANT = Path(
+ATLAS_v0_CORDEX_ANT = Path(
     MINI_ESGF_CACHE_DIR,
     "master/test_data/pool/data/c3s-ipcc-ar6-atlas/CORDEX-ANT/rcp45/tnn_CORDEX-ANT_rcp45_mon_200601.nc",
 ).as_posix()
