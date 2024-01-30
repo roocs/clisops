@@ -113,6 +113,7 @@ def test_subset_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
     "Test temporal and spatial subset for several ATLAS datasets."
 
     ds = xr.open_dataset(globals()[dset], use_cftime=True)
+    print(ds[ds.attrs["variable_id"]].encoding)
 
     # Remove string deflation options if applicable
     for cvar in [
