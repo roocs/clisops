@@ -115,12 +115,12 @@ def test_subset_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
     ds = xr.open_dataset(globals()[dset], use_cftime=True)
     try:
         print(ds["member_id"].encoding)
-        print(ds["member_id"])
+        print(ds["member_id"].data)
     except KeyError:
         print("No variable 'member_id'")
     try:
         print(ds["gcm_model"].encoding)
-        print(ds["gcm_model"])
+        print(ds["gcm_model"].data)
     except KeyError:
         print("No variable 'gcm_model'")
     # Remove string deflation options if applicable
