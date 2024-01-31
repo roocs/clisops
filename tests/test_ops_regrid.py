@@ -116,25 +116,8 @@ def test_regrid_regular_grid_to_all_roocs_grids(
 )
 def test_regrid_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
     "Test regridding for several ATLAS datasets."
-
-    ds = xr.open_dataset(globals()[dset], use_cftime=True)
-
-    # Remove string deflation options if applicable
-    for cvar in [
-        "member_id",
-        "gcm_variant",
-        "gcm_model",
-        "gcm_institution",
-        "rcm_variant",
-        "rcm_model",
-        "rcm_institution",
-    ]:
-        for en in ["zlib", "shuffle", "complevel"]:
-            if cvar in ds:  # if en in ds[cvar].encoding:
-                del ds[cvar].encoding[en]
-
     result = regrid(
-        ds=ds,
+        ds=globals()[dset],
         method="bilinear",
         adaptive_masking_threshold=0.5,
         grid="0pt5deg_lsm",
@@ -150,12 +133,16 @@ def test_regrid_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_ATLAS_CORDEX(tmpdir, load_esgf_test_data):
     "Test regridding for ATLAS CORDEX dataset."
+    import netCDF4
+
+    print("netcdf4-python version: %s" % netCDF4.__version__)
+    print("HDF5 lib version:       %s" % netCDF4.__hdf5libversion__)
+    print("netcdf lib version:     %s" % netCDF4.__netcdf4libversion__)
 
     ds = xr.open_dataset(ATLAS_v0_CORDEX_ANT, use_cftime=True)
 
-    # Remove string deflation options
-    # Will trigger KeyError if future netcdf-c versions will either omit variables with illegal filter
-    #  options or the filter options themselves
+    # Might trigger KeyError in future netcdf-c versions
+    # PR: https://github.com/Unidata/netcdf-c/pull/2716
     for cvar in [
         "member_id",
         "rcm_variant",
@@ -165,8 +152,7 @@ def test_regrid_ATLAS_CORDEX(tmpdir, load_esgf_test_data):
         "gcm_model",
         "gcm_institution",
     ]:
-        for en in ["zlib", "shuffle", "complevel"]:
-            del ds[cvar].encoding[en]
+        assert cvar in ds
 
     result = regrid(
         ds=ds,

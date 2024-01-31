@@ -198,12 +198,6 @@ def test_StandardFileNamer_c3s_cordex_use_default_attr_names(load_esgf_test_data
 
 def test_StandardFileNamer_c3s_atlas_v0(load_esgf_test_data):
     "Test C3S ATLAS v0 (c3s-ipcc-ar6-atlas) filenamer"
-    import netCDF4
-
-    print("netcdf4-python version: %s" % netCDF4.__version__)
-    print("HDF5 lib version:       %s" % netCDF4.__hdf5libversion__)
-    print("netcdf lib version:     %s" % netCDF4.__netcdf4libversion__)
-
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(

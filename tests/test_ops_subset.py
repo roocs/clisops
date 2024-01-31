@@ -111,39 +111,13 @@ def test_subset_args_as_parameter_classes(cmip5_tas_file, tmpdir):
 )
 def test_subset_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
     "Test temporal and spatial subset for several ATLAS datasets."
-
-    ds = xr.open_dataset(globals()[dset], use_cftime=True)
-    try:
-        print(ds["member_id"].encoding)
-        print(ds["member_id"].data)
-    except KeyError:
-        print("No variable 'member_id'")
-    try:
-        print(ds["gcm_model"].encoding)
-        print(ds["gcm_model"].data)
-    except KeyError:
-        print("No variable 'gcm_model'")
-    # Remove string deflation options if applicable
-    for cvar in [
-        "member_id",
-        "gcm_variant",
-        "gcm_model",
-        "gcm_institution",
-        "rcm_variant",
-        "rcm_model",
-        "rcm_institution",
-    ]:
-        for en in ["zlib", "shuffle", "complevel"]:
-            if cvar in ds:  # if en in ds[cvar].encoding:
-                del ds[cvar].encoding[en]
-
     time = time_parameter.TimeParameter(
         time_interval("2000-01-01T00:00:00", "2020-12-30T00:00:00")
     )
     area = area_parameter.AreaParameter((0, -90.0, 360.0, 90.0))
 
     result = subset(
-        ds=ds,
+        ds=globals()[dset],
         time=time,
         area=area,
         output_dir=tmpdir,
