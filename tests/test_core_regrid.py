@@ -233,7 +233,6 @@ def test_grid_init_ds_tas_unstructured(load_esgf_test_data):
     assert grid.lat_bnds == "latitude_bnds"
     assert grid.lon_bnds == "longitude_bnds"
     assert grid.ncells == 20480
-    print(grid.contains_collapsed_cells)
 
     # not implemented yet
     # assert self.mask

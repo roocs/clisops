@@ -214,7 +214,6 @@ def test_StandardFileNamer_c3s_atlas_v0(load_esgf_test_data):
     ]
 
     for ds, expected in checks:
-        print(s._get_project(ds))
         resp = s.get_file_name(ds)
         assert resp == expected
 
