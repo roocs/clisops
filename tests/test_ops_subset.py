@@ -617,7 +617,7 @@ def test_time_invariant_subset_standard_name(tmpdir):
 
 
 def test_longitude_and_latitude_coords_only(tmpdir):
-    """Test subset suceeds when latitude and longitude are coordinates not dims and are not called lat/lon"""
+    """Test subset succeeds when latitude and longitude are coordinates not dims and are not called lat/lon"""
 
     result = subset(
         ds=CMIP6_TOS,

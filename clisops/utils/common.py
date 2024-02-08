@@ -92,7 +92,7 @@ def _list_ten(list1d):
     Returns
     -------
     str
-        String containing the comma separated 5 first and last elements of the list, with "..." inbetween.
+        String containing the comma separated 5 first and last elements of the list, with "..." in between.
         For example "1, 2, 3, 4, 5 ... , 20, 21, 22, 23, 24, 25".
     """
     if len(list1d) < 11:

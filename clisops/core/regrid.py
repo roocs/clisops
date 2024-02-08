@@ -1,4 +1,5 @@
 """Regrid module."""
+
 from __future__ import annotations
 
 import functools
@@ -372,7 +373,7 @@ class Grid:
     @require_xesmf
     def _grid_from_ds_adaptive(self, ds: xr.Dataset | xr.DataArray):
         """Create Grid of similar extent and resolution of input dataset."""
-        # TODO: dachar/daops to deal with missing values occuring in the coordinate variables
+        # TODO: dachar/daops to deal with missing values occurring in the coordinate variables
         #       while no _FillValue/missing_value attribute is set
         #  -> FillValues else might get selected as minimum/maximum lat/lon value
         #     since they are not masked
