@@ -1,4 +1,5 @@
 """Subset module."""
+
 import numbers
 import re
 import warnings

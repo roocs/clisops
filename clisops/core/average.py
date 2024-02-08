@@ -1,4 +1,5 @@
 """Average module."""
+
 import warnings
 from pathlib import Path
 from typing import Sequence, Tuple, Union
