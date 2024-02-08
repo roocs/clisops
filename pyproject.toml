@@ -54,7 +54,6 @@ dependencies = [
   "geopandas>=0.11",
   "loguru>=0.5.3",
   "netCDF4>=1.4",
-  "libnetcdf<4.9.3",
   "numpy>=1.16",
   "packaging",
   "pandas>=1.0.3",
@@ -63,8 +62,7 @@ dependencies = [
   "requests>=2.0",
   # roocs_grids is differently named on conda-forge
   "roocs_grids>=0.1.2",
-  # "roocs-utils>=0.6.4,<0.7",
-  "roocs-utils@git+https://github.com/sol1105/roocs-utils.git@atlas-get-project#egg=roocs-utils",
+  "roocs-utils>=0.6.7,<0.7",
   "shapely>=1.9",
   "xarray>=0.21"
 ]

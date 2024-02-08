@@ -20,7 +20,7 @@ dependencies:
  - pyproj >=3.3.0
  - requests >=2.0
  - roocs-grids >=0.1.2
- - roocs-utils >=0.6.4,<0.7
+ - roocs-utils >=0.6.7,<0.7
  - shapely >=1.9
  - xarray >=0.21,<2023.03.0 # See: https://github.com/pydata/xarray/issues/7794
  - xesmf >=0.8.2
@@ -48,5 +48,3 @@ dependencies:
  - pandoc
  - sphinx
  - sphinx-rtd-theme >=1.0
- - pip:
-   - roocs-utils @ git+https://github.com/sol1105/roocs-utils.git@atlas-get-project#egg=roocs-utils
