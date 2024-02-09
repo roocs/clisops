@@ -19,7 +19,6 @@ import roocs_grids
 import xarray as xr
 from packaging.version import Version
 from roocs_utils.exceptions import InvalidParameterValue
-from xarray import __version__ as __xarray_version__
 
 import clisops.utils.dataset_utils as clidu
 from clisops import CONFIG
@@ -40,13 +39,12 @@ except (ModuleNotFoundError, ValueError):
 
 # FIXME: Remove this when xarray addresses https://github.com/pydata/xarray/issues/7794
 XARRAY_INCOMPATIBLE_VERSION = "2023.03.0"
-if Version(__xarray_version__) >= Version(XARRAY_INCOMPATIBLE_VERSION):
-    warnings.warn(
-        f"xarray version >= {XARRAY_INCOMPATIBLE_VERSION} "
-        f"is not supported for regridding operations with cf-time indexed arrays. "
-        f"Please use xarray version < {XARRAY_INCOMPATIBLE_VERSION}. "
-        "For more information, see: https://github.com/pydata/xarray/issues/7794."
-    )
+XARRAY_WARNING_MESSAGE = (
+    f"xarray version >= {XARRAY_INCOMPATIBLE_VERSION} "
+    f"is not supported for regridding operations with cf-time indexed arrays. "
+    f"Please use xarray version < {XARRAY_INCOMPATIBLE_VERSION}. "
+    "For more information, see: https://github.com/pydata/xarray/issues/7794."
+)
 
 
 # Read coordinate variable precision from the clisops configuration (roocs.ini)
@@ -56,6 +54,15 @@ coord_precision_hor = int(CONFIG["clisops:coordinate_precision"]["hor_coord_deci
 # Check if xESMF module is imported - decorator, used below
 require_xesmf = functools.partial(
     require_module, module=xe, module_name="xESMF", min_version=XESMF_MINIMUM_VERSION
+)
+
+# Check if xarray version is compatible - decorator, used below
+require_older_xarray = functools.partial(
+    require_module,
+    module=xr,
+    module_name="xarray",
+    max_supported_version=XARRAY_INCOMPATIBLE_VERSION,
+    max_supported_warning=XARRAY_WARNING_MESSAGE,
 )
 
 
@@ -82,8 +89,10 @@ def weights_cache_init(
         CONFIG["clisops:grid_weights"]["local_weights_dir"] = str(weights_dir)
     elif config["clisops:grid_weights"]["local_weights_dir"] == "":
         # Use platformdirs to determine the local weights cache directory
-        weights_dir = platformdirs.user_data_dir("clisops", "roocs")
-        CONFIG["clisops:grid_weights"]["local_weights_dir"] = weights_dir
+        weights_dir = (
+            Path(platformdirs.user_data_dir("clisops", "roocs")) / "grid_weights"
+        )
+        CONFIG["clisops:grid_weights"]["local_weights_dir"] = str(weights_dir)
     else:
         weights_dir = config["clisops:grid_weights"]["local_weights_dir"]
 
@@ -353,6 +362,7 @@ class Grid:
         self.format = self.detect_format()
 
     @require_xesmf
+    @require_older_xarray
     def _grid_from_instructor(self, grid_instructor: tuple | float | int):
         """Process instructions to create regional or global grid (uses xESMF utility functions)."""
         # Create tuple of length 1 if input is either float or int
@@ -383,6 +393,7 @@ class Grid:
         self.format = "xESMF"
 
     @require_xesmf
+    @require_older_xarray
     def _grid_from_ds_adaptive(self, ds: xr.Dataset | xr.DataArray):
         """Create Grid of similar extent and resolution of input dataset."""
         # TODO: dachar/daops to deal with missing values occurring in the coordinate variables
@@ -1424,6 +1435,7 @@ class Weights:
     """
 
     @require_xesmf
+    @require_older_xarray
     def __init__(
         self,
         grid_in: Grid,
@@ -1761,6 +1773,7 @@ class Weights:
 
 
 @require_xesmf
+@require_older_xarray
 def regrid(
     grid_in: Grid,
     grid_out: Grid,

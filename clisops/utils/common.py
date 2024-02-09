@@ -1,6 +1,7 @@
 import functools
 import os
 import sys
+import warnings
 from pathlib import Path
 from types import FunctionType, ModuleType
 from typing import List, Optional, Union
@@ -22,6 +23,8 @@ def require_module(
     module: ModuleType,
     module_name: str,
     min_version: Optional[str] = "0.0.0",
+    max_supported_version: Optional[str] = None,
+    max_supported_warning: Optional[str] = None,
 ):
     """Ensure that module is installed before function/method is called, decorator."""
 
@@ -31,6 +34,15 @@ def require_module(
             raise Exception(
                 f"Package {module_name} >= {min_version} is required to use {func}."
             )
+        if max_supported_version is not None:
+            if module.__version__ > max_supported_version:
+                if max_supported_warning is not None:
+                    warnings.warn(max_supported_warning)
+                else:
+                    warnings.warn(
+                        f"Package {module_name} version {module.__version__} "
+                        f"is greater than the suggested version {max_supported_version}."
+                    )
         return func(*args, **kwargs)
 
     return wrapper_func
