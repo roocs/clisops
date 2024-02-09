@@ -129,7 +129,6 @@ def test_grid_init_ds_tos_curvilinear(load_esgf_test_data):
 def test_grid_init_ds_tas_cordex(load_esgf_test_data):
     ds = xr.open_dataset(CORDEX_TAS_ONE_TIMESTEP, use_cftime=True)
     grid = Grid(ds=ds)
-    print(ds)
 
     assert grid.format == "CF"
     assert grid.source == "Dataset"
@@ -146,7 +145,6 @@ def test_grid_init_ds_tas_cordex(load_esgf_test_data):
     assert grid.ncells == 45225
 
     ds = ds.drop(["lat", "lon", "lat_vertices", "lon_vertices"])
-    print(ds)
     with pytest.raises(
         Exception,
         match="The grid format is not supported.",
@@ -235,7 +233,6 @@ def test_grid_init_ds_tas_unstructured(load_esgf_test_data):
     assert grid.lat_bnds == "latitude_bnds"
     assert grid.lon_bnds == "longitude_bnds"
     assert grid.ncells == 20480
-    print(grid.contains_collapsed_cells)
 
     # not implemented yet
     # assert self.mask
@@ -455,17 +452,8 @@ def test_grid_from_ds_adaptive_reproducibility():
 
     gAa = Grid(ds=dsA, grid_id="adaptive")
     gA = Grid(grid_id="0pt25deg")
-    print(repr(gAa))
-    print(repr(gA))
-    print(gAa.ds.lon[715:735])
-    print(gA.ds.lon[715:735])
-
     gBa = Grid(ds=dsB, grid_id="adaptive")
     gB = Grid(grid_id="1deg")
-    print(gBa.ds.lon[170:190])
-    print(gB.ds.lon[170:190])
-    print(repr(gBa))
-    print(repr(gB))
 
     assert gA.extent == "global"
     assert gA.compare_grid(gAa)
@@ -1122,15 +1110,13 @@ class TestRegrid:
         self._setup()
         weights_cache_init(Path(tmp_path, "weights"))
         w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="conservative")
-        r = regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.7)
-        print(r)
+        regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.7)
 
     def test_no_adaptive_masking(self, load_esgf_test_data, tmp_path):
         self._setup()
         weights_cache_init(Path(tmp_path, "weights"))
         w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="bilinear")
-        r = regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=-1.0)
-        print(r)
+        regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=-1.0)
 
     def test_duplicated_cells_warning_issued(self, load_esgf_test_data, tmp_path):
         self._setup()
@@ -1149,14 +1135,13 @@ class TestRegrid:
             "However, please be wary with the results and consider removing / masking "
             "the duplicated cells before remapping.",
         ) as issuedWarnings:
-            r = regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.0)
+            regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.0)
             if not issuedWarnings:
                 raise Exception(
                     "No warning issued regarding the duplicated cells in the grid."
                 )
             else:
                 assert len(issuedWarnings) == 1
-            print(r)
 
     def test_regrid_dataarray(self, load_esgf_test_data, tmp_path):
         self._setup()

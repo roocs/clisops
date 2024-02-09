@@ -354,3 +354,47 @@ CORDEX_TAS_NO_BOUNDS = Path(
     MINI_ESGF_CACHE_DIR,
     "master/test_data/pool/data/CORDEX/data/cordex/output/EUR-11/KNMI/MPI-M-MPI-ESM-LR/rcp85/r1i1p1/KNMI-RACMO22E/v1/mon/tas/v20190625/tas_EUR-11_MPI-M-MPI-ESM-LR_rcp85_r1i1p1_KNMI-RACMO22E_v1_mon_209101.nc",
 ).as_posix()
+
+# ATLAS v1 datasets with full time series
+ATLAS_v1_CMIP5 = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/pool/data/c3s-cica-atlas/CMIP5/rcp26/pr_CMIP5_rcp26_mon_200601-210012.nc",
+).as_posix()
+
+ATLAS_v1_EOBS = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/pool/data/c3s-cica-atlas/E-OBS/sfcwind_E-OBS_mon_195001-202112.nc",
+).as_posix()
+
+ATLAS_v1_ERA5 = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/pool/data/c3s-cica-atlas/ERA5/psl_ERA5_mon_194001-202212.nc",
+).as_posix()
+
+# ATLAS v1 datasets with full horizontal grid
+ATLAS_v1_CORDEX = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/pool/data/c3s-cica-atlas/CORDEX-CORE/historical/huss_CORDEX-CORE_historical_mon_197001.nc",
+).as_posix()
+
+ATLAS_v1_EOBS_GRID = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/pool/data/c3s-cica-atlas/E-OBS/t_E-OBS_mon_195001.nc",
+).as_posix()
+
+# ATLAS v0 datasets with full time series
+ATLAS_v0_CORDEX_NAM = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/pool/data/c3s-ipcc-ar6-atlas/CORDEX-NAM/historical/rx1day_CORDEX-NAM_historical_mon_197001-200512.nc",
+).as_posix()
+
+ATLAS_v0_CMIP6 = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/pool/data/c3s-ipcc-ar6-atlas/CMIP6/ssp245/sst_CMIP6_ssp245_mon_201501-210012.nc",
+).as_posix()
+
+# ATLAS v0 datasets with full horizontal grid
+ATLAS_v0_CORDEX_ANT = Path(
+    MINI_ESGF_CACHE_DIR,
+    "master/test_data/pool/data/c3s-ipcc-ar6-atlas/CORDEX-ANT/rcp45/tnn_CORDEX-ANT_rcp45_mon_200601.nc",
+).as_posix()

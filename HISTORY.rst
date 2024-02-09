@@ -10,6 +10,11 @@ Bug Fixes
 * Fixed KeyError for temporal subsetting by components if not all components can be found in the dataset (#316).
 * Raising KeyError for temporal subsetting by components when no time steps match the selection criteria (#316).
 * Coordinate detection for remapping operator via standard_name if detection via cf-xarray fails / is ambiguous (#316).
+* Remove encoding settings with regards to compression for string variables to avoid netCDF write errors with newer netcdf-c versions (>4.9.0) (#319).
+
+Other Changes
+^^^^^^^^^^^^^
+* The compression level is capped at 1 to reduce write times (#319).
 
 v0.12.2 (2024-01-03)
 --------------------
