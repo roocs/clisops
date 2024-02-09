@@ -13,12 +13,15 @@ Bug Fixes
 * Remove encoding settings with regards to compression for string variables to avoid netCDF write errors with newer netcdf-c versions (>4.9.0) (#319).
 * Fixed a few docstrings, specifies some class methods as static methods (#321).
 * Renamed a few internal variables for clarity, rephrased a few sentences for grammar/spelling (#321).
+* Fixed a bug related to the creation of the `weights_dir` for regridding that was causing issues for Windows platforms (#313).
 
 Other Changes
 ^^^^^^^^^^^^^
 * The compression level is capped at 1 to reduce write times (#319).
 * Updated pre-commit hooks, pinned linting tools to their pre-commit equivalents (#321).
 * Added a pre-commit hook as well as a configuration for `codespell` (#321).
+* The `require_module` decorator can now accept supported version information (#321).
+* Testing data caching now uses platformdirs to determine the OS-appropriate caching location (#321).
 
 v0.12.2 (2024-01-03)
 --------------------

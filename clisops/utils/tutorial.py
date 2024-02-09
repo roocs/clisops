@@ -9,12 +9,13 @@ from urllib.error import HTTPError
 from urllib.parse import urljoin
 from urllib.request import urlretrieve
 
+import platformdirs
 import requests
 from loguru import logger
 from xarray import Dataset
 from xarray import open_dataset as _open_dataset
 
-_default_cache_dir = Path.home() / ".clisops_testing_data"
+_default_cache_dir = Path(platformdirs.user_cache_dir("clisops", "roocs"))
 
 
 __all__ = ["get_file", "open_dataset", "query_folder"]
