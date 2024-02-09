@@ -11,6 +11,10 @@ Bug Fixes
 * Raising KeyError for temporal subsetting by components when no time steps match the selection criteria (#316).
 * Coordinate detection for remapping operator via standard_name if detection via cf-xarray fails / is ambiguous (#316).
 * Remove encoding settings with regards to compression for string variables to avoid netCDF write errors with newer netcdf-c versions (>4.9.0) (#319).
+* Updated pre-commit hooks, pinned linting tools to their pre-commit equivalents (#321).
+* Added a pre-copmmit hook as well as a configuration for `codespell` (#321).
+* Fixed a few docstrings, specifies some class methods as static methods (#321).
+* Renamed a few internal variables for clarity, rephrased a few sentences for grammar/spelling (#321).
 
 Other Changes
 ^^^^^^^^^^^^^
