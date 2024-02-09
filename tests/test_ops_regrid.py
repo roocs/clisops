@@ -12,6 +12,9 @@ from _common import (
     CMIP6_IITM_EXTENT,
     CMIP6_OCE_HALO_CNRM,
     CMIP6_TOS_ONE_TIME_STEP,
+    ATLAS_v0_CORDEX_ANT,
+    ATLAS_v1_CORDEX,
+    ATLAS_v1_EOBS_GRID,
 )
 from clisops.core.regrid import XESMF_MINIMUM_VERSION, weights_cache_init, xe
 from clisops.ops.regrid import regrid
@@ -105,6 +108,65 @@ def test_regrid_regular_grid_to_all_roocs_grids(
     ds = xr.open_dataset(nc_file)
     assert "mrsos" in ds
     assert ds.mrsos.size > 100
+
+
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+@pytest.mark.parametrize(
+    "dset", ["ATLAS_v1_CORDEX", "ATLAS_v1_EOBS_GRID", "ATLAS_v0_CORDEX_ANT"]
+)
+def test_regrid_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
+    "Test regridding for several ATLAS datasets."
+    result = regrid(
+        ds=globals()[dset],
+        method="bilinear",
+        adaptive_masking_threshold=0.5,
+        grid="0pt5deg_lsm",
+        output_dir=tmpdir,
+        output_type="netcdf",
+        file_namer="standard",
+    )
+    assert os.path.basename(result[0]).endswith(
+        "_regrid-bilinear-360x720_cells_grid.nc"
+    )
+
+
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+def test_regrid_ATLAS_CORDEX(tmpdir, load_esgf_test_data):
+    "Test regridding for ATLAS CORDEX dataset."
+    import netCDF4
+
+    print("netcdf4-python version: %s" % netCDF4.__version__)
+    print("HDF5 lib version:       %s" % netCDF4.__hdf5libversion__)
+    print("netcdf lib version:     %s" % netCDF4.__netcdf4libversion__)
+
+    ds = xr.open_dataset(ATLAS_v0_CORDEX_ANT, use_cftime=True)
+
+    # Might trigger KeyError in future netcdf-c versions
+    # PR: https://github.com/Unidata/netcdf-c/pull/2716
+    for cvar in [
+        "member_id",
+        "rcm_variant",
+        "rcm_model",
+        "rcm_institution",
+        "gcm_variant",
+        "gcm_model",
+        "gcm_institution",
+    ]:
+        assert cvar in ds
+
+    result = regrid(
+        ds=ds,
+        method="nearest_s2d",
+        adaptive_masking_threshold=0.5,
+        grid="1deg",
+        output_dir=tmpdir,
+        output_type="netcdf",
+        file_namer="standard",
+    )
+    assert (
+        os.path.basename(result[0])
+        == "tnn_CORDEX-ANT_rcp45_mon_20060101-20060101_regrid-nearest_s2d-180x360_cells_grid.nc"
+    )
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)

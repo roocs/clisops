@@ -1,6 +1,6 @@
 from collections import ChainMap
 from pathlib import Path
-from typing import List, Union
+from typing import List, Optional, Union
 
 import xarray as xr
 from loguru import logger
@@ -17,17 +17,16 @@ class Operation:
     def __init__(
         self,
         ds,
-        file_namer="standard",
-        split_method="time:auto",
-        output_dir=None,
-        output_type="netcdf",
+        file_namer: str = "standard",
+        split_method: str = "time:auto",
+        output_dir: Optional[Union[str, Path]] = None,
+        output_type: str = "netcdf",
         **params,
     ):
-        """
-        Constructor for each operation.
+        """Constructor for each operation.
+
         Sets common input parameters as attributes.
-        Parameters that are specific to each operation are handled in:
-          self._resolve_params()
+        Parameters that are specific to each operation are handled in `self._resolve_params()`
         """
         self._file_namer = file_namer
         self._split_method = split_method
@@ -47,7 +46,7 @@ class Operation:
 
         self.ds = ds
 
-    def _resolve_params(self, **params):
+    def _resolve_params(self, **params) -> None:
         """
         Resolve the operation-specific input parameters to `self.params`.
         """
@@ -62,14 +61,17 @@ class Operation:
 
     def _calculate(self):
         """The `_calculate()` method is implemented within each operation subclass."""
-        raise NotImplementedError
+        raise NotImplementedError()
 
-    def _remove_redundant_fill_values(self, ds):
+    def _remove_str_compression(self, ds):
         """
-        Get coordinate and data variables and remove fill values added by xarray
-        (CF conventions say that coordinate variables cannot have missing values).
-
-        See issue: https://github.com/roocs/clisops/issues/224
+        netCDF4 datatypes of variable length are decoded to str by xarray<2023.11.0.
+        As of xarray 2023.11.0 they are decoded to one of np.dtypes.StrDType (eg. "<U20")
+        of variable length and stripped of all encoding settings. In netcdf-c versions >= 4.9.0
+        and xarray < 2023.11.0 the latter part needs to be conducted manually to avoid an Exception
+        when writing the xarray.Dataset to disk.
+        See issue:  https://github.com/Unidata/netcdf4-python/issues/1205
+        See PR: https://github.com/roocs/clisops/pull/319
         """
         if isinstance(ds, xr.Dataset):
             varlist = list(ds.coords) + list(ds.data_vars)
@@ -77,6 +79,63 @@ class Operation:
             varlist = list(ds.coords)
 
         for var in varlist:
+            if "dtype" in ds[var].encoding:
+                if ds[var].encoding["dtype"] == str:
+                    for en in [
+                        "compression",
+                        "complevel",
+                        "shuffle",
+                        "fletcher32",
+                        "endian",
+                        "zlib",
+                    ]:
+                        if en in ds[var].encoding:
+                            del ds[var].encoding[en]
+        return ds
+
+    def _cap_deflate_level(self, ds):
+        """
+        For CMOR3 / CMIP6 it was investigated which netCDF4 deflate_level should be set to optimize
+        the balance between reduction of file size and degradation in performance. The values found
+        were deflate_level=1, shuffle=True. To keep the write times at a minimum, compression level 1
+        is not exceeded.
+        See issue: https://github.com/PCMDI/cmor/issues/403
+        """
+        if isinstance(ds, xr.Dataset):
+            varlist = list(ds.coords) + list(ds.data_vars)
+        elif isinstance(ds, xr.DataArray):
+            varlist = list(ds.coords)
+
+        for var in varlist:
+            complevel = ds[var].encoding.get("complevel", 0)
+            compression = ds[var].encoding.get("compression_opts", 0)
+            if complevel > 1:
+                ds[var].encoding["complevel"] = 1
+            elif compression > 1:
+                ds[var].encoding["compression_opts"] = 1
+
+        return ds
+
+    @staticmethod
+    def _remove_redundant_fill_values(ds):
+        """Get coordinate and data variables and remove fill values added by xarray.
+
+        CF-conventions say that coordinate variables cannot have missing values.
+
+        See Also
+        --------
+        https://github.com/roocs/clisops/issues/224
+        """
+        if isinstance(ds, xr.Dataset):
+            var_list = list(ds.coords) + list(ds.data_vars)
+        elif isinstance(ds, xr.DataArray):
+            var_list = list(ds.coords)
+        else:
+            raise ValueError(
+                f"Expected xarray.Dataset or xarray.DataArray, got {type(ds)}"
+            )
+
+        for var in var_list:
             fval = ChainMap(ds[var].attrs, ds[var].encoding).get("_FillValue", None)
             mval = ChainMap(ds[var].attrs, ds[var].encoding).get("missing_value", None)
             if not fval and not mval:
@@ -101,30 +160,42 @@ class Operation:
                     )
         return ds
 
-    def _remove_redundant_coordinates_attr(self, ds):
-        """
-        This method removes the coordinates attribute added by xarray, example:
+    @staticmethod
+    def _remove_redundant_coordinates_attr(ds):
+        """This method removes the coordinates attribute added by xarray.
 
-            double time_bnds(time, bnds) ;
-                time_bnds:coordinates = "height" ;
+         Example
+        -------
+        .. code-block:: cpp
 
-        Programs like cdo will complain about this:
+            double time_bnds(time, bnds);
+            time_bnds:coordinates = "height";
+
+        Programs like `cdo` will complain about this:
+
+        .. code-block:: shell
 
             Warning (cdf_set_var): Inconsistent variable definition for time_bnds!
 
-        See issue: https://github.com/roocs/clisops/issues/224
+        See Also
+        --------
+        https://github.com/roocs/clisops/issues/224
         """
         if isinstance(ds, xr.Dataset):
-            varlist = list(ds.coords) + list(ds.data_vars)
+            var_list = list(ds.coords) + list(ds.data_vars)
         elif isinstance(ds, xr.DataArray):
-            varlist = list(ds.coords)
+            var_list = list(ds.coords)
+        else:
+            raise ValueError(
+                f"Expected xarray.Dataset or xarray.DataArray, got {type(ds)}"
+            )
 
-        for var in varlist:
-            cattr = ChainMap(ds[var].attrs, ds[var].encoding).get("coordinates", None)
-            if not cattr:
+        for var in var_list:
+            c_attr = ChainMap(ds[var].attrs, ds[var].encoding).get("coordinates", None)
+            if not c_attr:
                 ds[var].encoding["coordinates"] = None
             else:
-                ds[var].encoding["coordinates"] = cattr
+                ds[var].encoding["coordinates"] = c_attr
                 ds[var].attrs.pop("coordinates", None)
         return ds
 
@@ -151,6 +222,10 @@ class Operation:
         processed_ds = self._remove_redundant_fill_values(processed_ds)
         # remove redundant coordinates from bounds
         processed_ds = self._remove_redundant_coordinates_attr(processed_ds)
+        # remove compression for string variables (as it is not supported by netcdf-c >= 4.9.0)
+        processed_ds = self._remove_str_compression(processed_ds)
+        # cap deflate level at 1
+        processed_ds = self._cap_deflate_level(processed_ds)
 
         # Work out how many outputs should be created based on the size
         # of the array. Manage this as a list of time slices.

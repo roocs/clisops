@@ -1,3 +1,6 @@
+from typing import Optional, Union
+
+import xarray as xr
 from roocs_utils.project_utils import get_project_name
 from roocs_utils.xarray_utils import xarray_utils as xu
 
@@ -7,9 +10,9 @@ from clisops.utils.output_utils import get_format_extension
 
 def get_file_namer(name):
     """Returns the correct filenamer from the provided name."""
-    namers = {"standard": StandardFileNamer, "simple": SimpleFileNamer}
+    file_namer = {"standard": StandardFileNamer, "simple": SimpleFileNamer}
 
-    return namers.get(name, StandardFileNamer)
+    return file_namer.get(name, StandardFileNamer)
 
 
 class _BaseFileNamer:
@@ -42,7 +45,8 @@ class StandardFileNamer(SimpleFileNamer):
     Generates file names based on input dataset.
     """
 
-    def _get_project(self, ds):
+    @staticmethod
+    def _get_project(ds):
         """Gets the project name from the input dataset"""
 
         return get_project_name(ds)
@@ -73,7 +77,13 @@ class StandardFileNamer(SimpleFileNamer):
         except KeyError:
             return None
 
-    def _resolve_derived_attrs(self, ds, attrs, template, fmt=None):
+    def _resolve_derived_attrs(
+        self,
+        ds: Union[xr.DataArray, xr.Dataset],
+        attrs: dict,
+        template: dict,
+        fmt: Optional[str] = None,
+    ) -> None:
         """Finds var_id, time_range and format_extension of dataset and output to generate output file name."""
         if "__derive__var_id" in template:
             attrs["__derive__var_id"] = xu.get_main_variable(ds)
@@ -91,7 +101,8 @@ class StandardFileNamer(SimpleFileNamer):
             for key, value in self._replace.items():
                 attrs[key] = value
 
-    def _get_time_range(self, da):
+    @staticmethod
+    def _get_time_range(da: Union[xr.DataArray, xr.Dataset]) -> str:
         """Finds the time range of the data in the output."""
         try:
             times = da.time.values

@@ -10,6 +10,15 @@ Bug Fixes
 * Fixed KeyError for temporal subsetting by components if not all components can be found in the dataset (#316).
 * Raising KeyError for temporal subsetting by components when no time steps match the selection criteria (#316).
 * Coordinate detection for remapping operator via standard_name if detection via cf-xarray fails / is ambiguous (#316).
+* Remove encoding settings with regards to compression for string variables to avoid netCDF write errors with newer netcdf-c versions (>4.9.0) (#319).
+* Fixed a few docstrings, specifies some class methods as static methods (#321).
+* Renamed a few internal variables for clarity, rephrased a few sentences for grammar/spelling (#321).
+
+Other Changes
+^^^^^^^^^^^^^
+* The compression level is capped at 1 to reduce write times (#319).
+* Updated pre-commit hooks, pinned linting tools to their pre-commit equivalents (#321).
+* Added a pre-commit hook as well as a configuration for `codespell` (#321).
 
 v0.12.2 (2024-01-03)
 --------------------

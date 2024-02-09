@@ -62,7 +62,7 @@ dependencies = [
   "requests>=2.0",
   # roocs_grids is differently named on conda-forge
   "roocs_grids>=0.1.2",
-  "roocs-utils>=0.6.4,<0.7",
+  "roocs-utils>=0.6.7,<0.7",
   "shapely>=1.9",
   "xarray>=0.21"
 ]
@@ -135,6 +135,9 @@ replace = "__version__ = \"{new_version}\""
 filename = "docs/conf.py"
 search = "version = \"{current_version}\""
 replace = "version = \"{new_version}\""
+
+[tool.codespell]
+ignore-words-list = "scrip,nam,te,mye,bu,lik,tread"
 
 [tool.coverage.run]
 relative_files = true
