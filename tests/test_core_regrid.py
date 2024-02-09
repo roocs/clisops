@@ -1034,11 +1034,11 @@ def test_cache_lock_mechanism(load_esgf_test_data, tmp_path):
     with pytest.warns(UserWarning, match="lockfile") as issuedWarnings:
         Weights(grid_in=grid_in, grid_out=grid_out, method="nearest_s2d")
         if not issuedWarnings:
-            raise Exception("Lockfile not recognized/ignored.")
+            raise RuntimeError("Lockfile not recognized/ignored.")
         else:
+            for issuedWarning in issuedWarnings:
+                print(issuedWarning.message)
             assert len(issuedWarnings) == 1
-            # for issuedWarning in issuedWarnings:
-            #    print(issuedWarning.message)
 
     lock.release()
 
@@ -1141,6 +1141,8 @@ class TestRegrid:
                     "No warning issued regarding the duplicated cells in the grid."
                 )
             else:
+                for issuedWarning in issuedWarnings:
+                    print(issuedWarning.message)
                 assert len(issuedWarnings) == 1
 
     def test_regrid_dataarray(self, load_esgf_test_data, tmp_path):
