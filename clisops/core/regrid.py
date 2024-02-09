@@ -14,6 +14,7 @@ from pathlib import Path
 
 import cf_xarray  # noqa
 import numpy as np
+import platformdirs
 import roocs_grids
 import xarray as xr
 from packaging.version import Version
@@ -49,7 +50,7 @@ if Version(__xarray_version__) >= Version(XARRAY_INCOMPATIBLE_VERSION):
 
 
 # Read coordinate variable precision from the clisops configuration (roocs.ini)
-#  All horizontal coordinate variables will be rounded to this precision
+# All horizontal coordinate variables will be rounded to this precision
 coord_precision_hor = int(CONFIG["clisops:coordinate_precision"]["hor_coord_decimals"])
 
 # Check if xESMF module is imported - decorator, used below
@@ -58,7 +59,9 @@ require_xesmf = functools.partial(
 )
 
 
-def weights_cache_init(weights_dir: str | Path) -> None:
+def weights_cache_init(
+    weights_dir: str | Path | None = None, config: dict = CONFIG
+) -> None:
     """Initialize global variable `weights_dir` as used by the Weights class.
 
     Parameters
@@ -67,13 +70,22 @@ def weights_cache_init(weights_dir: str | Path) -> None:
         Directory name to initialize the local weights cache in.
         Will be created if it does not exist.
         Per default, this function is called upon import with weights_dir as defined in roocs.ini.
+    config : dict
+        Configuration dictionary as read from roocs.ini.
 
     Returns
     -------
     None
     """
-    # Overwrite CONFIG entry with new value
-    CONFIG["clisops:grid_weights"]["local_weights_dir"] = str(weights_dir)
+    if weights_dir is not None:
+        # Overwrite CONFIG entry with new value
+        CONFIG["clisops:grid_weights"]["local_weights_dir"] = str(weights_dir)
+    elif config["clisops:grid_weights"]["local_weights_dir"] == "":
+        # Use platformdirs to determine the local weights cache directory
+        weights_dir = platformdirs.user_data_dir("clisops", "roocs")
+        CONFIG["clisops:grid_weights"]["local_weights_dir"] = weights_dir
+    else:
+        weights_dir = config["clisops:grid_weights"]["local_weights_dir"]
 
     # Create directory tree if required
     if not os.path.isdir(weights_dir):
@@ -81,7 +93,7 @@ def weights_cache_init(weights_dir: str | Path) -> None:
 
 
 # Initialize weights cache as defined in the clisops configuration (roocs.ini)
-weights_cache_init(CONFIG["clisops:grid_weights"]["local_weights_dir"])
+weights_cache_init()
 
 # Ensure local weight storage directory exists - decorator, used below
 check_weights_dir = functools.partial(
