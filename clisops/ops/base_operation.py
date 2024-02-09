@@ -115,7 +115,7 @@ class Operation:
                 ds[var].encoding["compression_opts"] = 1
 
         return ds
-  
+
     @staticmethod
     def _remove_redundant_fill_values(ds):
         """Get coordinate and data variables and remove fill values added by xarray.
