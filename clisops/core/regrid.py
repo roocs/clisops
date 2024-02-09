@@ -38,7 +38,7 @@ except (ModuleNotFoundError, ValueError):
     xe = None
 
 # FIXME: Remove this when xarray addresses https://github.com/pydata/xarray/issues/7794
-XARRAY_INCOMPATIBLE_VERSION = "2023.03.0"
+XARRAY_INCOMPATIBLE_VERSION = "2023.3.0"
 XARRAY_WARNING_MESSAGE = (
     f"xarray version >= {XARRAY_INCOMPATIBLE_VERSION} "
     f"is not supported for regridding operations with cf-time indexed arrays. "

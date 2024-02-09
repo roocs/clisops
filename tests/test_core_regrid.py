@@ -1035,9 +1035,10 @@ def test_cache_lock_mechanism(load_esgf_test_data, tmp_path):
         Weights(grid_in=grid_in, grid_out=grid_out, method="nearest_s2d")
         if not issuedWarnings:
             raise RuntimeError("Lockfile not recognized/ignored.")
+        elif Version(xr.__version__) >= Version("2023.3.0"):
+            # Warning will also be issued for xarray being too new
+            assert len(issuedWarnings) == 2
         else:
-            for issuedWarning in issuedWarnings:
-                print(issuedWarning.message)
             assert len(issuedWarnings) == 1
 
     lock.release()
@@ -1137,12 +1138,13 @@ class TestRegrid:
         ) as issuedWarnings:
             regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.0)
             if not issuedWarnings:
-                raise Exception(
+                raise RuntimeError(
                     "No warning issued regarding the duplicated cells in the grid."
                 )
+            elif Version(xr.__version__) >= Version("2023.3.0"):
+                # Warning will also be issued for xarray being too new
+                assert len(issuedWarnings) == 2
             else:
-                for issuedWarning in issuedWarnings:
-                    print(issuedWarning.message)
                 assert len(issuedWarnings) == 1
 
     def test_regrid_dataarray(self, load_esgf_test_data, tmp_path):
@@ -1210,17 +1212,17 @@ def test_duplicated_cells_renormalization(load_esgf_test_data, tmp_path):
     xr.testing.assert_equal(r1, r2)
 
     # Remap without using adaptive masking - internally, then adaptive masking is used
-    #   with threshold 0., to still renormalize contributions from duplicated cells
+    #   with threshold 0., to still re-normalize contributions from duplicated cells
     #   but not from masked cells or out-of-source-domain area
     r3 = regrid(grid_in, grid_out, w, adaptive_masking_threshold=-1.0)
 
-    # Make sure, contributions from duplicated cells (i.e. values > 1) are renormalized
+    # Make sure, contributions from duplicated cells (i.e. values > 1) are re-normalized
     assert r2["tauuo"].where(r2["tauuo"] > 1.0, 0.0).sum() == 0.0
     assert r3["tauuo"].where(r2["tauuo"] > 1.0, 0.0).sum() == 0.0
 
     # Make sure xesmf behaves as expected:
     #   test that deactivated adaptive masking in xesmf will yield results > 1
-    #   and else, contributions from duplicated cells will be renormalized
+    #   and else, contributions from duplicated cells will be re-normalized
     r4 = w.regridder(ds["tauuo"], skipna=False)
     r5 = w.regridder(ds["tauuo"], skipna=True, na_thres=0.0)
     assert r4.where(r4 > 1.0, 0.0).sum() > 0.0
