@@ -51,7 +51,7 @@ def average_over_dims(
     split_method: str = "time:auto",
     file_namer: str = "standard",
 ) -> List[Union[xr.Dataset, str]]:
-    """
+    """Calculate an average over given dimensions.
 
     Parameters
     ----------
@@ -126,7 +126,7 @@ def average_shape(
     split_method: str = "time:auto",
     file_namer: str = "standard",
 ) -> List[Union[xr.Dataset, str]]:
-    """
+    """Calculate a spatial average over a given shape.
 
     Parameters
     ----------
@@ -158,7 +158,6 @@ def average_shape(
     | output_type: "netcdf"
     | split_method: "time:auto"
     | file_namer: "standard"
-
     """
     op = AverageShape(**locals())
     return op.process()

@@ -136,6 +136,9 @@ filename = "docs/conf.py"
 search = "version = \"{current_version}\""
 replace = "version = \"{new_version}\""
 
+[tool.codespell]
+ignore-words-list = "scrip,nam,te,mye,bu,lik,tread"
+
 [tool.coverage.run]
 relative_files = true
 include = ["clisops/*"]

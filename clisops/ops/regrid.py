@@ -21,8 +21,8 @@ supported_regridding_methods = ["conservative", "patch", "nearest_s2d", "bilinea
 class Regrid(Operation):
     """Class for regridding operation, extends clisops.ops.base_operation.Operation."""
 
+    @staticmethod
     def _get_grid_in(
-        self,
         grid_desc: Union[xr.Dataset, xr.DataArray],
         compute_bounds: bool,
     ):
@@ -41,11 +41,12 @@ class Regrid(Operation):
         self,
         grid_desc: Union[xr.Dataset, xr.DataArray, int, float, tuple, str],
         compute_bounds: bool,
-    ):
-        """
-        Create clisops.core.regrid.Grid object as target grid of the regridding operation.
+    ) -> Grid:
+        """Create clisops.core.regrid.Grid object as target grid of the regridding operation.
 
-        Returns the Grid object
+        Returns
+        -------
+        Grid
         """
         if isinstance(grid_desc, str):
             if grid_desc in ["auto", "adaptive"]:
@@ -62,17 +63,20 @@ class Regrid(Operation):
             # clisops.core.regrid.Grid will raise the exception
             return Grid()
 
-    def _get_weights(self, grid_in: Grid, grid_out: Grid, method: str):
-        """
-        Generate the remapping weights using clisops.core.regrid.Weights.
+    @staticmethod
+    def _get_weights(grid_in: Grid, grid_out: Grid, method: str):
+        """Generate the remapping weights using clisops.core.regrid.Weights.
 
-        Returns the Weights object.
+        Returns
+        -------
+        Weights
+            An instance of the Weights object.
         """
         return Weights(grid_in=grid_in, grid_out=grid_out, method=method)
 
-    def _resolve_params(self, **params):
+    def _resolve_params(self, **params) -> None:
         """Generate a dictionary of regrid parameters."""
-        # all regrid specific paramterers should be passed in via **params
+        # all regrid specific parameters should be passed in via **params
         # this is where we resolve them and set self.params as a dict or as separate attributes
         # this would be where you make use of your other methods/ attributes e.g.
         # get_grid_in(), get_grid_out() and get_weights() to generate the regridder
@@ -121,8 +125,8 @@ class Regrid(Operation):
         # Input grid / Dataset
         self.ds = self.params.get("grid_in").ds
 
-        # Theres no __str__() method for the Regridder object, so I used its filename attribute,
-        #  which specifies a default filename (which has but not much to do with the filename we would give the weight file).
+        # There is no __str__() method for the Regridder object, so I used its filename attribute,
+        # which specifies a default filename (does not correspond with the filename we would give the weight file).
         # todo: Better option might be to have the Weights class extend the Regridder class or to define
         #  a __str__() method for the Weights class.
         logger.debug(
@@ -133,7 +137,7 @@ class Regrid(Operation):
             )
         )
 
-    def _get_file_namer(self):
+    def _get_file_namer(self) -> object:
         """Return the appropriate file namer object."""
         # "extra" is what will go at the end of the file name before .nc
         extra = "_regrid-{}-{}".format(
@@ -176,20 +180,19 @@ def regrid(
     file_namer: Optional[str] = "standard",
     keep_attrs: Optional[Union[bool, str]] = True,
 ) -> List[Union[xr.Dataset, str]]:
-    """
-    Regrid specified input file or xarray object.
+    """Regrid specified input file or xarray object.
 
     Parameters
     ----------
-    ds: Union[xr.Dataset, str]
-    method="nearest_s2d",
-    adaptive_masking_threshold=0.5,
-    grid="adaptive",
-    output_dir: Optional[Union[str, Path]] = None
-    output_type: {"netcdf", "nc", "zarr", "xarray"}
-    split_method: {"time:auto"}
-    file_namer: {"standard", "simple"}
-    keep_attrs: {True, False, "target"}
+    ds : Union[xr.Dataset, str]
+    method : {"nearest_s2d", "conservative", "patch", "bilinear"}
+    adaptive_masking_threshold : Optional[Union[int, float]]
+    grid : Union[xr.Dataset, xr.DataArray, int, float, tuple, str]
+    output_dir : Optional[Union[str, Path]] = None
+    output_type : {"netcdf", "nc", "zarr", "xarray"}
+    split_method : {"time:auto"}
+    file_namer : {"standard", "simple"}
+    keep_attrs : {True, False, "target"}
 
     Returns
     -------

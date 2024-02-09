@@ -180,7 +180,7 @@ CMIP6_TASMIN = Path(
     "master/test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Amon/tasmin/gn/v20190710/tasmin_Amon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_201001-201412.nc",
 ).as_posix()
 
-# Dataset with julian calender
+# Dataset with julian calendar
 CMIP6_JULIAN = Path(
     MINI_ESGF_CACHE_DIR,
     "master/test_data/badc/cmip6/data/CMIP6/CMIP/CCCR-IITM/IITM-ESM/1pctCO2/r1i1p1f1/Omon/tos/gn/v20191204/tos_Omon_IITM-ESM_1pctCO2_r1i1p1f1_gn_193001-193412.nc",
