@@ -64,6 +64,59 @@ class Operation:
         """The `_calculate()` method is implemented within each operation subclass."""
         raise NotImplementedError
 
+    def _remove_str_compression(self, ds):
+        """
+        netCDF4 datatypes of variable length are decoded to str by xarray<2023.11.0.
+        As of xarray 2023.11.0 they are decoded to one of np.dtypes.StrDType (eg. "<U20")
+        of variable length and stripped of all encoding settings. In netcdf-c versions >= 4.9.0
+        and xarray < 2023.11.0 the latter part needs to be conducted manually to avoid an Exception
+        when writing the xarray.Dataset to disk.
+        See issue:  https://github.com/Unidata/netcdf4-python/issues/1205
+        See PR: https://github.com/roocs/clisops/pull/319
+        """
+        if isinstance(ds, xr.Dataset):
+            varlist = list(ds.coords) + list(ds.data_vars)
+        elif isinstance(ds, xr.DataArray):
+            varlist = list(ds.coords)
+
+        for var in varlist:
+            if "dtype" in ds[var].encoding:
+                if ds[var].encoding["dtype"] == str:
+                    for en in [
+                        "compression",
+                        "complevel",
+                        "shuffle",
+                        "fletcher32",
+                        "endian",
+                        "zlib",
+                    ]:
+                        if en in ds[var].encoding:
+                            del ds[var].encoding[en]
+        return ds
+
+    def _cap_deflate_level(self, ds):
+        """
+        For CMOR3 / CMIP6 it was investigated which netCDF4 deflate_level should be set to optimize
+        the balance between reduction of file size and degradation in performance. The values found
+        were deflate_level=1, shuffle=True. To keep the write times at a minimum, compression level 1
+        is not exceeded.
+        See issue: https://github.com/PCMDI/cmor/issues/403
+        """
+        if isinstance(ds, xr.Dataset):
+            varlist = list(ds.coords) + list(ds.data_vars)
+        elif isinstance(ds, xr.DataArray):
+            varlist = list(ds.coords)
+
+        for var in varlist:
+            complevel = ds[var].encoding.get("complevel", 0)
+            compression = ds[var].encoding.get("compression_opts", 0)
+            if complevel > 1:
+                ds[var].encoding["complevel"] = 1
+            elif compression > 1:
+                ds[var].encoding["compression_opts"] = 1
+
+        return ds
+
     def _remove_redundant_fill_values(self, ds):
         """
         Get coordinate and data variables and remove fill values added by xarray
@@ -151,6 +204,10 @@ class Operation:
         processed_ds = self._remove_redundant_fill_values(processed_ds)
         # remove redundant coordinates from bounds
         processed_ds = self._remove_redundant_coordinates_attr(processed_ds)
+        # remove compression for string variables (as it is not supported by netcdf-c >= 4.9.0)
+        processed_ds = self._remove_str_compression(processed_ds)
+        # cap deflate level at 1
+        processed_ds = self._cap_deflate_level(processed_ds)
 
         # Work out how many outputs should be created based on the size
         # of the array. Manage this as a list of time slices.
