@@ -20,6 +20,7 @@ Other Changes
 * The compression level is capped at 1 to reduce write times (#319).
 * Updated pre-commit hooks, pinned linting tools to their pre-commit equivalents (#321).
 * Added a pre-commit hook as well as a configuration for `codespell` (#321).
+* Added `dependabot` to maintain package and GitHub Action versions (#322).
 * The `require_module` decorator can now accept supported version information (#321).
 * Testing data caching now uses platformdirs to determine the OS-appropriate caching location (#321).
 
