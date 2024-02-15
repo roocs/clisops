@@ -83,6 +83,8 @@ jobs:
             upstream: false
           - python-version: "3.11"
             upstream: false
+          - python-version: "3.12"
+            upstream: false
     defaults:
       run:
         shell: bash -l {0}
