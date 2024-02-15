@@ -9,7 +9,7 @@ on:
 concurrency:
   # For a given workflow, if we push to the same branch, cancel all previous builds on that branch except on master.
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
 permissions:
   contents: read
