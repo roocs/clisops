@@ -2,7 +2,7 @@ name: clisops
 channels:
  - conda-forge
 dependencies:
- - python >=3.8,<3.12
+ - python >=3.8,<3.13
  - flit
  - bottleneck >=1.3.1
  - cf_xarray >=0.8.6
