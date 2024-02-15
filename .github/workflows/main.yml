@@ -6,6 +6,14 @@ on:
       - master
   pull_request:
 
+concurrency:
+  # For a given workflow, if we push to the same branch, cancel all previous builds on that branch except on master.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Linting Suite
@@ -15,10 +23,6 @@ jobs:
         tox-env:
           - lint
     steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.12.1
-        with:
-          access_token: ${{ github.token }}
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
