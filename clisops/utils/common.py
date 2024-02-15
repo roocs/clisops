@@ -1,13 +1,13 @@
 import functools
 import os
 import sys
+import warnings
 from pathlib import Path
 from types import FunctionType, ModuleType
 from typing import List, Optional, Union
 
 from loguru import logger
-
-# from roocs_utils.parameter import parameterise
+from packaging.version import Version
 
 
 def expand_wildcards(paths: Union[str, Path]) -> list:
@@ -22,15 +22,30 @@ def require_module(
     module: ModuleType,
     module_name: str,
     min_version: Optional[str] = "0.0.0",
+    max_supported_version: Optional[str] = None,
+    max_supported_warning: Optional[str] = None,
 ):
     """Ensure that module is installed before function/method is called, decorator."""
 
     @functools.wraps(func)
     def wrapper_func(*args, **kwargs):
+        exception_msg = (
+            f"Package {module_name} >= {min_version} is required to use {func}."
+        )
         if module is None:
-            raise Exception(
-                f"Package {module_name} >= {min_version} is required to use {func}."
-            )
+            raise ModuleNotFoundError(exception_msg)
+        if Version(module.__version__) < Version(min_version):
+            raise ImportError(exception_msg)
+
+        if max_supported_version is not None:
+            if Version(module.__version__) > Version(max_supported_version):
+                if max_supported_warning is not None:
+                    warnings.warn(max_supported_warning)
+                else:
+                    warnings.warn(
+                        f"Package {module_name} version {module.__version__} "
+                        f"is greater than the suggested version {max_supported_version}."
+                    )
         return func(*args, **kwargs)
 
     return wrapper_func

@@ -24,9 +24,11 @@ jobs:
         with:
           python-version: "3.9"
       - name: Install tox
-        run: pip install tox~=4.0
+        run: |
+          python -m pip install tox~=4.0
       - name: Run linting suite
-        run: tox -e ${{ matrix.tox-env }}
+        run: |
+          python -m tox -e ${{ matrix.tox-env }}
 
   pypi:
     name: Python${{ matrix.python-version }} (PyPI + Tox)
@@ -54,7 +56,7 @@ jobs:
         python -m pip install tox~=4.0
     - name: Test with tox
       run: |
-        tox -e ${{ matrix.tox-env }}
+        python -m tox -e ${{ matrix.tox-env }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         COVERALLS_FLAG_NAME: run-${{ matrix.tox-env }}
@@ -103,9 +105,10 @@ jobs:
       - name: Check versions
         run: |
           conda list
+          python -m pip check || true
       - name: Test with conda
         run: |
-          pytest --cov tests
+          python -m pytest --cov tests
 
   finish:
     needs:
@@ -115,7 +118,7 @@ jobs:
     steps:
       - name: Coveralls Finished
         run: |
-          pip install --upgrade coveralls
+          python -m pip install --upgrade coveralls
           coveralls --finish
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
