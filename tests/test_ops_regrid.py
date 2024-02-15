@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 import cf_xarray  # noqa
@@ -6,15 +7,14 @@ import pytest
 import xarray as xr
 from roocs_grids import get_grid_file, grid_dict
 
-from _common import (
+from _common import (  # ATLAS_v1_CORDEX,; ATLAS_v1_EOBS_GRID,
     CMIP5_MRSOS_ONE_TIME_STEP,
     CMIP6_ATM_VERT_ONE_TIMESTEP,
     CMIP6_IITM_EXTENT,
     CMIP6_OCE_HALO_CNRM,
     CMIP6_TOS_ONE_TIME_STEP,
     ATLAS_v0_CORDEX_ANT,
-    ATLAS_v1_CORDEX,
-    ATLAS_v1_EOBS_GRID,
+    ContextLogger,
 )
 from clisops.core.regrid import XESMF_MINIMUM_VERSION, weights_cache_init, xe
 from clisops.ops.regrid import regrid
@@ -34,7 +34,7 @@ def _load_ds(fpath):
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_basic(tmpdir, load_esgf_test_data, tmp_path):
-    "Test a basic regridding operation."
+    """Test a basic regridding operation."""
     fpath = CMIP5_MRSOS_ONE_TIME_STEP
     basename = os.path.splitext(os.path.basename(fpath))[0]
     method = "nearest_s2d"
@@ -58,9 +58,9 @@ def test_regrid_basic(tmpdir, load_esgf_test_data, tmp_path):
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_grid_as_none(tmpdir, load_esgf_test_data, tmp_path):
-    """
-    Test behaviour when none passed as method and grid -
-    should use the default regridding.
+    """Test behaviour when none passed as method and grid.
+
+    Should use the default regridding.
     """
     fpath = CMIP5_MRSOS_ONE_TIME_STEP
 
@@ -84,7 +84,7 @@ def test_regrid_grid_as_none(tmpdir, load_esgf_test_data, tmp_path):
 def test_regrid_regular_grid_to_all_roocs_grids(
     tmpdir, load_esgf_test_data, grid_id, tmp_path
 ):
-    "Test regridded a regular lat/lon field to all roocs grid types."
+    """Test regridded a regular lat/lon field to all roocs grid types."""
     fpath = CMIP5_MRSOS_ONE_TIME_STEP
     basename = os.path.splitext(os.path.basename(fpath))[0]
     method = "nearest_s2d"
@@ -115,7 +115,7 @@ def test_regrid_regular_grid_to_all_roocs_grids(
     "dset", ["ATLAS_v1_CORDEX", "ATLAS_v1_EOBS_GRID", "ATLAS_v0_CORDEX_ANT"]
 )
 def test_regrid_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
-    "Test regridding for several ATLAS datasets."
+    """Test regridding for several ATLAS datasets."""
     result = regrid(
         ds=globals()[dset],
         method="bilinear",
@@ -131,13 +131,17 @@ def test_regrid_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_ATLAS_CORDEX(tmpdir, load_esgf_test_data):
-    "Test regridding for ATLAS CORDEX dataset."
+def test_regrid_ATLAS_CORDEX(tmpdir, load_esgf_test_data, caplog):  # noqa
+    """Test regridding for ATLAS CORDEX dataset."""
     import netCDF4
 
-    print("netcdf4-python version: %s" % netCDF4.__version__)
-    print("HDF5 lib version:       %s" % netCDF4.__hdf5libversion__)
-    print("netcdf lib version:     %s" % netCDF4.__netcdf4libversion__)
+    with ContextLogger(caplog) as _logger:
+        _logger.add(sys.stdout, level="INFO")
+        caplog.set_level("INFO", logger="clisops")
+
+        _logger.info("netcdf4-python version: %s" % netCDF4.__version__)
+        _logger.info("HDF5 lib version:       %s" % netCDF4.__hdf5libversion__)
+        _logger.info("netcdf lib version:     %s" % netCDF4.__netcdf4libversion__)
 
     ds = xr.open_dataset(ATLAS_v0_CORDEX_ANT, use_cftime=True)
 
@@ -171,7 +175,7 @@ def test_regrid_ATLAS_CORDEX(tmpdir, load_esgf_test_data):
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_keep_attrs(load_esgf_test_data, tmp_path):
-    "Test if dataset and variable attributes are kept / removed as specified."
+    """Test if dataset and variable attributes are kept / removed as specified."""
     fpath = CMIP6_TOS_ONE_TIME_STEP
     method = "nearest_s2d"
 
@@ -243,7 +247,7 @@ def test_regrid_keep_attrs(load_esgf_test_data, tmp_path):
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_halo_simple(load_esgf_test_data, tmp_path):
-    "Test regridding with a simple halo."
+    """Test regridding with a simple halo."""
     fpath = CMIP6_TOS_ONE_TIME_STEP
     ds = xr.open_dataset(fpath).isel(time=0)
 
@@ -265,7 +269,7 @@ def test_regrid_halo_simple(load_esgf_test_data, tmp_path):
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_halo_adv(load_esgf_test_data, tmp_path):
-    "Test regridding of dataset with a more complex halo."
+    """Test regridding of dataset with a more complex halo."""
     fpath = CMIP6_OCE_HALO_CNRM
     ds = xr.open_dataset(fpath).isel(time=0)
 
@@ -284,7 +288,7 @@ def test_regrid_halo_adv(load_esgf_test_data, tmp_path):
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_shifted_lon_frame(load_esgf_test_data, tmp_path):
-    "Test regridding of dataset with shifted longitude frame."
+    """Test regridding of dataset with shifted longitude frame."""
     fpath = CMIP6_IITM_EXTENT
     ds = xr.open_dataset(fpath).isel(time=0)
 
@@ -303,7 +307,7 @@ def test_regrid_shifted_lon_frame(load_esgf_test_data, tmp_path):
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_same_grid_exception(tmpdir, tmp_path):
-    "Test that an exception is raised when source and target grid are the same."
+    """Test that an exception is raised when source and target grid are the same."""
     fpath = get_grid_file("0pt25deg_era5")
 
     weights_cache_init(Path(tmp_path, "weights"))

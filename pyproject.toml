@@ -73,7 +73,7 @@ dev = [
   # Packaging
   "flit",
   # Dev tools and testing
-  "black>=23.11.0",
+  "black>=24.2.0",
   "bump-my-version>=0.1.2",
   "flake8",
   "gitpython>=3.1.30",
@@ -118,7 +118,8 @@ target-version = [
   "py38",
   "py39",
   "py310",
-  "py311"
+  "py311",
+  "py312"
 ]
 
 [tool.bumpversion]

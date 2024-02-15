@@ -33,6 +33,8 @@ try:
     import xesmf as xe
 
     if Version(xe.__version__) < Version(XESMF_MINIMUM_VERSION):
+        msg = f"xESMF >= {XESMF_MINIMUM_VERSION} is required to use the regridding operations."
+        warnings.warn(msg)
         raise ValueError()
 except (ModuleNotFoundError, ValueError):
     xe = None

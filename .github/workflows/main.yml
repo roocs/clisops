@@ -45,6 +45,8 @@ jobs:
             tox-env: py310
           - python-version: "3.11"
             tox-env: py311
+          - python-version: "3.12"
+            tox-env: py312
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python${{ matrix.python-version }}

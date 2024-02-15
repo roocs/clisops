@@ -228,8 +228,8 @@ def test_tmp_dir_deleted(tmpdir):
 
 
 def test_unify_chunks_cmip5():
-    """
-    testing unify chunks with a cmip5 example:
+    """test unify chunks with a cmip5 example.
+
     da.unify_chunks() doesn't change da.chunks
     ds = ds.unify_chunks() doesn't appear to change ds.chunks in our case
     """
@@ -252,8 +252,8 @@ def test_unify_chunks_cmip5():
 
 
 def test_unify_chunks_cmip6():
-    """
-    testing unify chunks with a cmip6 example:
+    """Test unify chunks with a cmip6 example.
+
     da.unify_chunks() doesn't change da.chunks
     ds = ds.unify_chunks() doesn't appear to change ds.chunks in our case
     """
