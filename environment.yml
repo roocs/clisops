@@ -26,7 +26,7 @@ dependencies:
  - xarray >=0.21,<2023.3.0 # See: https://github.com/pydata/xarray/issues/7794
  - xesmf >=0.8.2
   # Dev tools and testing
- - black >=24.2.0
+ - black >=24.1.0
  - bump-my-version >=0.17.1
  - flake8
  - gitpython >=3.1.30
