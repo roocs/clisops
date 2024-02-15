@@ -7,7 +7,9 @@ import pytest
 import xarray as xr
 from roocs_grids import get_grid_file, grid_dict
 
-from _common import (  # ATLAS_v1_CORDEX,; ATLAS_v1_EOBS_GRID,
+from _common import ATLAS_v1_CORDEX  # noqa
+from _common import ATLAS_v1_EOBS_GRID  # noqa
+from _common import (
     CMIP5_MRSOS_ONE_TIME_STEP,
     CMIP6_ATM_VERT_ONE_TIMESTEP,
     CMIP6_IITM_EXTENT,

@@ -83,8 +83,8 @@ jobs:
             upstream: false
           - python-version: "3.11"
             upstream: false
-          - python-version: "3.12"
-            upstream: false
+#          - python-version: "3.12"  # Not yet available until https://github.com/pydata/xarray/issues/7794 is resolved
+#            upstream: false
     defaults:
       run:
         shell: bash -l {0}
@@ -97,11 +97,9 @@ jobs:
           cache-environment: true
           environment-file: environment.yml
           create-args: >-
-            conda
             python=${{ matrix.python-version }}
       - name: Conda and Mamba versions
         run: |
-          conda --version
           echo "micromamba: $(micromamba --version)"
       - name: Install CLISOPS
         run: |
