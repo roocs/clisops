@@ -1,7 +1,7 @@
 Version History
 ===============
 
-v0.12.3 (unreleased)
+v0.13.0 (2024-02-16)
 --------------------
 
 New Features
@@ -11,10 +11,10 @@ New Features
 Bug Fixes
 ^^^^^^^^^
 * Fixed standard file-namer fallback method (#318).
-* Fixed KeyError for temporal subsetting by components if not all components can be found in the dataset (#316).
-* Raising KeyError for temporal subsetting by components when no time steps match the selection criteria (#316).
-* Coordinate detection for remapping operator via standard_name if detection via cf-xarray fails / is ambiguous (#316).
-* Remove encoding settings with regards to compression for string variables to avoid netCDF write errors with newer netcdf-c versions (>4.9.0) (#319).
+* Fixed `KeyError` for temporal subsetting by components if not all components can be found in the dataset (#316).
+* Raising `KeyError` for temporal subsetting by components when no time steps match the selection criteria (#316).
+* Coordinate detection for remapping operator via standard_name if detection via `cf-xarray` fails / is ambiguous (#316).
+* Remove encoding settings with regards to compression for string variables to avoid netCDF write errors with newer `netcdf-c` library versions (>4.9.0) (#319).
 * Fixed a few docstrings, specifies some class methods as static methods (#321).
 * Renamed a few internal variables for clarity, rephrased a few sentences for grammar/spelling (#321).
 * Fixed a bug related to the creation of the `weights_dir` for regridding that was causing issues for Windows platforms (#313).
@@ -22,7 +22,7 @@ Bug Fixes
 Other Changes
 ^^^^^^^^^^^^^
 * The compression level is capped at 1 to reduce write times (#319).
-* Updated pre-commit hooks, pinned linting tools to their pre-commit equivalents (#321).
+* Updated `pre-commit` hooks, pinned linting tools to their pre-commit equivalents (#321).
 * Added a pre-commit hook as well as a configuration for `codespell` (#321).
 * Added `dependabot` to maintain package and GitHub Action versions (#322).
 * The `require_module` decorator can now accept supported version information (#321).
