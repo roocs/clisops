@@ -7,15 +7,15 @@ import pytest
 import xarray as xr
 from roocs_grids import get_grid_file, grid_dict
 
-from _common import ATLAS_v1_CORDEX  # noqa
-from _common import ATLAS_v1_EOBS_GRID  # noqa
-from _common import (
+from _common import (  # noqa
     CMIP5_MRSOS_ONE_TIME_STEP,
     CMIP6_ATM_VERT_ONE_TIMESTEP,
     CMIP6_IITM_EXTENT,
     CMIP6_OCE_HALO_CNRM,
     CMIP6_TOS_ONE_TIME_STEP,
     ATLAS_v0_CORDEX_ANT,
+    ATLAS_v1_CORDEX,
+    ATLAS_v1_EOBS_GRID,
     ContextLogger,
 )
 from clisops.core.regrid import XESMF_MINIMUM_VERSION, weights_cache_init, xe
