@@ -6,6 +6,14 @@ on:
       - master
   pull_request:
 
+concurrency:
+  # For a given workflow, if we push to the same branch, cancel all previous builds on that branch except on master.
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Linting Suite
@@ -15,10 +23,6 @@ jobs:
         tox-env:
           - lint
     steps:
-      - name: Cancel previous runs
-        uses: styfle/cancel-workflow-action@0.12.1
-        with:
-          access_token: ${{ github.token }}
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
@@ -45,6 +49,8 @@ jobs:
             tox-env: py310
           - python-version: "3.11"
             tox-env: py311
+          - python-version: "3.12"
+            tox-env: py312
     steps:
     - uses: actions/checkout@v4
     - name: Set up Python${{ matrix.python-version }}
@@ -77,6 +83,8 @@ jobs:
             upstream: false
           - python-version: "3.11"
             upstream: false
+#          - python-version: "3.12"  # Not yet available until https://github.com/pydata/xarray/issues/7794 is resolved
+#            upstream: false
     defaults:
       run:
         shell: bash -l {0}
@@ -89,11 +97,9 @@ jobs:
           cache-environment: true
           environment-file: environment.yml
           create-args: >-
-            conda
             python=${{ matrix.python-version }}
       - name: Conda and Mamba versions
         run: |
-          conda --version
           echo "micromamba: $(micromamba --version)"
       - name: Install CLISOPS
         run: |

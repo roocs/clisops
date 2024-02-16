@@ -73,8 +73,8 @@ dev = [
   # Packaging
   "flit",
   # Dev tools and testing
-  "black>=23.11.0",
-  "bump-my-version>=0.1.2",
+  "black>=24.2.0",
+  "bump-my-version>=0.17.1",
   "flake8",
   "gitpython>=3.1.30",
   "ipython",
@@ -83,7 +83,7 @@ dev = [
   "pre-commit>=3.0.0",
   "pytest",
   "pytest-cov",
-  "pytest-loguru>=0.2.0",
+  "pytest-loguru>=0.3.0",
   "tox>=4.0",
   "watchdog"
 ]
@@ -118,7 +118,8 @@ target-version = [
   "py38",
   "py39",
   "py310",
-  "py311"
+  "py311",
+  "py312"
 ]
 
 [tool.bumpversion]

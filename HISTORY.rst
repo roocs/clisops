@@ -4,6 +4,10 @@ Version History
 v0.12.3 (unreleased)
 --------------------
 
+New Features
+^^^^^^^^^^^^
+* `clisops` now officially supports Python 3.12 (#330).
+
 Bug Fixes
 ^^^^^^^^^
 * Fixed standard file-namer fallback method (#318).
@@ -23,6 +27,10 @@ Other Changes
 * Added `dependabot` to maintain package and GitHub Action versions (#322).
 * The `require_module` decorator can now accept supported version information (#321).
 * Testing data caching now uses platformdirs to determine the OS-appropriate caching location (#321).
+* Updated `black` in linting tools to v24.2.0 (#330).
+* Changes some print calls into logging calls in the tests (#330).
+* A warning is now emitted on `clisops` import if the installed `xesmf` is too old (#330).
+* Replaced `styfle/cancel-workflow-action` with GitHub Workflow concurrency settings (#330).
 
 v0.12.2 (2024-01-03)
 --------------------
