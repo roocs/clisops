@@ -34,6 +34,7 @@ classifiers = [
   "Programming Language :: Python :: 3.9",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
+  # "Programming Language :: Python :: 3.12",  # Not yet available until https://github.com/pydata/xarray/issues/7794 is resolved
   "Topic :: Scientific/Engineering",
   "Topic :: Scientific/Engineering :: Atmospheric Science",
   "Topic :: Scientific/Engineering :: GIS",
