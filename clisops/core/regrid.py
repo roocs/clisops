@@ -17,6 +17,7 @@ import numpy as np
 import platformdirs
 import roocs_grids
 import xarray as xr
+from loguru import logger
 from packaging.version import Version
 from roocs_utils.exceptions import InvalidParameterValue
 
@@ -34,7 +35,7 @@ try:
 
     if Version(xe.__version__) < Version(XESMF_MINIMUM_VERSION):
         msg = f"xESMF >= {XESMF_MINIMUM_VERSION} is required to use the regridding operations."
-        warnings.warn(msg)
+        logger.warning(msg)
         raise ValueError()
 except (ModuleNotFoundError, ValueError):
     xe = None
@@ -910,7 +911,7 @@ class Grid:
         try:
             return self.ds.cf.bounds[coordinate][0]
         except (KeyError, AttributeError):
-            warnings.warn(
+            logger.warning(
                 "For coordinate variable '%s' no bounds can be identified." % coordinate
             )
             return
@@ -1263,12 +1264,12 @@ class Grid:
             np.amin(self.ds[self.lat].values) < -90.0
             or np.amax(self.ds[self.lat].values) > 90.0
         ):
-            warnings.warn(
+            logger.warning(
                 "At least one latitude value exceeds [-90,90]. The bounds could not be calculated."
             )
             return
         if self.ncells < 3:
-            warnings.warn(
+            logger.warning(
                 "The latitude and longitude axes need at least 3 entries"
                 " to be able to calculate the bounds."
             )
@@ -1280,10 +1281,10 @@ class Grid:
                 np.amin(self.ds[self.lat].values) < -90.0
                 or np.amax(self.ds[self.lat].values) > 90.0
             ):
-                warnings.warn("At least one latitude value exceeds [-90,90].")
+                logger.warning("At least one latitude value exceeds [-90,90].")
                 return
             if self.ncells < 3:
-                warnings.warn(
+                logger.warning(
                     "The latitude and longitude axes need at least 3 entries"
                     " to be able to calculate the bounds."
                 )
@@ -1297,7 +1298,7 @@ class Grid:
                     ds=self.ds, lat=self.lat, lon=self.lon
                 )
             else:
-                warnings.warn(
+                logger.warning(
                     "The bounds cannot be calculated for grid_type '%s' and format '%s'."
                     % (self.type, self.format)
                 )
@@ -1314,12 +1315,12 @@ class Grid:
             self.lon_bnds = "lon_bnds"
 
             # Issue warning
-            warnings.warn(
+            logger.warning(
                 "Successfully calculated a set of latitude and longitude bounds."
                 " They might, however, differ from the actual bounds of the model grid."
             )
         else:
-            warnings.warn(
+            logger.warning(
                 "The bounds cannot be calculated for grid_type '%s' and format '%s'."
                 % (self.type, self.format)
             )
@@ -1373,7 +1374,7 @@ class Grid:
                 else:
                     locked = False
             if locked:
-                warnings.warn(
+                logger.warning(
                     f"Could not write grid '{filename}' to cache because a lockfile of "
                     "another process exists."
                 )
@@ -1409,7 +1410,7 @@ class Grid:
             # Issue a warning if the file already exists
             #  Not raising an exception since this method is also used to save
             #  grid files to the local cache
-            warnings.warn(f"The file '{Path(folder, filename)}' already exists.")
+            logger.warning(f"The file '{Path(folder, filename)}' already exists.")
 
 
 class Weights:
@@ -1474,7 +1475,7 @@ class Weights:
             # forced to False for conservative regridding in xesmf
             # TODO: check if this is proper behaviour of xesmf
             if self.method not in ["conservative", "conservative_normed"]:
-                warnings.warn(
+                logger.warning(
                     "The grid extent could not be accessed. "
                     "It will be assumed that the input grid is not periodic in longitude."
                 )
@@ -1548,7 +1549,7 @@ class Weights:
         #          Weights are read from disk by xESMF if filename is specified and reuse_weights==True.
         lock_obj = create_lock(Path(weights_dir, self.filename + ".lock").as_posix())
         if not lock_obj:
-            warnings.warn(
+            logger.warning(
                 f"Could not reuse cached weights '{self.filename}' because a "
                 "lockfile of another process exists that is writing to that file."
             )
@@ -1723,9 +1724,8 @@ class Weights:
                 try:
                     return weights_dic[key]
                 except KeyError:
-                    warnings.warn(
-                        f"Requested info {key} does not exist in the metadata"
-                        " of the cached weights."
+                    logger.warning(
+                        f"Requested info {key} does not exist in the metadata of the cached weights."
                     )
                     return
         else:
@@ -1822,7 +1822,7 @@ def regrid(
 
     # Duplicated cells / Halo
     if grid_in.contains_duplicated_cells:
-        warnings.warn(
+        logger.warning(
             "The grid of the selected dataset contains duplicated cells. "
             "For the conservative remapping method, "
             "duplicated grid cells contribute to the resulting value, "

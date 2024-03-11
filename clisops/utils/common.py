@@ -1,7 +1,6 @@
 import functools
 import os
 import sys
-import warnings
 from pathlib import Path
 from types import FunctionType, ModuleType
 from typing import List, Optional, Union
@@ -40,9 +39,9 @@ def require_module(
         if max_supported_version is not None:
             if Version(module.__version__) > Version(max_supported_version):
                 if max_supported_warning is not None:
-                    warnings.warn(max_supported_warning)
+                    logger.warning(max_supported_warning)
                 else:
-                    warnings.warn(
+                    logger.warning(
                         f"Package {module_name} version {module.__version__} "
                         f"is greater than the suggested version {max_supported_version}."
                     )
