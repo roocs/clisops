@@ -7,7 +7,7 @@ import pytest
 import xarray as xr
 from shapely.geometry import Point, Polygon
 
-from _common import TESTS_DATA
+from _common import TESTS_DATA, ContextLogger
 from clisops.core import subset
 from clisops.utils import get_file
 
@@ -36,12 +36,14 @@ class TestSubsetTime:
         np.testing.assert_array_equal(out.time.dt.year.max(), int(yr_ed))
         np.testing.assert_array_equal(out.time.dt.year.min(), int(yr_st))
 
-    def test_time_dates_outofbounds(self):
+    def test_time_dates_outofbounds(self, caplog):
+        caplog.set_level("WARNING", logger="clisops")
+
         da = xr.open_dataset(self.nc_poslons).tas
         yr_st = "1776"
         yr_ed = "2077"
 
-        with warnings.catch_warnings(record=True) as record:
+        with ContextLogger(caplog):
             out = subset.subset_time(
                 da, start_date=f"{yr_st}-01", end_date=f"{yr_ed}-01"
             )
@@ -50,47 +52,48 @@ class TestSubsetTime:
 
         assert (
             '"start_date" not found within input date time range. Defaulting to minimum time step in xarray object.'
-            in [str(q.message) for q in record]
+            in caplog.text
         )
         assert (
             '"end_date" not found within input date time range. Defaulting to maximum time step in xarray object.'
-            in [str(q.message) for q in record]
+            in caplog.text
         )
 
-    def test_warnings(self):
+    def test_warnings(self, caplog):
+        caplog.set_level("WARNING", logger="clisops")
+
         da = xr.open_dataset(self.nc_poslons).tas
 
-        with pytest.raises(ValueError) as record:
+        with pytest.raises(ValueError):
             subset.subset_time(da, start_date="2059", end_date="2050")
 
         with pytest.raises(TypeError):
             subset.subset_time(da, start_yr=2050, end_yr=2059)
 
-        with warnings.catch_warnings(record=True) as record:
+        with ContextLogger(caplog):
             subset.subset_time(
                 da,
                 start_date=2050,  # noqa
                 end_date=2055,  # noqa
             )
-        assert (
-            'start_date and end_date require dates in (type: str) using formats of "%Y", "%Y-%m" or "%Y-%m-%d".'
-            in [str(q.message) for q in record]
-        )
+            assert (
+                'start_date and end_date require dates in (type: str) using formats of "%Y", "%Y-%m" or "%Y-%m-%d".'
+                in caplog.text
+            )
 
-        with warnings.catch_warnings(record=True) as record:
             subset.subset_time(
                 da, start_date="2064-01-01T00:00:00", end_date="2065-02-01T03:12:01"
             )
 
-        assert (
-            '"start_date" has been nudged to nearest valid time step in xarray object.'
-            in [str(q.message) for q in record]
-        )
+            assert (
+                '"start_date" has been nudged to nearest valid time step in xarray object.'
+                in caplog.text
+            )
 
-        assert (
-            '"end_date" has been nudged to nearest valid time step in xarray object.'
-            in [str(q.message) for q in record]
-        )
+            assert (
+                '"end_date" has been nudged to nearest valid time step in xarray object.'
+                in caplog.text
+            )
 
     def test_time_start_only(self):
         da = xr.open_dataset(self.nc_poslons).tas
@@ -963,12 +966,13 @@ class TestSubsetLevel:
         np.testing.assert_array_equal(out.plev.min(), lev_ed)
         np.testing.assert_array_equal(out.plev.max(), lev_st)
 
-    def test_level_outofbounds(self):
+    def test_level_outofbounds(self, caplog):
+        caplog.set_level("WARNING", logger="clisops")
         da = xr.open_dataset(self.nc_plev).o3
         lev_st = 10000000
         lev_ed = 10
 
-        with warnings.catch_warnings(record=True) as record:
+        with ContextLogger(caplog):
             out = subset.subset_level(da, first_level=lev_st, last_level=lev_ed)
 
         np.testing.assert_array_equal(out.plev.min(), da.plev.min())
@@ -976,34 +980,35 @@ class TestSubsetLevel:
 
         assert (
             '"first_level" has been nudged to nearest valid level in xarray object.'
-            in [str(q.message) for q in record]
+            in caplog.text
         )
         assert (
             '"last_level" has been nudged to nearest valid level in xarray object.'
-            in [str(q.message) for q in record]
+            in caplog.text
         )
 
-    def test_warnings(self):
+    def test_warnings(self, caplog):
+        caplog.set_level("WARNING", logger="clisops")
+
         da = xr.open_dataset(self.nc_plev).o3
 
         with pytest.raises(TypeError):
             subset.subset_level(da, first_level=da, last_level=da)
 
-        with warnings.catch_warnings(record=True) as record:
+        with ContextLogger(caplog):
             subset.subset_level(da, first_level="1000", last_level="1000")
-        assert (
-            '"first_level" should be a number, it has been converted to a float.'
-            in [str(q.message) for q in record]
-        )
+            assert (
+                '"first_level" should be a number, it has been converted to a float.'
+                in caplog.text
+            )
 
-        with warnings.catch_warnings(record=True) as record:
             subset.subset_level(da, first_level=81200, last_level=54100.6)
 
-        msgs = {
-            '"first_level" has been nudged to nearest valid level in xarray object.',
-            '"last_level" has been nudged to nearest valid level in xarray object.',
-        }
-        assert msgs.issubset({str(q.message) for q in record})
+            msgs = {
+                '"first_level" has been nudged to nearest valid level in xarray object.',
+                '"last_level" has been nudged to nearest valid level in xarray object.',
+            }
+            assert [m in caplog.text for m in msgs]
 
     def test_level_first_only(self):
         da = xr.open_dataset(self.nc_plev).o3
