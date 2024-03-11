@@ -1,6 +1,13 @@
 Version History
 ===============
 
+v0.13.1 (unreleased)
+--------------------
+
+Other Changes
+^^^^^^^^^^^^^
+* Internal warnings now consistently use the `clisops` configured `loguru` logger (#335).
+
 v0.13.0 (2024-02-16)
 --------------------
 
