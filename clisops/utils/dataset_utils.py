@@ -5,6 +5,7 @@ import cf_xarray as cfxr  # noqa
 import cftime
 import numpy as np
 import xarray as xr
+from loguru import logger
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.utils.time_utils import str_to_AnyCalendarDateTime
 from roocs_utils.xarray_utils.xarray_utils import get_coord_by_attr, get_coord_by_type
@@ -875,7 +876,7 @@ def generate_bounds_rectilinear(ds, lat, lon):
         lat_bnds[0, 1] = ds[lat].values[0] + gspacingl / 2.0
         lat_bnds[-1, 0] = ds[lat].values[-1] - gspacingu / 2.0
     else:
-        warnings.warn(
+        logger.warning(
             "The bounds could not be calculated since the latitude and/or longitude "
             "values are not strong monotonically decreasing/increasing."
         )
@@ -899,7 +900,7 @@ def generate_bounds_rectilinear(ds, lat, lon):
         lon_bnds[0, 1] = ds[lon].values[0] + gspacingl / 2.0
         lon_bnds[-1, 0] = ds[lon].values[-1] - gspacingu / 2.0
     else:
-        warnings.warn(
+        logger.warning(
             "The bounds could not be calculated since the latitude and/or longitude "
             "values are not strong monotonically decreasing/increasing."
         )
@@ -969,7 +970,7 @@ def detect_bounds(ds, coordinate) -> Optional[str]:
     try:
         return ds.cf.bounds[coordinate][0]
     except (KeyError, AttributeError):
-        warnings.warn(
+        logger.warning(
             "For coordinate variable '%s' no bounds can be identified." % coordinate
         )
     return

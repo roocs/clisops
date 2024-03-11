@@ -1,13 +1,13 @@
 """Average module."""
 
-import warnings
 from pathlib import Path
-from typing import Sequence, Tuple, Union
+from typing import Sequence, Union
 
 import cf_xarray  # noqa
 import geopandas as gpd
 import numpy as np
 import xarray as xr
+from loguru import logger
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils.xarray_utils import (
     get_coord_by_type,
@@ -85,7 +85,7 @@ def average_shape(
         )
 
     if isinstance(ds, xr.DataArray):
-        warnings.warn(
+        logger.warning(
             "Pass a Dataset object instead of a DataArray.", DeprecationWarning
         )
         ds_copy = ds.to_dataset(name=ds.name)
