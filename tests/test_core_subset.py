@@ -1,4 +1,5 @@
 import os
+import warnings
 
 import geopandas as gpd
 import numpy as np
@@ -6,7 +7,7 @@ import pytest
 import xarray as xr
 from shapely.geometry import Point, Polygon
 
-from _common import TESTS_DATA
+from _common import TESTS_DATA, ContextLogger
 from clisops.core import subset
 from clisops.utils import get_file
 
@@ -35,12 +36,14 @@ class TestSubsetTime:
         np.testing.assert_array_equal(out.time.dt.year.max(), int(yr_ed))
         np.testing.assert_array_equal(out.time.dt.year.min(), int(yr_st))
 
-    def test_time_dates_outofbounds(self):
+    def test_time_dates_outofbounds(self, caplog):
+        caplog.set_level("WARNING", logger="clisops")
+
         da = xr.open_dataset(self.nc_poslons).tas
         yr_st = "1776"
         yr_ed = "2077"
 
-        with pytest.warns(None) as record:  # noqa
+        with ContextLogger(caplog):
             out = subset.subset_time(
                 da, start_date=f"{yr_st}-01", end_date=f"{yr_ed}-01"
             )
@@ -49,67 +52,73 @@ class TestSubsetTime:
 
         assert (
             '"start_date" not found within input date time range. Defaulting to minimum time step in xarray object.'
-            in [str(q.message) for q in record]
+            in caplog.text
         )
         assert (
             '"end_date" not found within input date time range. Defaulting to maximum time step in xarray object.'
-            in [str(q.message) for q in record]
+            in caplog.text
         )
 
-    def test_warnings(self):
+    def test_warnings(self, caplog):
+        caplog.set_level("WARNING", logger="clisops")
+
         da = xr.open_dataset(self.nc_poslons).tas
 
-        with pytest.raises(ValueError) as record:
+        with pytest.raises(ValueError):
             subset.subset_time(da, start_date="2059", end_date="2050")
 
         with pytest.raises(TypeError):
             subset.subset_time(da, start_yr=2050, end_yr=2059)
 
-        with pytest.warns(None) as record:  # noqa
+        with ContextLogger(caplog):
             subset.subset_time(
                 da,
                 start_date=2050,  # noqa
                 end_date=2055,  # noqa
             )
-        assert (
-            'start_date and end_date require dates in (type: str) using formats of "%Y", "%Y-%m" or "%Y-%m-%d".'
-            in [str(q.message) for q in record]
-        )
+            assert (
+                'start_date and end_date require dates in (type: str) using formats of "%Y", "%Y-%m" or "%Y-%m-%d".'
+                in caplog.text
+            )
 
-        with pytest.warns(None) as record:  # noqa
             subset.subset_time(
                 da, start_date="2064-01-01T00:00:00", end_date="2065-02-01T03:12:01"
             )
 
-        assert (
-            '"start_date" has been nudged to nearest valid time step in xarray object.'
-            in [str(q.message) for q in record]
-        )
+            assert (
+                '"start_date" has been nudged to nearest valid time step in xarray object.'
+                in caplog.text
+            )
 
-        assert (
-            '"end_date" has been nudged to nearest valid time step in xarray object.'
-            in [str(q.message) for q in record]
-        )
+            assert (
+                '"end_date" has been nudged to nearest valid time step in xarray object.'
+                in caplog.text
+            )
 
     def test_time_start_only(self):
         da = xr.open_dataset(self.nc_poslons).tas
         yr_st = "2050"
 
         # start date only
-        with pytest.warns(None):  # noqa
+        with warnings.catch_warnings(record=True) as record:
             out = subset.subset_time(da, start_date=f"{yr_st}-01")
+        assert not record
+
         np.testing.assert_array_equal(out.time.dt.year.min(), int(yr_st))
         np.testing.assert_array_equal(out.time.dt.year.max(), da.time.dt.year.max())
 
-        with pytest.warns(None):  # noqa
+        with warnings.catch_warnings(record=True) as record:
             out = subset.subset_time(da, start_date=f"{yr_st}-07")
+        assert not record
+
         np.testing.assert_array_equal(out.time.dt.year.min(), int(yr_st))
         np.testing.assert_array_equal(out.time.min().dt.month, 7)
         np.testing.assert_array_equal(out.time.dt.year.max(), da.time.dt.year.max())
         np.testing.assert_array_equal(out.time.max(), da.time.max())
 
-        with pytest.warns(None):  # noqa
+        with warnings.catch_warnings(record=True) as record:
             out = subset.subset_time(da, start_date=f"{yr_st}-07-15")
+        assert not record
         np.testing.assert_array_equal(out.time.dt.year.min(), int(yr_st))
         np.testing.assert_array_equal(out.time.min().dt.month, 7)
         np.testing.assert_array_equal(out.time.min().dt.day, 15)
@@ -121,15 +130,19 @@ class TestSubsetTime:
         yr_ed = "2059"
 
         # end date only
-        with pytest.warns(None):  # noqa
+        with warnings.catch_warnings(record=True) as record:
             out = subset.subset_time(da, end_date=f"{yr_ed}-01")
+        assert not record
+
         np.testing.assert_array_equal(out.time.dt.year.max(), int(yr_ed))
         np.testing.assert_array_equal(out.time.max().dt.month, 1)
         np.testing.assert_array_equal(out.time.max().dt.day, 31)
         np.testing.assert_array_equal(out.time.min(), da.time.min())
 
-        with pytest.warns(None):  # noqa
+        with warnings.catch_warnings(record=True) as record:
             out = subset.subset_time(da, end_date=f"{yr_ed}-06-15")
+        assert not record
+
         np.testing.assert_array_equal(out.time.dt.year.max(), int(yr_ed))
         np.testing.assert_array_equal(out.time.max().dt.month, 6)
         np.testing.assert_array_equal(out.time.max().dt.day, 15)
@@ -625,7 +638,7 @@ class TestSubsetBbox:
             subset.subset_bbox(
                 da, lon_bnds=self.lon, lat_bnds=self.lat, start_yr=2050, end_yr=2059
             )
-        with pytest.warns(None) as record:  # noqa
+        with warnings.catch_warnings(record=True) as record:
             subset.subset_bbox(
                 da,
                 lon_bnds=self.lon,
@@ -725,7 +738,7 @@ class TestSubsetShape:
     def test_no_wraps(self, tmp_netcdf_filename):
         ds = xr.open_dataset(self.nc_file)
 
-        with pytest.warns(None) as record:  # noqa
+        with warnings.catch_warnings(record=True) as record:
             sub = subset.subset_shape(ds, self.poslons_geojson)
 
         self.compare_vals(ds, sub, "tas")
@@ -756,7 +769,7 @@ class TestSubsetShape:
     def test_all_neglons(self):
         ds = xr.open_dataset(self.nc_file_neglons)
 
-        with pytest.warns(None) as record:  # noqa
+        with warnings.catch_warnings(record=True) as record:
             sub = subset.subset_shape(ds, self.southern_qc_geojson)
 
         self.compare_vals(ds, sub, "tasmax")
@@ -775,7 +788,7 @@ class TestSubsetShape:
     def test_rotated_pole_with_time(self):
         ds = xr.open_dataset(self.lons_2d_nc_file)
 
-        with pytest.warns(None) as record:  # noqa
+        with warnings.catch_warnings(record=True) as record:
             sub = subset.subset_shape(
                 ds,
                 self.eastern_canada_geojson,
@@ -953,12 +966,13 @@ class TestSubsetLevel:
         np.testing.assert_array_equal(out.plev.min(), lev_ed)
         np.testing.assert_array_equal(out.plev.max(), lev_st)
 
-    def test_level_outofbounds(self):
+    def test_level_outofbounds(self, caplog):
+        caplog.set_level("WARNING", logger="clisops")
         da = xr.open_dataset(self.nc_plev).o3
         lev_st = 10000000
         lev_ed = 10
 
-        with pytest.warns(None) as record:  # noqa
+        with ContextLogger(caplog):
             out = subset.subset_level(da, first_level=lev_st, last_level=lev_ed)
 
         np.testing.assert_array_equal(out.plev.min(), da.plev.min())
@@ -966,42 +980,44 @@ class TestSubsetLevel:
 
         assert (
             '"first_level" has been nudged to nearest valid level in xarray object.'
-            in [str(q.message) for q in record]
+            in caplog.text
         )
         assert (
             '"last_level" has been nudged to nearest valid level in xarray object.'
-            in [str(q.message) for q in record]
+            in caplog.text
         )
 
-    def test_warnings(self):
+    def test_warnings(self, caplog):
+        caplog.set_level("WARNING", logger="clisops")
+
         da = xr.open_dataset(self.nc_plev).o3
 
         with pytest.raises(TypeError):
             subset.subset_level(da, first_level=da, last_level=da)
 
-        with pytest.warns(None) as record:  # noqa
+        with ContextLogger(caplog):
             subset.subset_level(da, first_level="1000", last_level="1000")
-        assert (
-            '"first_level" should be a number, it has been converted to a float.'
-            in [str(q.message) for q in record]
-        )
+            assert (
+                '"first_level" should be a number, it has been converted to a float.'
+                in caplog.text
+            )
 
-        with pytest.warns(None) as record:  # noqa
             subset.subset_level(da, first_level=81200, last_level=54100.6)
 
-        msgs = {
-            '"first_level" has been nudged to nearest valid level in xarray object.',
-            '"last_level" has been nudged to nearest valid level in xarray object.',
-        }
-        assert msgs.issubset({str(q.message) for q in record})
+            msgs = {
+                '"first_level" has been nudged to nearest valid level in xarray object.',
+                '"last_level" has been nudged to nearest valid level in xarray object.',
+            }
+            assert [m in caplog.text for m in msgs]
 
     def test_level_first_only(self):
         da = xr.open_dataset(self.nc_plev).o3
         lev_st = 100000
 
         # first level only
-        with pytest.warns(None):  # noqa
+        with warnings.catch_warnings(record=True) as record:
             out = subset.subset_level(da, first_level=lev_st, last_level=lev_st)
+        assert not record
 
         np.testing.assert_array_equal(out.plev.values[0], da.plev.values[0])
         np.testing.assert_array_equal(out.plev.values[-1], da.plev.values[0])
@@ -1011,14 +1027,16 @@ class TestSubsetLevel:
         # good_levels = [40000, 30000]
         # good_indices = [6, 7]
 
-        with pytest.warns(None):  # noqa
+        with warnings.catch_warnings(record=True) as record:
             out = subset.subset_level(da, first_level=37000.2342, last_level=27777)
+        assert not record
 
         np.testing.assert_array_equal(out.plev.values[0], da.plev.values[7])
         np.testing.assert_array_equal(out.plev.values[-1], da.plev.values[7])
 
-        with pytest.warns(None):  # noqa
+        with warnings.catch_warnings(record=True) as record:
             out = subset.subset_level(da, first_level=41562, last_level=29999)
+        assert not record
 
         np.testing.assert_array_equal(out.plev.values[:], da.plev.values[6:8])
 

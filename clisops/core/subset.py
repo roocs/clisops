@@ -2,7 +2,6 @@
 
 import numbers
 import re
-import warnings
 from functools import wraps
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
@@ -44,6 +43,8 @@ __all__ = [
     "subset_level_by_values",
 ]
 
+from loguru import logger
+
 
 def get_lat(ds: Union[xarray.Dataset, xarray.DataArray]) -> xarray.DataArray:
     try:
@@ -72,7 +73,7 @@ def check_start_end_dates(func: Callable) -> Callable:
             kwargs["end_date"] = da.time.max().dt.strftime("%Y").values
 
         if isinstance(kwargs["start_date"], int) or isinstance(kwargs["end_date"], int):
-            warnings.warn(
+            logger.warning(
                 "start_date and end_date require dates in (type: str) "
                 'using formats of "%Y", "%Y-%m" or "%Y-%m-%d".',
                 UserWarning,
@@ -86,7 +87,7 @@ def check_start_end_dates(func: Callable) -> Callable:
             if sel_time.size == 0:
                 raise ValueError()
         except KeyError:
-            warnings.warn(
+            logger.warning(
                 '"start_date" not found within input date time range. Defaulting to minimum time step in '
                 "xarray object.",
                 UserWarning,
@@ -94,7 +95,7 @@ def check_start_end_dates(func: Callable) -> Callable:
             )
             kwargs["start_date"] = da.time.min().dt.strftime("%Y").values
         except ValueError:
-            warnings.warn(
+            logger.warning(
                 '"start_date" has been nudged to nearest valid time step in xarray object.',
                 UserWarning,
                 stacklevel=2,
@@ -110,7 +111,7 @@ def check_start_end_dates(func: Callable) -> Callable:
             if sel_time.size == 0:
                 raise ValueError()
         except KeyError:
-            warnings.warn(
+            logger.warning(
                 '"end_date" not found within input date time range. Defaulting to maximum time step in '
                 "xarray object.",
                 UserWarning,
@@ -118,7 +119,7 @@ def check_start_end_dates(func: Callable) -> Callable:
             )
             kwargs["end_date"] = da.time.max().dt.strftime("%Y").values
         except ValueError:
-            warnings.warn(
+            logger.warning(
                 '"end_date" has been nudged to nearest valid time step in xarray object.',
                 UserWarning,
                 stacklevel=2,
@@ -168,7 +169,7 @@ def check_start_end_levels(func: Callable) -> Callable:
             if not isinstance(kwargs[key], numbers.Number):
                 try:
                     kwargs[key] = float(kwargs[key])
-                    warnings.warn(
+                    logger.warning(
                         f'"{key}" should be a number, it has been converted to a float.',
                         UserWarning,
                         stacklevel=2,
@@ -186,13 +187,13 @@ def check_start_end_levels(func: Callable) -> Callable:
                 kwargs["first_level"] = level.sel(
                     **{level.name: slice(kwargs["first_level"], None)}
                 ).values[0]
-                warnings.warn(
+                logger.warning(
                     '"first_level" has been nudged to nearest valid level in xarray object.',
                     UserWarning,
                     stacklevel=2,
                 )
             except IndexError:
-                warnings.warn(
+                logger.warning(
                     '"first_level" not found within input level range. Defaulting to first level '
                     "in xarray object.",
                     UserWarning,
@@ -208,13 +209,13 @@ def check_start_end_levels(func: Callable) -> Callable:
                 kwargs["last_level"] = level.sel(
                     **{level.name: slice(None, kwargs["last_level"])}
                 ).values[-1]
-                warnings.warn(
+                logger.warning(
                     '"last_level" has been nudged to nearest valid level in xarray object.',
                     UserWarning,
                     stacklevel=2,
                 )
             except IndexError:
-                warnings.warn(
+                logger.warning(
                     '"last_level" not found within input level range. Defaulting to last level '
                     "in xarray object.",
                     UserWarning,
@@ -374,8 +375,10 @@ def convert_lat_lon_to_da(func: Callable) -> Callable:
                 lon = [lon]
             ptdim = get_temp_dimname(args[0].dims, "site")
             if ptdim != "site" and len(lat) > 1:
-                warnings.warn(
-                    f"Dimension 'site' already on input, output will use {ptdim} instead."
+                logger.warning(
+                    f"Dimension 'site' already on input, output will use {ptdim} instead.",
+                    UserWarning,
+                    stacklevel=2,
                 )
             lon = xarray.DataArray(lon, dims=(ptdim,))
             lat = xarray.DataArray(lat, dims=(ptdim,))
@@ -407,7 +410,7 @@ def wrap_lons_and_split_at_greenwich(func: Callable) -> Callable:
                 np.min(x_dim) < -180 and np.max(x_dim) >= 180
             ):
                 # TODO: This should raise an exception, right?
-                warnings.warn(
+                logger.warning(
                     "DataArray doesn't seem to be using lons between 0 and 360 degrees or between -180 and 180 degrees."
                     " Tread with caution.",
                     UserWarning,
@@ -421,7 +424,7 @@ def wrap_lons_and_split_at_greenwich(func: Callable) -> Callable:
                     feature.geometry.bounds[2] > 0
                 ):
                     split_flag = True
-                    warnings.warn(
+                    logger.warning(
                         "Geometry crosses the Greenwich Meridian. Proceeding to split polygon at Greenwich."
                         " This feature is experimental. Output might not be accurate.",
                         UserWarning,
@@ -461,7 +464,7 @@ def wrap_lons_and_split_at_greenwich(func: Callable) -> Callable:
 
             poly = poly.to_crs(crs=wrapped_lons)
             if split_flag:
-                warnings.warn(
+                logger.warning(
                     "Rebuffering split polygons to ensure edge inclusion in selection.",
                     UserWarning,
                     stacklevel=4,
@@ -531,7 +534,7 @@ def create_mask(
     if check_overlap:
         _check_has_overlaps(polygons=poly)
     if wrap_lons:
-        warnings.warn("Wrapping longitudes at 180 degrees.")
+        logger.warning("Wrapping longitudes at 180 degrees.", UserWarning, stacklevel=2)
 
     if len(x_dim.shape) == 1 and len(y_dim.shape) == 1 and x_dim.dims != y_dim.dims:
         # create a 2d grid of lon, lat values
@@ -812,7 +815,7 @@ def shape_bbox_indexer(
     # Note that the nearest indices might be inside the shape, so we'll need to add a *halo* around those indices.
     if rectilinear:
         if version.parse(xarray.__version__) < version.Version("2022.6.0"):
-            warnings.warn(
+            logger.warning(
                 "CLISOPS will require xarray >= 2022.06 in the next minor release. "
                 "Please update your environment dependencies.",
                 DeprecationWarning,
@@ -1410,7 +1413,7 @@ def _check_has_overlaps(polygons: gpd.GeoDataFrame) -> None:
         if not any(p.overlaps(g) for g in polygons["geometry"][n:]):
             non_overlapping.append(p)
     if len(polygons) != len(non_overlapping):
-        warnings.warn(
+        logger.warning(
             "List of shapes contains overlap between features. Results will vary on feature order.",
             UserWarning,
             stacklevel=5,
@@ -1421,7 +1424,7 @@ def _check_has_overlaps_old(polygons: gpd.GeoDataFrame) -> None:
     for i, (inda, pola) in enumerate(polygons.iterrows()):
         for indb, polb in polygons.iloc[i + 1 :].iterrows():
             if pola.geometry.intersects(polb.geometry):
-                warnings.warn(
+                logger.warning(
                     f"List of shapes contains overlap between {inda} and {indb}. Points will be assigned to {inda}.",
                     UserWarning,
                     stacklevel=5,
@@ -1436,13 +1439,13 @@ def _check_crs_compatibility(shape_crs: CRS, raster_crs: CRS) -> None:
             "lon_wrap" in raster_crs.to_string()
             and "lon_wrap" not in shape_crs.to_string()
         ):
-            warnings.warn(
+            logger.warning(
                 "CRS definitions are similar but raster lon values must be wrapped.",
                 UserWarning,
                 stacklevel=3,
             )
         elif not shape_crs.equals(wgs84) and not raster_crs.equals(wgs84):
-            warnings.warn(
+            logger.warning(
                 "CRS definitions are not similar or both not using WGS84 datum. Tread with caution.",
                 UserWarning,
                 stacklevel=3,
