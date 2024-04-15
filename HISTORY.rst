@@ -4,6 +4,11 @@ Version History
 v0.13.1 (unreleased)
 --------------------
 
+New Features
+^^^^^^^^^^^^
+* Core bbox and shape subsetting accepts a ``mask_outside`` argument. When False, data outside the shape/box but within the subsetted dataset is not masked (#337).
+* Added ``shapely.Polygon`` to the types understood by ``core.subset.subset_shape`` (#337).
+
 Other Changes
 ^^^^^^^^^^^^^
 * Internal warnings now consistently use the `clisops` configured `loguru` logger (#335).
