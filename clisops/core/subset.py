@@ -1045,7 +1045,9 @@ def subset_shape(
     # If polygon doesn't cross prime meridian, subset bbox first to reduce processing time.
     # Only case not implemented is when lon_bnds cross the 0 deg meridian but dataset grid has all positive lons.
     try:
-        ds_copy = subset_bbox(ds_copy, lon_bnds=lon_bnds, lat_bnds=lat_bnds, mask_outside=mask_outside)
+        ds_copy = subset_bbox(
+            ds_copy, lon_bnds=lon_bnds, lat_bnds=lat_bnds, mask_outside=mask_outside
+        )
         if not mask_outside:
             if isinstance(ds, xarray.DataArray):
                 ds_copy = list(ds_copy.data_vars.values())[0]

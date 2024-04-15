@@ -423,11 +423,12 @@ class TestSubsetBbox:
         assert np.all(out.lat.values[mask1.values] <= np.max(self.lat))
 
         # No mask
-        out_nomask = subset.subset_bbox(da, lon_bnds=self.lon, lat_bnds=self.lat, mask_outside=False)
+        out_nomask = subset.subset_bbox(
+            da, lon_bnds=self.lon, lat_bnds=self.lat, mask_outside=False
+        )
         assert (out.lon == out_nomask.lon).all()
         assert (out.lat == out_nomask.lat).all()
         assert out_nomask.isnull().sum() == 0
-
 
     def test_irregular_dataset(self):
         da = xr.open_dataset(self.nc_2dlonlat)
@@ -820,9 +821,7 @@ class TestSubsetShape:
 
         # No mask
         sub_nomask = subset.subset_shape(
-            ds,
-            self.eastern_canada_geojson,
-            mask_outside=False
+            ds, self.eastern_canada_geojson, mask_outside=False
         )
         assert (sub.lon == sub_nomask.lon).all()
         assert (sub.lat == sub_nomask.lat).all()
