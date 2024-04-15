@@ -422,6 +422,13 @@ class TestSubsetBbox:
         assert np.all(out.lat.values[mask1.values] >= np.min(self.lat))
         assert np.all(out.lat.values[mask1.values] <= np.max(self.lat))
 
+        # No mask
+        out_nomask = subset.subset_bbox(da, lon_bnds=self.lon, lat_bnds=self.lat, mask_outside=False)
+        assert (out.lon == out_nomask.lon).all()
+        assert (out.lat == out_nomask.lat).all()
+        assert out_nomask.isnull().sum() == 0
+
+
     def test_irregular_dataset(self):
         da = xr.open_dataset(self.nc_2dlonlat)
         out = subset.subset_bbox(da, lon_bnds=[-150, 100], lat_bnds=[10, 60])
@@ -811,6 +818,16 @@ class TestSubsetShape:
             not in [str(q.message) for q in record]
         )
 
+        # No mask
+        sub_nomask = subset.subset_shape(
+            ds,
+            self.eastern_canada_geojson,
+            mask_outside=False
+        )
+        assert (sub.lon == sub_nomask.lon).all()
+        assert (sub.lat == sub_nomask.lat).all()
+        assert sub_nomask.isnull().sum() == 0
+
     def test_small_poly_buffer(self, tmp_netcdf_filename):
         ds = xr.open_dataset(self.nc_file)
 
@@ -869,14 +886,13 @@ class TestSubsetShape:
         """Check that points touching the polygon are included in subset."""
         # Create simple polygon
         poly = Polygon([[0, 0], [1, 0], [1, 1]])
-        shape = gpd.GeoDataFrame(geometry=[poly])
         # Create simple data array
         da = xr.DataArray(
             data=[[0, 1], [2, 3]],
             dims=("lon", "lat"),
             coords={"lon": [0, 1], "lat": [0, 1]},
         )
-        sub = subset.subset_shape(da, shape=shape)
+        sub = subset.subset_shape(da, shape=poly)
         assert sub.notnull().sum() == 3
 
     def test_locstream(self):
@@ -889,8 +905,7 @@ class TestSubsetShape:
             },
         )
         poly = Polygon([[-90, 40], [-70, 20], [-50, 40], [-70, 60]])
-        shape = gpd.GeoDataFrame(geometry=[poly])
-        sub = subset.subset_shape(da, shape=shape)
+        sub = subset.subset_shape(da, shape=poly)
         exp = da.isel(site=[1, 3, 4, 5, 7])
         xr.testing.assert_identical(sub, exp)
 

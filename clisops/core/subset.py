@@ -933,10 +933,11 @@ def create_weight_masks(
 
 def subset_shape(
     ds: Union[xarray.DataArray, xarray.Dataset],
-    shape: Union[str, Path, gpd.GeoDataFrame],
+    shape: Union[str, Path, gpd.GeoDataFrame, Polygon],
     raster_crs: Optional[Union[str, int]] = None,
     shape_crs: Optional[Union[str, int]] = None,
     buffer: Optional[Union[int, float]] = None,
+    mask_outside: bool = True,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     first_level: Optional[Union[float, int]] = None,
@@ -953,8 +954,8 @@ def subset_shape(
     ----------
     ds : Union[xarray.DataArray, xarray.Dataset]
         Input values.
-    shape : Union[str, Path, gpd.GeoDataFrame]
-        Path to a shape file, or GeoDataFrame directly. Supports GeoPandas-compatible formats.
+    shape : Union[str, Path, gpd.GeoDataFrame, shapely.Polygon]
+        Path to a shape file, or GeoDataFrame, or shapely Polygon. Supports GeoPandas-compatible formats.
     raster_crs : Optional[Union[str, int]]
         EPSG number or PROJ4 string.
     shape_crs : Optional[Union[str, int]]
@@ -962,6 +963,10 @@ def subset_shape(
     buffer : Optional[Union[int, float]]
         Buffer the shape in order to select a larger region stemming from it.
         Units are based on the shape degrees/metres.
+    mask_outside : bool
+        This controls what happens to data outside the shape but still inside subsetted dataset.
+        True (default) masks these points. If False, this is the same as calling :py:func:`subset_bbox`
+        with the shape's ``total_bounds``.
     start_date : Optional[str]
         Start date of the subset.
         Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
@@ -1024,6 +1029,8 @@ def subset_shape(
 
     if isinstance(shape, gpd.GeoDataFrame):
         poly = shape.copy()
+    elif isinstance(shape, Polygon):
+        poly = gpd.GeoDataFrame(geometry=[shape])
     else:
         poly = gpd.GeoDataFrame.from_file(shape)
 
@@ -1038,7 +1045,12 @@ def subset_shape(
     # If polygon doesn't cross prime meridian, subset bbox first to reduce processing time.
     # Only case not implemented is when lon_bnds cross the 0 deg meridian but dataset grid has all positive lons.
     try:
-        ds_copy = subset_bbox(ds_copy, lon_bnds=lon_bnds, lat_bnds=lat_bnds)
+        ds_copy = subset_bbox(ds_copy, lon_bnds=lon_bnds, lat_bnds=lat_bnds, mask_outside=mask_outside)
+        if not mask_outside:
+            if isinstance(ds, xarray.DataArray):
+                ds_copy = list(ds_copy.data_vars.values())[0]
+                ds_copy.name = ds.name
+            return ds_copy
     except ValueError as e:
         raise ValueError(
             "No grid cell centroids found within provided polygon bounding box. "
@@ -1169,6 +1181,7 @@ def subset_bbox(
     da: Union[xarray.DataArray, xarray.Dataset],
     lon_bnds: Union[np.array, Tuple[Optional[float], Optional[float]]] = None,
     lat_bnds: Union[np.array, Tuple[Optional[float], Optional[float]]] = None,
+    mask_outside: bool = True,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     first_level: Optional[Union[float, int]] = None,
@@ -1181,9 +1194,6 @@ def subset_bbox(
     Return a subset of a DataArray or Dataset for grid points falling within a spatial bounding box
     defined by longitude and latitudinal bounds and for dates falling within provided bounds.
 
-    TODO: returns the what?
-    In the case of a lat-lon rectilinear grid, this simply returns the
-
     Parameters
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
@@ -1192,6 +1202,9 @@ def subset_bbox(
         List of minimum and maximum longitudinal bounds. Optional. Defaults to all longitudes in original data-array.
     lat_bnds : Union[np.array, Tuple[Optional[float], Optional[float]]]
         List of minimum and maximum latitudinal bounds. Optional. Defaults to all latitudes in original data-array.
+    mask_outside: bool
+        For data on grids other than latitude-longitude, this controls what happens to data outside
+        the bbox but still inside the subsetted dataset. True (default) masks these points while False keeps them.
     start_date : Optional[str]
         Start date of the subset.
         Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
@@ -1306,22 +1319,23 @@ def subset_bbox(
                 "the area covered by the bounding box."
             )
 
-        # Recompute condition on cropped coordinates
-        if lat_bnds is not None:
-            lat_cond = in_bounds(lat_b, da[lat])
+        if mask_outside:
+            # Recompute condition on cropped coordinates
+            if lat_bnds is not None:
+                lat_cond = in_bounds(lat_b, da[lat])
 
-        if lon_bnds is not None:
-            lon_cond = in_bounds(lon_b, da[lon])
+            if lon_bnds is not None:
+                lon_cond = in_bounds(lon_b, da[lon])
 
-        # Mask coordinates outside the bounding box
-        if isinstance(da, xarray.Dataset):
-            # If da is a xr.DataSet Mask only variables that have the
-            # same 2d coordinates as lat (or lon)
-            for var in da.data_vars:
-                if set(da[lat].dims).issubset(da[var].dims):
-                    da[var] = da[var].where(lon_cond & lat_cond)
-        else:
-            da = da.where(lon_cond & lat_cond)
+            # Mask coordinates outside the bounding box
+            if isinstance(da, xarray.Dataset):
+                # If da is a xr.DataSet Mask only variables that have the
+                # same 2d coordinates as lat (or lon)
+                for var in da.data_vars:
+                    if set(da[lat].dims).issubset(da[var].dims):
+                        da[var] = da[var].where(lon_cond & lat_cond)
+            else:
+                da = da.where(lon_cond & lat_cond)
 
     else:
         raise (
