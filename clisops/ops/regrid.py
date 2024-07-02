@@ -108,7 +108,7 @@ class Regrid(Operation):
         weights = self._get_weights(grid_in=grid_in, grid_out=grid_out, method=method)
         t_end = dt.now()
         logger.info(
-            f"Computed/Retrieved weights in {(t_end-t_start).total_seconds()} seconds."
+            f"Computed/Retrieved weights in {(t_end - t_start).total_seconds()} seconds."
         )
 
         # Define params dict
