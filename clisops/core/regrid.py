@@ -146,9 +146,9 @@ def weights_cache_flush(
 
     # Find and delete/report weight files, grid files and the json files containing the metadata
     if os.path.isdir(weights_dir):
-        flist_weights = glob(f"{weights_dir}/weights_{'?'*32}_{'?'*32}_*.nc")
-        flist_meta = glob(f"{weights_dir}/weights_{'?'*32}_{'?'*32}_*.json")
-        flist_grids = glob(f"{weights_dir}/grid_{'?'*32}.nc")
+        flist_weights = glob(f"{weights_dir}/weights_{'?' * 32}_{'?' * 32}_*.nc")
+        flist_meta = glob(f"{weights_dir}/weights_{'?' * 32}_{'?' * 32}_*.json")
+        flist_grids = glob(f"{weights_dir}/grid_{'?' * 32}.nc")
         if flist_weights != [] or flist_grids != [] or flist_meta != []:
             for f in flist_meta + flist_weights + flist_grids:
                 if dryrun or verbose:
