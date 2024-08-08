@@ -23,3 +23,4 @@ Contributors
 * Martin Schupfner <schupfner@dkrz.de> `@sol1105 <https://github.com/sol1105>`_
 * Marco Braun <Braun.Marco@ouranos.ca> `@vindelico <https://github.com/vindelico>`_
 * Charles Gauthier <gauthier.charles@ouranos.ca> `@charlesgauthier-udm <https://github.com/charlesgauthier-udm>`_
+* Gabriel Rondeau-Genesse <rondeau-genesse.gabriel@ouranos.ca> `@RondeauG <https://github.com/RondeauG>`_
