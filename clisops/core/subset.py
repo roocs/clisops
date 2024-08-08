@@ -1049,7 +1049,7 @@ def subset_shape(
         wrap = False
         if rcrs is not None:
             try:
-                r = CRS.from_user_input(rcrs)
+                rcrs = CRS.from_user_input(rcrs)
             except ValueError:
                 raise
         else:
