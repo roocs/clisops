@@ -1030,32 +1030,6 @@ def subset_shape(
     if buffer is not None:
         poly.geometry = poly.buffer(buffer)
 
-    # Get the shape's bounding box.
-    minx, miny, maxx, maxy = poly.total_bounds
-    lon_bnds = (minx, maxx)
-    lat_bnds = (miny, maxy)
-
-    # If polygon doesn't cross prime meridian, subset bbox first to reduce processing time.
-    # Only case not implemented is when lon_bnds cross the 0 deg meridian but dataset grid has all positive lons.
-    try:
-        ds_copy = subset_bbox(ds_copy, lon_bnds=lon_bnds, lat_bnds=lat_bnds)
-    except ValueError as e:
-        raise ValueError(
-            "No grid cell centroids found within provided polygon bounding box. "
-            'Try using the "buffer" option to create an expanded area.'
-        ) from e
-    except NotImplementedError:
-        pass
-
-    lon = get_lon(ds_copy)
-    lat = get_lat(ds_copy)
-
-    if start_date or end_date:
-        ds_copy = subset_time(ds_copy, start_date=start_date, end_date=end_date)
-
-    if first_level or last_level:
-        ds_copy = subset_level(ds_copy, first_level=first_level, last_level=last_level)
-
     # Determine whether CRS types are the same between shape and raster
     if shape_crs is not None:
         try:
@@ -1069,34 +1043,67 @@ def subset_shape(
             poly.crs = wgs84
             shape_crs = wgs84
 
-    wrap_lons = False
-    if raster_crs is not None:
-        try:
-            raster_crs = CRS.from_user_input(raster_crs)
-        except ValueError:
-            raise
-    else:
-        if np.min(lat_bnds) < -90 or np.max(lat_bnds) > 90:
-            raise ValueError("Latitudes exceed domain of WGS84 coordinate system.")
-        if np.min(lon_bnds) < -180 or np.max(lon_bnds) > 180:
-            raise ValueError("Longitudes exceed domain of WGS84 coordinate system.")
-
-        try:
-            # Extract CF-compliant CRS_WKT from crs variable.
-            raster_crs = CRS.from_cf(ds_copy.crs.attrs)
-        except AttributeError as e:
-            # This is guessing that lons are wrapped around at 180+ but without much information, this might not be true
-            if np.min(lon) >= -180 and np.max(lon) <= 180:
-                raster_crs = wgs84
-            elif np.min(lon) >= 0 and np.max(lon) <= 360:
-                wrap_lons = True
-                raster_crs = wgs84_wrapped
-            else:
-                raise CRSError(
-                    "Raster CRS is not known and does not resemble WGS84."
-                ) from e
+    def _get_raster_info(d, rcrs):
+        lo = get_lon(ds_copy)
+        la = get_lat(ds_copy)
+        wrap = False
+        if rcrs is not None:
+            try:
+                r = CRS.from_user_input(rcrs)
+            except ValueError:
+                raise
+        else:
+            try:
+                # Extract CF-compliant CRS_WKT from crs variable.
+                rcrs = CRS.from_cf(d.crs.attrs)
+            except AttributeError as e:
+                # This is guessing that lons are wrapped around at 180+ but without much information, this might not be true
+                if np.min(lo) >= -180 and np.max(lo) <= 180:
+                    rcrs = wgs84
+                elif np.min(lo) >= 0 and np.max(lo) <= 360:
+                    wrap = True
+                    rcrs = wgs84_wrapped
+                else:
+                    raise CRSError(
+                        "Raster CRS is not known and does not resemble WGS84."
+                    ) from e
+        return lo, la, wrap, rcrs
+    lon, lat, wrap_lons, raster_crs = _get_raster_info(ds_copy, raster_crs)
 
     _check_crs_compatibility(shape_crs=shape_crs, raster_crs=raster_crs)
+    # Change the projection of the shape to match the raster, to ensure correct overlay.
+    poly = poly.to_crs(raster_crs)
+
+    # Get the shape's bounding box.
+    minx, miny, maxx, maxy = poly.total_bounds
+    lon_bnds = (minx, maxx)
+    lat_bnds = (miny, maxy)
+
+    if np.min(lat_bnds) < -90 or np.max(lat_bnds) > 90:
+        raise ValueError("Latitudes exceed domain of WGS84 coordinate system.")
+    if np.min(lon_bnds) < -180 or np.max(lon_bnds) > 180:
+        raise ValueError("Longitudes exceed domain of WGS84 coordinate system.")
+
+    # If polygon doesn't cross prime meridian, subset bbox first to reduce processing time.
+    # Only case not implemented is when lon_bnds cross the 0 deg meridian but dataset grid has all positive lons.
+    try:
+        ds_copy = subset_bbox(ds_copy, lon_bnds=lon_bnds, lat_bnds=lat_bnds)
+    except ValueError as e:
+        raise ValueError(
+            "No grid cell centroids found within provided polygon bounding box. "
+            'Try using the "buffer" option to create an expanded area.'
+        ) from e
+    except NotImplementedError:
+        pass
+
+    if start_date or end_date:
+        ds_copy = subset_time(ds_copy, start_date=start_date, end_date=end_date)
+
+    if first_level or last_level:
+        ds_copy = subset_level(ds_copy, first_level=first_level, last_level=last_level)
+
+    # Repeat the checks for the shape's bounding box after the bbox subset.
+    lon, lat, wrap_lons, raster_crs = _get_raster_info(ds_copy, raster_crs)
 
     mask_2d = create_mask(x_dim=lon, y_dim=lat, poly=poly, wrap_lons=wrap_lons).clip(
         1, 1
