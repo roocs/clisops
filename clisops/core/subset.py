@@ -1068,6 +1068,7 @@ def subset_shape(
                         "Raster CRS is not known and does not resemble WGS84."
                     ) from e
         return lo, la, wrap, rcrs
+
     lon, lat, wrap_lons, raster_crs = _get_raster_info(ds_copy, raster_crs)
 
     _check_crs_compatibility(shape_crs=shape_crs, raster_crs=raster_crs)
