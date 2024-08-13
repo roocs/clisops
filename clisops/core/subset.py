@@ -1040,40 +1040,50 @@ def subset_shape(
         try:
             shape_crs = CRS(poly.crs)
         except CRSError:
-            poly.crs = wgs84
-            shape_crs = wgs84
+            minbnd, _, maxbnd, _ = poly.total_bounds
+            # This is guessing that lons are wrapped around at 180+ but without much information, this might not be true
+            if minbnd >= -180 and maxbnd <= 180:
+                shape_crs = wgs84
+            elif minbnd >= 0 and minbnd <= 360:
+                shape_crs = wgs84_wrapped
+            else:
+                raise CRSError(
+                    "Shapefile CRS could not be determined and does not resemble WGS84."
+                )
+            poly.crs = shape_crs
+    if not shape_crs.equals(wgs84):
+        logger.warning(
+            "Shapefile CRS is not WGS84 and will be reprojected to WGS84. This may lead to inaccuracies.",
+            UserWarning,
+            stacklevel=2,
+        )
+        poly = poly.to_crs(wgs84)
+        shape_crs = wgs84
 
-    def _get_raster_info(d, rcrs):
-        lo = get_lon(ds_copy)
-        la = get_lat(ds_copy)
-        wrap = False
-        if rcrs is not None:
-            try:
-                rcrs = CRS.from_user_input(rcrs)
-            except ValueError:
-                raise
-        else:
-            try:
-                # Extract CF-compliant CRS_WKT from crs variable.
-                rcrs = CRS.from_cf(d.crs.attrs)
-            except AttributeError as e:
-                # This is guessing that lons are wrapped around at 180+ but without much information, this might not be true
-                if np.min(lo) >= -180 and np.max(lo) <= 180:
-                    rcrs = wgs84
-                elif np.min(lo) >= 0 and np.max(lo) <= 360:
-                    wrap = True
-                    rcrs = wgs84_wrapped
-                else:
-                    raise CRSError(
-                        "Raster CRS is not known and does not resemble WGS84."
-                    ) from e
-        return lo, la, wrap, rcrs
-
-    lon, lat, wrap_lons, raster_crs = _get_raster_info(ds_copy, raster_crs)
+    lon = get_lon(ds_copy)
+    wrap_lons = False
+    if raster_crs is not None:
+        try:
+            raster_crs = CRS.from_user_input(raster_crs)
+        except ValueError:
+            raise
+    else:
+        try:
+            # Extract CF-compliant CRS_WKT from crs variable.
+            raster_crs = CRS.from_cf(ds_copy.crs.attrs)
+        except AttributeError as e:
+            # This is guessing that lons are wrapped around at 180+ but without much information, this might not be true
+            if np.min(lon) >= -180 and np.max(lon) <= 180:
+                raster_crs = wgs84
+            elif np.min(lon) >= 0 and np.max(lon) <= 360:
+                wrap_lons = True
+                raster_crs = wgs84_wrapped
+            else:
+                raise CRSError(
+                    "Raster CRS is not known and does not resemble WGS84."
+                ) from e
 
     _check_crs_compatibility(shape_crs=shape_crs, raster_crs=raster_crs)
-    # Change the projection of the shape to match the raster, to ensure correct overlay.
-    poly = poly.to_crs(raster_crs)
 
     # Get the shape's bounding box.
     minx, miny, maxx, maxy = poly.total_bounds
@@ -1103,8 +1113,9 @@ def subset_shape(
     if first_level or last_level:
         ds_copy = subset_level(ds_copy, first_level=first_level, last_level=last_level)
 
-    # Repeat the checks for the shape's bounding box after the bbox subset.
-    lon, lat, wrap_lons, raster_crs = _get_raster_info(ds_copy, raster_crs)
+    # Get the new lon and lat coordinates after the bbox subset.
+    lon = get_lon(ds_copy)
+    lat = get_lat(ds_copy)
 
     mask_2d = create_mask(x_dim=lon, y_dim=lat, poly=poly, wrap_lons=wrap_lons).clip(
         1, 1
@@ -1443,7 +1454,11 @@ def _check_crs_compatibility(shape_crs: CRS, raster_crs: CRS) -> None:
     """If CRS definitions are not WGS84 or incompatible, raise operation warnings."""
     wgs84 = CRS(4326)
     if not shape_crs.equals(raster_crs):
-        if (
+        if (shape_crs.coordinate_system.name != raster_crs.coordinate_system.name) and (shape_crs.axis_info[0].unit_name != raster_crs.axis_info[0].unit_name):
+            raise CRSError(
+                "CRS definitions are not compatible. Please ensure both are using the same coordinate system and units."
+            )
+        elif (
             "lon_wrap" in raster_crs.to_string()
             and "lon_wrap" not in shape_crs.to_string()
         ):
