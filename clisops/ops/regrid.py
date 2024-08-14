@@ -1,3 +1,4 @@
+import warnings
 from datetime import datetime as dt
 from pathlib import Path
 from typing import List, Optional, Union
@@ -103,20 +104,30 @@ class Regrid(Operation):
         grid_in = self._get_grid_in(self.ds, compute_bounds)
         grid_out = self._get_grid_out(grid, compute_bounds)
 
-        # Compute the remapping weights
-        t_start = dt.now()
-        weights = self._get_weights(grid_in=grid_in, grid_out=grid_out, method=method)
-        t_end = dt.now()
-        logger.info(
-            f"Computed/Retrieved weights in {(t_end - t_start).total_seconds()} seconds."
-        )
+        if grid_in.hash == grid_out.hash:
+            weights = None
+            regridder = None
+            weights_filename = None
+        else:
+            # Compute the remapping weights
+            t_start = dt.now()
+            weights = self._get_weights(
+                grid_in=grid_in, grid_out=grid_out, method=method
+            )
+            regridder = weights.regridder
+            weights_filename = regridder.filename
+            t_end = dt.now()
+            logger.info(
+                f"Computed/Retrieved weights in {(t_end - t_start).total_seconds()} seconds."
+            )
 
         # Define params dict
         self.params = {
+            "orig_ds": self.ds,
             "grid_in": grid_in,
             "grid_out": grid_out,
             "method": method,
-            "regridder": weights.regridder,
+            "regridder": regridder,
             "weights": weights,
             "adaptive_masking_threshold": adaptive_masking_threshold,
             "keep_attrs": keep_attrs,
@@ -133,7 +144,7 @@ class Regrid(Operation):
             "Resolved parameters: grid_in: {}, grid_out: {}, regridder: {}".format(
                 self.params.get("grid_in").__str__(),
                 self.params.get("grid_out").__str__(),
-                self.params.get("regridder").filename,
+                weights_filename,
             )
         )
 
@@ -154,6 +165,15 @@ class Regrid(Operation):
 
         Returns the resulting xarray.Dataset.
         """
+
+        # Pass through the input dataset if grid_in and grid_out are equal
+        if self.params.get("grid_in").hash == self.params.get("grid_out").hash:
+            warnings.warn(
+                "The selected source and target grids are the same. "
+                "No regridding operation required."
+            )
+            return self.params.get("orig_ds")
+
         # the result is saved by the process() method on the base class
         regridded_ds = core_regrid(
             self.params.get("grid_in", None),

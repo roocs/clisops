@@ -48,6 +48,7 @@ from _common import (
 )
 from clisops import CONFIG
 from clisops.ops.subset import Subset, subset
+from clisops.utils.dataset_utils import determine_lon_lat_range
 from clisops.utils.output_utils import _format_time  # noqa
 
 
@@ -699,28 +700,23 @@ def test_time_invariant_subset_with_time(load_esgf_test_data):
     assert str(exc.value) == "'Dataset' object has no attribute 'time'"
 
 
-# test known bug
-@pytest.mark.skip(reason="bug no longer exists")
 def test_cross_prime_meridian(tmpdir):
+    """Test subset with crossing prime meridian"""
     ds = _load_ds(CMIP6_TAS_DAY)
 
-    with pytest.raises(NotImplementedError) as exc:
-        subset(
-            ds=ds,
-            area=(-5, 50, 30, 65),
-            output_dir=tmpdir,
-            output_type="nc",
-            file_namer="simple",
-        )
-    assert (
-        str(exc.value)
-        == "Input longitude bounds ([-5. 30.]) cross the 0 degree meridian "
-        "but dataset longitudes are all positive."
+    result = subset(
+        ds=ds,
+        area=(-5, 50, 30, 65),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
     )
 
+    _check_output_nc(result)
 
-# test it works when not crossing 0 meridian
+
 def test_do_not_cross_prime_meridian(tmpdir):
+    """Test subset without crossing prime meridian"""
     ds = _load_ds(CMIP6_TAS_DAY)
 
     result = subset(
@@ -748,18 +744,17 @@ def test_0_360_no_cross(tmpdir, load_esgf_test_data):
     _check_output_nc(result)
 
 
-@pytest.mark.skip(reason="bug no longer exists")
 def test_0_360_cross(tmpdir, load_esgf_test_data):
     ds = _load_ds(CMIP6_RLDS)
 
-    with pytest.raises(NotImplementedError):
-        subset(
-            ds=ds,
-            area=(-50.0, -90.0, 100.0, 90.0),
-            output_dir=tmpdir,
-            output_type="nc",
-            file_namer="simple",
-        )
+    result = subset(
+        ds=ds,
+        area=(-50.0, -90.0, 100.0, 90.0),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+    _check_output_nc(result)
 
 
 def test_300_60_no_cross(tmpdir):
@@ -834,25 +829,49 @@ def test_roll_positive_mini_data():
     )
 
 
-@pytest.mark.skip(reason="bug no longer exists")
-def test_check_lon_alignment_curvilinear_grid():
+def test_lon_alignment_curvilinear_grid():
     ds = _load_ds(CMIP6_SFTOF)
 
+    # Assert lon frame is (0, 360)
+    x0, x1, *y = determine_lon_lat_range(
+        ds,
+        "longitude",
+        "latitude",
+        "vertices_longitude",
+        "vertices_latitude",
+        apply_fix=False,
+    )
+    assert np.isclose(x0, 0.0, atol=0.1)
+    assert np.isclose(x1, 360.0, atol=0.1)
+
+    # Define an area with another lon frame (-180, 180)
     area = (-50.0, -90.0, 100.0, 90.0)
 
-    with pytest.raises(Exception) as exc:
-        subset(
-            ds=ds,
-            area=area,
-            output_type="xarray",
-        )
+    ds_subset = subset(
+        ds=ds,
+        area=area,
+        output_type="xarray",
+    )[0]
 
-    assert (
-        str(exc.value)
-        == "The requested longitude subset (-50.0, 100.0) is not within the longitude bounds "
-        "of this dataset and the data could not be converted to this longitude frame successfully. "
-        "Please re-run your request with longitudes within the bounds of the dataset: (0.00, 359.99)"
+    # Assert data includes the desired area
+    #  (lon_frame was converted to -180, 180 before subsetting)
+    # Since it is a curvilinear grid, the minimum longitude is smaller than -50
+    #  and the maximum longitude is larger than 100
+    x0, x1, *y = determine_lon_lat_range(
+        ds_subset,
+        "longitude",
+        "latitude",
+        "longitude_bnds",
+        "latitude_bnds",
+        apply_fix=False,
     )
+    assert np.isclose(x0, -155.0, atol=0.1)
+    assert np.isclose(x1, 159.5, atol=0.1)
+
+    # But we can confirm that the majority of points lie between -50 and 100
+    #  (in this case more than 2/3 of the points)
+    hist = np.histogram(ds_subset["longitude"], bins=(x0, -51, 101, x1))
+    assert hist[0][1] > 2 * (hist[0][0] + hist[0][2])
 
 
 class TestSubset:

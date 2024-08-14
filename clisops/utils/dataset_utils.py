@@ -38,7 +38,7 @@ def get_coord_by_type(
 
     Raises
     ------
-    Exception
+    ValueError
         If the coordinate type is not known.
     """
     # List for all potential matches
@@ -1396,7 +1396,7 @@ def detect_coordinate(ds, coord_type):
 
     Raises
     ------
-    AttributeError
+    KeyError
         Raised if the requested coordinate cannot be identified.
 
     Returns
@@ -1473,13 +1473,18 @@ def detect_gridtype(ds, lon, lat, lon_bnds=None, lat_bnds=None):
             ):
                 return "unstructured"
             # rectilinear: bounds [nlat/nlon, 2]
-            elif (
-                all([ds[bnds].ndim == 2 for bnds in [lon_bnds, lat_bnds]])
-                and ds.dims[ds.cf.get_bounds_dim_name(lon)] == 2
+            elif all([ds[bnds].ndim == 2 for bnds in [lon_bnds, lat_bnds]]) and all(
+                [
+                    ds.dims[dim] == 2
+                    for dim in [
+                        ds[lon_bnds].dims[-1],
+                        ds[lat_bnds].dims[-1],
+                    ]
+                ]
             ):
                 return "regular_lat_lon"
             else:
-                raise Exception("The grid type is not supported.")
+                raise ValueError("The grid type is not supported.")
 
     # 2D coordinate variables
     elif ds[lat].ndim == 2 and ds[lon].ndim == 2:
@@ -1493,7 +1498,7 @@ def detect_gridtype(ds, lon, lat, lon_bnds=None, lat_bnds=None):
         #      lat_bnds[:, 2]=[min(lat_bnds[:,j, :]), max(lat_bnds[:,j, :])]
         #      lon_bnds similar
         if not ds[lat].shape == ds[lon].shape:
-            raise InvalidParameterValue(
+            raise ValueError(
                 "The horizontal coordinate variables have differing shapes."
             )
         else:
@@ -1510,10 +1515,10 @@ def detect_gridtype(ds, lon, lat, lon_bnds=None, lat_bnds=None):
                 ] == list(ds[lon_bnds].shape):
                     return "curvilinear"
                 else:
-                    raise Exception("The grid type is not supported.")
+                    raise ValueError("The grid type is not supported.")
 
     # >2D coordinate variables, or coordinate variables of different dimensionality
     else:
-        raise InvalidParameterValue(
+        raise ValueError(
             "The horizontal coordinate variables have more than 2 dimensions."
         )
