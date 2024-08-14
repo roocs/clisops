@@ -4,9 +4,9 @@ from math import isclose
 import numpy as np
 import pytest
 import xarray as xr
-from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
 
-from _common import CMIP6_RLDS_ONE_TIME_STEP
+from _common import CMIP6_RLDS_ONE_TIME_STEP, CMIP6_SIMASS_DEGEN, CMIP6_TA
+from clisops.utils.dataset_utils import get_coord_by_type
 
 
 def open_dataset():
@@ -19,6 +19,7 @@ def setup_test():
 
     # gets longitude by the correct name as used in the dataset
     lon = get_coord_by_type(ds, "longitude")
+    lon = ds[lon]
 
     return ds, lon
 
@@ -164,34 +165,27 @@ def test_roll_compare_roll_coords(load_esgf_test_data):
     )
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
 def test_irregular_grid_dataset(load_esgf_test_data):
-    ds = xr.open_mfdataset(
-        "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/"
-        "ssp370/r1i1p1f1/Ofx/sftof/gn/v20191108/*.nc"
-    )
+    ds = xr.open_dataset(CMIP6_SIMASS_DEGEN)
     lon = get_coord_by_type(ds, "longitude", ignore_aux_coords=False)
 
     assert "lon" not in ds.dims
 
     with pytest.raises(ValueError) as exc:
-        ds.roll(shifts={f"{lon.name}": 180}, roll_coords=False)
+        ds.roll(shifts={f"{lon}": 180}, roll_coords=False)
     assert str(exc.value) == "dimensions ['longitude'] do not exist"
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
 def test_3d_grid_dataset(load_esgf_test_data):
-    ds = xr.open_mfdataset(
-        "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp370/r1i1p1f1/Amon/ta/gn/v20191108/*.nc"
-    )
+    ds = xr.open_mfdataset(CMIP6_TA)
     lon = get_coord_by_type(ds, "longitude", ignore_aux_coords=False)
 
     assert "lon" in ds.dims
 
     offset = 180
 
-    ds_roll_coords = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=True)
-    ds_not_roll_coords = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=False)
+    ds_roll_coords = ds.roll(shifts={f"{lon}": offset}, roll_coords=True)
+    ds_not_roll_coords = ds.roll(shifts={f"{lon}": offset}, roll_coords=False)
 
     # check plev doesn't change with/without rolling coords
     np.testing.assert_array_equal(

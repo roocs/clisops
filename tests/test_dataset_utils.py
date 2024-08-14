@@ -1,3 +1,5 @@
+import os
+
 import cf_xarray as cfxr  # noqa
 import numpy as np
 import packaging.version
@@ -8,16 +10,24 @@ from roocs_grids import get_grid_file
 
 import clisops.utils.dataset_utils as clidu
 from _common import (
+    C3S_CMIP5_TAS,
     C3S_CORDEX_AFR_TAS,
     C3S_CORDEX_ANT_SFC_WIND,
+    CMIP5_RH,
+    CMIP5_TAS,
+    CMIP5_ZOSTOGA,
+    CMIP6_CHAR_DIM,
+    CMIP6_EXTENT_UNMASKED,
     CMIP6_GFDL_EXTENT,
     CMIP6_IITM_EXTENT,
     CMIP6_OCE_HALO_CNRM,
     CMIP6_SICONC,
+    CMIP6_SIMASS_DEGEN,
     CMIP6_TAS_ONE_TIME_STEP,
     CMIP6_TAS_PRECISION_A,
     CMIP6_TOS_ONE_TIME_STEP,
     CMIP6_UNSTR_ICON_A,
+    CMIP6_UNTAGGED_MISSVALS,
     CORDEX_TAS_ONE_TIMESTEP,
 )
 from clisops.core.regrid import XESMF_MINIMUM_VERSION
@@ -272,7 +282,7 @@ def test_detect_coordinate_and_bounds():
     assert lon_d == clidu.detect_coordinate(ds_d, "longitude")
 
 
-def test_detect_coordinate_by_standard_name(tmpdir):
+def test_detect_coordinate_robustness(tmpdir):
     "Test coordinate detection for dataset where cf_xarray fails due to erroneous attributes"
     ds = xr.open_mfdataset(C3S_CORDEX_AFR_TAS, use_cftime=True, combine="by_coords")
     assert clidu.detect_coordinate(ds, "latitude") == "lat"
@@ -292,20 +302,11 @@ def test_detect_coordinate_by_standard_name(tmpdir):
     assert clidu.detect_coordinate(ds, "latitude") == "lat"
     assert clidu.detect_coordinate(ds, "longitude") == "lon"
 
-    # Additionally remove standard_name to also confuse roocs_utils
+    # Additionally remove standard_name
     del ds.lat.attrs["standard_name"]
     del ds.lon.attrs["standard_name"]
-    with pytest.raises(Exception) as exc:
-        clidu.detect_coordinate(ds, "latitude")
-    assert (
-        str(exc.value) == "'A latitude coordinate cannot be identified in the dataset.'"
-    )
-    with pytest.raises(Exception) as exc:
-        clidu.detect_coordinate(ds, "longitude")
-    assert (
-        str(exc.value)
-        == "'A longitude coordinate cannot be identified in the dataset.'"
-    )
+    assert clidu.detect_coordinate(ds, "latitude") == "lat"
+    assert clidu.detect_coordinate(ds, "longitude") == "lon"
 
 
 def test_detect_gridtype():
@@ -339,6 +340,147 @@ def test_detect_gridtype():
         )
         == "regular_lat_lon"
     )
+
+
+def test_determine_lon_lat_range(load_esgf_test_data):
+    """Test the function determine_lon_lat_range incl. and without fix for unmasked missing values."""
+    # Test case 1 - without fix
+    ds = xr.open_dataset(CMIP6_EXTENT_UNMASKED)
+    x0, x1, y0, y1 = clidu.determine_lon_lat_range(
+        ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=False
+    )
+    for i, j in [
+        (x0, -300),
+        (x1, 1e20),
+        (y0, -78),
+        (y1, 1e20),
+    ]:
+        assert np.isclose(i, j, atol=0.1)
+
+    # Test case 1 - with fix
+    x0, x1, y0, y1 = clidu.determine_lon_lat_range(
+        ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=True
+    )
+    for i, j in [
+        (x0, -300.0),
+        (x1, 60.0),
+        (y0, -78),
+        (y1, 89.9),
+    ]:
+        assert np.isclose(i, j, atol=0.1)
+
+    # Test case 2 - without fix
+    ds = xr.open_dataset(CMIP6_UNTAGGED_MISSVALS)
+    x0, x1, y0, y1 = clidu.determine_lon_lat_range(
+        ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=False
+    )
+    for i, j in [
+        (x0, 0.0),
+        (x1, 9.9692e36),
+        (y0, -79.2),
+        (y1, 9.9692e36),
+    ]:
+        assert np.isclose(i, j, atol=0.1)
+
+    # Test case 2 - with fix
+    x0, x1, y0, y1 = clidu.determine_lon_lat_range(
+        ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=True
+    )
+    for i, j in [
+        (x0, 0.0),
+        (x1, 360),
+        (y0, -79.2),
+        (y1, 89.7),
+    ]:
+        assert np.isclose(i, j, atol=0.1)
+
+    # Fix is applied on the ds "in place"
+    x0, x1, y0, y1 = clidu.determine_lon_lat_range(
+        ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=False
+    )
+    for i, j in [
+        (x0, 0.0),
+        (x1, 360),
+        (y0, -79.2),
+        (y1, 89.7),
+    ]:
+        assert np.isclose(i, j, atol=0.1)
+
+
+def test_determine_lon_lat_range_unstructured(load_esgf_test_data):
+    """Test the function determine_lon_lat_range for unstructured grids."""
+    ds = xr.open_dataset(CMIP6_UNSTR_ICON_A)
+    # Test case 1 - manipulate only latitudes
+    ds.latitude.values[0] = -999.0
+    with pytest.warns(
+        UserWarning,
+        match="fix is not possible since their locations are not consistent",
+    ):
+        x0, x1, y0, y1 = clidu.determine_lon_lat_range(
+            ds,
+            "longitude",
+            "latitude",
+            "longitude_bnds",
+            "latitude_bnds",
+            apply_fix=True,
+        )
+    for i, j in [
+        (x0, 1.0),
+        (x1, 360.0),
+        (y0, -999.0),
+        (y1, 88.9),
+    ]:
+        assert np.isclose(i, j, atol=0.1)
+    # Test case 2 - manipulate longitudes as well, but inconsistent
+    ds.longitude.values[1] = -999.0
+    with pytest.warns(
+        UserWarning,
+        match="fix is not possible since their locations are not consistent",
+    ):
+        x0, x1, y0, y1 = clidu.determine_lon_lat_range(
+            ds,
+            "longitude",
+            "latitude",
+            "longitude_bnds",
+            "latitude_bnds",
+            apply_fix=True,
+        )
+    for i, j in [
+        (x0, -999.0),
+        (x1, 360.0),
+        (y0, -999.0),
+        (y1, 88.9),
+    ]:
+        assert np.isclose(i, j, atol=0.1)
+    # Test case 3 - manipulate latitudes and longitudes consistently
+    ds.longitude.values[0] = -999.0
+    ds.latitude.values[1] = -999.0
+    with pytest.warns(UserWarning, match=r"missing_value found \(and treated\)"):
+        x0, x1, y0, y1 = clidu.determine_lon_lat_range(
+            ds,
+            "longitude",
+            "latitude",
+            "longitude_bnds",
+            "latitude_bnds",
+            apply_fix=True,
+        )
+    for i, j in [
+        (x0, 1.0),
+        (x1, 360.0),
+        (y0, -88.9),
+        (y1, 88.9),
+    ]:
+        assert np.isclose(i, j, atol=0.1)
+
+
+def test_determine_lon_lat_range_regular_lat_lon():
+    """Test the function determine_lon_lat_range for regular lat lon grids."""
+    ds = xr.open_mfdataset(CMIP5_TAS)
+    ds.lat.values[1] = -999.0
+    with pytest.warns(UserWarning, match="fix is not possible for regular"):
+        clidu.determine_lon_lat_range(
+            ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=True
+        )
 
 
 def test_crosses_0_meridian():
@@ -522,19 +664,23 @@ def test_calculate_bounds_curvilinear(load_esgf_test_data):
         for j in range(1, 19):
             ds.lat_vertices[i, j, :] = np.sort(ds.lat_vertices.values[i, j, :])
             ds.lon_vertices[i, j, :] = np.sort(ds.lon_vertices.values[i, j, :])
-            ds_nb.lat_bnds[i, j, :] = np.sort(ds_nb.lat_bnds.values[i, j, :])
-            ds_nb.lon_bnds[i, j, :] = np.sort(ds_nb.lon_bnds.values[i, j, :])
+            ds_nb.vertices_latitude[i, j, :] = np.sort(
+                ds_nb.vertices_latitude.values[i, j, :]
+            )
+            ds_nb.vertices_longitude[i, j, :] = np.sort(
+                ds_nb.vertices_longitude.values[i, j, :]
+            )
 
     # Assert all values are close (discard cells at edge of selected grid area)
     xr.testing.assert_allclose(
         ds.lat_vertices.isel({"rlat": range(1, 19), "rlon": range(1, 19)}),
-        ds_nb.lat_bnds.isel({"rlat": range(1, 19), "rlon": range(1, 19)}),
+        ds_nb.vertices_latitude.isel({"rlat": range(1, 19), "rlon": range(1, 19)}),
         rtol=1e-06,
         atol=0,
     )
     xr.testing.assert_allclose(
         ds.lon_vertices.isel({"rlat": range(1, 19), "rlon": range(1, 19)}),
-        ds_nb.lon_bnds.isel({"rlat": range(1, 19), "rlon": range(1, 19)}),
+        ds_nb.vertices_longitude.isel({"rlat": range(1, 19), "rlon": range(1, 19)}),
         rtol=1e-06,
         atol=0,
     )
@@ -553,3 +699,239 @@ def test_calculate_bounds_rectilinear(load_esgf_test_data):
     # Assert all values are close
     xr.testing.assert_allclose(ds.lat_bnds, ds_nb.lat_bnds, rtol=1e-06, atol=0)
     xr.testing.assert_allclose(ds.lon_bnds, ds_nb.lon_bnds, rtol=1e-06, atol=0)
+
+
+# Adapted from roocs_utils:tests.test_xarray_utils.test_get_main_var
+def test_get_main_var(load_esgf_test_data):
+    data = C3S_CMIP5_TAS
+    ds = xr.open_mfdataset(data, use_cftime=True, combine="by_coords")
+    result = clidu.get_main_variable(ds)
+    assert result == "tas"
+
+
+def test_get_main_var_2(load_esgf_test_data):
+    data = CMIP5_ZOSTOGA
+    ds = xr.open_mfdataset(data, use_cftime=True, combine="by_coords")
+    result = clidu.get_main_variable(ds)
+    assert result == "zostoga"
+
+
+def test_get_main_var_3(load_esgf_test_data):
+    data = CMIP5_TAS
+    ds = xr.open_mfdataset(data, use_cftime=True, combine="by_coords")
+    result = clidu.get_main_variable(ds)
+    assert result == "tas"
+
+
+def test_get_main_var_4(load_esgf_test_data):
+    data = CMIP5_RH
+    ds = xr.open_mfdataset(data, use_cftime=True, combine="by_coords")
+    result = clidu.get_main_variable(ds)
+    assert result == "rh"
+
+
+def test_get_main_var_test_data(load_esgf_test_data):
+    ds = xr.open_mfdataset(CMIP6_SIMASS_DEGEN, use_cftime=True, combine="by_coords")
+    var_id = clidu.get_main_variable(ds)
+    assert var_id == "simass"
+
+
+def test_get_main_var_include_common_coords(load_esgf_test_data):
+    ds = xr.open_mfdataset(CMIP5_TAS, use_cftime=True, combine="by_coords")
+    var_id = clidu.get_main_variable(ds, exclude_common_coords=False)
+
+    # incorrectly identified main variable and common_coords included in search
+    assert var_id == "lat_bnds"
+
+
+def test_get_standard_names(load_esgf_test_data):
+    ds = xr.open_mfdataset(CMIP5_TAS, use_cftime=True, combine="by_coords")
+    assert sorted(ds.cf.standard_names) == sorted(
+        [
+            "air_temperature",
+            "height",
+            "latitude",
+            "longitude",
+            "time",
+        ]
+    )
+
+
+# Adapted from roocs_utils:tests.test_xarray_utils.test_cf_xarray
+def test_get_latitude_cf_xarray(load_esgf_test_data):
+    ds = xr.open_mfdataset(CMIP5_TAS, use_cftime=True, combine="by_coords")
+    xr.testing.assert_identical(
+        ds["lat"].reset_coords(("height"), drop=True), ds.cf["lat"]
+    )
+    xr.testing.assert_identical(
+        ds["lat"].reset_coords(("height"), drop=True), ds.cf["latitude"]
+    )
+
+
+def test_get_latitude_2_cf_xarray(load_esgf_test_data):
+    ds = xr.open_mfdataset(C3S_CMIP5_TAS, use_cftime=True, combine="by_coords")
+    xr.testing.assert_identical(ds["lat"], ds.cf["lat"])
+    xr.testing.assert_identical(ds["lat"], ds.cf["latitude"])
+    with pytest.raises(KeyError):
+        xr.testing.assert_identical(ds["lat"], ds.cf["lats"])
+
+
+def test_get_lat_lon_names_from_ds_cf_xarray(load_esgf_test_data):
+    ds = xr.open_mfdataset(CMIP5_TAS, use_cftime=True, combine="by_coords")
+    assert ds.cf["latitude"].name == "lat"
+    assert ds.cf["longitude"].name == "lon"
+    # not sure how it will deal with lats
+
+
+def test_get_time_cf_xarray(load_esgf_test_data):
+    ds = xr.open_mfdataset(CMIP5_TAS, use_cftime=True, combine="by_coords")
+    xr.testing.assert_identical(
+        ds["time"].reset_coords(("height"), drop=True), ds.cf["time"]
+    )
+
+
+# Adapted from roocs_utils:tests.test_xarray_utils.test_get_coords
+# test dataset with no known problems
+def test_get_time(load_esgf_test_data):
+    ds = xr.open_mfdataset(CMIP5_TAS, use_cftime=True, combine="by_coords")
+    da = ds["tas"]
+    coord = da.time
+    assert clidu.get_coord_type(coord) == "time"
+
+
+def test_get_latitude(load_esgf_test_data):
+    ds = xr.open_mfdataset(CMIP5_TAS, use_cftime=True, combine="by_coords")
+    da = ds["tas"]
+    coord = da.lat
+    assert clidu.get_coord_type(coord) == "latitude"
+
+
+def test_get_longitude(load_esgf_test_data):
+    ds = xr.open_mfdataset(CMIP5_TAS, use_cftime=True, combine="by_coords")
+    da = ds["tas"]
+    coord = da.lon
+    assert clidu.get_coord_type(coord) == "longitude"
+
+
+# test dataset with no standard name for time
+def test_get_time_2(load_esgf_test_data):
+    ds = xr.open_mfdataset(C3S_CMIP5_TAS, use_cftime=True, combine="by_coords")
+    da = ds["tas"]
+    coord = da.time
+    assert clidu.get_coord_type(coord) == "time"
+
+
+def test_get_latitude_2(load_esgf_test_data):
+    ds = xr.open_mfdataset(C3S_CMIP5_TAS, use_cftime=True, combine="by_coords")
+    da = ds["tas"]
+    coord = da.lat
+    assert clidu.get_coord_type(coord) == "latitude"
+
+
+def test_get_longitude_2(load_esgf_test_data):
+    ds = xr.open_mfdataset(C3S_CMIP5_TAS, use_cftime=True, combine="by_coords")
+    da = ds["tas"]
+    coord = da.lon
+    assert clidu.get_coord_type(coord) == "longitude"
+
+
+# test dataset with only time and another coordinate that isn't lat or lon
+def test_get_time_3(load_esgf_test_data):
+    ds = xr.open_mfdataset(CMIP5_ZOSTOGA, use_cftime=True, combine="by_coords")
+    da = ds["zostoga"]
+    coord = da.time
+    assert clidu.get_coord_type(coord) == "time"
+
+
+def test_get_level(load_esgf_test_data):
+    ds = xr.open_mfdataset(CMIP5_ZOSTOGA, use_cftime=True, combine="by_coords")
+    da = ds["zostoga"]
+    coord = da.lev
+    assert clidu.get_coord_type(coord) == "level"
+
+
+def test_get_other(load_esgf_test_data):
+    ds = xr.open_mfdataset(CMIP6_SICONC, use_cftime=True, combine="by_coords")
+    da = ds["siconc"]
+    coord = da.type
+    assert clidu.get_coord_type(coord) is None
+
+
+def test_order_of_coords(load_esgf_test_data):
+    ds = xr.open_mfdataset(CMIP5_ZOSTOGA, use_cftime=True, combine="by_coords")
+    da = ds["zostoga"]
+
+    coords = [_ for _ in da.coords]
+    assert coords == ["lev", "time"]
+
+    coord_names_keys = [_ for _ in da.coords.keys()]
+    assert coord_names_keys == ["lev", "time"]
+
+    # this changes order each time
+    # coord_names = [_ for _ in da.coords._names]
+    # assert coord_names == ['time', 'lev']
+
+    coord_names_keys = [_ for _ in da.coords]
+    assert coord_names_keys == ["lev", "time"]
+
+    coord_sizes = [da[f"{coord}"].size for coord in da.coords.keys()]
+    shape = da.shape
+
+    dims = da.dims
+    assert dims == ("time", "lev")
+
+    assert shape == (1140, 1)  # looks like shape comes from dims
+    assert coord_sizes == [1, 1140]
+    assert ds["lev"].shape == (1,)
+    assert ds["time"].shape == (1140,)
+
+
+def test_text_coord_not_level(load_esgf_test_data):
+    ds = xr.open_mfdataset(CMIP6_CHAR_DIM, use_cftime=True, combine="by_coords")
+    coord_type = clidu.get_coord_type(ds.sector)
+    assert coord_type is None
+    assert coord_type != "level"
+
+
+def test_get_coords_by_type(load_esgf_test_data):
+    ds = xr.open_mfdataset(C3S_CORDEX_AFR_TAS, use_cftime=True, combine="by_coords")
+
+    # check lat, lon, time and level are found when they are coordinates
+    lat = clidu.get_coord_by_type(ds, "latitude", ignore_aux_coords=False)
+    lon = clidu.get_coord_by_type(ds, "longitude", ignore_aux_coords=False)
+    time = clidu.get_coord_by_type(ds, "time", ignore_aux_coords=False)
+    level = clidu.get_coord_by_type(ds, "level", ignore_aux_coords=False)
+
+    assert lat == "lat"
+    assert lon == "lon"
+    assert time == "time"
+    assert level == "height"
+
+    # test that latitude and longitude are still found when they are data variables
+    # reset coords sets lat and lon as data variables
+    ds = ds.reset_coords(["lat", "lon"])
+
+    # if ignore_Aux_coords=True then lat/lon should not be identified
+    lat = clidu.get_coord_by_type(ds, "latitude", ignore_aux_coords=True)
+    lon = clidu.get_coord_by_type(ds, "longitude", ignore_aux_coords=True)
+
+    assert lat is None
+    assert lon is None
+
+    # if ignore_Aux_coords=False then lat/lon should be identified
+    lat = clidu.get_coord_by_type(ds, "latitude", ignore_aux_coords=False)
+    lon = clidu.get_coord_by_type(ds, "longitude", ignore_aux_coords=False)
+
+    assert lat == "lat"
+    assert lon == "lon"
+
+
+def test_get_coords_by_type_with_no_time(load_esgf_test_data):
+    ds = xr.open_mfdataset(C3S_CORDEX_AFR_TAS, use_cftime=True, combine="by_coords")
+    # check time
+    time = clidu.get_coord_by_type(ds, "time", ignore_aux_coords=False)
+    assert time == "time"
+    # drop time
+    ds = ds.drop_dims("time")
+    time = clidu.get_coord_by_type(ds, "time", ignore_aux_coords=False)
+    assert time is None

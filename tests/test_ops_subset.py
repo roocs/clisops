@@ -16,21 +16,26 @@ from roocs_utils.parameter.param_utils import (
 )
 
 from _common import (
-    C3S_CMIP5_TOS,
     C3S_CMIP5_TSICE,
     CMIP5_MRSOS_MULTIPLE_TIME_STEPS,
     CMIP5_RH,
     CMIP5_TAS,
+    CMIP5_WRONG_CF_UNITS,
     CMIP5_ZOSTOGA,
+    CMIP6_AREACELLO,
     CMIP6_FILLVALUE,
     CMIP6_MRSOFC,
     CMIP6_RLDS,
     CMIP6_RLDS_ONE_TIME_STEP,
+    CMIP6_RLUS_ONE_TIME_STEP,
+    CMIP6_SFTOF,
     CMIP6_SICONC,
     CMIP6_SICONC_DAY,
     CMIP6_TA,
+    CMIP6_TAS_DAY,
     CMIP6_TASMIN,
     CMIP6_TOS,
+    CMIP6_TOS_CNRM,
     CMIP6_TOS_ONE_TIME_STEP,
     ATLAS_v0_CMIP6,
     ATLAS_v0_CORDEX_NAM,
@@ -529,7 +534,6 @@ def test_aux_variables():
     test auxiliary variables are remembered in output dataset
     Have to create a netcdf file with auxiliary variable
     """
-
     ds = _load_ds("tests/data/test_file.nc")
 
     assert "do_i_get_written" in ds.variables
@@ -544,8 +548,7 @@ def test_aux_variables():
     assert "do_i_get_written" in result[0].variables
 
 
-@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
-def test_coord_variables_exist():
+def test_coord_variables_exist(load_esgf_test_data):
     """
     check coord variables e.g. lat/lon when original data
     is on an irregular grid exist in output dataset
@@ -566,13 +569,11 @@ def test_coord_variables_exist():
     assert "lon" in result[0].coords
 
 
-@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
 def test_coord_variables_subsetted_i_j():
     """
     check coord variables e.g. lat/lon when original data
     is on an irregular grid are subsetted correctly in output dataset
     """
-
     ds = _load_ds(C3S_CMIP5_TSICE)
 
     assert "lat" in ds.coords
@@ -590,7 +591,7 @@ def test_coord_variables_subsetted_i_j():
     )
 
     out = result[0].tsice
-    assert out.values.shape == (180, 318, 178)
+    assert out.values.shape == (180, 7, 4)
 
     # all lats and lons (hence i and j) have been dropped in these ranges as they are all masked, only time dim remains
     assert out.where(
@@ -608,14 +609,12 @@ def test_coord_variables_subsetted_i_j():
     assert np.all(out.lat.values[mask1.values] <= area[3])
 
 
-@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
 def test_coord_variables_subsetted_rlat_rlon():
     """
     check coord variables e.g. lat/lon when original data
     is on an irregular grid are subsetted correctly in output dataset
     """
-
-    ds = _load_ds(C3S_CMIP5_TOS)
+    ds = _load_ds(CMIP5_WRONG_CF_UNITS)
 
     assert "lat" in ds.coords
     assert "lon" in ds.coords
@@ -625,22 +624,22 @@ def test_coord_variables_subsetted_rlat_rlon():
     area = (5.0, 10.0, 20.0, 65.0)
 
     result = subset(
-        ds=C3S_CMIP5_TOS,
+        ds=CMIP5_WRONG_CF_UNITS,
         time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
         area=area,
         output_type="xarray",
     )
 
-    out = result[0].tos
-    assert out.values.shape == (96, 65, 15)
+    out = result[0].zos
+    assert out.values.shape == (1, 65, 15)
 
     # all lats and lons (hence rlat and rlon) have been dropped in these ranges as they are all masked, only time dim remains
     assert out.where(
         np.logical_and(out.lon < area[0], out.lon > area[2]), drop=True
-    ).values.shape == (96, 0, 0)
+    ).values.shape == (1, 0, 0)
     assert out.where(
         np.logical_and(out.lat < area[1], out.lat > area[3]), drop=True
-    ).values.shape == (96, 0, 0)
+    ).values.shape == (1, 0, 0)
 
     mask1 = ~(np.isnan(out.sel(time=out.time[0])))
 
@@ -664,7 +663,6 @@ def test_time_invariant_subset_standard_name(tmpdir):
 
 def test_longitude_and_latitude_coords_only(tmpdir):
     """Test subset succeeds when latitude and longitude are coordinates not dims and are not called lat/lon"""
-
     result = subset(
         ds=CMIP6_TOS,
         area=(10, -70, 260, 70),
@@ -702,13 +700,9 @@ def test_time_invariant_subset_with_time(load_esgf_test_data):
 
 
 # test known bug
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 @pytest.mark.skip(reason="bug no longer exists")
 def test_cross_prime_meridian(tmpdir):
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/day/tas/gn/v20191016"
-        "/tas_day_MIROC6_ssp119_r1i1p1f1_gn_20150101-20241231.nc"
-    )
+    ds = _load_ds(CMIP6_TAS_DAY)
 
     with pytest.raises(NotImplementedError) as exc:
         subset(
@@ -726,12 +720,8 @@ def test_cross_prime_meridian(tmpdir):
 
 
 # test it works when not crossing 0 meridian
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_do_not_cross_prime_meridian(tmpdir):
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/day/tas/gn/v20191016"
-        "/tas_day_MIROC6_ssp119_r1i1p1f1_gn_20150101-20241231.nc"
-    )
+    ds = _load_ds(CMIP6_TAS_DAY)
 
     result = subset(
         ds=ds,
@@ -744,12 +734,9 @@ def test_do_not_cross_prime_meridian(tmpdir):
     _check_output_nc(result)
 
 
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
-def test_0_360_no_cross(tmpdir):
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803"
-        "/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc"
-    )
+def test_0_360_no_cross(tmpdir, load_esgf_test_data):
+    ds = _load_ds(CMIP6_RLDS_ONE_TIME_STEP)
+
     result = subset(
         ds=ds,
         area=(10.0, -90.0, 200.0, 90.0),
@@ -761,13 +748,9 @@ def test_0_360_no_cross(tmpdir):
     _check_output_nc(result)
 
 
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 @pytest.mark.skip(reason="bug no longer exists")
-def test_0_360_cross(tmpdir):
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/"
-        "rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc"
-    )
+def test_0_360_cross(tmpdir, load_esgf_test_data):
+    ds = _load_ds(CMIP6_RLDS)
 
     with pytest.raises(NotImplementedError):
         subset(
@@ -779,12 +762,9 @@ def test_0_360_cross(tmpdir):
         )
 
 
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_300_60_no_cross(tmpdir):
     # longitude is -300 to 60
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/Ofx/areacello/gn/v20190726/*.nc"
-    )
+    ds = _load_ds(CMIP6_AREACELLO)
 
     result = subset(
         ds=ds,
@@ -797,12 +777,9 @@ def test_300_60_no_cross(tmpdir):
     _check_output_nc(result)
 
 
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_300_60_cross(tmpdir):
     # longitude is -300 to 60
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/Ofx/areacello/gn/v20190726/*.nc"
-    )
+    ds = _load_ds(CMIP6_AREACELLO)
 
     result = subset(
         ds=ds,
@@ -815,12 +792,8 @@ def test_300_60_cross(tmpdir):
     _check_output_nc(result)
 
 
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
-def test_roll_positive_real_data():
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/"
-        "rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc"
-    )
+def test_roll_positive_real_data(load_esgf_test_data):
+    ds = _load_ds(CMIP6_RLUS_ONE_TIME_STEP)
 
     area = (-50.0, -90.0, 100.0, 90.0)
 
@@ -861,11 +834,9 @@ def test_roll_positive_mini_data():
     )
 
 
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
+@pytest.mark.skip(reason="bug no longer exists")
 def test_check_lon_alignment_curvilinear_grid():
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp370/r1i1p1f1/Ofx/sftof/gn/v20191108/*.nc"
-    )
+    ds = _load_ds(CMIP6_SFTOF)
 
     area = (-50.0, -90.0, 100.0, 90.0)
 
@@ -875,6 +846,7 @@ def test_check_lon_alignment_curvilinear_grid():
             area=area,
             output_type="xarray",
         )
+
     assert (
         str(exc.value)
         == "The requested longitude subset (-50.0, 100.0) is not within the longitude bounds "
@@ -1092,11 +1064,8 @@ def test_no_lat_lon_in_range():
     )
 
 
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_curvilinear_ds_no_data_in_bbox_real_data():
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/ScenarioMIP/CNRM-CERFACS/CNRM-CM6-1/ssp245/r1i1p1f2/Omon/tos/gn/v20190219/tos_Omon_CNRM-CM6-1_ssp245_r1i1p1f2_gn_201501-210012.nc"
-    )
+    ds = _load_ds(CMIP6_TOS_CNRM)
     with pytest.raises(ValueError) as exc:
         subset(
             ds=ds,
@@ -1110,16 +1079,13 @@ def test_curvilinear_ds_no_data_in_bbox_real_data():
     )
 
 
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
 def test_curvilinear_ds_no_data_in_bbox_real_data_swap_lat():
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/ScenarioMIP/CNRM-CERFACS/CNRM-CM6-1/ssp245/r1i1p1f2/Omon/tos/gn/v20190219/tos_Omon_CNRM-CM6-1_ssp245_r1i1p1f2_gn_201501-210012.nc"
-    )
+    ds = _load_ds(CMIP6_TOS_CNRM)
     with pytest.raises(ValueError) as exc:
         subset(
             ds=ds,
             area="1,4,2,40",
-            time=time_interval("2021-01-01/2050-12-31"),
+            time=time_interval("2015-01-01/2050-12-31"),
             output_type="xarray",
         )
     assert (

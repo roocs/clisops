@@ -13,9 +13,9 @@ import pandas as pd
 import xarray as xr
 from loguru import logger
 from roocs_utils.utils.common import parse_size
-from roocs_utils.xarray_utils import xarray_utils as xu
 
 from clisops import CONFIG, chunk_memory_limit
+from clisops.utils.dataset_utils import get_main_variable
 
 SUPPORTED_FORMATS = {
     "netcdf": {"method": "to_netcdf", "extension": "nc"},
@@ -78,7 +78,7 @@ def get_da(ds):
     if isinstance(ds, xr.DataArray):
         da = ds
     else:
-        var_id = xu.get_main_variable(ds)
+        var_id = get_main_variable(ds)
         da = ds[var_id]
 
     return da

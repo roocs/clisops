@@ -7,7 +7,479 @@ import numpy as np
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.utils.time_utils import str_to_AnyCalendarDateTime
-from roocs_utils.xarray_utils.xarray_utils import get_coord_by_attr, get_coord_by_type
+
+known_coord_types = ["time", "level", "latitude", "longitude", "realization"]
+
+
+def get_coord_by_type(
+    ds, coord_type, ignore_aux_coords=True, return_further_matches=False
+):
+    """
+    Returns the name of the coordinate that matches the given type.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset or xarray.DataArray
+        Dataset/DataArray to search for coordinate.
+    coord_type : str
+        Type of coordinate, e.g. 'time', 'level', 'latitude', 'longitude', 'realization'.
+    ignore_aux_coords : bool
+        Whether to ignore auxiliary coordinates.
+    return_further_matches : bool
+        Whether to return further matches.
+
+    Returns
+    -------
+    str
+        Name of the coordinate that matches the given type.
+    str, list of str
+        If return_further_matches is True, apart from the matching coordinate,
+        a list with further potential matches is returned.
+
+    Raises
+    ------
+    Exception
+        If the coordinate type is not known.
+    """
+    # List for all potential matches
+    coords = list()
+
+    # If coord_type is not in known_coord_types then raise an error
+    if coord_type not in known_coord_types:
+        raise ValueError(f"Coordinate type not known: {coord_type}")
+
+    # Loop through all (potential) coordinates to find all possible matches
+    if isinstance(ds, xr.DataArray):
+        coord_vars = list(ds.coords)
+    elif isinstance(ds, xr.Dataset):
+        # Not all coordinate variables are always classified as such
+        coord_vars = list(ds.coords) + list(ds.data_vars)
+    else:
+        raise TypeError("Not an xarray.Dataset or xarray.DataArray.")
+    for coord_id in coord_vars:
+        # If ignore_aux_coords is True then: ignore coords that are not dimensions
+        if ignore_aux_coords and coord_id not in ds.dims:
+            continue
+
+        coord = ds[coord_id]
+
+        if get_coord_type(coord) == coord_type:
+            coords.append(coord_id)
+
+    # Return None if no match
+    if len(coords) == 0:
+        warnings.warn(f"No coordinate variable found for type '{coord_type}'.")
+        return None
+    elif len(coords) == 1:
+        if return_further_matches:
+            return coords[0], []
+        else:
+            return coords[0]
+    # If more than one match is found, a selection has to be made
+    else:
+        warnings.warn(
+            f"More than one coordinate variable found for type '{coord_type}'. Selecting the best fit."
+        )
+        # Sort in terms of number of dimensions
+        coords = sorted(coords, key=lambda x: len(ds[x].dims), reverse=True)
+
+        # Get dimensions and singleton coords of main variable
+        main_var_dims = list(ds[get_main_variable(ds)].dims)
+
+        # Select coordinate with most dims (matching with main variable dims)
+        for coord_id in coords:
+            if all([dim in main_var_dims for dim in ds.coords[coord_id].dims]):
+                if return_further_matches:
+                    return coord_id, [x for x in coords if x != coord_id]
+                else:
+                    return coord_id
+        # If the decision making fails, pass the first match
+        if return_further_matches:
+            return coords[0], coords[1:]
+        else:
+            return coords[0]
+
+
+# from dachar
+def get_coord_by_attr(ds, attr, value):
+    """
+    Returns a coordinate based on a known attribute of a coordinate.
+
+    :param ds: Xarray Dataset or DataArray
+    :param attr: (str) Name of attribute to look for.
+    :param value: Expected value of attribute you are looking for.
+    :return: Coordinate of xarray dataset if found.
+    """
+    coords = ds.coords
+
+    for coord in coords.values():
+        if coord.attrs.get(attr, None) == value:
+            return coord
+
+    return None
+
+
+def is_latitude(coord):
+    """
+    Determines if a coordinate is latitude.
+
+    :param coord: coordinate of xarray dataset e.g. coord = ds.coords[coord_id]
+    :return: (bool) True if the coordinate is latitude.
+    """
+
+    if (
+        "latitude" in coord.cf.coordinates
+        and coord.name in coord.cf.coordinates["latitude"]
+    ):
+        return True
+
+    if (
+        "latitude" in coord.cf.standard_names
+        and coord.name in coord.cf.standard_names["latitude"]
+    ):
+        return True
+
+    if hasattr(coord, "standard_name") and coord.standard_name == "latitude":
+        return True
+
+    if hasattr(coord, "long_name") and coord.long_name == "latitude":
+        return True
+
+    return False
+
+
+def is_longitude(coord):
+    """
+    Determines if a coordinate is longitude.
+
+    :param coord: coordinate of xarray dataset e.g. coord = ds.coords[coord_id]
+    :return: (bool) True if the coordinate is longitude.
+    """
+    if (
+        "longitude" in coord.cf.coordinates
+        and coord.name in coord.cf.coordinates["longitude"]
+    ):
+        return True
+
+    if (
+        "longitude" in coord.cf.standard_names
+        and coord.name in coord.cf.standard_names["longitude"]
+    ):
+        return True
+
+    if hasattr(coord, "standard_name") and coord.standard_name == "longitude":
+        return True
+
+    if hasattr(coord, "long_name") and coord.long_name == "longitude":
+        return True
+
+    return False
+
+
+def is_level(coord):
+    """
+    Determines if a coordinate is level.
+
+    :param coord: coordinate of xarray dataset e.g. coord = ds.coords[coord_id]
+    :return: (bool) True if the coordinate is level.
+    """
+    if (
+        "vertical" in coord.cf.coordinates
+        and coord.name in coord.cf.coordinates["vertical"]
+    ):
+        return True
+
+    if hasattr(coord, "positive"):
+        if coord.attrs.get("positive", None) == "up" or "down":
+            return True
+
+    if hasattr(coord, "axis"):
+        if coord.attrs.get("axis", None) == "Z":
+            return True
+
+    return False
+
+
+def is_time(coord):
+    """
+    Determines if a coordinate is time.
+
+    :param coord: coordinate of xarray dataset e.g. coord = ds.coords[coord_id]
+    :return: (bool) True if the coordinate is time.
+    """
+    if "time" in coord.cf.coordinates and coord.name in coord.cf.coordinates["time"]:
+        return True
+
+    if (
+        "time" in coord.cf.standard_names
+        and coord.name in coord.cf.standard_names["time"]
+    ):
+        return True
+
+    if np.issubdtype(coord.dtype, np.datetime64):
+        return True
+
+    if isinstance(np.atleast_1d(coord.values)[0], cftime.datetime):
+        return True
+
+    if hasattr(coord, "axis"):
+        if coord.axis == "T":
+            return True
+
+    return False
+
+
+def is_realization(coord):
+    """
+    Determines if a coordinate is realization.
+
+    :param coord: coordinate of xarray dataset e.g. coord = ds.coords[coord_id]
+    :return: (bool) True if the coordinate is longitude.
+    """
+    if (
+        "realization" in coord.cf.standard_names
+        and coord.name in coord.cf.standard_names["realization"]
+    ):
+        return True
+
+    if coord.attrs.get("standard_name", None) == "realization":
+        return True
+
+    return False
+
+
+def get_coord_type(coord):
+    """
+    Gets the coordinate type.
+
+    :param coord: coordinate of xarray dataset e.g. coord = ds.coords[coord_id]
+    :return: The type of coordinate as a string. Either longitude, latitude, time, level or None
+    """
+
+    if is_longitude(coord):
+        return "longitude"
+    elif is_latitude(coord):
+        return "latitude"
+    elif is_level(coord):
+        return "level"
+    elif is_time(coord):
+        return "time"
+    elif is_realization(coord):
+        return "realization"
+
+    return None
+
+
+def get_main_variable(ds, exclude_common_coords=True):
+    """
+    Finds the main variable of an xarray Dataset
+
+    :param ds: xarray Dataset
+    :param exclude_common_coords: (bool) If True then common coordinates are excluded from the search for the
+                                main variable. common coordinates are time, level, latitude, longitude and bounds.
+                                Default is True.
+    :return: (str) The main variable of the dataset e.g. 'tas'
+    """
+
+    data_dims = [data.dims for var_id, data in ds.variables.items()]
+    flat_dims = [dim for sublist in data_dims for dim in sublist]
+
+    results = {}
+    common_coords = [
+        "bnd",
+        "bound",
+        "lat",
+        "lon",
+        "time",
+        "level",
+        "realization_index",
+        "realization",
+    ]
+
+    for var_id, data in ds.variables.items():
+        if var_id in flat_dims:
+            continue
+        if exclude_common_coords is True and any(
+            coord in var_id for coord in common_coords
+        ):
+            continue
+        else:
+            results.update({var_id: len(ds[var_id].shape)})
+    result = max(results, key=results.get)
+
+    if result is None:
+        raise Exception("Could not determine main variable")
+    else:
+        return result
+
+
+def determine_lon_lat_range(ds, lon, lat, lon_bnds=None, lat_bnds=None, apply_fix=True):
+    """Determine the min/max lon/lat values of the dataset (and potentially apply fix for unmasked missing values).
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset.
+    lon : str
+        Name of longitude coordinate.
+    lat : str
+        Name of latitude coordinate.
+    lon_bnds : str or None, optional
+        Name of longitude bounds coordinate. The default is None.
+    lat_bnds : str or None, optional
+        Name of latitude bounds coordinate. The default is None.
+    apply_fix : bool, optional
+        Whether to apply fix for unmasked missing values. The default is True.
+
+    Returns
+    -------
+    xmin : float
+        Minimum longitude value.
+    xmax : float
+        Maximum longitude value.
+    ymin : float
+        Minimum latitude value.
+    ymax : float
+        Maximum latitude value.
+    """
+    # Determine min/max lon/lat values
+    xmin = ds[lon].min().item()
+    xmax = ds[lon].max().item()
+    ymin = ds[lat].min().item()
+    ymax = ds[lat].max().item()
+
+    # Potentially apply fix for unmasked missing values
+    if apply_fix:
+        if fix_unmasked_missing_values_lon_lat(
+            ds, lon, lat, lon_bnds, lat_bnds, [xmin, xmax], [ymin, ymax]
+        ):
+            xmin = ds[lon].min().item()
+            xmax = ds[lon].max().item()
+            ymin = ds[lat].min().item()
+            ymax = ds[lat].max().item()
+
+    return xmin, xmax, ymin, ymax
+
+
+def fix_unmasked_missing_values_lon_lat(
+    ds, lon, lat, lon_bnds, lat_bnds, xminmax, yminmax
+):
+    """Fix for unmasked missing values in longitude and latitude coordinates and their bounds
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Input dataset.
+    lon : str
+        Name of longitude coordinate.
+    lat : str
+        Name of latitude coordinate.
+    lon_bnds : str or None
+        Name of longitude bounds coordinate.
+    lat_bnds : str or None
+        Name of latitude bounds coordinate.
+    xminmax : list
+        List of minimum and maximum longitude values.
+    yminmax : list
+        List of minimum and maximum latitude values.
+
+    Returns
+    -------
+    fix : bool
+        Whether the fix on ds[lon] and ds[lat] (and if specified ds[lon_bnds] and ds[lat_bnds]) was applied or not.
+    """
+    fix = False
+    minval = -999
+    maxval = 999
+
+    # Potentially fix unmasked missing values in longitude/latitude arrays
+    if any([xymin <= minval for xymin in xminmax + yminmax]) or any(
+        [xymax >= maxval for xymax in xminmax + yminmax]
+    ):
+
+        # Identify potential missing values by detecting outliers
+        mask_y = (ds[lat] <= minval) | (ds[lat] >= maxval)
+        possible_missing_values_y = ds[lat].where(mask_y)
+        mask_x = (ds[lon] <= minval) | (ds[lon] >= maxval)
+        possible_missing_values_x = ds[lon].where(mask_x)
+
+        # TBD - potential TODO - Explicitly check the vertices as well for possible missing values
+        #                        and not apply the mask from lat / lon.
+        #                      - Check if the fields already contain nans (and if they are consistent
+        #                        between lat and lon).
+
+        # Find out if the outlier values are unique
+        possible_missing_values_x_min = possible_missing_values_x.min().item()
+        possible_missing_values_x_max = possible_missing_values_x.max().item()
+        possible_missing_values_y_min = possible_missing_values_y.min().item()
+        possible_missing_values_y_max = possible_missing_values_y.max().item()
+
+        possible_missing_values = [
+            val
+            for val in [
+                possible_missing_values_x_min,
+                possible_missing_values_x_max,
+                possible_missing_values_y_min,
+                possible_missing_values_y_max,
+            ]
+            if not np.isnan(val)
+        ]
+
+        # Compare the masks for lat / lon and abort the fix if they differ
+        if (
+            ds[lat].dims != ds[lon].dims
+            and len(ds[lon].dims) == 1
+            and len(ds[lat].dims) == 1
+        ):
+            # Abort fix for regular lat-lon grids (1D coordinate variables should not include missing values
+            #  - for some of the operations the outliers will cause an exception later on)
+            warnings.warn(
+                f"Extreme value(s) (potentially unmasked missing_values) found in {lon} and {lat} arrays: "
+                f"{set(possible_missing_values)}. A fix is not possible for regular latitude-longitude grids."
+            )
+            return fix
+        elif not (mask_x == mask_y).all().item():
+            # Abort fix if the masks differ
+            warnings.warn(
+                f"Extreme value(s) (potentially unmasked missing_values) found in {lon} and {lat} arrays: "
+                f"{set(possible_missing_values)}. A fix is not possible since their locations are not consistent "
+                "between the two arrays."
+            )
+            return fix
+
+        # Check if there's only one unique extreme value
+        if len(set(possible_missing_values)) == 1:
+            fix = True
+            missing_value = possible_missing_values[0]
+            # Replace the missing value with np.NaN in place
+            # and add _FillValue and missing_value attributes
+            #  (ignoring already present attributes)
+            for var in lat, lon:
+                ds[var] = ds[var].where(ds[var] != missing_value, other=np.nan)
+            if lat_bnds is not None and lon_bnds is not None:
+                ds[lat_bnds] = ds[lat_bnds].where(
+                    ds[lat] != missing_value, other=np.nan
+                )
+                ds[lon_bnds] = ds[lon_bnds].where(
+                    ds[lon] != missing_value, other=np.nan
+                )
+            for var in [
+                var for var in [lat, lon, lat_bnds, lon_bnds] if var is not None
+            ]:
+                ds[var].encoding["_FillValue"] = float(1e20)
+                ds[var].encoding["missing_value"] = float(1e20)
+                ds[var].attrs["_FillValue"] = float(1e20)
+                ds[var].attrs["missing_value"] = float(1e20)
+            warnings.warn(
+                f"Unmasked missing_value found (and treated) in {lon} and {lat} arrays: '{missing_value}'."
+            )
+        else:
+            # Raise warning - the values will likely cause an exception later on, depending on the operation
+            warnings.warn(
+                f"Multiple extreme values (potentially unmasked missing_values) found in {lon} and {lat} arrays: {set(possible_missing_values)}. This may cause issues."
+            )
+
+    return fix
 
 
 def calculate_offset(lon, first_element_value):
@@ -144,7 +616,7 @@ def cf_convert_between_lon_frames(ds_in, lon_interval):
             "This function requires an xarray.DataArray or xarray.Dataset as input."
         )
     low, high = lon_interval
-    lon_min, lon_max = ds.coords[lon].values.min(), ds.coords[lon].values.max()
+    lon_min, lon_max = ds.coords[lon].min().item(), ds.coords[lon].max().item()
     atol = 0.5
 
     # Check longitude
@@ -264,7 +736,7 @@ def check_lon_alignment(ds, lon_bnds):
     """
     low, high = lon_bnds
     lon = get_coord_by_type(ds, "longitude", ignore_aux_coords=False)
-    lon = ds.coords[lon.name]
+    lon = ds.coords[lon]
     lon_min, lon_max = lon.values.min(), lon.values.max()
 
     # handle the case where there is only one longitude
@@ -396,14 +868,14 @@ def add_hor_CF_coord_attrs(
     """
     # Define common CF coordinate variable attrs
     lat_attrs = {
-        "bounds": "lat_bnds",
+        "bounds": lat_bnds,
         "units": "degrees_north",
         "long_name": "latitude",
         "standard_name": "latitude",
         "axis": "Y",
     }
     lon_attrs = {
-        "bounds": "lon_bnds",
+        "bounds": lon_bnds,
         "units": "degrees_east",
         "long_name": "longitude",
         "standard_name": "longitude",
@@ -815,11 +1287,11 @@ def generate_bounds_curvilinear(ds, lat, lon):
     lat_bnds = lats_cor.reshape(nlat, nlon, 4)
 
     # Add to the dataset
-    ds["lat_bnds"] = (
+    ds["vertices_latitude"] = (
         (ds[lat].dims[0], ds[lat].dims[1], "vertices"),
         lat_bnds,
     )
-    ds["lon_bnds"] = (
+    ds["vertices_longitude"] = (
         (ds[lon].dims[0], ds[lon].dims[1], "vertices"),
         lon_bnds,
     )
@@ -935,19 +1407,14 @@ def detect_coordinate(ds, coord_type):
     error_msg = f"A {coord_type} coordinate cannot be identified in the dataset."
 
     # Make use of cf-xarray accessor
-    try:
-        coord = ds.cf[coord_type]
-        # coord = get_coord_by_type(ds, coord_type, ignore_aux_coords=False)
-    except KeyError:
+    coord = get_coord_by_type(ds, coord_type, ignore_aux_coords=False)
+    if coord is None:
         coord = get_coord_by_attr(ds, "standard_name", coord_type)
         if coord is None:
             raise KeyError(error_msg)
 
     # Return the name of the coordinate variable
-    try:
-        return coord.name
-    except AttributeError:
-        raise AttributeError(error_msg)
+    return coord
 
 
 def detect_bounds(ds, coordinate) -> Optional[str]:

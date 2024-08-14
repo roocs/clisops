@@ -9,12 +9,12 @@ import geopandas as gpd
 import numpy as np
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
-from roocs_utils.xarray_utils.xarray_utils import (
+
+from clisops.utils.dataset_utils import (
     get_coord_by_type,
     get_coord_type,
     known_coord_types,
 )
-
 from clisops.utils.time_utils import create_time_bounds
 
 from .regrid import XESMF_MINIMUM_VERSION
@@ -281,15 +281,11 @@ def average_time(
         )
 
     # check time coordinate exists and get name
-    # For roocs_utils 0.5.0
     t = get_coord_by_type(ds, "time", ignore_aux_coords=False)
     if t is None:
         raise Exception("Time dimension could not be found")
-    # For latest roocs_utils (master)
-    # try:
-    #    t = get_coord_by_type(ds, "time", ignore_aux_coords=False)
-    # except KeyError:
-    #    raise Exception("Time dimension could not be found")
+    else:
+        t = ds[t]
 
     # resample and average over time
     ds_t_avg = ds.resample(indexer={t.name: freqs[freq]}).mean(

@@ -4,9 +4,10 @@ from typing import List, Optional, Union
 
 import xarray as xr
 from loguru import logger
-from roocs_utils.xarray_utils.xarray_utils import get_main_variable, open_xr_dataset
+from roocs_utils.xarray_utils.xarray_utils import open_xr_dataset
 
 from clisops.utils.common import expand_wildcards
+from clisops.utils.dataset_utils import get_main_variable
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import get_output, get_time_slices
 
