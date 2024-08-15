@@ -1454,7 +1454,9 @@ def _check_crs_compatibility(shape_crs: CRS, raster_crs: CRS) -> None:
     """If CRS definitions are not WGS84 or incompatible, raise operation warnings."""
     wgs84 = CRS(4326)
     if not shape_crs.equals(raster_crs):
-        if (shape_crs.coordinate_system.name != raster_crs.coordinate_system.name) and (shape_crs.axis_info[0].unit_name != raster_crs.axis_info[0].unit_name):
+        if (shape_crs.coordinate_system.name != raster_crs.coordinate_system.name) and (
+            shape_crs.axis_info[0].unit_name != raster_crs.axis_info[0].unit_name
+        ):
             raise CRSError(
                 "CRS definitions are not compatible. Please ensure both are using the same coordinate system and units."
             )
