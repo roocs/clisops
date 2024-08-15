@@ -173,7 +173,10 @@ def test_irregular_grid_dataset(load_esgf_test_data):
 
     with pytest.raises(ValueError) as exc:
         ds.roll(shifts={f"{lon}": 180}, roll_coords=False)
-    assert str(exc.value) == "dimensions ['longitude'] do not exist"
+    assert str(exc.value) in [
+        "dimensions ['longitude'] do not exist",
+        "Dimensions ['longitude'] not found in data dimensions ('i', 'j', 'time', 'bnds', 'vertices')",
+    ]
 
 
 def test_3d_grid_dataset(load_esgf_test_data):
