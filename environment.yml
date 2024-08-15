@@ -5,7 +5,7 @@ dependencies:
  - python >=3.8,<3.13
  - flit
  - bottleneck >=1.3.1
- - cartopy >=0.23
+ - cartopy >=0.23.0
  - cf_xarray >=0.8.6
  - cftime >=1.4.1
  - dask >=2.6.0
