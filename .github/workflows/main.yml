@@ -40,6 +40,7 @@ jobs:
     name: Python${{ matrix.python-version }} (PyPI + Tox)
     needs: lint
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       matrix:
         include:
@@ -76,6 +77,7 @@ jobs:
     name: Python${{ matrix.python-version }} (Anaconda, upstream=${{ matrix.upstream }})
     needs: lint
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
