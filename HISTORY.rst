@@ -1,7 +1,7 @@
 Version History
 ===============
 
-v0.13.1 (unreleased)
+v0.13.1 (2024-08-20)
 --------------------
 
 Bug Fixes
@@ -11,10 +11,12 @@ Bug Fixes
 Breaking Changes
 ^^^^^^^^^^^^^^^^
 * Anaconda builds now require `cartopy >=0.23` and only support Python 3.9 and above (#340).
+* Many dependency version pins now include lower bounds for clearer compatibility and easier maintenance (#343).
 
 Other Changes
 ^^^^^^^^^^^^^
 * Internal warnings now consistently use the `clisops` configured `loguru` logger (#335).
+* CI Actions now use the commit hashes for version tracking (#343).
 
 v0.13.0 (2024-02-16)
 --------------------
