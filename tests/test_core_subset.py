@@ -5,6 +5,8 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import xarray as xr
+from pyproj.crs import CRS
+from pyproj.exceptions import CRSError
 from shapely.geometry import Point, Polygon
 
 from _common import TESTS_DATA, ContextLogger
@@ -893,6 +895,32 @@ class TestSubsetShape:
         sub = subset.subset_shape(da, shape=shape)
         exp = da.isel(site=[1, 3, 4, 5, 7])
         xr.testing.assert_identical(sub, exp)
+
+    def test_shapefile_wrapped_wgs84(self):
+        da = xr.open_dataset(self.nc_file)
+        poly_wgs84 = Polygon([[-90, 40], [-70, 20], [-50, 40], [-70, 60]])
+        poly_wrapped = Polygon(
+            [[-90 + 360, 40], [-70 + 360, 20], [-50 + 360, 40], [-70 + 360, 60]]
+        )
+        shape = gpd.GeoDataFrame(geometry=[poly_wgs84])
+        shape_wrapped = gpd.GeoDataFrame(geometry=[poly_wrapped])
+        assert subset.subset_shape(da, shape).equals(
+            subset.subset_shape(da, shape_wrapped)
+        )
+
+    def test_shapefile_utm(self):
+        da = xr.open_dataset(self.nc_file)
+        regions = gpd.read_file(self.multi_regions_geojson).set_index("id")
+        regions_utm = regions.to_crs("EPSG:32618")
+        assert subset.subset_shape(da, regions).equals(
+            subset.subset_shape(da, regions_utm)
+        )
+
+    def test_compare_crs(self):
+        raster_crs = CRS.from_string("EPSG:4326")
+        shape_crs = CRS.from_string("EPSG:32618")
+        with pytest.raises(CRSError):
+            subset._check_crs_compatibility(raster_crs, shape_crs)
 
 
 class TestDistance:

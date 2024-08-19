@@ -8,6 +8,10 @@ Bug Fixes
 ^^^^^^^^^
 * Changed the order of operations in `clisops.core.subset.subset_shape` to ensure that the CRS of the shapefile is compatible with the dataset CRS before attempting to subset (#340).
 
+Breaking Changes
+^^^^^^^^^^^^^^^^
+* Anaconda builds now require `cartopy >=0.23` and only support Python 3.9 and above (#340).
+
 Other Changes
 ^^^^^^^^^^^^^
 * Internal warnings now consistently use the `clisops` configured `loguru` logger (#335).
