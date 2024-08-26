@@ -146,7 +146,6 @@ ignore-words-list = "scrip,nam,te,mye,bu,lik,tread"
 
 [tool.coverage.run]
 relative_files = true
-include = ["clisops/*"]
 omit = ["*/tests/*.py"]
 
 [tool.flit.sdist]
