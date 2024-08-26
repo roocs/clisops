@@ -57,7 +57,7 @@ dependencies = [
   "loguru >=0.5.3",
   "netCDF4 >=1.4",
   "numpy >=1.16; python_version=='3.8'",
-  "numpy >=1.16,<2.1; python_version>='3.9'",
+  "numpy >=1.16,<2.2; python_version>='3.9'",
   "packaging",
   "pandas >=1.0.3",
   "platformdirs >=4.0",
