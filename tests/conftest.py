@@ -1,18 +1,25 @@
 import os
+from sys import platform
+from typing import Union
 
 import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
 from _pytest.logging import caplog as _caplog  # noqa
+from filelock import FileLock
 from git import Repo
 
 from _common import MINI_ESGF_CACHE_DIR, write_roocs_cfg
-from clisops.utils import get_file
+from clisops.utils import get_file as _get_file
+from clisops.utils import open_dataset as _open_dataset
 
 write_roocs_cfg()
 
 ESGF_TEST_DATA_REPO_URL = "https://github.com/roocs/mini-esgf-data"
+
+XCLIM_TEST_DATA_REPO_URL = "https://github.com/Ouranosinc/xclim-testdata"
+XCLIM_TEST_DATA_VERSION = "v2023.12.14"
 
 
 @pytest.fixture
@@ -252,42 +259,81 @@ def ps_series():
     return _ps_series
 
 
-@pytest.fixture
-def cmip5_tas_file():
-    return str(
-        get_file(
-            "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc",
-        )
-    )
+@pytest.fixture(scope="session", autouse=True)
+def threadsafe_data_dir(tmp_path_factory):
+    yield tmp_path_factory.getbasetemp().joinpath("data")
 
 
-@pytest.fixture
-def cmip6_o3():
-    return str(
-        get_file(
-            "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
+@pytest.fixture(scope="session", autouse=True)
+def get_file(threadsafe_data_dir):
+    def _get_session_scoped_file(file: str, branch: str = XCLIM_TEST_DATA_VERSION):
+        return _get_file(
+            file,
+            github_url=XCLIM_TEST_DATA_REPO_URL,
+            cache_dir=threadsafe_data_dir,
+            branch=branch,
         )
-    )
+
+    return _get_session_scoped_file
+
+
+@pytest.fixture(scope="session", autouse=True)
+def open_dataset(threadsafe_data_dir):
+    def _open_session_scoped_file(
+        file: Union[str, os.PathLike],
+        branch: str = XCLIM_TEST_DATA_VERSION,
+        **xr_kwargs,
+    ):
+        return _open_dataset(
+            file,
+            github_url=XCLIM_TEST_DATA_REPO_URL,
+            cache_dir=threadsafe_data_dir,
+            branch=branch,
+            **xr_kwargs,
+        )
+
+    return _open_session_scoped_file
 
 
 # Fixture to load mini-esgf-data repository used by roocs tests
 @pytest.fixture(scope="session", autouse=True)
-def load_esgf_test_data():
+def load_esgf_test_data(worker_id):
     """
     This fixture ensures that the required test data repository
     has been cloned to the cache directory within the home directory.
     """
     branch = "master"
-    target = os.path.join(MINI_ESGF_CACHE_DIR, branch)
+    target = MINI_ESGF_CACHE_DIR.joinpath(branch)
 
-    if not os.path.isdir(MINI_ESGF_CACHE_DIR):
-        os.makedirs(MINI_ESGF_CACHE_DIR)
+    if not target.exists():
+        if (platform == "win32" and worker_id == "gw0") or worker_id == "master":
+            if not os.path.isdir(target):
+                os.makedirs(MINI_ESGF_CACHE_DIR, exist_ok=True)
+                repo = Repo.clone_from(ESGF_TEST_DATA_REPO_URL, target)
+                repo.git.checkout(branch)
+            elif (
+                os.environ.get("ROOCS_AUTO_UPDATE_TEST_DATA", "true").lower() != "false"
+            ):
+                repo = Repo(target)
+                repo.git.checkout(branch)
+                repo.remotes[0].pull()
 
-    if not os.path.isdir(target):
-        repo = Repo.clone_from(ESGF_TEST_DATA_REPO_URL, target)
-        repo.git.checkout(branch)
+        else:
+            lockfile = MINI_ESGF_CACHE_DIR.joinpath(".lock")
+            test_data_being_written = FileLock(lockfile)
+            with test_data_being_written:
+                if not os.path.isdir(target):
+                    repo = Repo.clone_from(ESGF_TEST_DATA_REPO_URL, target)
+                    repo.git.checkout(branch)
+                elif (
+                    os.environ.get("ROOCS_AUTO_UPDATE_TEST_DATA", "true").lower()
+                    != "false"
+                ):
+                    repo = Repo(target)
+                    repo.git.checkout(branch)
+                    repo.remotes[0].pull()
+                target.joinpath(".data_written").touch()
 
-    elif os.environ.get("ROOCS_AUTO_UPDATE_TEST_DATA", "true").lower() != "false":
-        repo = Repo(target)
-        repo.git.checkout(branch)
-        repo.remotes[0].pull()
+            with test_data_being_written.acquire():
+                if lockfile.exists():
+                    lockfile.unlink()

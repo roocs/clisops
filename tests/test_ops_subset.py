@@ -1,6 +1,7 @@
 import os
 import random
 from pathlib import Path
+from typing import Union
 
 import numpy as np
 import pytest
@@ -46,19 +47,19 @@ from clisops.ops.subset import Subset, subset
 from clisops.utils.output_utils import _format_time  # noqa
 
 
-def _load_ds(fpath):
+def _load_ds(fpath: Union[str, Path]):
     if isinstance(fpath, (str, Path)):
-        if fpath.endswith("*.nc"):
+        if str(fpath).endswith("*.nc"):
             return xr.open_mfdataset(fpath)
         else:
             return xr.open_dataset(fpath)
     return xr.open_mfdataset(fpath)
 
 
-def test_subset_no_params(cmip5_tas_file, tmpdir):
+def test_subset_no_params(get_file, tmpdir):
     """Test subset without area param."""
     result = subset(
-        ds=cmip5_tas_file,
+        ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
         output_dir=tmpdir,
         output_type="nc",
         file_namer="simple",
@@ -66,10 +67,10 @@ def test_subset_no_params(cmip5_tas_file, tmpdir):
     _check_output_nc(result)
 
 
-def test_subset_time(cmip5_tas_file, tmpdir):
+def test_subset_time(get_file, tmpdir):
     """Tests clisops subset function with a time subset."""
     result = subset(
-        ds=cmip5_tas_file,
+        ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
         time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
         area=(0, -90.0, 360.0, 90.0),
         output_dir=tmpdir,
@@ -79,7 +80,7 @@ def test_subset_time(cmip5_tas_file, tmpdir):
     _check_output_nc(result)
 
 
-def test_subset_args_as_parameter_classes(cmip5_tas_file, tmpdir):
+def test_subset_args_as_parameter_classes(get_file, tmpdir):
     """Tests clisops subset function with a time subset
     with the arguments as parameter classes from roocs-utils."""
 
@@ -89,7 +90,7 @@ def test_subset_args_as_parameter_classes(cmip5_tas_file, tmpdir):
     area = area_parameter.AreaParameter((0, -90.0, 360.0, 90.0))
 
     result = subset(
-        ds=cmip5_tas_file,
+        ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
         time=time,
         area=area,
         output_dir=tmpdir,
@@ -109,7 +110,7 @@ def test_subset_args_as_parameter_classes(cmip5_tas_file, tmpdir):
         "ATLAS_v0_CMIP6",
     ],
 )
-def test_subset_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
+def test_subset_ATLAS_datasets(tmpdir, dset):
     "Test temporal and spatial subset for several ATLAS datasets."
     time = time_parameter.TimeParameter(
         time_interval("2000-01-01T00:00:00", "2020-12-30T00:00:00")
@@ -127,11 +128,11 @@ def test_subset_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
     _check_output_nc(result)
 
 
-def test_subset_invalid_time(cmip5_tas_file, tmpdir):
+def test_subset_invalid_time(get_file, tmpdir):
     """Tests subset with invalid time param."""
     with pytest.raises(InvalidParameterValue):
         subset(
-            ds=cmip5_tas_file,
+            ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
             time=time_interval("yesterday", "2020-12-30T00:00:00"),
             area=(0, -90.0, 360.0, 90.0),
             output_dir=tmpdir,
@@ -161,10 +162,10 @@ def test_subset_no_ds(tmpdir):
         )  # noqa
 
 
-def test_subset_area_simple_file_name(cmip5_tas_file, tmpdir):
-    """Tests clisops subset function with a area subset (simple file name)."""
+def test_subset_area_simple_file_name(get_file, tmpdir):
+    """Tests clisops subset function with an area subset (simple file name)."""
     result = subset(
-        ds=cmip5_tas_file,
+        ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
         area=(0.0, 10.0, 10.0, 65.0),
         output_dir=tmpdir,
         output_type="nc",
@@ -173,8 +174,8 @@ def test_subset_area_simple_file_name(cmip5_tas_file, tmpdir):
     _check_output_nc(result)
 
 
-def test_subset_area_project_file_name_atlas(load_esgf_test_data, tmpdir):
-    """Tests clisops subset function with a area subset (derived file name)."""
+def test_subset_area_project_file_name_atlas(tmpdir):
+    """Tests clisops subset function with an area subset (derived file name)."""
     result = subset(
         ds=ATLAS_v1_EOBS_GRID,
         area=(0.0, 10.0, 10.0, 65.0),
@@ -185,10 +186,10 @@ def test_subset_area_project_file_name_atlas(load_esgf_test_data, tmpdir):
     _check_output_nc(result, "t_E-OBS_no-expt_mon_19500101-19500101.nc")
 
 
-def test_subset_area_project_file_name(cmip5_tas_file, tmpdir):
-    """Tests clisops subset function with a area subset (derived file name)."""
+def test_subset_area_project_file_name(get_file, tmpdir):
+    """Tests clisops subset function with an area subset (derived file name)."""
     result = subset(
-        ds=cmip5_tas_file,
+        ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
         area=(0.0, 10.0, 10.0, 65.0),
         output_dir=tmpdir,
         output_type="nc",
@@ -197,28 +198,27 @@ def test_subset_area_project_file_name(cmip5_tas_file, tmpdir):
     _check_output_nc(result, "tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-20301116.nc")
 
 
-def test_subset_invalid_area(cmip5_tas_file, tmpdir):
+def test_subset_invalid_area(get_file, tmpdir):
     """Tests subset with invalid area param."""
     with pytest.raises(InvalidParameterValue):
         subset(
-            ds=cmip5_tas_file,
+            ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
             area=("zero", 49.0, 10.0, 65.0),
             output_dir=tmpdir,
         )
 
 
-def test_subset_with_time_and_area(cmip5_tas_file, tmpdir):
+def test_subset_with_time_and_area(get_file, tmpdir):
     """Tests clisops subset function with time and area subsets.
 
     On completion:
     - assert all dimensions have been reduced.
-
     """
     start_time, end_time = "2019-01-16", "2020-12-16"
     bbox = (0.0, -80, 170.0, 65.0)
 
     outputs = subset(
-        ds=cmip5_tas_file,
+        ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
         time=time_interval(start_time, end_time),
         area=bbox,
         output_dir=tmpdir,
@@ -351,7 +351,7 @@ def test_subset_with_tas_series(tmpdir, tas_series):
     _check_output_nc(result)
 
 
-def test_time_slices_in_subset_tas(load_esgf_test_data):
+def test_time_slices_in_subset_tas():
     start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
 
     time_slices = [
@@ -386,7 +386,7 @@ def test_time_slices_in_subset_tas(load_esgf_test_data):
         count += 1
 
 
-def test_time_slices_in_subset_rh(load_esgf_test_data):
+def test_time_slices_in_subset_rh():
     start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
 
     time_slices = [
@@ -418,7 +418,7 @@ def test_time_slices_in_subset_rh(load_esgf_test_data):
 
 
 # area can be a few degrees out
-def test_area_within_area_subset(load_esgf_test_data):
+def test_area_within_area_subset():
     area = (0.0, 10.0, 175.0, 90.0)
 
     outputs = subset(
@@ -434,7 +434,7 @@ def test_area_within_area_subset(load_esgf_test_data):
     assert area[1] <= ds.lat.data <= area[3]
 
 
-def test_area_within_area_subset_cmip6(load_esgf_test_data):
+def test_area_within_area_subset_cmip6():
     area = (20.0, 10.0, 250.0, 90.0)
 
     outputs = subset(
@@ -452,7 +452,7 @@ def test_area_within_area_subset_cmip6(load_esgf_test_data):
     assert np.isclose(ds.lat.data[0], 36.76056)
 
 
-def test_subset_with_lat_lon_single_values(load_esgf_test_data):
+def test_subset_with_lat_lon_single_values():
     """Creates subset where lat and lon only have one value. Then
     subsets that. This tests that the `lat_bnds` and `lon_bnds`
     are not being reversed by the `_check_desc_coords` function in
@@ -481,7 +481,7 @@ def test_subset_with_lat_lon_single_values(load_esgf_test_data):
     assert len(ds2.lon) == 1
 
 
-def test_area_within_area_subset_chunked(load_esgf_test_data):
+def test_area_within_area_subset_chunked():
     start_time, end_time = "2001-01-01T00:00:00", "2200-12-30T00:00:00"
     area = (0.0, 10.0, 175.0, 90.0)
 
@@ -502,9 +502,13 @@ def test_area_within_area_subset_chunked(load_esgf_test_data):
         assert area[1] <= ds.lat.data <= area[3]
 
 
-def test_subset_level(cmip6_o3):
+def test_subset_level(get_file):
     """Tests clisops subset function with a level subset."""
     # Levels are: 100000, ..., 100
+    cmip6_o3 = get_file(
+        "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
+    )
+
     ds = _load_ds(cmip6_o3)
 
     result1 = subset(
@@ -690,7 +694,7 @@ def test_time_invariant_subset_simple_name(tmpdir):
     _check_output_nc(result)
 
 
-def test_time_invariant_subset_with_time(load_esgf_test_data):
+def test_time_invariant_subset_with_time():
     with pytest.raises(AttributeError) as exc:
         subset(
             ds=CMIP6_MRSOFC,
@@ -884,9 +888,9 @@ def test_check_lon_alignment_curvilinear_grid():
 
 
 class TestSubset:
-    def test_resolve_params(self, cmip5_tas_file):
+    def test_resolve_params(self, get_file):
         s = Subset(
-            ds=cmip5_tas_file,
+            ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
             time=time_interval("1999-01-01T00:00:00", "2100-12-30T00:00:00"),
             area=(-5.0, 49.0, 10.0, 65),
             level=level_interval(1000.0, 1000.0),
@@ -897,53 +901,53 @@ class TestSubset:
         assert s.params["lon_bnds"] == (-5, 10)
         assert s.params["lat_bnds"] == (49, 65)
 
-    def test_resolve_params_time(self, cmip5_tas_file):
+    def test_resolve_params_time(self, get_file):
         s = Subset(
-            ds=cmip5_tas_file,
+            ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
             time=time_interval("1999-01-01", "2100-12"),
             area=(0, -90, 360, 90),
         )
         assert s.params["start_date"] == "1999-01-01T00:00:00"
         assert s.params["end_date"] == "2100-12-31T23:59:59"
 
-    def test_resolve_params_invalid_time(self, cmip5_tas_file):
+    def test_resolve_params_invalid_time(self, get_file):
         with pytest.raises(InvalidParameterValue):
             Subset(
-                ds=cmip5_tas_file,
+                ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
                 time=time_interval("1999-01-01T00:00:00", "maybe tomorrow"),
                 area=(0, -90, 360, 90),
             )
         with pytest.raises(InvalidParameterValue):
             Subset(
-                ds=cmip5_tas_file,
+                ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
                 time=time_interval("", "2100"),
                 area=(0, -90, 360, 90),
             )
 
-    def test_resolve_params_area(self, cmip5_tas_file):
+    def test_resolve_params_area(self, get_file):
         s = Subset(
-            ds=cmip5_tas_file,
+            ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
             area=(0, 10, 50, 60),
         )
         assert s.params["lon_bnds"] == (0, 50)
         assert s.params["lat_bnds"] == (10, 60)
         # allow also strings
         s = Subset(
-            ds=cmip5_tas_file,
+            ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
             area=("0", "10", "50", "60"),
         )
         assert s.params["lon_bnds"] == (0, 50)
         assert s.params["lat_bnds"] == (10, 60)
 
-    def test_map_params_invalid_area(self, cmip5_tas_file):
+    def test_map_params_invalid_area(self, get_file):
         with pytest.raises(InvalidParameterValue):
             Subset(
-                ds=cmip5_tas_file,
+                ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
                 area=(0, 10, 50),
             )
         with pytest.raises(InvalidParameterValue):
             Subset(
-                ds=cmip5_tas_file,
+                ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
                 area=("zero", 10, 50, 60),
             )
 
@@ -1155,7 +1159,7 @@ def test_curvilinear_increase_lon_of_bbox():
 
 
 class TestReverseBounds:
-    def test_reverse_lat_regular(self, load_esgf_test_data):
+    def test_reverse_lat_regular(self):
         result = subset(
             ds=CMIP6_RLDS_ONE_TIME_STEP,
             area=(20, -45, 240, 45),
@@ -1170,7 +1174,7 @@ class TestReverseBounds:
 
         np.testing.assert_array_equal(result[0].rlds, result_rev[0].rlds)
 
-    def test_reverse_lon_regular(self, load_esgf_test_data):
+    def test_reverse_lon_regular(self):
         result = subset(
             ds=CMIP6_RLDS_ONE_TIME_STEP,
             area=(20, -45, 240, 45),
@@ -1185,7 +1189,7 @@ class TestReverseBounds:
 
         np.testing.assert_array_equal(result[0].rlds, result_rev[0].rlds)
 
-    def test_reverse_lon_cross_meridian_regular(self, load_esgf_test_data):
+    def test_reverse_lon_cross_meridian_regular(self):
         result = subset(
             ds=CMIP6_RLDS_ONE_TIME_STEP,
             area=(-70, -45, 240, 45),
@@ -1200,7 +1204,7 @@ class TestReverseBounds:
 
         np.testing.assert_array_equal(result[0].rlds, result_rev[0].rlds)
 
-    def test_reverse_lat_and_lon_regular(self, load_esgf_test_data):
+    def test_reverse_lat_and_lon_regular(self):
         result = subset(
             ds=CMIP6_RLDS_ONE_TIME_STEP,
             area=(-70, -45, 240, 45),
@@ -1215,7 +1219,7 @@ class TestReverseBounds:
 
         np.testing.assert_array_equal(result[0].rlds, result_rev[0].rlds)
 
-    def test_reverse_lat_curvilinear(self, load_esgf_test_data):
+    def test_reverse_lat_curvilinear(self):
         result = subset(
             ds=CMIP6_TOS_ONE_TIME_STEP,
             area=(20, -45, 240, 45),
@@ -1230,7 +1234,7 @@ class TestReverseBounds:
 
         np.testing.assert_array_equal(result[0].tos, result_rev[0].tos)
 
-    def test_reverse_lon_curvilinear(self, load_esgf_test_data):
+    def test_reverse_lon_curvilinear(self):
         result = subset(
             ds=CMIP6_TOS_ONE_TIME_STEP,
             area=(20, -45, 240, 45),
@@ -1245,7 +1249,7 @@ class TestReverseBounds:
 
         np.testing.assert_array_equal(result[0].tos, result_rev[0].tos)
 
-    def test_reverse_lon_cross_meridian_curvilinear(self, load_esgf_test_data):
+    def test_reverse_lon_cross_meridian_curvilinear(self):
         result = subset(
             ds=CMIP6_TOS_ONE_TIME_STEP,
             area=(-70, -45, 120, 45),
@@ -1260,7 +1264,7 @@ class TestReverseBounds:
 
         np.testing.assert_array_equal(result[0].tos, result_rev[0].tos)
 
-    def test_reverse_lat_and_lon_curvilinear(self, load_esgf_test_data):
+    def test_reverse_lat_and_lon_curvilinear(self):
         result = subset(
             ds=CMIP6_TOS_ONE_TIME_STEP,
             area=(20, -45, 240, 45),
@@ -1325,7 +1329,11 @@ class TestReverseBounds:
 
         np.testing.assert_array_equal(result[0].tos, result_rev.tos)
 
-    def test_reverse_level(self, cmip6_o3):
+    def test_reverse_level(self, get_file):
+        cmip6_o3 = get_file(
+            "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
+        )
+
         result = subset(
             ds=cmip6_o3,
             level=level_interval("100000/100"),
@@ -1340,7 +1348,7 @@ class TestReverseBounds:
 
         np.testing.assert_array_equal(result[0].o3, result_rev[0].o3)
 
-    def test_reverse_time(self, load_esgf_test_data):
+    def test_reverse_time(self):
         result = subset(
             ds=CMIP5_TAS,
             time=time_interval("2021-01-01/2050-12-31"),
@@ -1367,7 +1375,7 @@ def _shuffle(lst):
     return l_copy
 
 
-def test_subset_level_by_values_all(tmpdir, load_esgf_test_data):
+def test_subset_level_by_values_all(tmpdir):
     all_levels = [
         100000,
         92500,
@@ -1409,7 +1417,7 @@ def test_subset_level_by_values_all(tmpdir, load_esgf_test_data):
     assert_vars_equal("plev", *ds_list)
 
 
-def test_subset_level_by_values_partial(tmpdir, load_esgf_test_data):
+def test_subset_level_by_values_partial(tmpdir):
     some_levels = [60000, 50000, 40000, 30000, 25000, 20000, 15000, 10000, 7000, 5000]
 
     shuffled_1 = _shuffle(some_levels)
@@ -1430,7 +1438,7 @@ def test_subset_level_by_values_partial(tmpdir, load_esgf_test_data):
     assert_vars_equal("plev", *ds_list)
 
 
-def test_subset_level_by_values_with_gaps(tmpdir, load_esgf_test_data):
+def test_subset_level_by_values_with_gaps(tmpdir):
     picked_levels = [60000, 30000, 25000, 20000, 7000, 5000]
 
     shuffled_1 = _shuffle(picked_levels)
@@ -1450,7 +1458,7 @@ def test_subset_level_by_values_with_gaps(tmpdir, load_esgf_test_data):
     assert_vars_equal("plev", *ds_list)
 
 
-def test_subset_level_by_values_and_bbox(tmpdir, load_esgf_test_data):
+def test_subset_level_by_values_and_bbox(tmpdir):
     some_levels = [60000, 50000, 40000, 30000, 25000, 20000, 15000, 10000, 7000, 5000]
     area = (20, 30.0, 150, 70.0)
 
@@ -1474,7 +1482,7 @@ def test_subset_level_by_values_and_bbox(tmpdir, load_esgf_test_data):
     assert_vars_equal("plev", *ds_list)
 
 
-def test_subset_time_by_values_all(tmpdir, load_esgf_test_data):
+def test_subset_time_by_values_all(tmpdir):
     all_times = [str(tm) for tm in xr.open_dataset(CMIP6_TA).time.values]
 
     shuffled_1 = _shuffle(all_times)
@@ -1496,7 +1504,7 @@ def test_subset_time_by_values_all(tmpdir, load_esgf_test_data):
     assert_vars_equal("time", *ds_list)
 
 
-def test_subset_time_by_values_partial(tmpdir, load_esgf_test_data):
+def test_subset_time_by_values_partial(tmpdir):
     all_times = [str(tm) for tm in xr.open_dataset(CMIP6_TA).time.values]
     some_times = all_times[20:-15]
 
@@ -1517,7 +1525,7 @@ def test_subset_time_by_values_partial(tmpdir, load_esgf_test_data):
     assert_vars_equal("time", *ds_list)
 
 
-def test_subset_time_by_values_with_gaps(tmpdir, load_esgf_test_data):
+def test_subset_time_by_values_with_gaps(tmpdir):
     all_times = [str(tm) for tm in xr.open_dataset(CMIP6_TA).time.values]
     some_times = [
         all_times[0],
@@ -1543,7 +1551,7 @@ def test_subset_time_by_values_with_gaps(tmpdir, load_esgf_test_data):
     assert_vars_equal("time", *ds_list)
 
 
-def test_subset_by_time_components_year_month(tmpdir, load_esgf_test_data):
+def test_subset_by_time_components_year_month(tmpdir):
     # times = ("2015-01-16 12", "MANY MORE", "2024-12-16 12") [120]
     tc1 = time_components(year=(2021, 2022), month=["dec", "jan", "feb"])
     tc2 = time_components(year=(2021, 2022), month=[12, 1, 2])
@@ -1558,7 +1566,7 @@ def test_subset_by_time_components_year_month(tmpdir, load_esgf_test_data):
         assert set(ds.time.dt.month.values) == {12, 1, 2}
 
 
-def test_subset_empty(tmpdir, load_esgf_test_data):
+def test_subset_empty(tmpdir):
     # Monthly mean dataset with 360-day calendar
     with pytest.raises(Exception) as exc:
         subset(
@@ -1570,7 +1578,7 @@ def test_subset_empty(tmpdir, load_esgf_test_data):
     assert str(exc.value) == "'No timesteps are matching the selection criteria.'"
 
 
-def test_subset_by_time_components_31_days_360_day(tmpdir, load_esgf_test_data):
+def test_subset_by_time_components_31_days_360_day(tmpdir):
     # Dataset with 360-day calendar
     tmpdir30 = Path(tmpdir, "ds30")
     tmpdir31 = Path(tmpdir, "ds31")
@@ -1596,7 +1604,7 @@ def test_subset_by_time_components_31_days_360_day(tmpdir, load_esgf_test_data):
     assert ds30.dims["time"] == 8490
 
 
-def test_subset_by_time_components_month_day(tmpdir, load_esgf_test_data):
+def test_subset_by_time_components_month_day(tmpdir):
     # CMIP6_SICONC_DAY: 18500101-20141231 ;  n_times = 60225
     tc1 = time_components(month=["jul"], day=[1, 11, 21])
     tc2 = time_components(month=[7], day=[1, 11, 21])
@@ -1612,7 +1620,7 @@ def test_subset_by_time_components_month_day(tmpdir, load_esgf_test_data):
         assert len(ds.time.values) == (2014 - 1850 + 1) * 3
 
 
-def test_subset_by_time_interval_and_components_month_day(tmpdir, load_esgf_test_data):
+def test_subset_by_time_interval_and_components_month_day(tmpdir):
     # CMIP6_SICONC_DAY: 18500101-20141231 ;  n_times = 60225
     ys, ye = 1850, 1869
     ti = time_interval(f"{ys}-01-01T00:00:00", f"{ye}-12-31T23:59:59")
@@ -1634,7 +1642,7 @@ def test_subset_by_time_interval_and_components_month_day(tmpdir, load_esgf_test
         assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
 
 
-def test_subset_by_time_series_and_components_month_day(tmpdir, load_esgf_test_data):
+def test_subset_by_time_series_and_components_month_day(tmpdir):
     # CMIP6_SICONC_DAY: 18500101-20141231 ;  n_times = 60225
     ys, ye = 1850, 1869
     req_times = [
@@ -1661,7 +1669,7 @@ def test_subset_by_time_series_and_components_month_day(tmpdir, load_esgf_test_d
         assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
 
 
-def test_subset_by_area_and_components_month_day(tmpdir, load_esgf_test_data):
+def test_subset_by_area_and_components_month_day(tmpdir):
     # CMIP6_SICONC_DAY: 18500101-20141231 ;  n_times = 60225
     ys, ye = 1850, 1869
     ti = time_interval(f"{ys}-01-01T00:00:00", f"{ye}-12-31T23:59:59")
@@ -1685,10 +1693,10 @@ def test_subset_by_area_and_components_month_day(tmpdir, load_esgf_test_data):
         assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
 
 
-def test_subset_nc_no_fill_value(cmip5_tas_file, tmpdir):
+def test_subset_nc_no_fill_value(get_file, tmpdir):
     """Tests clisops subset function with a time subset."""
     result = subset(
-        ds=CMIP5_TAS,
+        ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
         time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
         output_dir=tmpdir,
         output_type="nc",
@@ -1721,10 +1729,10 @@ def test_subset_nc_no_fill_value(cmip5_tas_file, tmpdir):
     assert "_FillValue" not in res.time_bnds.encoding
 
 
-def test_subset_cmip5_nc_consistent_bounds(cmip5_tas_file, tmpdir):
+def test_subset_cmip5_nc_consistent_bounds(get_file, tmpdir):
     """Tests clisops subset function with a time subset and check the metadata"""
     result = subset(
-        ds=CMIP5_TAS,
+        ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
         time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
         output_dir=tmpdir,
         output_type="nc",
@@ -1746,7 +1754,7 @@ def test_subset_cmip5_nc_consistent_bounds(cmip5_tas_file, tmpdir):
     assert "coordinates" not in res.time_bnds.encoding
 
 
-def test_subset_cmip6_nc_consistent_bounds(cmip5_tas_file, tmpdir):
+def test_subset_cmip6_nc_consistent_bounds(get_file, tmpdir):
     """Tests clisops subset function with a time subset and check the metadata"""
     result = subset(
         ds=CMIP6_TASMIN,
@@ -1771,7 +1779,7 @@ def test_subset_cmip6_nc_consistent_bounds(cmip5_tas_file, tmpdir):
     assert "coordinates" not in res.time_bnds.encoding
 
 
-def test_subset_cmip6_issue_308_fillvalue(tmpdir, load_esgf_test_data, capsys):
+def test_subset_cmip6_issue_308_fillvalue(tmpdir, capsys):
     """Tests clisops subset function with a time subset and check the metadata.
 
     Notes

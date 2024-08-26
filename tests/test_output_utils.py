@@ -29,7 +29,7 @@ def _open(coll):
     return ds
 
 
-def test_get_time_slices_single_slice(load_esgf_test_data):
+def test_get_time_slices_single_slice():
     tas = _open(CMIP5_TAS)
 
     test_data = [
@@ -53,7 +53,7 @@ def test_get_time_slices_single_slice(load_esgf_test_data):
         assert resp[0] == slices
 
 
-def test_get_time_slices_multiple_slices(load_esgf_test_data):
+def test_get_time_slices_multiple_slices():
     tas = _open(CMIP5_TAS)
 
     test_data = [

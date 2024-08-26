@@ -505,7 +505,7 @@ def test_convert_lon_frame_shifted_no_bounds():
 # todo: add a few more tests of cf_convert_lon_frame using xe.util functions to create regional and global datasets
 
 
-def test_calculate_bounds_curvilinear(load_esgf_test_data):
+def test_calculate_bounds_curvilinear():
     "Test for bounds calculation for curvilinear grid"
 
     # Load CORDEX dataset (curvilinear grid)
@@ -540,7 +540,7 @@ def test_calculate_bounds_curvilinear(load_esgf_test_data):
     )
 
 
-def test_calculate_bounds_rectilinear(load_esgf_test_data):
+def test_calculate_bounds_rectilinear():
     "Test for bounds calculation for rectilinear grid"
 
     # Load CORDEX dataset (curvilinear grid)

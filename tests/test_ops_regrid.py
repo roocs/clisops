@@ -35,7 +35,7 @@ def _load_ds(fpath):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_basic(tmpdir, load_esgf_test_data, tmp_path):
+def test_regrid_basic(tmpdir, tmp_path):
     """Test a basic regridding operation."""
     fpath = CMIP5_MRSOS_ONE_TIME_STEP
     basename = os.path.splitext(os.path.basename(fpath))[0]
@@ -59,7 +59,7 @@ def test_regrid_basic(tmpdir, load_esgf_test_data, tmp_path):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_grid_as_none(tmpdir, load_esgf_test_data, tmp_path):
+def test_regrid_grid_as_none(tmpdir, tmp_path):
     """Test behaviour when none passed as method and grid.
 
     Should use the default regridding.
@@ -83,9 +83,7 @@ def test_regrid_grid_as_none(tmpdir, load_esgf_test_data, tmp_path):
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 @pytest.mark.parametrize("grid_id", sorted(grid_dict))
-def test_regrid_regular_grid_to_all_roocs_grids(
-    tmpdir, load_esgf_test_data, grid_id, tmp_path
-):
+def test_regrid_regular_grid_to_all_roocs_grids(tmpdir, grid_id, tmp_path):
     """Test regridded a regular lat/lon field to all roocs grid types."""
     fpath = CMIP5_MRSOS_ONE_TIME_STEP
     basename = os.path.splitext(os.path.basename(fpath))[0]
@@ -116,7 +114,7 @@ def test_regrid_regular_grid_to_all_roocs_grids(
 @pytest.mark.parametrize(
     "dset", ["ATLAS_v1_CORDEX", "ATLAS_v1_EOBS_GRID", "ATLAS_v0_CORDEX_ANT"]
 )
-def test_regrid_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
+def test_regrid_ATLAS_datasets(tmpdir, dset):
     """Test regridding for several ATLAS datasets."""
     result = regrid(
         ds=globals()[dset],
@@ -133,7 +131,7 @@ def test_regrid_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_ATLAS_CORDEX(tmpdir, load_esgf_test_data, caplog):  # noqa
+def test_regrid_ATLAS_CORDEX(tmpdir, caplog):  # noqa
     """Test regridding for ATLAS CORDEX dataset."""
     import netCDF4
 
@@ -176,7 +174,7 @@ def test_regrid_ATLAS_CORDEX(tmpdir, load_esgf_test_data, caplog):  # noqa
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_keep_attrs(load_esgf_test_data, tmp_path):
+def test_regrid_keep_attrs(tmp_path):
     """Test if dataset and variable attributes are kept / removed as specified."""
     fpath = CMIP6_TOS_ONE_TIME_STEP
     method = "nearest_s2d"
@@ -248,7 +246,7 @@ def test_regrid_keep_attrs(load_esgf_test_data, tmp_path):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_halo_simple(load_esgf_test_data, tmp_path):
+def test_regrid_halo_simple(tmp_path):
     """Test regridding with a simple halo."""
     fpath = CMIP6_TOS_ONE_TIME_STEP
     ds = xr.open_dataset(fpath).isel(time=0)
@@ -270,7 +268,7 @@ def test_regrid_halo_simple(load_esgf_test_data, tmp_path):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_halo_adv(load_esgf_test_data, tmp_path):
+def test_regrid_halo_adv(tmp_path):
     """Test regridding of dataset with a more complex halo."""
     fpath = CMIP6_OCE_HALO_CNRM
     ds = xr.open_dataset(fpath).isel(time=0)
@@ -289,7 +287,7 @@ def test_regrid_halo_adv(load_esgf_test_data, tmp_path):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_shifted_lon_frame(load_esgf_test_data, tmp_path):
+def test_regrid_shifted_lon_frame(tmp_path):
     """Test regridding of dataset with shifted longitude frame."""
     fpath = CMIP6_IITM_EXTENT
     ds = xr.open_dataset(fpath).isel(time=0)
@@ -330,7 +328,7 @@ def test_regrid_same_grid_exception(tmpdir, tmp_path):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_cmip6_nc_consistent_bounds_and_coords(load_esgf_test_data, tmpdir):
+def test_regrid_cmip6_nc_consistent_bounds_and_coords(tmpdir):
     """Tests clisops regrid function and check metadata added by xarray"""
     result = regrid(
         ds=CMIP6_ATM_VERT_ONE_TIMESTEP,

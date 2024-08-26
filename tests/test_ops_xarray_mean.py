@@ -100,7 +100,7 @@ def test_xarray_da_mean_skipna_false_datetime():
     # result is nat
 
 
-def test_xarray_da_mean_keep_attrs_true(load_esgf_test_data):
+def test_xarray_da_mean_keep_attrs_true():
     ds = xr.open_mfdataset(
         CMIP5_TAS,
         combine="by_coords",
@@ -114,7 +114,7 @@ def test_xarray_da_mean_keep_attrs_true(load_esgf_test_data):
     assert ds.attrs == ds_mean.attrs
 
 
-def test_xarray_da_mean_keep_attrs_false(load_esgf_test_data):
+def test_xarray_da_mean_keep_attrs_false():
     ds = xr.open_mfdataset(
         CMIP5_TAS,
         combine="by_coords",

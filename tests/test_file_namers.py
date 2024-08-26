@@ -91,7 +91,7 @@ def test_StandardFileNamer_cmip5():
         assert resp == expected
 
 
-def test_StandardFileNamer_cmip5_use_default_attr_names(load_esgf_test_data):
+def test_StandardFileNamer_cmip5_use_default_attr_names():
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
@@ -108,7 +108,7 @@ def test_StandardFileNamer_cmip5_use_default_attr_names(load_esgf_test_data):
         assert resp == expected
 
 
-def test_StandardFileNamer_cmip6(load_esgf_test_data):
+def test_StandardFileNamer_cmip6():
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
@@ -124,7 +124,7 @@ def test_StandardFileNamer_cmip6(load_esgf_test_data):
         assert resp == expected
 
 
-def test_StandardFileNamer_cmip6_use_default_attr_names(load_esgf_test_data):
+def test_StandardFileNamer_cmip6_use_default_attr_names():
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
@@ -148,7 +148,7 @@ def test_StandardFileNamer_cmip6_use_default_attr_names(load_esgf_test_data):
     condition="platform.system() == 'Windows'",
     reason="Git modules not working on Windows",
 )
-def test_StandardFileNamer_c3s_cordex(load_esgf_test_data):
+def test_StandardFileNamer_c3s_cordex():
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
@@ -173,7 +173,7 @@ def test_StandardFileNamer_c3s_cordex(load_esgf_test_data):
     condition="platform.system() == 'Windows'",
     reason="Git modules not working on Windows",
 )
-def test_StandardFileNamer_c3s_cordex_use_default_attr_names(load_esgf_test_data):
+def test_StandardFileNamer_c3s_cordex_use_default_attr_names():
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
@@ -196,8 +196,8 @@ def test_StandardFileNamer_c3s_cordex_use_default_attr_names(load_esgf_test_data
         assert resp == expected
 
 
-def test_StandardFileNamer_c3s_atlas_v0(load_esgf_test_data):
-    "Test C3S ATLAS v0 (c3s-ipcc-ar6-atlas) filenamer"
+def test_StandardFileNamer_c3s_atlas_v0():
+    """Test C3S ATLAS v0 (c3s-ipcc-ar6-atlas) filenamer"""
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(
@@ -218,8 +218,8 @@ def test_StandardFileNamer_c3s_atlas_v0(load_esgf_test_data):
         assert resp == expected
 
 
-def test_StandardFileNamer_c3s_atlas_v1(load_esgf_test_data):
-    "Test C3S ATLAS v1 (c3s-cica-atlas) filenamer"
+def test_StandardFileNamer_c3s_atlas_v1():
+    """Test C3S ATLAS v1 (c3s-cica-atlas) filenamer"""
     s = get_file_namer("standard")()
 
     _ds = xr.open_mfdataset(

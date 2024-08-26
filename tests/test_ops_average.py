@@ -34,8 +34,8 @@ def _load_ds(fpath):
     return xr.open_mfdataset(fpath, use_cftime=True)
 
 
-def test_average_basic_data_array(cmip5_tas_file):
-    ds = xr.open_dataset(cmip5_tas_file)
+def test_average_basic_data_array(open_dataset):
+    ds = open_dataset("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc")
     result = average_over_dims(
         ds["tas"], dims=["time"], ignore_undetected_dims=False, output_type="xarray"
     )
@@ -69,9 +69,14 @@ def test_average_lon_xarray():
     assert "lon" not in result[0]
 
 
-def test_average_level_xarray(cmip6_o3):
+def test_average_level_xarray(get_file):
     result = average_over_dims(
-        cmip6_o3, dims=["level"], ignore_undetected_dims=False, output_type="xarray"
+        get_file(
+            "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
+        ),
+        dims=["level"],
+        ignore_undetected_dims=False,
+        output_type="xarray",
     )
 
     assert "plev" not in result[0]
@@ -119,9 +124,11 @@ def test_average_lon_nc(tmpdir):
     )
 
 
-def test_average_level_nc(cmip6_o3, tmpdir):
+def test_average_level_nc(get_file, tmpdir):
     result = average_over_dims(
-        cmip6_o3,
+        get_file(
+            "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
+        ),
         dims=["level"],
         ignore_undetected_dims=False,
         output_dir=tmpdir,
