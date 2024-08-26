@@ -6,7 +6,7 @@ from pathlib import Path
 
 import xarray as xr
 
-from _common import CMIP5_TAS, CMIP6_TOS, ContextLogger
+from _common import CMIP5_TAS, CMIP6_TOS
 from clisops import CONFIG
 from clisops.utils.common import expand_wildcards
 from clisops.utils.file_namers import get_file_namer
@@ -17,6 +17,7 @@ from clisops.utils.output_utils import (
     get_output,
     get_time_slices,
 )
+from clisops.utils.testing import ContextLogger
 
 
 def _open(coll):

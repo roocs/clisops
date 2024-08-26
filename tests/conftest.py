@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 from sys import platform
 from typing import Union
 
@@ -10,16 +11,16 @@ from _pytest.logging import caplog as _caplog  # noqa
 from filelock import FileLock
 from git import Repo
 
-from _common import MINI_ESGF_CACHE_DIR, write_roocs_cfg
 from clisops.utils import get_file as _get_file
 from clisops.utils import open_dataset as _open_dataset
-
-write_roocs_cfg()
+from clisops.utils.testing import MINI_ESGF_CACHE_DIR, get_esgf_file_paths
 
 ESGF_TEST_DATA_REPO_URL = "https://github.com/roocs/mini-esgf-data"
 
 XCLIM_TEST_DATA_REPO_URL = "https://github.com/Ouranosinc/xclim-testdata"
 XCLIM_TEST_DATA_VERSION = "v2023.12.14"
+
+REAL_C3S_CMIP5_ARCHIVE_BASE = "/gws/nopw/j04/cp4cds1_vol1/data/"
 
 
 @pytest.fixture
@@ -295,6 +296,15 @@ def open_dataset(threadsafe_data_dir):
     return _open_session_scoped_file
 
 
+@pytest.fixture
+def check_output_nc(result, fname="output_001.nc", time=None):
+    assert fname in [Path(_).name for _ in result]
+    if time:
+        ds = xr.open_mfdataset(result, use_cftime=True, decode_timedelta=False)
+        time_ = f"{ds.time.values.min().isoformat()}/{ds.time.values.max().isoformat()}"
+        assert time == time_
+
+
 # Fixture to load mini-esgf-data repository used by roocs tests
 @pytest.fixture(scope="session", autouse=True)
 def load_esgf_test_data(worker_id):
@@ -303,12 +313,12 @@ def load_esgf_test_data(worker_id):
     has been cloned to the cache directory within the home directory.
     """
     branch = "master"
-    target = MINI_ESGF_CACHE_DIR.joinpath(branch)
+    target = Path(MINI_ESGF_CACHE_DIR).joinpath(branch)
 
     if not target.exists():
         if (platform == "win32" and worker_id == "gw0") or worker_id == "master":
-            if not os.path.isdir(target):
-                os.makedirs(MINI_ESGF_CACHE_DIR, exist_ok=True)
+            if not target.is_dir():
+                MINI_ESGF_CACHE_DIR.make_dirs(exist_ok=True)
                 repo = Repo.clone_from(ESGF_TEST_DATA_REPO_URL, target)
                 repo.git.checkout(branch)
             elif (
@@ -322,7 +332,7 @@ def load_esgf_test_data(worker_id):
             lockfile = MINI_ESGF_CACHE_DIR.joinpath(".lock")
             test_data_being_written = FileLock(lockfile)
             with test_data_being_written:
-                if not os.path.isdir(target):
+                if not target.is_dir():
                     repo = Repo.clone_from(ESGF_TEST_DATA_REPO_URL, target)
                     repo.git.checkout(branch)
                 elif (
@@ -337,3 +347,68 @@ def load_esgf_test_data(worker_id):
             with test_data_being_written.acquire():
                 if lockfile.exists():
                     lockfile.unlink()
+
+
+@pytest.fixture
+def c3s_cmip5_tsice():
+    return Path(
+        # This is now only required for json files
+        Path(__file__).parent.absolute(),
+        "data",
+        "c3s-cmip5/output1/NCC/NorESM1-ME/rcp60/mon/seaIce/OImon/r1i1p1/tsice/v20120614/*.nc",
+    ).as_posix()
+
+
+@pytest.fixture
+def c3s_cmip5_tos():
+    return Path(
+        Path(__file__).parent.absolute(),
+        "data",
+        "c3s-cmip5/output1/BCC/bcc-csm1-1-m/historical/mon/ocean/Omon/r1i1p1/tos/v20120709/*.nc",
+    ).as_posix()
+
+
+@pytest.fixture
+def cmip5_archive_base():
+    if "CMIP5_ARCHIVE_BASE" in os.environ:
+        return os.environ["CMIP5_ARCHIVE_BASE"]
+    return (
+        Path(__file__)
+        .parent.absolute()
+        .joinpath("mini-esgf-data/test_data/badc/cmip5/data")
+        .as_posix()
+    )
+
+
+@pytest.fixture
+def cmip6_archive_base():
+    if "CMIP6_ARCHIVE_BASE" in os.environ:
+        return os.environ["CMIP6_ARCHIVE_BASE"]
+    return (
+        Path(__file__)
+        .parent.absolute()
+        .joinpath("mini-esgf-data/test_data/badc/cmip6/data")
+        .as_posix()
+    )
+
+
+@pytest.fixture(scope="session", autouse=True)
+def mini_esgf_data(threadsafe_data_dir):
+    return get_esgf_file_paths(threadsafe_data_dir)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def clisops_test_data():
+    test_data = Path(__file__).parent.absolute().joinpath("data")
+
+    return {
+        "meridian_geojson": test_data.joinpath("meridian.json").as_posix(),
+        "meridian_multi_geojson": test_data.joinpath("meridian_multi.json").as_posix(),
+        "poslons_geojson": test_data.joinpath("poslons.json").as_posix(),
+        "eastern_canada_geojson": test_data.joinpath("eastern_canada.json").as_posix(),
+        "southern_qc_geojson": test_data.joinpath(
+            "southern_qc_geojson.json"
+        ).as_posix(),
+        "small_geojson": test_data.joinpath("small_geojson.json").as_posix(),
+        "multi_regions_geojson": test_data.joinpath("multi_regions.json").as_posix(),
+    }

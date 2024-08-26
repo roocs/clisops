@@ -5,13 +5,6 @@ import xarray as xr
 from packaging.version import Version
 from roocs_utils.exceptions import InvalidParameterValue
 
-from _common import (
-    C3S_CORDEX_EUR_ZG500,
-    CMIP5_TAS,
-    CMIP6_SICONC_DAY,
-    CMIP6_TAS_ONE_TIME_STEP,
-    TESTS_DATA,
-)
 from clisops.core.average import XESMF_MINIMUM_VERSION  # noqa
 from clisops.ops.average import average_over_dims, average_shape, average_time
 
@@ -42,25 +35,31 @@ def test_average_basic_data_array(open_dataset):
     assert "time" not in result[0]
 
 
-def test_average_time_xarray():
+def test_average_time_xarray(mini_esgf_data):
     result = average_over_dims(
-        CMIP5_TAS, dims=["time"], ignore_undetected_dims=False, output_type="xarray"
+        mini_esgf_data["CMIP5_TAS"],
+        dims=["time"],
+        ignore_undetected_dims=False,
+        output_type="xarray",
     )
 
     assert "time" not in result[0]
 
 
-def test_average_lat_xarray():
+def test_average_lat_xarray(mini_esgf_data):
     result = average_over_dims(
-        CMIP5_TAS, dims=["latitude"], ignore_undetected_dims=False, output_type="xarray"
+        mini_esgf_data["CMIP5_TAS"],
+        dims=["latitude"],
+        ignore_undetected_dims=False,
+        output_type="xarray",
     )
 
     assert "lat" not in result[0]
 
 
-def test_average_lon_xarray():
+def test_average_lon_xarray(mini_esgf_data):
     result = average_over_dims(
-        CMIP5_TAS,
+        mini_esgf_data["CMIP5_TAS"],
         dims=["longitude"],
         ignore_undetected_dims=False,
         output_type="xarray",
@@ -82,9 +81,9 @@ def test_average_level_xarray(get_file):
     assert "plev" not in result[0]
 
 
-def test_average_time_nc(tmpdir):
+def test_average_time_nc(tmpdir, mini_esgf_data):
     result = average_over_dims(
-        CMIP5_TAS,
+        mini_esgf_data["CMIP5_TAS"],
         dims=["time"],
         ignore_undetected_dims=False,
         output_dir=tmpdir,
@@ -94,9 +93,9 @@ def test_average_time_nc(tmpdir):
     _check_output_nc(result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_avg-t.nc")
 
 
-def test_average_lat_nc(tmpdir):
+def test_average_lat_nc(tmpdir, mini_esgf_data):
     result = average_over_dims(
-        CMIP5_TAS,
+        mini_esgf_data["CMIP5_TAS"],
         dims=["latitude"],
         ignore_undetected_dims=False,
         output_dir=tmpdir,
@@ -109,9 +108,9 @@ def test_average_lat_nc(tmpdir):
     )
 
 
-def test_average_lon_nc(tmpdir):
+def test_average_lon_nc(tmpdir, mini_esgf_data):
     result = average_over_dims(
-        CMIP5_TAS,
+        mini_esgf_data["CMIP5_TAS"],
         dims=["longitude"],
         ignore_undetected_dims=False,
         output_dir=tmpdir,
@@ -142,9 +141,9 @@ def test_average_level_nc(get_file, tmpdir):
     )
 
 
-def test_average_multiple_dims_filename(tmpdir):
+def test_average_multiple_dims_filename(tmpdir, mini_esgf_data):
     result = average_over_dims(
-        CMIP5_TAS,
+        mini_esgf_data["CMIP5_TAS"],
         dims=["time", "longitude"],
         ignore_undetected_dims=False,
         output_dir=tmpdir,
@@ -155,9 +154,9 @@ def test_average_multiple_dims_filename(tmpdir):
     _check_output_nc(result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_avg-tx.nc")
 
 
-def test_average_multiple_dims_xarray():
+def test_average_multiple_dims_xarray(mini_esgf_data):
     result = average_over_dims(
-        CMIP5_TAS,
+        mini_esgf_data["CMIP5_TAS"],
         dims=["time", "longitude"],
         ignore_undetected_dims=False,
         output_type="xarray",
@@ -167,10 +166,10 @@ def test_average_multiple_dims_xarray():
     assert "lon" not in result[0]
 
 
-def test_average_no_dims():
+def test_average_no_dims(mini_esgf_data):
     with pytest.raises(InvalidParameterValue) as exc:
         average_over_dims(
-            CMIP5_TAS,
+            mini_esgf_data["CMIP5_TAS"],
             dims=None,
             ignore_undetected_dims=False,
             output_type="xarray",
@@ -178,10 +177,10 @@ def test_average_no_dims():
     assert str(exc.value) == "At least one dimension for averaging must be provided"
 
 
-def test_unknown_dim():
+def test_unknown_dim(mini_esgf_data):
     with pytest.raises(InvalidParameterValue) as exc:
         average_over_dims(
-            CMIP5_TAS,
+            mini_esgf_data["CMIP5_TAS"],
             dims=["wrong"],
             ignore_undetected_dims=False,
             output_type="xarray",
@@ -192,10 +191,10 @@ def test_unknown_dim():
     )
 
 
-def test_dim_not_found():
+def test_dim_not_found(mini_esgf_data):
     with pytest.raises(InvalidParameterValue) as exc:
         average_over_dims(
-            CMIP5_TAS,
+            mini_esgf_data["CMIP5_TAS"],
             dims=["level", "time"],
             ignore_undetected_dims=False,
             output_type="xarray",
@@ -206,10 +205,10 @@ def test_dim_not_found():
     )
 
 
-def test_dim_not_found_ignore():
+def test_dim_not_found_ignore(mini_esgf_data):
     # cannot average over level, but have ignored it and done average over time anyway
     result = average_over_dims(
-        CMIP5_TAS,
+        mini_esgf_data["CMIP5_TAS"],
         dims=["level", "time"],
         ignore_undetected_dims=True,
         output_type="xarray",
@@ -240,13 +239,10 @@ def test_aux_variables():
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MESSAGE)
-def test_average_shape_xarray():
-    # Fetch local JSON file
-    meridian_geojson = os.path.join(TESTS_DATA, "meridian.json")
-
+def test_average_shape_xarray(mini_esgf_data, clisops_test_data):
     result = average_shape(
-        ds=CMIP6_TAS_ONE_TIME_STEP,
-        shape=meridian_geojson,
+        ds=mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"],
+        shape=clisops_test_data["meridian_geojson"],
         variable=None,
         output_type="xarray",
     )
@@ -254,23 +250,22 @@ def test_average_shape_xarray():
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MESSAGE)
-def test_average_multiple_shapes_xarray():
-    # Fetch local JSON file
-    multi_regions_geojson = os.path.join(TESTS_DATA, "multi_regions.json")
-
+def test_average_multiple_shapes_xarray(mini_esgf_data, clisops_test_data):
     result = average_shape(
-        CMIP6_TAS_ONE_TIME_STEP, multi_regions_geojson, output_type="xarray"
+        mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"],
+        clisops_test_data["multi_regions_geojson"],
+        output_type="xarray",
     )
 
     assert result[0].geom.size > int(1)
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MESSAGE)
-def test_average_shape_no_shape():
+def test_average_shape_no_shape(mini_esgf_data):
     # Run without JSON file
     with pytest.raises(InvalidParameterValue) as exc:
         average_shape(
-            ds=CMIP6_TAS_ONE_TIME_STEP,
+            ds=mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"],
             shape=None,  # noqa
             variable=None,
             output_type="xarray",
@@ -279,12 +274,10 @@ def test_average_shape_no_shape():
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MESSAGE)
-def test_average_shape_nc(tmpdir):
-    # Fetch local JSON file
-    meridian_geojson = os.path.join(TESTS_DATA, "meridian.json")
+def test_average_shape_nc(tmpdir, mini_esgf_data, clisops_test_data):
     result = average_shape(
-        ds=CMIP6_TAS_ONE_TIME_STEP,
-        shape=meridian_geojson,
+        ds=mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"],
+        shape=clisops_test_data["meridian_geojson"],
         variable=None,
         output_dir=tmpdir,
         output_type="netcdf",
@@ -296,8 +289,8 @@ def test_average_shape_nc(tmpdir):
     )
 
 
-def test_average_over_years():
-    ds = _load_ds(CMIP5_TAS)  # monthly dataset
+def test_average_over_years(mini_esgf_data):
+    ds = _load_ds(mini_esgf_data["CMIP5_TAS"])  # monthly dataset
 
     # check initial dataset
     assert ds.time.shape == (3530,)
@@ -305,7 +298,7 @@ def test_average_over_years():
     assert ds.time.values[-1].isoformat() == "2299-12-16T00:00:00"
 
     result = average_time(
-        CMIP5_TAS,
+        mini_esgf_data["CMIP5_TAS"],
         freq="year",
         output_type="xarray",
     )
@@ -326,8 +319,8 @@ def test_average_over_years():
     ]
 
 
-def test_average_over_months():
-    ds = _load_ds(CMIP6_SICONC_DAY)  # monthly dataset
+def test_average_over_months(mini_esgf_data):
+    ds = _load_ds(mini_esgf_data["CMIP6_SICONC_DAY"])  # monthly dataset
 
     # check initial dataset
     assert ds.time.shape == (60225,)
@@ -336,7 +329,7 @@ def test_average_over_months():
 
     # average over time
     result = average_time(
-        CMIP6_SICONC_DAY,
+        mini_esgf_data["CMIP6_SICONC_DAY"],
         freq="month",
         output_type="xarray",
     )
@@ -360,22 +353,22 @@ def test_average_over_months():
     ]
 
 
-def test_average_time_no_freq():
+def test_average_time_no_freq(mini_esgf_data):
     with pytest.raises(InvalidParameterValue) as exc:
         # average over time
         average_time(
-            CMIP6_SICONC_DAY,
+            mini_esgf_data["CMIP6_SICONC_DAY"],
             freq=None,  # noqa
             output_type="xarray",
         )
     assert str(exc.value) == "At least one frequency for averaging must be provided"
 
 
-def test_average_time_incorrect_freq():
+def test_average_time_incorrect_freq(mini_esgf_data):
     with pytest.raises(InvalidParameterValue) as exc:
         # average over time
         average_time(
-            CMIP6_SICONC_DAY,
+            mini_esgf_data["CMIP6_SICONC_DAY"],
             freq="week",
             output_type="xarray",
         )
@@ -385,9 +378,9 @@ def test_average_time_incorrect_freq():
     )
 
 
-def test_average_time_file_name(tmpdir):
+def test_average_time_file_name(tmpdir, mini_esgf_data):
     result = average_time(
-        CMIP5_TAS,
+        mini_esgf_data["CMIP5_TAS"],
         freq="year",
         output_type="nc",
         output_dir=tmpdir,
@@ -398,8 +391,8 @@ def test_average_time_file_name(tmpdir):
     )
 
 
-def test_average_time_cordex():
-    ds = _load_ds(C3S_CORDEX_EUR_ZG500)
+def test_average_time_cordex(mini_esgf_data):
+    ds = _load_ds(mini_esgf_data["C3S_CORDEX_EUR_ZG500"])
 
     # check initial dataset
     assert ds.time.shape == (3653,)
@@ -408,7 +401,7 @@ def test_average_time_cordex():
 
     # average over time
     result = average_time(
-        C3S_CORDEX_EUR_ZG500,
+        mini_esgf_data["C3S_CORDEX_EUR_ZG500"],
         freq="month",
         output_type="xarray",
     )

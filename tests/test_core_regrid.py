@@ -10,24 +10,6 @@ from packaging.version import Version
 from roocs_grids import get_grid_file
 
 import clisops.utils.dataset_utils as clidu
-from _common import (
-    CMIP6_ATM_VERT_ONE_TIMESTEP,
-    CMIP6_ATM_VERT_ONE_TIMESTEP_ZONMEAN,
-    CMIP6_GFDL_EXTENT,
-    CMIP6_IITM_EXTENT,
-    CMIP6_OCE_HALO_CNRM,
-    CMIP6_STAGGERED_UCOMP,
-    CMIP6_TAS_ONE_TIME_STEP,
-    CMIP6_TAS_PRECISION_A,
-    CMIP6_TAS_PRECISION_B,
-    CMIP6_TOS_ONE_TIME_STEP,
-    CMIP6_UNSTR_ICON_A,
-    CMIP6_ZONMEAN_A,
-    CMIP6_ZONMEAN_B,
-    CORDEX_TAS_NO_BOUNDS,
-    CORDEX_TAS_ONE_TIMESTEP,
-    CORDEX_TAS_ONE_TIMESTEP_ANT,
-)
 from clisops import CONFIG
 from clisops.core.regrid import (
     XESMF_MINIMUM_VERSION,
@@ -62,8 +44,8 @@ XESMF_IMPORT_MSG = (
 )
 
 
-def test_grid_init_ds_tas_regular(open_dataset):
-    ds = open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+def test_grid_init_ds_tas_regular(open_dataset, mini_esgf_data):
+    ds = open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
     grid = Grid(ds=ds)
 
     assert grid.format == "CF"
@@ -84,8 +66,8 @@ def test_grid_init_ds_tas_regular(open_dataset):
     # assert self.mask
 
 
-def test_grid_init_da_tas_regular(open_dataset):
-    ds = open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+def test_grid_init_da_tas_regular(open_dataset, mini_esgf_data):
+    ds = open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
     da = ds.tas
     grid = Grid(ds=da)
 
@@ -104,8 +86,8 @@ def test_grid_init_da_tas_regular(open_dataset):
     assert grid.ncells == 14400
 
 
-def test_grid_init_ds_tos_curvilinear(open_dataset):
-    ds = open_dataset(CMIP6_TOS_ONE_TIME_STEP, use_cftime=True)
+def test_grid_init_ds_tos_curvilinear(open_dataset, mini_esgf_data):
+    ds = open_dataset(mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True)
     grid = Grid(ds=ds)
 
     assert grid.format == "CF"
@@ -126,8 +108,8 @@ def test_grid_init_ds_tos_curvilinear(open_dataset):
     # assert self.mask
 
 
-def test_grid_init_ds_tas_cordex(open_dataset):
-    ds = open_dataset(CORDEX_TAS_ONE_TIMESTEP, use_cftime=True)
+def test_grid_init_ds_tas_cordex(open_dataset, mini_esgf_data):
+    ds = open_dataset(mini_esgf_data["CORDEX_TAS_ONE_TIMESTEP"], use_cftime=True)
     grid = Grid(ds=ds)
 
     assert grid.format == "CF"
@@ -152,8 +134,8 @@ def test_grid_init_ds_tas_cordex(open_dataset):
         Grid(ds=ds)
 
 
-def test_grid_init_ds_tas_cordex_ant(open_dataset):
-    ds = open_dataset(CORDEX_TAS_ONE_TIMESTEP_ANT, use_cftime=True)
+def test_grid_init_ds_tas_cordex_ant(open_dataset, mini_esgf_data):
+    ds = open_dataset(mini_esgf_data["CORDEX_TAS_ONE_TIMESTEP_ANT"], use_cftime=True)
 
     # assert shifted lon frame
     assert np.isclose(ds["lon"].min(), -165.7, atol=0.5)
@@ -180,8 +162,8 @@ def test_grid_init_ds_tas_cordex_ant(open_dataset):
     assert grid.ncells == 12125
 
 
-def test_grid_init_shifted_lon_frame_GFDL(open_dataset):
-    ds = open_dataset(CMIP6_GFDL_EXTENT, use_cftime=True)
+def test_grid_init_shifted_lon_frame_GFDL(open_dataset, mini_esgf_data):
+    ds = open_dataset(mini_esgf_data["CMIP6_GFDL_EXTENT"], use_cftime=True)
 
     # confirm shifted lon frame
     assert np.isclose(ds["lon"].min(), -300.0, atol=0.5)
@@ -200,8 +182,8 @@ def test_grid_init_shifted_lon_frame_GFDL(open_dataset):
     assert grid.extent == "global"
 
 
-def test_grid_init_shifted_lon_frame_IITM(open_dataset):
-    ds = open_dataset(CMIP6_IITM_EXTENT, use_cftime=True)
+def test_grid_init_shifted_lon_frame_IITM(open_dataset, mini_esgf_data):
+    ds = open_dataset(mini_esgf_data["CMIP6_IITM_EXTENT"], use_cftime=True)
 
     # confirm shifted lon frame
     assert np.isclose(ds["longitude"].min(), -280.0, atol=1.0)
@@ -218,8 +200,8 @@ def test_grid_init_shifted_lon_frame_IITM(open_dataset):
     assert grid.extent == "global"
 
 
-def test_grid_init_ds_tas_unstructured(open_dataset):
-    ds = open_dataset(CMIP6_UNSTR_ICON_A, use_cftime=True)
+def test_grid_init_ds_tas_unstructured(open_dataset, mini_esgf_data):
+    ds = open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"], use_cftime=True)
     grid = Grid(ds=ds)
 
     assert grid.format == "CF"
@@ -238,9 +220,11 @@ def test_grid_init_ds_tas_unstructured(open_dataset):
     # assert self.mask
 
 
-def test_grid_init_ds_zonmean(open_dataset):
-    dsA = open_dataset(CMIP6_ZONMEAN_A, use_cftime=True)
-    dsB = open_dataset(CMIP6_ATM_VERT_ONE_TIMESTEP_ZONMEAN, use_cftime=True)
+def test_grid_init_ds_zonmean(open_dataset, mini_esgf_data):
+    dsA = open_dataset(mini_esgf_data["CMIP6_ZONMEAN_A"], use_cftime=True)
+    dsB = open_dataset(
+        mini_esgf_data["CMIP6_ATM_VERT_ONE_TIMESTEP_ZONMEAN"], use_cftime=True
+    )
 
     # Zonal mean dataset without "lon" dimension
     with pytest.raises(
@@ -421,11 +405,11 @@ def test_from_grid_id():
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
-def test_grid_from_ds_adaptive_extent(open_dataset):
+def test_grid_from_ds_adaptive_extent(open_dataset, mini_esgf_data):
     """Test that the extent is evaluated as global for original and derived adaptive grid."""
-    dsA = open_dataset(CMIP6_TOS_ONE_TIME_STEP, use_cftime=True)
-    dsB = open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
-    dsC = open_dataset(CMIP6_UNSTR_ICON_A, use_cftime=True)
+    dsA = open_dataset(mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True)
+    dsB = open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
+    dsC = open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"], use_cftime=True)
 
     gA = Grid(ds=dsA)
     gB = Grid(ds=dsB)
@@ -462,10 +446,10 @@ def test_grid_from_ds_adaptive_reproducibility(open_dataset):
 
 
 # @pytest.mark.xfail
-def test_detect_extent_shifted_lon_frame(open_dataset):
+def test_detect_extent_shifted_lon_frame(open_dataset, mini_esgf_data):
     """Test whether the extent can be correctly inferred for a dataset with shifted longitude frame."""
     # Load dataset with longitude ranging from (-300, 60)
-    ds = open_dataset(CMIP6_GFDL_EXTENT, use_cftime=True)
+    ds = open_dataset(mini_esgf_data["CMIP6_GFDL_EXTENT"], use_cftime=True)
 
     # Convert the longitude frame to 0,360 (shall happen implicitly in the future)
     ds, ll, lu = clidu.cf_convert_between_lon_frames(ds, (0, 360))
@@ -487,10 +471,10 @@ def test_compare_grid_same_resolution(open_dataset):
     assert g025_lsm.compare_grid(ds025)
 
 
-def test_compare_grid_diff_in_precision(open_dataset):
+def test_compare_grid_diff_in_precision(open_dataset, mini_esgf_data):
     """Test that the same grid stored with different precision is evaluated as the same grid"""
-    dsA = open_dataset(CMIP6_TAS_PRECISION_A, use_cftime=True)
-    dsB = open_dataset(CMIP6_TAS_PRECISION_B, use_cftime=True)
+    dsA = open_dataset(mini_esgf_data["CMIP6_TAS_PRECISION_A"], use_cftime=True)
+    dsB = open_dataset(mini_esgf_data["CMIP6_TAS_PRECISION_B"], use_cftime=True)
 
     gA = Grid(ds=dsA)
     gB = Grid(ds=dsB)
@@ -513,10 +497,10 @@ def test_compare_grid_hash_dict_and_verbose(capfd):
     assert list(gA.hash_dict.keys()) == ["lat", "lon", "lat_bnds", "lon_bnds", "mask"]
 
 
-def test_to_netcdf(tmp_path, open_dataset):
+def test_to_netcdf(tmp_path, open_dataset, mini_esgf_data):
     """Test if grid file is properly written to disk using to_netcdf method."""
     # Create Grid object
-    dsA = open_dataset(CMIP6_TAS_PRECISION_A)
+    dsA = open_dataset(mini_esgf_data["CMIP6_TAS_PRECISION_A"])
     gA = Grid(ds=dsA)
 
     # Save to disk
@@ -551,11 +535,11 @@ def test_to_netcdf(tmp_path, open_dataset):
     assert "coordinates" not in dsB.attrs.keys()
 
 
-def test_detect_collapsed_cells(open_dataset):
+def test_detect_collapsed_cells(open_dataset, mini_esgf_data):
     """Test that collapsed cells are properly identified"""
-    dsA = open_dataset(CMIP6_OCE_HALO_CNRM, use_cftime=True)
-    dsB = open_dataset(CMIP6_TOS_ONE_TIME_STEP, use_cftime=True)
-    dsC = open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+    dsA = open_dataset(mini_esgf_data["CMIP6_OCE_HALO_CNRM"], use_cftime=True)
+    dsB = open_dataset(mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True)
+    dsC = open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
 
     gA = Grid(ds=dsA)
     gB = Grid(ds=dsB)
@@ -566,11 +550,11 @@ def test_detect_collapsed_cells(open_dataset):
     assert not gC.contains_collapsed_cells
 
 
-def test_detect_duplicated_cells(open_dataset):
+def test_detect_duplicated_cells(open_dataset, mini_esgf_data):
     """Test that collapsed cells are properly identified"""
-    dsA = open_dataset(CMIP6_OCE_HALO_CNRM, use_cftime=True)
-    dsB = open_dataset(CMIP6_TOS_ONE_TIME_STEP, use_cftime=True)
-    dsC = open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+    dsA = open_dataset(mini_esgf_data["CMIP6_OCE_HALO_CNRM"], use_cftime=True)
+    dsB = open_dataset(mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True)
+    dsC = open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
 
     gA = Grid(ds=dsA)
     gB = Grid(ds=dsB)
@@ -581,8 +565,8 @@ def test_detect_duplicated_cells(open_dataset):
     assert not gC.contains_duplicated_cells
 
 
-def test_subsetted_grid(open_dataset):
-    ds = open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+def test_subsetted_grid(open_dataset, mini_esgf_data):
+    ds = open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
 
     area = (0.0, 10.0, 175.0, 90.0)
 
@@ -613,9 +597,9 @@ def test_subsetted_grid(open_dataset):
     # assert self.mask
 
 
-def test_drop_vars_transfer_coords(open_dataset):
+def test_drop_vars_transfer_coords(open_dataset, mini_esgf_data):
     """Test for Grid methods drop_vars and transfer_coords"""
-    ds = open_dataset(CMIP6_ATM_VERT_ONE_TIMESTEP)
+    ds = open_dataset(mini_esgf_data["CMIP6_ATM_VERT_ONE_TIMESTEP"])
     g = Grid(ds=ds)
     gt = Grid(grid_id="0pt25deg_era5_lsm", compute_bounds=True)
     assert sorted(list(g.ds.data_vars.keys())) == ["o3", "ps"]
@@ -650,17 +634,21 @@ def test_drop_vars_transfer_coords(open_dataset):
     assert list(gt.ds.data_vars.keys()) == []
 
 
-def test_calculate_bounds_curvilinear(open_dataset):
+def test_calculate_bounds_curvilinear(open_dataset, mini_esgf_data):
     """Test for bounds calculation for curvilinear grid"""
-    ds = open_dataset(CORDEX_TAS_NO_BOUNDS).isel({"rlat": range(10), "rlon": range(10)})
+    ds = open_dataset(mini_esgf_data["CORDEX_TAS_NO_BOUNDS"]).isel(
+        {"rlat": range(10), "rlon": range(10)}
+    )
     g = Grid(ds=ds, compute_bounds=True)
     assert g.lat_bnds is not None
     assert g.lon_bnds is not None
 
 
-def test_calculate_bounds_duplicated_cells(open_dataset):
+def test_calculate_bounds_duplicated_cells(open_dataset, mini_esgf_data):
     """Test for bounds calculation for curvilinear grid"""
-    ds = open_dataset(CORDEX_TAS_NO_BOUNDS).isel({"rlat": range(10), "rlon": range(10)})
+    ds = open_dataset(mini_esgf_data["CORDEX_TAS_NO_BOUNDS"]).isel(
+        {"rlat": range(10), "rlon": range(10)}
+    )
 
     # create duplicated cells
     ds["lat"][:, 0] = ds["lat"][:, 1]
@@ -674,9 +662,11 @@ def test_calculate_bounds_duplicated_cells(open_dataset):
         Grid(ds=ds, compute_bounds=True)
 
 
-def test_centers_within_bounds_curvilinear(open_dataset):
+def test_centers_within_bounds_curvilinear(open_dataset, mini_esgf_data):
     """Test for bounds calculation for curvilinear grid"""
-    ds = open_dataset(CORDEX_TAS_NO_BOUNDS).isel({"rlat": range(10), "rlon": range(10)})
+    ds = open_dataset(mini_esgf_data["CORDEX_TAS_NO_BOUNDS"]).isel(
+        {"rlat": range(10), "rlon": range(10)}
+    )
     g = Grid(ds=ds, compute_bounds=True)
     assert g.lat_bnds is not None
     assert g.lon_bnds is not None
@@ -746,8 +736,8 @@ def test_centers_within_bounds_regular_lat_lon():
     )
 
 
-def test_data_vars_coords_reset_and_cfxr(open_dataset):
-    dsA = open_dataset(CMIP6_ATM_VERT_ONE_TIMESTEP)
+def test_data_vars_coords_reset_and_cfxr(open_dataset, mini_esgf_data):
+    dsA = open_dataset(mini_esgf_data["CMIP6_ATM_VERT_ONE_TIMESTEP"])
 
     # generate dummy areacella
     areacella = xr.DataArray(
@@ -780,8 +770,8 @@ def test_data_vars_coords_reset_and_cfxr(open_dataset):
 # test all methods
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 class TestWeights:
-    def test_grids_in_and_out_bilinear(self, tmp_path, open_dataset):
-        ds = open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+    def test_grids_in_and_out_bilinear(self, tmp_path, open_dataset, mini_esgf_data):
+        ds = open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
         grid_in = Grid(ds=ds)
 
         assert grid_in.extent == "global"
@@ -807,8 +797,10 @@ class TestWeights:
         # default file_name = method_inputgrid_outputgrid_periodic"
         assert w.regridder.filename == "bilinear_80x180_120x240_peri.nc"
 
-    def test_grids_in_and_out_conservative(self, tmp_path, open_dataset):
-        ds = open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+    def test_grids_in_and_out_conservative(
+        self, tmp_path, open_dataset, mini_esgf_data
+    ):
+        ds = open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
         grid_in = Grid(ds=ds)
 
         assert grid_in.extent == "global"
@@ -844,9 +836,9 @@ class TestWeights:
     #     """Test creating a Weights object by reading an xESMF or other weights file from disk."""
     #     pass
 
-    def test_conservative_no_bnds(self, tmp_path, open_dataset):
+    def test_conservative_no_bnds(self, tmp_path, open_dataset, mini_esgf_data):
         """Test whether exception is raised when no bounds present for conservative remapping."""
-        ds = open_dataset(CORDEX_TAS_NO_BOUNDS)
+        ds = open_dataset(mini_esgf_data["CORDEX_TAS_NO_BOUNDS"])
         gi = Grid(ds=ds)
         go = Grid(grid_id="1deg", compute_bounds=True)
 
@@ -912,9 +904,9 @@ def test_Weights_compute(tmp_path):
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
-def test_Weights_compute_unstructured(tmp_path, open_dataset):
+def test_Weights_compute_unstructured(tmp_path, open_dataset, mini_esgf_data):
     """Test the generation of Weights for unstructured grids with the _compute method."""
-    ds = open_dataset(CMIP6_UNSTR_ICON_A, use_cftime=True)
+    ds = open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"], use_cftime=True)
     g = Grid(ds=ds)
     g_out = Grid(grid_id="2deg_lsm", compute_bounds=True)
 
@@ -950,10 +942,10 @@ def test_Weights_generate_id(tmp_path):
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
-def test_Weights_init_with_collapsed_cells(tmp_path, open_dataset):
+def test_Weights_init_with_collapsed_cells(tmp_path, open_dataset, mini_esgf_data):
     "Test the creation of remapping weights for a grid containing collapsed cells"
     # ValueError: ESMC_FieldRegridStore failed with rc = 506. Please check the log files (named "*ESMF_LogFile").
-    ds = open_dataset(CMIP6_OCE_HALO_CNRM, use_cftime=True)
+    ds = open_dataset(mini_esgf_data["CMIP6_OCE_HALO_CNRM"], use_cftime=True)
 
     g = Grid(ds=ds)
     g_out = Grid(grid_instructor=(10.0,))
@@ -1004,9 +996,9 @@ def test_cache_init_and_flush(tmp_path):
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
-def test_cache_lock_mechanism(tmp_path, open_dataset):
+def test_cache_lock_mechanism(tmp_path, open_dataset, mini_esgf_data):
     """Test lock mechanism of local regrid weights cache."""
-    ds = open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+    ds = open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
 
     grid_in = Grid(ds=ds)
     grid_out = Grid(grid_instructor=10)
@@ -1091,6 +1083,7 @@ def test_read_metadata(tmp_path):
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 class TestRegrid:
     ds = None
+    c6tots = "CMIP6_TAS_ONE_TIME_STEP"
 
     def _setup(self):
         if hasattr(self, "setup_done"):
@@ -1102,24 +1095,26 @@ class TestRegrid:
         self.grid_out = Grid(grid_instructor=self.grid_instructor_out)
         self.setup_done = True
 
-    def test_adaptive_masking(self, tmp_path, open_dataset):
-        self.ds = open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+    def test_adaptive_masking(self, tmp_path, open_dataset, mini_esgf_data):
+        self.ds = open_dataset(mini_esgf_data[self.c6tots], use_cftime=True)
         self._setup()
 
         weights_cache_init(Path(tmp_path, "weights"))
         w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="conservative")
         regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.7)
 
-    def test_no_adaptive_masking(self, tmp_path, open_dataset):
-        self.ds = open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+    def test_no_adaptive_masking(self, tmp_path, open_dataset, mini_esgf_data):
+        self.ds = open_dataset(mini_esgf_data[self.c6tots], use_cftime=True)
         self._setup()
 
         weights_cache_init(Path(tmp_path, "weights"))
         w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="bilinear")
         regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=-1.0)
 
-    def test_duplicated_cells_warning_issued(self, tmp_path, open_dataset):
-        self.ds = open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+    def test_duplicated_cells_warning_issued(
+        self, tmp_path, open_dataset, mini_esgf_data
+    ):
+        self.ds = open_dataset(mini_esgf_data[self.c6tots], use_cftime=True)
         self._setup()
 
         weights_cache_init(Path(tmp_path, "weights"))
@@ -1148,8 +1143,8 @@ class TestRegrid:
             else:
                 assert len(issuedWarnings) == 1
 
-    def test_regrid_dataarray(self, tmp_path, open_dataset):
-        self.ds = open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+    def test_regrid_dataarray(self, tmp_path, open_dataset, mini_esgf_data):
+        self.ds = open_dataset(mini_esgf_data[self.c6tots], use_cftime=True)
         self._setup()
 
         weights_cache_init(Path(tmp_path, "weights"))
@@ -1184,9 +1179,9 @@ class TestRegrid:
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
-def test_duplicated_cells_renormalization(tmp_path, open_dataset):
+def test_duplicated_cells_renormalization(tmp_path, open_dataset, mini_esgf_data):
     # todo: Should probably be an xesmf test as well, will do PR there in the future
-    ds = open_dataset(CMIP6_STAGGERED_UCOMP, use_cftime=True)
+    ds = open_dataset(mini_esgf_data["CMIP6_STAGGERED_UCOMP"], use_cftime=True)
 
     # some internal xesmf code to create array of ones
     missing = np.isnan(ds.tauuo)

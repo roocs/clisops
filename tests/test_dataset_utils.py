@@ -7,26 +7,13 @@ from packaging.version import Version
 from roocs_grids import get_grid_file
 
 import clisops.utils.dataset_utils as clidu
-from _common import (
-    C3S_CORDEX_AFR_TAS,
-    C3S_CORDEX_ANT_SFC_WIND,
-    CMIP6_GFDL_EXTENT,
-    CMIP6_IITM_EXTENT,
-    CMIP6_OCE_HALO_CNRM,
-    CMIP6_SICONC,
-    CMIP6_TAS_ONE_TIME_STEP,
-    CMIP6_TAS_PRECISION_A,
-    CMIP6_TOS_ONE_TIME_STEP,
-    CMIP6_UNSTR_ICON_A,
-    CORDEX_TAS_ONE_TIMESTEP,
-)
 from clisops.core.regrid import XESMF_MINIMUM_VERSION
 
 try:
     import xesmf
 
     if Version(xesmf.__version__) < Version(XESMF_MINIMUM_VERSION):
-        raise ImportError()
+        raise ImportError("xESMF version is too low.")
 except ImportError:
     xesmf = None
 

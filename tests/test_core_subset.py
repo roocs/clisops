@@ -5,12 +5,13 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import xarray as xr
+from pandas.io.sas.sas_constants import column_label_text_subheader_index_offset
 from pyproj.crs import CRS
 from pyproj.exceptions import CRSError
 from shapely.geometry import Point, Polygon
 
-from _common import TESTS_DATA, ContextLogger
 from clisops.core import subset
+from clisops.utils.testing import ContextLogger
 
 try:
     import xesmf
@@ -672,14 +673,6 @@ class TestSubsetShape:
     lons_2d_nc_file = "CRCM5/tasmax_bby_198406_se.nc"
     nc_file_neglons = "NRCANdaily/nrcan_canada_daily_tasmax_1990.nc"
 
-    meridian_geojson = os.path.join(TESTS_DATA, "meridian.json")
-    meridian_multi_geojson = os.path.join(TESTS_DATA, "meridian_multi.json")
-    poslons_geojson = os.path.join(TESTS_DATA, "poslons.json")
-    eastern_canada_geojson = os.path.join(TESTS_DATA, "eastern_canada.json")
-    southern_qc_geojson = os.path.join(TESTS_DATA, "southern_qc_geojson.json")
-    small_geojson = os.path.join(TESTS_DATA, "small_geojson.json")
-    multi_regions_geojson = os.path.join(TESTS_DATA, "multi_regions.json")
-
     @staticmethod
     def compare_vals(ds, sub, vari, flag_2d=False):
         # Check subsetted values against original.
@@ -705,12 +698,12 @@ class TestSubsetShape:
                     sub[vari].sel(lon=lon1, lat=lat1), ds[vari].sel(lon=lon1, lat=lat1)
                 )
 
-    def test_wraps(self, tmp_netcdf_filename, open_dataset):
+    def test_wraps(self, tmp_netcdf_filename, open_dataset, clisops_test_data):
         ds = open_dataset(self.nc_file)
 
         # Polygon crosses meridian, a warning should be raised
         with pytest.warns(UserWarning):
-            sub = subset.subset_shape(ds, self.meridian_geojson)
+            sub = subset.subset_shape(ds, clisops_test_data["meridian_geojson"])
 
         # No time subsetting should occur.
         assert len(sub.tas) == 12
@@ -721,7 +714,8 @@ class TestSubsetShape:
         )
         self.compare_vals(ds, sub, "tas")
 
-        poly = gpd.read_file(self.meridian_multi_geojson)
+        poly = gpd.read_file(clisops_test_data["meridian_multi_geojson"])
+
         subtas = subset.subset_shape(ds.tas, poly)
         np.testing.assert_array_almost_equal(
             float(np.mean(subtas.isel(time=0))), 281.092, 3
@@ -734,13 +728,13 @@ class TestSubsetShape:
         assert tmp_netcdf_filename.exists()
         with xr.open_dataset(filename_or_obj=tmp_netcdf_filename) as f:
             assert {"tas", "crs"}.issubset(set(f.data_vars))
-            subset.subset_shape(ds, self.meridian_multi_geojson)
+            subset.subset_shape(ds, clisops_test_data["meridian_multi_geojson"])
 
-    def test_no_wraps(self, tmp_netcdf_filename, open_dataset):
+    def test_no_wraps(self, tmp_netcdf_filename, open_dataset, clisops_test_data):
         ds = open_dataset(self.nc_file)
 
         with warnings.catch_warnings(record=True) as record:
-            sub = subset.subset_shape(ds, self.poslons_geojson)
+            sub = subset.subset_shape(ds, clisops_test_data["poslons_geojson"])
 
         self.compare_vals(ds, sub, "tas")
 
@@ -765,13 +759,13 @@ class TestSubsetShape:
         assert tmp_netcdf_filename.exists()
         with xr.open_dataset(filename_or_obj=tmp_netcdf_filename) as f:
             assert {"tas", "crs"}.issubset(set(f.data_vars))
-            subset.subset_shape(ds, self.poslons_geojson)
+            subset.subset_shape(ds, clisops_test_data["poslons_geojson"])
 
-    def test_all_neglons(self, open_dataset):
+    def test_all_neglons(self, open_dataset, clisops_test_data):
         ds = open_dataset(self.nc_file_neglons)
 
         with warnings.catch_warnings(record=True) as record:
-            sub = subset.subset_shape(ds, self.southern_qc_geojson)
+            sub = subset.subset_shape(ds, clisops_test_data["southern_qc_geojson"])
 
         self.compare_vals(ds, sub, "tasmax")
 
@@ -786,13 +780,13 @@ class TestSubsetShape:
             not in [q.message for q in record]
         )
 
-    def test_rotated_pole_with_time(self, open_dataset):
+    def test_rotated_pole_with_time(self, open_dataset, clisops_test_data):
         ds = open_dataset(self.lons_2d_nc_file)
 
         with warnings.catch_warnings(record=True) as record:
             sub = subset.subset_shape(
                 ds,
-                self.eastern_canada_geojson,
+                clisops_test_data["eastern_canada_geojson"],
                 start_date="1984-06-01",
                 end_date="1984-06-15",
             )
@@ -812,16 +806,18 @@ class TestSubsetShape:
             not in [str(q.message) for q in record]
         )
 
-    def test_small_poly_buffer(self, tmp_netcdf_filename, open_dataset):
+    def test_small_poly_buffer(
+        self, tmp_netcdf_filename, open_dataset, clisops_test_data
+    ):
         ds = open_dataset(self.nc_file)
 
         with pytest.raises(ValueError):
-            subset.subset_shape(ds, self.small_geojson)
+            subset.subset_shape(ds, clisops_test_data["small_geojson"])
 
         with pytest.raises(ValueError):
-            subset.subset_shape(ds, self.small_geojson, buffer=0.6)
+            subset.subset_shape(ds, clisops_test_data["small_geojson"], buffer=0.6)
 
-        sub = subset.subset_shape(ds, self.small_geojson, buffer=5)
+        sub = subset.subset_shape(ds, clisops_test_data["small_geojson"], buffer=5)
         self.compare_vals(ds, sub, "tas")
         assert len(sub.lon.values) == 3
         assert len(sub.lat.values) == 3
@@ -834,9 +830,9 @@ class TestSubsetShape:
         with xr.open_dataset(filename_or_obj=tmp_netcdf_filename) as f:
             assert {"tas", "crs"}.issubset(set(f.data_vars))
 
-    def test_mask_multiregions(self, open_dataset):
+    def test_mask_multiregions(self, open_dataset, clisops_test_data):
         ds = open_dataset(self.nc_file)
-        regions = gpd.read_file(self.multi_regions_geojson)
+        regions = gpd.read_file(clisops_test_data["multi_regions_geojson"])
         regions.set_index("id")
         mask = subset.create_mask(
             x_dim=ds.lon, y_dim=ds.lat, poly=regions, wrap_lons=True
@@ -848,19 +844,21 @@ class TestSubsetShape:
     @pytest.mark.skipif(
         xesmf is None, reason="xESMF >= 0.6.2 is needed for average_shape."
     )
-    def test_weight_masks_multiregions(self, open_dataset):
+    def test_weight_masks_multiregions(self, open_dataset, clisops_test_data):
         # rename is due to a small limitation of xESMF 0.5.2
         ds = open_dataset(self.nc_file).rename(bnds="bounds")
-        regions = gpd.read_file(self.multi_regions_geojson).set_index("id")
+        regions = gpd.read_file(clisops_test_data["multi_regions_geojson"]).set_index(
+            "id"
+        )
         masks = subset.create_weight_masks(ds, poly=regions)
 
         np.testing.assert_allclose(masks.sum(["lat", "lon"]), [1, 1, 1])
         np.testing.assert_array_equal(masks.geom.values, regions.index)
         np.testing.assert_allclose(masks.max("geom").sum(), 2.900, 3)
 
-    def test_subset_multiregions(self, open_dataset):
+    def test_subset_multiregions(self, open_dataset, clisops_test_data):
         ds = open_dataset(self.nc_file)
-        regions = gpd.read_file(self.multi_regions_geojson)
+        regions = gpd.read_file(clisops_test_data["multi_regions_geojson"])
         regions.set_index("id")
         ds_sub = subset.subset_shape(ds, shape=regions)
         assert ds_sub.notnull().sum() == 58 + 250 + 22
@@ -907,9 +905,11 @@ class TestSubsetShape:
             subset.subset_shape(da, shape_wrapped)
         )
 
-    def test_shapefile_utm(self, open_dataset):
+    def test_shapefile_utm(self, open_dataset, clisops_test_data):
         da = open_dataset(self.nc_file)
-        regions = gpd.read_file(self.multi_regions_geojson).set_index("id")
+        regions = gpd.read_file(clisops_test_data["multi_regions_geojson"]).set_index(
+            "id"
+        )
         regions_utm = regions.to_crs("EPSG:32618")
         assert subset.subset_shape(da, regions).equals(
             subset.subset_shape(da, regions_utm)
