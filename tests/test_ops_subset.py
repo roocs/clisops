@@ -1381,7 +1381,7 @@ class TestByValues:
                 if attr in ref_da.attrs:
                     assert ref_da.attrs[attr] == da.attrs.get(attr)
 
-    def test_subset_level_by_values_all(self, tmpdir):
+    def test_subset_level_by_values_all(self, tmpdir, mini_esgf_data):
         all_levels = [
             100000,
             92500,
@@ -1409,7 +1409,12 @@ class TestByValues:
 
         # Get various outputs and compare they are the same
         ds_list = [
-            subset(ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray", level=level)[0]
+            subset(
+                ds=mini_esgf_data["CMIP6_TA"],
+                output_dir=tmpdir,
+                output_type="xarray",
+                level=level,
+            )[0]
             for level in [
                 None,
                 level_series(all_levels),
@@ -1422,7 +1427,7 @@ class TestByValues:
 
         self.assert_vars_equal("plev", *ds_list)
 
-    def test_subset_level_by_values_partial(self, tmpdir):
+    def test_subset_level_by_values_partial(self, tmpdir, mini_esgf_data):
         some_levels = [
             60000,
             50000,
@@ -1441,7 +1446,12 @@ class TestByValues:
 
         # Get various outputs and compare they are the same
         ds_list = [
-            subset(ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray", level=level)[0]
+            subset(
+                ds=mini_esgf_data["CMIP6_TA"],
+                output_dir=tmpdir,
+                output_type="xarray",
+                level=level,
+            )[0]
             for level in [
                 level_series(some_levels),
                 level_interval(some_levels[0], some_levels[-1]),
@@ -1453,7 +1463,7 @@ class TestByValues:
 
         self.assert_vars_equal("plev", *ds_list)
 
-    def test_subset_level_by_values_with_gaps(self, tmpdir):
+    def test_subset_level_by_values_with_gaps(self, tmpdir, mini_esgf_data):
         picked_levels = [60000, 30000, 25000, 20000, 7000, 5000]
 
         shuffled_1 = self.shuffle(picked_levels)
@@ -1461,7 +1471,12 @@ class TestByValues:
 
         # Get various outputs and compare they are the same
         ds_list = [
-            subset(ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray", level=level)[0]
+            subset(
+                ds=mini_esgf_data["CMIP6_TA"],
+                output_dir=tmpdir,
+                output_type="xarray",
+                level=level,
+            )[0]
             for level in [
                 level_series(picked_levels),
                 level_series(list(reversed(picked_levels))),
@@ -1472,7 +1487,7 @@ class TestByValues:
 
         self.assert_vars_equal("plev", *ds_list)
 
-    def test_subset_level_by_values_and_bbox(self, tmpdir):
+    def test_subset_level_by_values_and_bbox(self, tmpdir, mini_esgf_data):
         some_levels = [
             60000,
             50000,
@@ -1493,7 +1508,7 @@ class TestByValues:
         # Get various outputs and compare they are the same
         ds_list = [
             subset(
-                ds=CMIP6_TA,
+                ds=mini_esgf_data["CMIP6_TA"],
                 output_dir=tmpdir,
                 output_type="xarray",
                 level=level,
@@ -1510,15 +1525,22 @@ class TestByValues:
 
         self.assert_vars_equal("plev", *ds_list)
 
-    def test_subset_time_by_values_all(self, tmpdir):
-        all_times = [str(tm) for tm in xr.open_dataset(CMIP6_TA).time.values]
+    def test_subset_time_by_values_all(self, tmpdir, mini_esgf_data):
+        all_times = [
+            str(tm) for tm in xr.open_dataset(mini_esgf_data["CMIP6_TA"]).time.values
+        ]
 
         shuffled_1 = self.shuffle(all_times)
         shuffled_2 = self.shuffle(all_times)
 
         # Get various outputs and compare they are the same
         ds_list = [
-            subset(ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray", time=times)[0]
+            subset(
+                ds=mini_esgf_data["CMIP6_TA"],
+                output_dir=tmpdir,
+                output_type="xarray",
+                time=times,
+            )[0]
             for times in [
                 None,
                 time_series(all_times),
@@ -1531,8 +1553,10 @@ class TestByValues:
 
         self.assert_vars_equal("time", *ds_list)
 
-    def test_subset_time_by_values_partial(self, tmpdir):
-        all_times = [str(tm) for tm in xr.open_dataset(CMIP6_TA).time.values]
+    def test_subset_time_by_values_partial(self, tmpdir, mini_esgf_data):
+        all_times = [
+            str(tm) for tm in xr.open_dataset(mini_esgf_data["CMIP6_TA"]).time.values
+        ]
         some_times = all_times[20:-15]
 
         shuffled_1 = self.shuffle(some_times)
@@ -1540,7 +1564,12 @@ class TestByValues:
 
         # Get various outputs and compare they are the same
         ds_list = [
-            subset(ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray", time=times)[0]
+            subset(
+                ds=mini_esgf_data["CMIP6_TA"],
+                output_dir=tmpdir,
+                output_type="xarray",
+                time=times,
+            )[0]
             for times in [
                 time_interval(some_times[0], some_times[-1]),
                 time_series(list(reversed(some_times))),
@@ -1551,8 +1580,10 @@ class TestByValues:
 
         self.assert_vars_equal("time", *ds_list)
 
-    def test_subset_time_by_values_with_gaps(self, tmpdir):
-        all_times = [str(tm) for tm in xr.open_dataset(CMIP6_TA).time.values]
+    def test_subset_time_by_values_with_gaps(self, tmpdir, mini_esgf_data):
+        all_times = [
+            str(tm) for tm in xr.open_dataset(mini_esgf_data["CMIP6_TA"]).time.values
+        ]
         some_times = [
             all_times[0],
             all_times[100],
@@ -1566,7 +1597,12 @@ class TestByValues:
 
         # Get various outputs and compare they are the same
         ds_list = [
-            subset(ds=CMIP6_TA, output_dir=tmpdir, output_type="xarray", time=times)[0]
+            subset(
+                ds=mini_esgf_data["CMIP6_TA"],
+                output_dir=tmpdir,
+                output_type="xarray",
+                time=times,
+            )[0]
             for times in [
                 time_series(list(reversed(some_times))),
                 time_series(shuffled_1),
@@ -1577,26 +1613,25 @@ class TestByValues:
         self.assert_vars_equal("time", *ds_list)
 
 
-def test_subset_by_time_components_year_month(tmpdir):
+def test_subset_by_time_components_year_month(tmpdir, mini_esgf_data):
     # times = ("2015-01-16 12", "MANY MORE", "2024-12-16 12") [120]
     tc1 = time_components(year=(2021, 2022), month=["dec", "jan", "feb"])
     tc2 = time_components(year=(2021, 2022), month=[12, 1, 2])
 
-    ds_ta = CMIP6_TA
     kwargs = {"output_dir": tmpdir, "output_type": "xarray"}
 
     for tc in (tc1, tc2):
-        ds = subset(ds_ta, time_components=tc, **kwargs)[0]
+        ds = subset(mini_esgf_data["CMIP6_TA"], time_components=tc, **kwargs)[0]
 
         assert set(ds.time.dt.year.values) == {2021, 2022}
         assert set(ds.time.dt.month.values) == {12, 1, 2}
 
 
-def test_subset_empty(tmpdir):
+def test_subset_empty(tmpdir, mini_esgf_data):
     # Monthly mean dataset with 360-day calendar
     with pytest.raises(Exception) as exc:
         subset(
-            ds=CMIP5_TAS,
+            ds=mini_esgf_data["CMIP5_TAS"],
             output_type="nc",
             output_dir=tmpdir,
             time_components="month:12,1,2|day:1,2,3,4,5",
@@ -1604,7 +1639,7 @@ def test_subset_empty(tmpdir):
     assert str(exc.value) == "'No timesteps are matching the selection criteria.'"
 
 
-def test_subset_by_time_components_31_days_360_day(tmpdir):
+def test_subset_by_time_components_31_days_360_day(tmpdir, mini_esgf_data):
     # Dataset with 360-day calendar
     tmpdir30 = Path(tmpdir, "ds30")
     tmpdir31 = Path(tmpdir, "ds31")
@@ -1612,13 +1647,13 @@ def test_subset_by_time_components_31_days_360_day(tmpdir):
     os.mkdir(tmpdir31)
 
     subset(
-        ds=CMIP5_MRSOS_MULTIPLE_TIME_STEPS,
+        ds=mini_esgf_data["CMIP5_MRSOS_MULTIPLE_TIME_STEPS"],
         output_type="nc",
         output_dir=tmpdir30,
         time_components="month:12,1,2|day:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30",
     )
     subset(
-        ds=CMIP5_MRSOS_MULTIPLE_TIME_STEPS,
+        ds=mini_esgf_data["CMIP5_MRSOS_MULTIPLE_TIME_STEPS"],
         output_type="nc",
         output_dir=tmpdir31,
         time_components="month:12,1,2|day:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31",
@@ -1630,23 +1665,22 @@ def test_subset_by_time_components_31_days_360_day(tmpdir):
     assert ds30.dims["time"] == 8490
 
 
-def test_subset_by_time_components_month_day(tmpdir):
+def test_subset_by_time_components_month_day(tmpdir, mini_esgf_data):
     # CMIP6_SICONC_DAY: 18500101-20141231 ;  n_times = 60225
     tc1 = time_components(month=["jul"], day=[1, 11, 21])
     tc2 = time_components(month=[7], day=[1, 11, 21])
 
-    ds_ta = CMIP6_SICONC_DAY
     kwargs = {"output_dir": tmpdir, "output_type": "xarray"}
 
     for tc in (tc1, tc2):
-        ds = subset(ds_ta, time_components=tc, **kwargs)[0]
+        ds = subset(mini_esgf_data["CMIP6_SICONC_DAY"], time_components=tc, **kwargs)[0]
 
         assert set(ds.time.dt.month.values) == {7}
         assert set(ds.time.dt.day.values) == {1, 11, 21}
         assert len(ds.time.values) == (2014 - 1850 + 1) * 3
 
 
-def test_subset_by_time_interval_and_components_month_day(tmpdir):
+def test_subset_by_time_interval_and_components_month_day(tmpdir, mini_esgf_data):
     # CMIP6_SICONC_DAY: 18500101-20141231 ;  n_times = 60225
     ys, ye = 1850, 1869
     ti = time_interval(f"{ys}-01-01T00:00:00", f"{ye}-12-31T23:59:59")
@@ -1657,23 +1691,24 @@ def test_subset_by_time_interval_and_components_month_day(tmpdir):
     tc1 = time_components(month=["mar", "apr", "may"], day=days)
     tc2 = time_components(month=months, day=days)
 
-    ds_ta = CMIP6_SICONC_DAY
     kwargs = {"output_dir": tmpdir, "output_type": "xarray"}
 
     for tc in (tc1, tc2):
-        ds = subset(ds_ta, time=ti, time_components=tc, **kwargs)[0]
+        ds = subset(
+            mini_esgf_data["CMIP6_SICONC_DAY"], time=ti, time_components=tc, **kwargs
+        )[0]
 
         assert set(ds.time.dt.month.values) == set(months)
         assert set(ds.time.dt.day.values) == set(days)
         assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
 
 
-def test_subset_by_time_series_and_components_month_day(tmpdir):
+def test_subset_by_time_series_and_components_month_day(tmpdir, mini_esgf_data):
     # CMIP6_SICONC_DAY: 18500101-20141231 ;  n_times = 60225
     ys, ye = 1850, 1869
     req_times = [
         tm.isoformat()
-        for tm in xr.open_dataset(CMIP6_SICONC_DAY).time.values
+        for tm in xr.open_dataset(mini_esgf_data["CMIP6_SICONC_DAY"]).time.values
         if ys <= tm.year <= ye
     ]
 
@@ -1684,18 +1719,19 @@ def test_subset_by_time_series_and_components_month_day(tmpdir):
     tc1 = time_components(month=["mar", "apr", "may"], day=days)
     tc2 = time_components(month=months, day=days)
 
-    ds_ta = CMIP6_SICONC_DAY
     kwargs = {"output_dir": tmpdir, "output_type": "xarray"}
 
     for tc in (tc1, tc2):
-        ds = subset(ds_ta, time=ts, time_components=tc, **kwargs)[0]
+        ds = subset(
+            mini_esgf_data["CMIP6_SICONC_DAY"], time=ts, time_components=tc, **kwargs
+        )[0]
 
         assert set(ds.time.dt.month.values) == set(months)
         assert set(ds.time.dt.day.values) == set(days)
         assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
 
 
-def test_subset_by_area_and_components_month_day(tmpdir):
+def test_subset_by_area_and_components_month_day(tmpdir, mini_esgf_data):
     # CMIP6_SICONC_DAY: 18500101-20141231 ;  n_times = 60225
     ys, ye = 1850, 1869
     ti = time_interval(f"{ys}-01-01T00:00:00", f"{ye}-12-31T23:59:59")
@@ -1708,18 +1744,23 @@ def test_subset_by_area_and_components_month_day(tmpdir):
 
     area = area_parameter.AreaParameter((20, 30.0, 150, 70.0))
 
-    ds_ta = CMIP6_SICONC_DAY
     kwargs = {"output_dir": tmpdir, "output_type": "xarray"}
 
     for tc in (tc1, tc2):
-        ds = subset(ds_ta, time=ti, time_components=tc, area=area, **kwargs)[0]
+        ds = subset(
+            mini_esgf_data["CMIP6_SICONC_DAY"],
+            time=ti,
+            time_components=tc,
+            area=area,
+            **kwargs,
+        )[0]
 
         assert set(ds.time.dt.month.values) == set(months)
         assert set(ds.time.dt.day.values) == set(days)
         assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
 
 
-def test_subset_nc_no_fill_value(get_file, tmpdir):
+def test_subset_nc_no_fill_value(get_file, tmpdir, mini_esgf_data):
     """Tests clisops subset function with a time subset."""
     result = subset(
         ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
@@ -1730,7 +1771,7 @@ def test_subset_nc_no_fill_value(get_file, tmpdir):
     )
 
     # check that with just opening the file with xarray, saving to netcdf, then opening again, these fill values get added
-    ds = _load_ds(CMIP5_TAS)
+    ds = _load_ds(mini_esgf_data["CMIP5_TAS"])
     ds.to_netcdf(f"{tmpdir}/test_fill_values.nc")
     ds = _load_ds(f"{tmpdir}/test_fill_values.nc")
 
@@ -1780,10 +1821,10 @@ def test_subset_cmip5_nc_consistent_bounds(get_file, tmpdir):
     assert "coordinates" not in res.time_bnds.encoding
 
 
-def test_subset_cmip6_nc_consistent_bounds(get_file, tmpdir):
+def test_subset_cmip6_nc_consistent_bounds(get_file, tmpdir, mini_esgf_data):
     """Tests clisops subset function with a time subset and check the metadata"""
     result = subset(
-        ds=CMIP6_TASMIN,
+        ds=mini_esgf_data["CMIP6_TASMIN"],
         time=time_interval("2010-01-01T00:00:00", "2010-12-31T00:00:00"),
         output_dir=tmpdir,
         output_type="nc",
@@ -1805,7 +1846,7 @@ def test_subset_cmip6_nc_consistent_bounds(get_file, tmpdir):
     assert "coordinates" not in res.time_bnds.encoding
 
 
-def test_subset_cmip6_issue_308_fillvalue(tmpdir, capsys):
+def test_subset_cmip6_issue_308_fillvalue(tmpdir, capsys, mini_esgf_data):
     """Tests clisops subset function with a time subset and check the metadata.
 
     Notes
@@ -1818,7 +1859,7 @@ def test_subset_cmip6_issue_308_fillvalue(tmpdir, capsys):
     with ContextLogger():
         enable_logging()
         result = subset(
-            ds=CMIP6_FILLVALUE,
+            ds=mini_esgf_data["CMIP6_FILLVALUE"],
             time=time_interval("2000-01-01T00:00:00", "2000-12-31T00:00:00"),
             output_dir=tmpdir,
             output_type="nc",

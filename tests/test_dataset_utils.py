@@ -22,8 +22,8 @@ XESMF_IMPORT_MSG = (
 )
 
 
-def test_add_day():
-    da = xr.open_dataset(CMIP6_SICONC, use_cftime=True)
+def test_add_day(mini_esgf_data):
+    da = xr.open_dataset(mini_esgf_data["CMIP6_SICONC"], use_cftime=True)
     date = "2012-02-29T00:00:00"
 
     new_date = clidu.adjust_date_to_calendar(da, date, "forwards")
@@ -31,8 +31,8 @@ def test_add_day():
     assert new_date == "2012-03-01T00:00:00"
 
 
-def test_sub_day():
-    da = xr.open_dataset(CMIP6_SICONC, use_cftime=True)
+def test_sub_day(mini_esgf_data):
+    da = xr.open_dataset(mini_esgf_data["CMIP6_SICONC"], use_cftime=True)
     date = "2012-02-30T00:00:00"
 
     new_date = clidu.adjust_date_to_calendar(da, date, "backwards")
@@ -40,8 +40,8 @@ def test_sub_day():
     assert new_date == "2012-02-28T00:00:00"
 
 
-def test_invalid_day():
-    da = xr.open_dataset(CMIP6_SICONC, use_cftime=True)
+def test_invalid_day(mini_esgf_data):
+    da = xr.open_dataset(mini_esgf_data["CMIP6_SICONC"], use_cftime=True)
     date = "2012-02-29T00:00:00"
 
     with pytest.raises(Exception) as exc:
@@ -52,8 +52,8 @@ def test_invalid_day():
     )
 
 
-def test_date_out_of_expected_range():
-    da = xr.open_dataset(CMIP6_SICONC, use_cftime=True)
+def test_date_out_of_expected_range(mini_esgf_data):
+    da = xr.open_dataset(mini_esgf_data["CMIP6_SICONC"], use_cftime=True)
     date = "2012-00-01T00:00:00"
 
     with pytest.raises(Exception) as exc:
@@ -64,7 +64,7 @@ def test_date_out_of_expected_range():
 
 
 def test_add_hor_CF_coord_attrs():
-    "Test function to add standard attributes to horizontal coordinate variables."
+    """Test function to add standard attributes to horizontal coordinate variables."""
     # Create basic dataset
     ds = xr.Dataset(
         data_vars={},
@@ -113,7 +113,7 @@ def test_add_hor_CF_coord_attrs():
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_reformat_xESMF_to_CF():
-    "Test reformat operation reformat_xESMF_to_CF"
+    """Test reformat operation reformat_xESMF_to_CF."""
     # Use xesmf utility function to create dataset with global grid
     ds = xesmf.util.grid_global(5.0, 5.0)
 
@@ -130,7 +130,7 @@ def test_reformat_xESMF_to_CF():
 
 
 def test_reformat_SCRIP_to_CF():
-    "Test reformat operation reformat_SCRIP_to_CF"
+    """Test reformat operation reformat_SCRIP_to_CF."""
     # Load dataset in SCRIP format (using roocs_grids)
     ds = xr.open_dataset(get_grid_file("2pt5deg"))
 
@@ -159,7 +159,7 @@ def test_reformat_SCRIP_to_CF():
 
 
 def test_detect_shape_regular():
-    "Test detect_shape function for a regular grid"
+    """Test detect_shape function for a regular grid."""
     # Load dataset
     ds = xr.open_dataset(get_grid_file("0pt25deg_era5_lsm"))
 
@@ -174,10 +174,10 @@ def test_detect_shape_regular():
     assert ncells == nlat * nlon
 
 
-def test_detect_shape_unstructured():
-    "Test detect_shape function for an unstructured grid"
+def test_detect_shape_unstructured(mini_esgf_data):
+    """Test detect_shape function for an unstructured grid."""
     # Load dataset
-    ds = xr.open_dataset(CMIP6_UNSTR_ICON_A, use_cftime=True)
+    ds = xr.open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"], use_cftime=True)
 
     # Detect shape
     nlat, nlon, ncells = clidu.detect_shape(
@@ -192,7 +192,7 @@ def test_detect_shape_unstructured():
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_detect_format():
-    "Test detect_format function"
+    """Test detect_format function."""
     # Load/Create datasets in SCRIP, CF and xESMF format
     ds_cf = xr.open_dataset(get_grid_file("0pt25deg_era5_lsm"))
     ds_scrip = xr.open_dataset(get_grid_file("0pt25deg_era5"))
@@ -204,14 +204,16 @@ def test_detect_format():
     assert clidu.detect_format(ds_xesmf) == "xESMF"
 
 
-def test_detect_coordinate_and_bounds():
-    "Test detect_bounds and detect_coordinate functions."
-    ds_a = xr.open_mfdataset(C3S_CORDEX_AFR_TAS, use_cftime=True, combine="by_coords")
-    ds_b = xr.open_mfdataset(
-        C3S_CORDEX_ANT_SFC_WIND, use_cftime=True, combine="by_coords"
+def test_detect_coordinate_and_bounds(mini_esgf_data):
+    """Test detect_bounds and detect_coordinate functions."""
+    ds_a = xr.open_mfdataset(
+        mini_esgf_data["C3S_CORDEX_AFR_TAS"], use_cftime=True, combine="by_coords"
     )
-    ds_c = xr.open_dataset(CMIP6_UNSTR_ICON_A)
-    ds_d = xr.open_dataset(CMIP6_OCE_HALO_CNRM)
+    ds_b = xr.open_mfdataset(
+        mini_esgf_data["C3S_CORDEX_ANT_SFC_WIND"], use_cftime=True, combine="by_coords"
+    )
+    ds_c = xr.open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"])
+    ds_d = xr.open_dataset(mini_esgf_data["CMIP6_OCE_HALO_CNRM"])
 
     # check lat, lon are found
     lat_a = clidu.detect_coordinate(ds_a, "latitude")
@@ -259,9 +261,11 @@ def test_detect_coordinate_and_bounds():
     assert lon_d == clidu.detect_coordinate(ds_d, "longitude")
 
 
-def test_detect_coordinate_by_standard_name(tmpdir):
-    "Test coordinate detection for dataset where cf_xarray fails due to erroneous attributes"
-    ds = xr.open_mfdataset(C3S_CORDEX_AFR_TAS, use_cftime=True, combine="by_coords")
+def test_detect_coordinate_by_standard_name(tmpdir, mini_esgf_data):
+    """Test coordinate detection for dataset where cf_xarray fails due to erroneous attributes."""
+    ds = xr.open_mfdataset(
+        mini_esgf_data["C3S_CORDEX_AFR_TAS"], use_cftime=True, combine="by_coords"
+    )
     assert clidu.detect_coordinate(ds, "latitude") == "lat"
     assert clidu.detect_coordinate(ds, "longitude") == "lon"
 
@@ -295,11 +299,11 @@ def test_detect_coordinate_by_standard_name(tmpdir):
     )
 
 
-def test_detect_gridtype():
+def test_detect_gridtype(mini_esgf_data):
     """Test the function detect_gridtype."""
-    ds_a = xr.open_dataset(CMIP6_UNSTR_ICON_A, use_cftime=True)
-    ds_b = xr.open_dataset(CMIP6_TOS_ONE_TIME_STEP, use_cftime=True)
-    ds_c = xr.open_dataset(CMIP6_TAS_ONE_TIME_STEP, use_cftime=True)
+    ds_a = xr.open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"], use_cftime=True)
+    ds_b = xr.open_dataset(mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True)
+    ds_c = xr.open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
     assert (
         clidu.detect_gridtype(
             ds_a,
@@ -328,8 +332,8 @@ def test_detect_gridtype():
     )
 
 
-def test_crosses_0_meridian():
-    """Test the _crosses_0_meridian function"""
+def test_crosses_0_meridian(mini_esgf_data):
+    """Test the _crosses_0_meridian function."""
     # Case 1 - longitude crossing 180° meridian
     lon = np.arange(160.0, 200.0, 1.0)
 
@@ -341,7 +345,7 @@ def test_crosses_0_meridian():
 
     # Case 2 - regional dataset ranging [315 .. 66] but for whatever reason not defined on
     #          [-180, 180] longitude frame
-    ds = xr.open_dataset(CORDEX_TAS_ONE_TIMESTEP)
+    ds = xr.open_dataset(mini_esgf_data["CORDEX_TAS_ONE_TIMESTEP"])
     assert np.isclose(ds["lon"].min(), 0, atol=0.1)
     assert np.isclose(ds["lon"].max(), 360, atol=0.1)
 
@@ -353,7 +357,7 @@ def test_crosses_0_meridian():
 
 
 def test_convert_interval_between_lon_frames():
-    """Test the helper function _convert_interval_between_lon_frames"""
+    """Test the helper function _convert_interval_between_lon_frames."""
     # Convert from 0,360 to -180,180 longitude frame and vice versa
     assert clidu._convert_interval_between_lon_frames(20, 60) == (20, 60)
     assert clidu._convert_interval_between_lon_frames(190, 200) == (-170, -160)
@@ -373,7 +377,7 @@ def test_convert_interval_between_lon_frames():
 
 
 def test_convert_lon_frame_bounds():
-    """Test the function cf_convert_between_lon_frames"""
+    """Test the function cf_convert_between_lon_frames."""
     # Load tutorial dataset defined on [200,330]
     ds = xr.tutorial.open_dataset("air_temperature")
     assert ds["lon"].min() == 200.0
@@ -409,8 +413,8 @@ def test_convert_lon_frame_bounds():
     assert lu == 350.0
 
 
-def test_convert_lon_frame_shifted_bounds():
-    ds = xr.open_dataset(CMIP6_GFDL_EXTENT, use_cftime=True)
+def test_convert_lon_frame_shifted_bounds(mini_esgf_data):
+    ds = xr.open_dataset(mini_esgf_data["CMIP6_GFDL_EXTENT"], use_cftime=True)
 
     # confirm shifted frame
     assert np.isclose(ds["lon"].min(), -300.0, atol=0.5)
@@ -453,8 +457,8 @@ def test_convert_lon_frame_shifted_bounds():
     assert np.all(ds_c["x"].values[1:] - ds_c["x"].values[:-1] > 0.0)
 
 
-def test_convert_lon_frame_shifted_no_bounds():
-    ds = xr.open_dataset(CMIP6_IITM_EXTENT, use_cftime=True)
+def test_convert_lon_frame_shifted_no_bounds(mini_esgf_data):
+    ds = xr.open_dataset(mini_esgf_data["CMIP6_IITM_EXTENT"], use_cftime=True)
 
     # confirm shifted frame
     assert np.isclose(ds["longitude"].min(), -280.0, atol=1.0)
@@ -492,11 +496,11 @@ def test_convert_lon_frame_shifted_no_bounds():
 # todo: add a few more tests of cf_convert_lon_frame using xe.util functions to create regional and global datasets
 
 
-def test_calculate_bounds_curvilinear():
-    "Test for bounds calculation for curvilinear grid"
+def test_calculate_bounds_curvilinear(mini_esgf_data):
+    """Test for bounds calculation for curvilinear grid."""
 
     # Load CORDEX dataset (curvilinear grid)
-    ds = xr.open_dataset(CORDEX_TAS_ONE_TIMESTEP).isel(
+    ds = xr.open_dataset(mini_esgf_data["CORDEX_TAS_ONE_TIMESTEP"]).isel(
         {"rlat": range(100, 120), "rlon": range(100, 120)}
     )
 
@@ -527,11 +531,11 @@ def test_calculate_bounds_curvilinear():
     )
 
 
-def test_calculate_bounds_rectilinear():
-    "Test for bounds calculation for rectilinear grid"
+def test_calculate_bounds_rectilinear(mini_esgf_data):
+    """Test for bounds calculation for rectilinear grid."""
 
     # Load CORDEX dataset (curvilinear grid)
-    ds = xr.open_dataset(CMIP6_TAS_PRECISION_A)
+    ds = xr.open_dataset(mini_esgf_data["CMIP6_TAS_PRECISION_A"])
 
     # Drop bounds variables and compute them
     ds_nb = ds.drop_vars(["lon_bnds", "lat_bnds"])
