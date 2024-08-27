@@ -126,7 +126,7 @@ def test_grid_init_ds_tas_cordex(mini_esgf_data):
     assert grid.nlon == 225
     assert grid.ncells == 45225
 
-    ds = ds.drop(["lat", "lon", "lat_vertices", "lon_vertices"])
+    ds = ds.drop_vars(["lat", "lon", "lat_vertices", "lon_vertices"])
     with pytest.raises(
         Exception,
         match="The grid format is not supported.",
@@ -566,7 +566,9 @@ def test_detect_duplicated_cells(mini_esgf_data):
 
 
 def test_subsetted_grid(mini_esgf_data):
-    ds = xr.open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
+    ds = xr.open_dataset(
+        mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True
+    ).load()
 
     area = (0.0, 10.0, 175.0, 90.0)
 

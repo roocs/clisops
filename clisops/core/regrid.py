@@ -637,7 +637,7 @@ class Grid:
                         )
                         and all(
                             [
-                                self.ds.dims[dim] > 2
+                                self.ds.sizes[dim] > 2
                                 for dim in [
                                     self.ds[self.lon_bnds].dims[-1],
                                     self.ds[self.lat_bnds].dims[-1],
