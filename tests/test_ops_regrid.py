@@ -106,10 +106,10 @@ def test_regrid_regular_grid_to_all_roocs_grids(
 @pytest.mark.parametrize(
     "dset", ["ATLAS_v1_CORDEX", "ATLAS_v1_EOBS_GRID", "ATLAS_v0_CORDEX_ANT"]
 )
-def test_regrid_ATLAS_datasets(tmpdir, dset):
+def test_regrid_ATLAS_datasets(tmpdir, dset, mini_esgf_data):
     """Test regridding for several ATLAS datasets."""
     result = regrid(
-        ds=globals()[dset],
+        ds=mini_esgf_data[dset],
         method="bilinear",
         adaptive_masking_threshold=0.5,
         grid="0pt5deg_lsm",
