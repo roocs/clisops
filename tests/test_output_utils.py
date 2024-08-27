@@ -6,7 +6,6 @@ from pathlib import Path
 
 import xarray as xr
 
-from _common import CMIP5_TAS, CMIP6_TOS
 from clisops import CONFIG
 from clisops.utils.common import expand_wildcards
 from clisops.utils.file_namers import get_file_namer
@@ -30,8 +29,8 @@ def _open(coll):
     return ds
 
 
-def test_get_time_slices_single_slice():
-    tas = _open(CMIP5_TAS)
+def test_get_time_slices_single_slice(mini_esgf_data):
+    tas = _open(mini_esgf_data["CMIP5_TAS"])
 
     test_data = [
         (
@@ -54,8 +53,8 @@ def test_get_time_slices_single_slice():
         assert resp[0] == slices
 
 
-def test_get_time_slices_multiple_slices():
-    tas = _open(CMIP5_TAS)
+def test_get_time_slices_multiple_slices(mini_esgf_data):
+    tas = _open(mini_esgf_data["CMIP5_TAS"])
 
     test_data = [
         (
@@ -133,13 +132,13 @@ def test_tmp_dir_not_created_with_no_staging_dir():
     assert target_path == "./output_001.nc"
 
 
-def test_no_staging_dir(caplog):
+def test_no_staging_dir(caplog, mini_esgf_data):
     with ContextLogger(caplog) as _logger:
         _logger.add(sys.stdout, level="INFO")
         caplog.set_level("INFO", logger="clisops")
 
         CONFIG["clisops:write"]["output_staging_dir"] = ""
-        ds = _open(CMIP5_TAS)
+        ds = _open(mini_esgf_data["CMIP5_TAS"])
         output_path = get_output(
             ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")()
         )
@@ -150,7 +149,7 @@ def test_no_staging_dir(caplog):
         os.remove("output_001.nc")
 
 
-def test_invalid_staging_dir(caplog):
+def test_invalid_staging_dir(caplog, mini_esgf_data):
     with ContextLogger(caplog) as _logger:
         _logger.add(sys.stdout, level="INFO")
         caplog.set_level("INFO", logger="clisops")
@@ -158,7 +157,7 @@ def test_invalid_staging_dir(caplog):
         # check staging dir not used with invalid directory
         CONFIG["clisops:write"]["output_staging_dir"] = "test/not/real/dir/"
 
-        ds = _open(CMIP5_TAS)
+        ds = _open(mini_esgf_data["CMIP5_TAS"])
         output_path = get_output(
             ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")()
         )
@@ -168,7 +167,7 @@ def test_invalid_staging_dir(caplog):
         os.remove("output_001.nc")
 
 
-def test_staging_dir_used(caplog, tmpdir):
+def test_staging_dir_used(caplog, tmpdir, mini_esgf_data):
     with ContextLogger(caplog) as _logger:
         _logger.add(sys.stdout, level="INFO")
         caplog.set_level("INFO", logger="clisops")
@@ -177,7 +176,7 @@ def test_staging_dir_used(caplog, tmpdir):
         staging = Path(tmpdir).joinpath("tests")
         staging.mkdir(exist_ok=True)
         CONFIG["clisops:write"]["output_staging_dir"] = str(staging)
-        ds = _open(CMIP5_TAS)
+        ds = _open(mini_esgf_data["CMIP5_TAS"])
 
         output_path = get_output(
             ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")()
@@ -189,11 +188,11 @@ def test_staging_dir_used(caplog, tmpdir):
         Path("output_001.nc").unlink()
 
 
-def test_final_output_path_staging_dir():
+def test_final_output_path_staging_dir(mini_esgf_data):
     # check final output file in correct location with a staging directory used
     CONFIG["clisops:write"]["output_staging_dir"] = "tests/"
 
-    ds = _open(CMIP5_TAS)
+    ds = _open(mini_esgf_data["CMIP5_TAS"])
     get_output(ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")())
 
     assert os.path.isfile("./output_001.nc")
@@ -201,9 +200,9 @@ def test_final_output_path_staging_dir():
     os.remove("output_001.nc")
 
 
-def test_final_output_path_no_staging_dir():
+def test_final_output_path_no_staging_dir(mini_esgf_data):
     # check final output file in correct location with a staging directory is not used
-    ds = _open(CMIP5_TAS)
+    ds = _open(mini_esgf_data["CMIP5_TAS"])
     get_output(ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")())
 
     assert os.path.isfile("./output_001.nc")
@@ -211,7 +210,7 @@ def test_final_output_path_no_staging_dir():
     os.remove("output_001.nc")
 
 
-def test_tmp_dir_deleted(tmpdir):
+def test_tmp_dir_deleted(tmpdir, mini_esgf_data):
     # check temporary directory under staging dir gets deleted after data has bee staged
     staging = Path(tmpdir).joinpath("tests")
     staging.mkdir(exist_ok=True)
@@ -219,7 +218,7 @@ def test_tmp_dir_deleted(tmpdir):
 
     # CONFIG["clisops:write"]["output_staging_dir"] = "tests/"
 
-    ds = _open(CMIP5_TAS)
+    ds = _open(mini_esgf_data["CMIP5_TAS"])
     get_output(ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")())
 
     # check that no tmpdir directories exist
@@ -228,14 +227,14 @@ def test_tmp_dir_deleted(tmpdir):
     os.remove("output_001.nc")
 
 
-def test_unify_chunks_cmip5():
+def test_unify_chunks_cmip5(mini_esgf_data):
     """test unify chunks with a cmip5 example.
 
     da.unify_chunks() doesn't change da.chunks
     ds = ds.unify_chunks() doesn't appear to change ds.chunks in our case
     """
     # DataArray unify chunks method
-    ds1 = _open(CMIP5_TAS)
+    ds1 = _open(mini_esgf_data["CMIP5_TAS"])
     da = get_da(ds1)
     chunk_length = get_chunk_length(da)
     chunked_ds1 = ds1.chunk({"time": chunk_length})
@@ -252,14 +251,14 @@ def test_unify_chunks_cmip5():
     assert chunked_ds2.chunks == chunked_ds2_unified.chunks
 
 
-def test_unify_chunks_cmip6():
+def test_unify_chunks_cmip6(mini_esgf_data):
     """Test unify chunks with a cmip6 example.
 
     da.unify_chunks() doesn't change da.chunks
     ds = ds.unify_chunks() doesn't appear to change ds.chunks in our case
     """
     # DataArray unify chunks method
-    ds1 = _open(CMIP6_TOS)
+    ds1 = _open(mini_esgf_data["CMIP6_TOS"])
     da = get_da(ds1)
     chunk_length = get_chunk_length(da)
     chunked_ds1 = ds1.chunk({"time": chunk_length})

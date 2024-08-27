@@ -55,8 +55,7 @@ def test_subset_time(get_file, tmpdir, check_output_nc):
 
 
 def test_subset_args_as_parameter_classes(get_file, tmpdir, check_output_nc):
-    """Tests clisops subset function with a time subset
-    with the arguments as parameter classes from roocs-utils."""
+    """Tests clisops subset function with a time subset with the arguments as parameter classes from roocs-utils."""
 
     time = time_parameter.TimeParameter(
         time_interval("2000-01-01T00:00:00", "2020-12-30T00:00:00")
@@ -84,15 +83,15 @@ def test_subset_args_as_parameter_classes(get_file, tmpdir, check_output_nc):
         "ATLAS_v0_CMIP6",
     ],
 )
-def test_subset_ATLAS_datasets(tmpdir, dset, check_output_nc):
-    "Test temporal and spatial subset for several ATLAS datasets."
+def test_subset_ATLAS_datasets(tmpdir, dset, check_output_nc, mini_esgf_data):
+    """Test temporal and spatial subset for several ATLAS datasets."""
     time = time_parameter.TimeParameter(
         time_interval("2000-01-01T00:00:00", "2020-12-30T00:00:00")
     )
     area = area_parameter.AreaParameter((0, -90.0, 360.0, 90.0))
 
     result = subset(
-        ds=globals()[dset],
+        ds=mini_esgf_data[dset],
         time=time,
         area=area,
         output_dir=tmpdir,

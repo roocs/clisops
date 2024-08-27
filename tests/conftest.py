@@ -298,12 +298,17 @@ def open_dataset(threadsafe_data_dir):
 
 
 @pytest.fixture
-def check_output_nc(result, fname="output_001.nc", time=None):
-    assert fname in [Path(_).name for _ in result]
-    if time:
-        ds = xr.open_mfdataset(result, use_cftime=True, decode_timedelta=False)
-        time_ = f"{ds.time.values.min().isoformat()}/{ds.time.values.max().isoformat()}"
-        assert time == time_
+def check_output_nc():
+    def _check_output_nc(result, fname="output_001.nc", time=None):
+        assert fname in [Path(_).name for _ in result]
+        if time:
+            ds = xr.open_mfdataset(result, use_cftime=True, decode_timedelta=False)
+            time_ = (
+                f"{ds.time.values.min().isoformat()}/{ds.time.values.max().isoformat()}"
+            )
+            assert time == time_
+
+    return _check_output_nc
 
 
 # Fixture to load mini-esgf-data repository used by roocs tests
