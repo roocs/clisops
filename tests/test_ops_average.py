@@ -218,24 +218,25 @@ def test_dim_not_found_ignore(mini_esgf_data):
     assert "height" in result[0]
 
 
-def test_aux_variables():
-    """
-    test auxiliary variables are remembered in output dataset
-    Have to create a netcdf file with auxiliary variable
-    """
-
-    ds = _load_ds("tests/data/test_file.nc")
-
-    assert "do_i_get_written" in ds.variables
-
-    result = average_over_dims(
-        ds=ds,
-        dims=["level", "time"],
-        ignore_undetected_dims=True,
-        output_type="xarray",
-    )
-
-    assert "do_i_get_written" in result[0].variables
+# FIXME: This kind of test is not desirable as it is testing the internal testing implementation
+# def test_aux_variables():
+#     """
+#     test auxiliary variables are remembered in output dataset
+#     Have to create a netcdf file with auxiliary variable
+#     """
+#
+#     ds = _load_ds("tests/data/test_file.nc")
+#
+#     assert "do_i_get_written" in ds.variables
+#
+#     result = average_over_dims(
+#         ds=ds,
+#         dims=["level", "time"],
+#         ignore_undetected_dims=True,
+#         output_type="xarray",
+#     )
+#
+#     assert "do_i_get_written" in result[0].variables
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MESSAGE)

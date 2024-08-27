@@ -16,6 +16,7 @@ from clisops.utils import open_dataset as _open_dataset
 from clisops.utils.testing import MINI_ESGF_CACHE_DIR, get_esgf_file_paths
 
 ESGF_TEST_DATA_REPO_URL = "https://github.com/roocs/mini-esgf-data"
+ESGF_TEST_DATA_VERSION = "master"
 
 XCLIM_TEST_DATA_REPO_URL = "https://github.com/Ouranosinc/xclim-testdata"
 XCLIM_TEST_DATA_VERSION = "v2023.12.14"
@@ -312,35 +313,34 @@ def load_esgf_test_data(worker_id):
     This fixture ensures that the required test data repository
     has been cloned to the cache directory within the home directory.
     """
-    branch = "master"
-    target = Path(MINI_ESGF_CACHE_DIR).joinpath(branch)
+    target = Path(MINI_ESGF_CACHE_DIR).joinpath(ESGF_TEST_DATA_VERSION)
 
     if not target.exists():
         if (platform == "win32" and worker_id == "gw0") or worker_id == "master":
             if not target.is_dir():
-                MINI_ESGF_CACHE_DIR.make_dirs(exist_ok=True)
+                Path(MINI_ESGF_CACHE_DIR).mkdir(exist_ok=True)
                 repo = Repo.clone_from(ESGF_TEST_DATA_REPO_URL, target)
-                repo.git.checkout(branch)
+                repo.git.checkout(ESGF_TEST_DATA_VERSION)
             elif (
                 os.environ.get("ROOCS_AUTO_UPDATE_TEST_DATA", "true").lower() != "false"
             ):
                 repo = Repo(target)
-                repo.git.checkout(branch)
+                repo.git.checkout(ESGF_TEST_DATA_VERSION)
                 repo.remotes[0].pull()
 
         else:
-            lockfile = MINI_ESGF_CACHE_DIR.joinpath(".lock")
+            lockfile = Path(MINI_ESGF_CACHE_DIR).joinpath(".lock")
             test_data_being_written = FileLock(lockfile)
             with test_data_being_written:
                 if not target.is_dir():
                     repo = Repo.clone_from(ESGF_TEST_DATA_REPO_URL, target)
-                    repo.git.checkout(branch)
+                    repo.git.checkout(ESGF_TEST_DATA_VERSION)
                 elif (
                     os.environ.get("ROOCS_AUTO_UPDATE_TEST_DATA", "true").lower()
                     != "false"
                 ):
                     repo = Repo(target)
-                    repo.git.checkout(branch)
+                    repo.git.checkout(ESGF_TEST_DATA_VERSION)
                     repo.remotes[0].pull()
                 target.joinpath(".data_written").touch()
 
@@ -393,8 +393,10 @@ def cmip6_archive_base():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def mini_esgf_data(threadsafe_data_dir):
-    return get_esgf_file_paths(threadsafe_data_dir)
+def mini_esgf_data():
+    return get_esgf_file_paths(
+        Path(MINI_ESGF_CACHE_DIR).joinpath(ESGF_TEST_DATA_VERSION)
+    )
 
 
 @pytest.fixture(scope="session", autouse=True)

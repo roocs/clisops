@@ -208,12 +208,12 @@ def test_detect_coordinate_and_bounds(mini_esgf_data):
     """Test detect_bounds and detect_coordinate functions."""
     ds_a = xr.open_mfdataset(
         mini_esgf_data["C3S_CORDEX_AFR_TAS"], use_cftime=True, combine="by_coords"
-    )
+    ).load()
     ds_b = xr.open_mfdataset(
         mini_esgf_data["C3S_CORDEX_ANT_SFC_WIND"], use_cftime=True, combine="by_coords"
-    )
-    ds_c = xr.open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"])
-    ds_d = xr.open_dataset(mini_esgf_data["CMIP6_OCE_HALO_CNRM"])
+    ).load()
+    ds_c = xr.open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"]).load()
+    ds_d = xr.open_dataset(mini_esgf_data["CMIP6_OCE_HALO_CNRM"]).load()
 
     # check lat, lon are found
     lat_a = clidu.detect_coordinate(ds_a, "latitude")
@@ -265,7 +265,7 @@ def test_detect_coordinate_by_standard_name(tmpdir, mini_esgf_data):
     """Test coordinate detection for dataset where cf_xarray fails due to erroneous attributes."""
     ds = xr.open_mfdataset(
         mini_esgf_data["C3S_CORDEX_AFR_TAS"], use_cftime=True, combine="by_coords"
-    )
+    ).load()
     assert clidu.detect_coordinate(ds, "latitude") == "lat"
     assert clidu.detect_coordinate(ds, "longitude") == "lon"
 

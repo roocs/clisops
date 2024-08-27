@@ -22,8 +22,8 @@ class TestRoll:
 
         return offset
 
-    def test_roll_lon_minus_180(self, open_dataset, mini_esgf_data):
-        ds = open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
+    def test_roll_lon_minus_180(self, mini_esgf_data):
+        ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
         lon = get_coord_by_type(ds, "longitude")
 
@@ -42,8 +42,8 @@ class TestRoll:
         assert ds.lon.values.min() == 0
         assert ds.lon.values.max() == 357.5
 
-    def test_roll_lon_minus_180_use_res(self, open_dataset, mini_esgf_data):
-        ds = open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
+    def test_roll_lon_minus_180_use_res(self, mini_esgf_data):
+        ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
         lon = get_coord_by_type(ds, "longitude")
 
@@ -69,8 +69,8 @@ class TestRoll:
             ds.rlds.values,
         )
 
-    def test_roll_lon_plus_180(self, open_dataset, mini_esgf_data):
-        ds = open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
+    def test_roll_lon_plus_180(self, mini_esgf_data):
+        ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
         lon = get_coord_by_type(ds, "longitude")
 
@@ -83,8 +83,8 @@ class TestRoll:
         assert ds.lon.values.min() == 0
         assert ds.lon.values.max() == 357.5
 
-    def test_roll_lon_plus_180_use_res(self, open_dataset, mini_esgf_data):
-        ds = open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
+    def test_roll_lon_plus_180_use_res(self, mini_esgf_data):
+        ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
         lon = get_coord_by_type(ds, "longitude")
 
@@ -99,9 +99,9 @@ class TestRoll:
         assert ds.lon.values.min() == 0
         assert ds.lon.values.max() == 357.5
 
-    def test_plus_minus_180_equal(self, open_dataset, mini_esgf_data):
+    def test_plus_minus_180_equal(self, mini_esgf_data):
         # check that rolling +180 and -180 gives the same result - when taking the resolution into account
-        ds = open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
+        ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
         lon = get_coord_by_type(ds, "longitude")
 
@@ -115,8 +115,8 @@ class TestRoll:
         # values of rlds are equal - rolling by -180 and 180 (taking res into account) is the same
         np.testing.assert_allclose(ds_minus.rlds.values, ds_plus.rlds.values)
 
-    def test_roll_compare_roll_coords(self, open_dataset, mini_esgf_data):
-        ds = open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
+    def test_roll_compare_roll_coords(self, mini_esgf_data):
+        ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
         lon = get_coord_by_type(ds, "longitude")
 
