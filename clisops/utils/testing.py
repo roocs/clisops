@@ -30,8 +30,8 @@ __all__ = [
     "ESGF_TEST_DATA_REPO_URL",
     "XCLIM_TEST_DATA_CACHE_DIR",
     "XCLIM_TEST_DATA_REPO_URL",
-    "default_mini_esgf_cache",
-    "default_xclim_testdata_cache",
+    "default_esgf_test_data_cache",
+    "default_xclim_test_data_cache",
     "get_esgf_file_paths",
     "load_registry",
     "open_dataset",
@@ -40,42 +40,54 @@ __all__ = [
 ]
 
 try:
-    default_mini_esgf_cache = pooch.os_cache("mini-esgf-data")
-    default_xclim_testdata_cache = pooch.os_cache("xclim-testdata")
+    default_esgf_test_data_cache = pooch.os_cache("mini-esgf-data")
+    default_xclim_test_data_cache = pooch.os_cache("xclim-testdata")
 except AttributeError:
-    default_mini_esgf_cache = None
-    default_xclim_testdata_cache = None
+    default_esgf_test_data_cache = None
+    default_xclim_test_data_cache = None
 
-ESGF_TEST_DATA_REPO_URL = "https://github.com/roocs/mini-esgf-data"
-ESGF_TEST_DATA_VERSION = "master"
-ESGF_TEST_DATA_CACHE_DIR = os.getenv("XCLIM_TESTDATA_CACHE", default_mini_esgf_cache)
+ESGF_TEST_DATA_REPO_URL = os.getenv(
+    "ESGF_TEST_DATA_REPO_UR", "https://github.com/roocs/mini-esgf-data"
+)
+default_esgf_test_data_version = "v1"
+ESGF_TEST_DATA_VERSION = os.getenv(
+    "ESGF_TEST_DATA_VERSION", default_esgf_test_data_version
+)
+ESGF_TEST_DATA_CACHE_DIR = os.getenv(
+    "ESGF_TEST_DATA_CACHE_DIR", default_esgf_test_data_cache
+)
 
-XCLIM_TEST_DATA_REPO_URL = "https://github.com/Ouranosinc/xclim-testdata"
-XCLIM_TEST_DATA_VERSION = "v2024.8.23"
+XCLIM_TEST_DATA_REPO_URL = os.getenv(
+    "XCLIM_TEST_DATA_REPO_URL", "https://github.com/Ouranosinc/xclim-testdata"
+)
+default_xclim_test_data_version = "v2024.8.23"
+XCLIM_TEST_DATA_VERSION = os.getenv(
+    "XCLIM_TEST_DATA_VERSION", default_xclim_test_data_version
+)
 XCLIM_TEST_DATA_CACHE_DIR = os.getenv(
-    "XCLIM_TESTDATA_CACHE", default_xclim_testdata_cache
+    "XCLIM_TEST_DATA_CACHE_DIR", default_xclim_test_data_cache
 )
 
 
 def write_roocs_cfg(cache_dir: Union[str, Path]):
     cfg_templ = """
     [project:cmip5]
-    base_dir = {{ base_dir }}/test_data/badc/cmip5/data/cmip5
+    base_dir = {{ base_dir }}/badc/cmip5/data/cmip5
 
     [project:cmip6]
-    base_dir = {{ base_dir }}/test_data/badc/cmip6/data/CMIP6
+    base_dir = {{ base_dir }}/badc/cmip6/data/CMIP6
 
     [project:cordex]
-    base_dir = {{ base_dir }}/test_data/badc/cordex/data/cordex
+    base_dir = {{ base_dir }}/badc/cordex/data/cordex
 
     [project:c3s-cmip5]
-    base_dir = {{ base_dir }}/test_data/gws/nopw/j04/cp4cds1_vol1/data/c3s-cmip5
+    base_dir = {{ base_dir }}/gws/nopw/j04/cp4cds1_vol1/data/c3s-cmip5
 
     [project:c3s-cmip6]
-    base_dir = {{ base_dir }}/test_data/badc/cmip6/data/CMIP6
+    base_dir = {{ base_dir }}/badc/cmip6/data/CMIP6
 
     [project:c3s-cordex]
-    base_dir = {{ base_dir }}/test_data/pool/data/CORDEX/data/cordex
+    base_dir = {{ base_dir }}/pool/data/CORDEX/data/cordex
     """
     roocs_config = Path(cache_dir, "roocs.ini")
     cfg = Template(cfg_templ).render(
@@ -92,191 +104,191 @@ def get_esgf_file_paths(esgf_cache_dir):
     return {
         "CMIP5_ZOSTOGA": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip5/data/cmip5/output1/INM/inmcm4/rcp45/mon/ocean/Omon/r1i1p1/latest/zostoga/zostoga_Omon_inmcm4_rcp45_r1i1p1_200601-210012.nc",
+            "badc/cmip5/data/cmip5/output1/INM/inmcm4/rcp45/mon/ocean/Omon/r1i1p1/latest/zostoga/zostoga_Omon_inmcm4_rcp45_r1i1p1_200601-210012.nc",
         ).as_posix(),
         "CMIP5_TAS": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
+            "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
         ).as_posix(),
         "CMIP5_RH": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/historical/mon/land/Lmon/r1i1p1/latest/rh/*.nc",
+            "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/historical/mon/land/Lmon/r1i1p1/latest/rh/*.nc",
         ).as_posix(),
         "CMIP6_RLDS": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc",
+            "badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc",
         ).as_posix(),
         "CMIP6_RLDS_ONE_TIME_STEP": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001.nc",
+            "badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001.nc",
         ).as_posix(),
         "CMIP6_MRSOFC": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/ScenarioMIP/IPSL/IPSL-CM6A-LR/ssp119/r1i1p1f1/fx/mrsofc/gr/v20190410/mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc",
+            "badc/cmip6/data/CMIP6/ScenarioMIP/IPSL/IPSL-CM6A-LR/ssp119/r1i1p1f1/fx/mrsofc/gr/v20190410/mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc",
         ).as_posix(),
         "CMIP6_SICONC": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/CCCma/CanESM5/historical/r1i1p1f1/SImon/siconc/gn/latest/siconc_SImon_CanESM5_historical_r1i1p1f1_gn_185001-201412.nc",
+            "badc/cmip6/data/CMIP6/CMIP/CCCma/CanESM5/historical/r1i1p1f1/SImon/siconc/gn/latest/siconc_SImon_CanESM5_historical_r1i1p1f1_gn_185001-201412.nc",
         ).as_posix(),
         "CMIP6_SICONC_DAY": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/CCCma/CanESM5/historical/r1i1p1f1/SIday/siconc/gn/v20190429/siconc_SIday_CanESM5_historical_r1i1p1f1_gn_18500101-20141231.nc",
+            "badc/cmip6/data/CMIP6/CMIP/CCCma/CanESM5/historical/r1i1p1f1/SIday/siconc/gn/v20190429/siconc_SIday_CanESM5_historical_r1i1p1f1_gn_18500101-20141231.nc",
         ).as_posix(),
         "CMIP6_TA": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/Amon/ta/gn/files/d20190807/ta_Amon_MIROC6_ssp119_r1i1p1f1_gn_201501-202412.nc",
+            "badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/Amon/ta/gn/files/d20190807/ta_Amon_MIROC6_ssp119_r1i1p1f1_gn_201501-202412.nc",
         ).as_posix(),
         "CMIP6_TASMIN": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Amon/tasmin/gn/v20190710/tasmin_Amon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_201001-201412.nc",
+            "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Amon/tasmin/gn/v20190710/tasmin_Amon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_201001-201412.nc",
         ).as_posix(),
         "CMIP6_JULIAN": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/CCCR-IITM/IITM-ESM/1pctCO2/r1i1p1f1/Omon/tos/gn/v20191204/tos_Omon_IITM-ESM_1pctCO2_r1i1p1f1_gn_193001-193412.nc",
+            "badc/cmip6/data/CMIP6/CMIP/CCCR-IITM/IITM-ESM/1pctCO2/r1i1p1f1/Omon/tos/gn/v20191204/tos_Omon_IITM-ESM_1pctCO2_r1i1p1f1_gn_193001-193412.nc",
         ).as_posix(),
         "C3S_CORDEX_AFR_TAS": Path(
             esgf_cache_dir,
-            "test_data/pool/data/CORDEX/data/cordex/output/AFR-22/GERICS/MPI-M-MPI-ESM-LR/historical/r1i1p1/GERICS-REMO2015/v1/day/tas/v20201015/*.nc",
+            "pool/data/CORDEX/data/cordex/output/AFR-22/GERICS/MPI-M-MPI-ESM-LR/historical/r1i1p1/GERICS-REMO2015/v1/day/tas/v20201015/*.nc",
         ).as_posix(),
         "C3S_CORDEX_NAM_PR": Path(
             esgf_cache_dir,
-            "test_data/pool/data/CORDEX/data/cordex/output/NAM-22/OURANOS/NOAA-GFDL-GFDL-ESM2M/rcp45/r1i1p1/OURANOS-CRCM5/v1/day/pr/v20200831/*.nc",
+            "pool/data/CORDEX/data/cordex/output/NAM-22/OURANOS/NOAA-GFDL-GFDL-ESM2M/rcp45/r1i1p1/OURANOS-CRCM5/v1/day/pr/v20200831/*.nc",
         ).as_posix(),
         "C3S_CORDEX_EUR_ZG500": Path(
             esgf_cache_dir,
-            "test_data/pool/data/CORDEX/data/cordex/output/EUR-11/IPSL/IPSL-IPSL-CM5A-MR/rcp85/r1i1p1/IPSL-WRF381P/v1/day/zg500/v20190919/*.nc",
+            "pool/data/CORDEX/data/cordex/output/EUR-11/IPSL/IPSL-IPSL-CM5A-MR/rcp85/r1i1p1/IPSL-WRF381P/v1/day/zg500/v20190919/*.nc",
         ).as_posix(),
         "C3S_CORDEX_ANT_SFC_WIND": Path(
             esgf_cache_dir,
-            "test_data/pool/data/CORDEX/data/cordex/output/ANT-44/KNMI/ECMWF-ERAINT/evaluation/r1i1p1/KNMI-RACMO21P/v1/day/sfcWind/v20201001/*.nc",
+            "pool/data/CORDEX/data/cordex/output/ANT-44/KNMI/ECMWF-ERAINT/evaluation/r1i1p1/KNMI-RACMO21P/v1/day/sfcWind/v20201001/*.nc",
         ).as_posix(),
         "CMIP6_TOS": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tos/gn/v20190710/tos_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001-186912.nc",
+            "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tos/gn/v20190710/tos_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001-186912.nc",
         ).as_posix(),
         "CMIP6_TAS_ONE_TIME_STEP": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/CAS/FGOALS-g3/historical/r1i1p1f1/Amon/tas/gn/v20190818/tas_Amon_FGOALS-g3_historical_r1i1p1f1_gn_185001.nc",
+            "badc/cmip6/data/CMIP6/CMIP/CAS/FGOALS-g3/historical/r1i1p1f1/Amon/tas/gn/v20190818/tas_Amon_FGOALS-g3_historical_r1i1p1f1_gn_185001.nc",
         ).as_posix(),
         "CMIP6_TOS_ONE_TIME_STEP": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Omon/tos/gn/v20190710/tos_Omon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_185001.nc",
+            "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Omon/tos/gn/v20190710/tos_Omon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_185001.nc",
         ).as_posix(),
         "CMIP5_MRSOS_ONE_TIME_STEP": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/day/land/day/r1i1p1/latest/mrsos/mrsos_day_HadGEM2-ES_rcp85_r1i1p1_20051201.nc",
+            "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/day/land/day/r1i1p1/latest/mrsos/mrsos_day_HadGEM2-ES_rcp85_r1i1p1_20051201.nc",
         ).as_posix(),
         "CMIP5_MRSOS_MULTIPLE_TIME_STEPS": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp45/day/land/day/r1i1p1/latest/mrsos/*.nc",
+            "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp45/day/land/day/r1i1p1/latest/mrsos/*.nc",
         ).as_posix(),
         "CMIP6_GFDL_EXTENT": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/NOAA-GFDL/GFDL-CM4/historical/r1i1p1f1/Omon/sos/gn/v20180701/sos_Omon_GFDL-CM4_historical_r1i1p1f1_gn_185001.nc",
+            "badc/cmip6/data/CMIP6/CMIP/NOAA-GFDL/GFDL-CM4/historical/r1i1p1f1/Omon/sos/gn/v20180701/sos_Omon_GFDL-CM4_historical_r1i1p1f1_gn_185001.nc",
         ).as_posix(),
         "CMIP6_TAS_PRECISION_A": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/AWI/AWI-ESM-1-1-LR/1pctCO2/r1i1p1f1/Amon/tas/gn/v20200212/tas_Amon_AWI-ESM-1-1-LR_1pctCO2_r1i1p1f1_gn_185501.nc",
+            "badc/cmip6/data/CMIP6/CMIP/AWI/AWI-ESM-1-1-LR/1pctCO2/r1i1p1f1/Amon/tas/gn/v20200212/tas_Amon_AWI-ESM-1-1-LR_1pctCO2_r1i1p1f1_gn_185501.nc",
         ).as_posix(),
         "CMIP6_TAS_PRECISION_B": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/AWI/AWI-ESM-1-1-LR/1pctCO2/r1i1p1f1/Amon/tas/gn/v20200212/tas_Amon_AWI-ESM-1-1-LR_1pctCO2_r1i1p1f1_gn_209901.nc",
+            "badc/cmip6/data/CMIP6/CMIP/AWI/AWI-ESM-1-1-LR/1pctCO2/r1i1p1f1/Amon/tas/gn/v20200212/tas_Amon_AWI-ESM-1-1-LR_1pctCO2_r1i1p1f1_gn_209901.nc",
         ).as_posix(),
         "CMIP6_ATM_VERT_ONE_TIMESTEP": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/AERmon/o3/gn/v20190710/o3_AERmon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
+            "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/AERmon/o3/gn/v20190710/o3_AERmon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
         ).as_posix(),
         "CMIP6_ATM_VERT_ONE_TIMESTEP_ZONMEAN": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/AERmon/o3/gn/v20190710/o3_AERmon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001_zm.nc",
+            "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/AERmon/o3/gn/v20190710/o3_AERmon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001_zm.nc",
         ).as_posix(),
         "CMIP6_IITM_EXTENT": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/CCCR-IITM/IITM-ESM/1pctCO2/r1i1p1f1/Omon/tos/gn/v20191204/tos_Omon_IITM-ESM_1pctCO2_r1i1p1f1_gn_193001.nc",
+            "badc/cmip6/data/CMIP6/CMIP/CCCR-IITM/IITM-ESM/1pctCO2/r1i1p1f1/Omon/tos/gn/v20191204/tos_Omon_IITM-ESM_1pctCO2_r1i1p1f1_gn_193001.nc",
         ).as_posix(),
         "CMIP6_OCE_HALO_CNRM": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/CNRM-CERFACS/CNRM-CM6-1-HR/historical/r1i1p1f2/Omon/tos/gn/v20191021/tos_Omon_CNRM-CM6-1-HR_historical_r1i1p1f2_gn_185001.nc",
+            "badc/cmip6/data/CMIP6/CMIP/CNRM-CERFACS/CNRM-CM6-1-HR/historical/r1i1p1f2/Omon/tos/gn/v20191021/tos_Omon_CNRM-CM6-1-HR_historical_r1i1p1f2_gn_185001.nc",
         ).as_posix(),
         "CMIP6_UNSTR_FESOM_LR": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/AWI/AWI-ESM-1-1-LR/historical/r1i1p1f1/Omon/tos/gn/v20200212/tos_Omon_AWI-ESM-1-1-LR_historical_r1i1p1f1_gn_185001.nc",
+            "badc/cmip6/data/CMIP6/CMIP/AWI/AWI-ESM-1-1-LR/historical/r1i1p1f1/Omon/tos/gn/v20200212/tos_Omon_AWI-ESM-1-1-LR_historical_r1i1p1f1_gn_185001.nc",
         ).as_posix(),
         "CMIP6_UNSTR_ICON_A": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/ICON-ESM-LR/historical/r1i1p1f1/Amon/tas/gn/v20210215/tas_Amon_ICON-ESM-LR_historical_r1i1p1f1_gn_185001.nc",
+            "badc/cmip6/data/CMIP6/CMIP/MPI-M/ICON-ESM-LR/historical/r1i1p1f1/Amon/tas/gn/v20210215/tas_Amon_ICON-ESM-LR_historical_r1i1p1f1_gn_185001.nc",
         ).as_posix(),
         "CMIP6_UNSTR_VERT_ICON_O": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/ICON-ESM-LR/historical/r1i1p1f1/Omon/thetao/gn/v20210215/thetao_Omon_ICON-ESM-LR_historical_r1i1p1f1_gn_185001.nc",
+            "badc/cmip6/data/CMIP6/CMIP/MPI-M/ICON-ESM-LR/historical/r1i1p1f1/Omon/thetao/gn/v20210215/thetao_Omon_ICON-ESM-LR_historical_r1i1p1f1_gn_185001.nc",
         ).as_posix(),
         "CMIP6_UNTAGGED_MISSVALS": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2-FV2/historical/r1i1p1f1/Omon/tos/gn/v20191120/tos_Omon_CESM2-FV2_historical_r1i1p1f1_gn_200001.nc",
+            "badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2-FV2/historical/r1i1p1f1/Omon/tos/gn/v20191120/tos_Omon_CESM2-FV2_historical_r1i1p1f1_gn_200001.nc",
         ).as_posix(),
         "CMIP6_STAGGERED_UCOMP": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tauuo/gn/v20200909/tauuo_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
+            "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tauuo/gn/v20200909/tauuo_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
         ).as_posix(),
         "CMIP6_STAGGERED_VCOMP": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tauvo/gn/v20190710/tauvo_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
+            "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tauvo/gn/v20190710/tauvo_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
         ).as_posix(),
         "CMIP6_FILLVALUE": Path(
             esgf_cache_dir,
-            "test_data/pool/data/CMIP6/data/CMIP6/CMIP/NCAR/CESM2-WACCM/historical/r1i1p1f1/day/tas/gn/v20190227/tas_day_CESM2-WACCM_historical_r1i1p1f1_gn_20000101-20091231.nc",
+            "pool/data/CMIP6/data/CMIP6/CMIP/NCAR/CESM2-WACCM/historical/r1i1p1f1/day/tas/gn/v20190227/tas_day_CESM2-WACCM_historical_r1i1p1f1_gn_20000101-20091231.nc",
         ).as_posix(),
         "CMIP6_ZONMEAN_A": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Omon/msftmz/gn/v20190710/msftmz_Omon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_191001.nc",
+            "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Omon/msftmz/gn/v20190710/msftmz_Omon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_191001.nc",
         ).as_posix(),
         "CMIP6_ZONMEAN_B": Path(
             esgf_cache_dir,
-            "test_data/badc/cmip6/data/CMIP6/CMIP/NCC/NorCPM1/historical/r22i1p1f1/Omon/msftmz/grz/v20200724/msftmz_Omon_NorCPM1_historical_r22i1p1f1_grz_185001.nc",
+            "badc/cmip6/data/CMIP6/CMIP/NCC/NorCPM1/historical/r22i1p1f1/Omon/msftmz/grz/v20200724/msftmz_Omon_NorCPM1_historical_r22i1p1f1_grz_185001.nc",
         ).as_posix(),
         "CORDEX_TAS_ONE_TIMESTEP": Path(
             esgf_cache_dir,
-            "test_data/pool/data/CORDEX/data/cordex/output/EUR-22/GERICS/MPI-M-MPI-ESM-LR/rcp85/r1i1p1/GERICS-REMO2015/v1/mon/tas/v20191029/tas_EUR-22_MPI-M-MPI-ESM-LR_rcp85_r1i1p1_GERICS-REMO2015_v1_mon_202101.nc",
+            "pool/data/CORDEX/data/cordex/output/EUR-22/GERICS/MPI-M-MPI-ESM-LR/rcp85/r1i1p1/GERICS-REMO2015/v1/mon/tas/v20191029/tas_EUR-22_MPI-M-MPI-ESM-LR_rcp85_r1i1p1_GERICS-REMO2015_v1_mon_202101.nc",
         ).as_posix(),
         "CORDEX_TAS_ONE_TIMESTEP_ANT": Path(
             esgf_cache_dir,
-            "test_data/pool/data/CORDEX/data/cordex/output/ANT-44/KNMI/ECMWF-ERAINT/evaluation/r1i1p1/DMI-HIRHAM5/v1/day/tas/v20201001/tas_ANT-44_ECMWF-ERAINT_evaluation_r1i1p1_DMI-HIRHAM5_v1_day_20060101.nc",
+            "pool/data/CORDEX/data/cordex/output/ANT-44/KNMI/ECMWF-ERAINT/evaluation/r1i1p1/DMI-HIRHAM5/v1/day/tas/v20201001/tas_ANT-44_ECMWF-ERAINT_evaluation_r1i1p1_DMI-HIRHAM5_v1_day_20060101.nc",
         ).as_posix(),
         "CORDEX_TAS_NO_BOUNDS": Path(
             esgf_cache_dir,
-            "test_data/pool/data/CORDEX/data/cordex/output/EUR-11/KNMI/MPI-M-MPI-ESM-LR/rcp85/r1i1p1/KNMI-RACMO22E/v1/mon/tas/v20190625/tas_EUR-11_MPI-M-MPI-ESM-LR_rcp85_r1i1p1_KNMI-RACMO22E_v1_mon_209101.nc",
+            "pool/data/CORDEX/data/cordex/output/EUR-11/KNMI/MPI-M-MPI-ESM-LR/rcp85/r1i1p1/KNMI-RACMO22E/v1/mon/tas/v20190625/tas_EUR-11_MPI-M-MPI-ESM-LR_rcp85_r1i1p1_KNMI-RACMO22E_v1_mon_209101.nc",
         ).as_posix(),
         "ATLAS_v1_CMIP5": Path(
             esgf_cache_dir,
-            "test_data/pool/data/c3s-cica-atlas/CMIP5/rcp26/pr_CMIP5_rcp26_mon_200601-210012.nc",
+            "pool/data/c3s-cica-atlas/CMIP5/rcp26/pr_CMIP5_rcp26_mon_200601-210012.nc",
         ).as_posix(),
         "ATLAS_v1_EOBS": Path(
             esgf_cache_dir,
-            "test_data/pool/data/c3s-cica-atlas/E-OBS/sfcwind_E-OBS_mon_195001-202112.nc",
+            "pool/data/c3s-cica-atlas/E-OBS/sfcwind_E-OBS_mon_195001-202112.nc",
         ).as_posix(),
         "ATLAS_v1_ERA5": Path(
             esgf_cache_dir,
-            "test_data/pool/data/c3s-cica-atlas/ERA5/psl_ERA5_mon_194001-202212.nc",
+            "pool/data/c3s-cica-atlas/ERA5/psl_ERA5_mon_194001-202212.nc",
         ).as_posix(),
         "ATLAS_v1_CORDEX": Path(
             esgf_cache_dir,
-            "test_data/pool/data/c3s-cica-atlas/CORDEX-CORE/historical/huss_CORDEX-CORE_historical_mon_197001.nc",
+            "pool/data/c3s-cica-atlas/CORDEX-CORE/historical/huss_CORDEX-CORE_historical_mon_197001.nc",
         ).as_posix(),
         "ATLAS_v1_EOBS_GRID": Path(
             esgf_cache_dir,
-            "test_data/pool/data/c3s-cica-atlas/E-OBS/t_E-OBS_mon_195001.nc",
+            "pool/data/c3s-cica-atlas/E-OBS/t_E-OBS_mon_195001.nc",
         ).as_posix(),
         "ATLAS_v0_CORDEX_NAM": Path(
             esgf_cache_dir,
-            "test_data/pool/data/c3s-ipcc-ar6-atlas/CORDEX-NAM/historical/rx1day_CORDEX-NAM_historical_mon_197001-200512.nc",
+            "pool/data/c3s-ipcc-ar6-atlas/CORDEX-NAM/historical/rx1day_CORDEX-NAM_historical_mon_197001-200512.nc",
         ).as_posix(),
         "ATLAS_v0_CMIP6": Path(
             esgf_cache_dir,
-            "test_data/pool/data/c3s-ipcc-ar6-atlas/CMIP6/ssp245/sst_CMIP6_ssp245_mon_201501-210012.nc",
+            "pool/data/c3s-ipcc-ar6-atlas/CMIP6/ssp245/sst_CMIP6_ssp245_mon_201501-210012.nc",
         ).as_posix(),
         "ATLAS_v0_CORDEX_ANT": Path(
             esgf_cache_dir,
-            "test_data/pool/data/c3s-ipcc-ar6-atlas/CORDEX-ANT/rcp45/tnn_CORDEX-ANT_rcp45_mon_200601.nc",
+            "pool/data/c3s-ipcc-ar6-atlas/CORDEX-ANT/rcp45/tnn_CORDEX-ANT_rcp45_mon_200601.nc",
         ).as_posix(),
     }
 
@@ -315,8 +327,6 @@ def load_registry(branch: str, repo: str):
     dict
         Dictionary of filenames and hashes.
     """
-    remote_registry = audit_url(f"{repo}/raw/{branch}/data/registry.txt")
-
     if repo == ESGF_TEST_DATA_REPO_URL:
         project = "mini-esgf-data"
         default_testdata_version = ESGF_TEST_DATA_VERSION
@@ -331,6 +341,7 @@ def load_registry(branch: str, repo: str):
             f"Please use one of {ESGF_TEST_DATA_REPO_URL} or {XCLIM_TEST_DATA_REPO_URL}"
         )
 
+    remote_registry = audit_url(f"{repo}/raw/{branch}/data/{project}_registry.txt")
     if branch != default_testdata_version:
         custom_registry_folder = Path(
             str(ilr.files("clisops").joinpath(f"utils/registries/{branch}"))
@@ -338,7 +349,6 @@ def load_registry(branch: str, repo: str):
         custom_registry_folder.mkdir(parents=True, exist_ok=True)
         registry_file = custom_registry_folder.joinpath(f"{project}_registry.txt")
         urlretrieve(remote_registry, registry_file)  # noqa: S310
-
     elif repo != default_testdata_repo_url:
         registry_file = Path(
             str(ilr.files("clisops").joinpath(f"utils/{project}_registry.txt"))
@@ -402,8 +412,10 @@ def stratus(  # noqa: PR01
 
     if repo.endswith("xclim-testdata"):
         _version = XCLIM_TEST_DATA_VERSION
+        _default_version = default_xclim_test_data_version
     elif repo.endswith("mini-esgf-data"):
         _version = ESGF_TEST_DATA_VERSION
+        _default_version = default_esgf_test_data_version
     else:
         raise ValueError(
             f"Repository URL {repo} not recognized. "
@@ -414,8 +426,8 @@ def stratus(  # noqa: PR01
     return pooch.create(
         path=cache_dir,
         base_url=remote,
-        version=_version,
-        version_dev=branch,
+        version=_default_version,
+        version_dev=_version,
         allow_updates=data_updates,
         registry=load_registry(branch=branch, repo=repo),
     )
@@ -534,6 +546,15 @@ def gather_testing_data(
 ):
     """Gather testing data across workers."""
     cache_dir = Path(cache_dir)
+    if repo.endswith("xclim-testdata"):
+        version = default_xclim_test_data_version
+    elif repo.endswith("mini-esgf-data"):
+        version = default_esgf_test_data_version
+    else:
+        raise ValueError(
+            f"Repository URL {repo} not recognized. "
+            f"Please use one of {ESGF_TEST_DATA_REPO_URL} or {XCLIM_TEST_DATA_REPO_URL}"
+        )
 
     if worker_id == "master":
         populate_testing_data(branch=branch, repo=repo, cache_dir=cache_dir)
@@ -555,7 +576,7 @@ def gather_testing_data(
             with test_data_being_written.acquire():
                 if lockfile.exists():
                     lockfile.unlink()
-        copytree(cache_dir.joinpath(branch), worker_cache_dir)
+        copytree(cache_dir.joinpath(version), worker_cache_dir)
 
 
 def audit_url(url: str, context: Optional[str] = None) -> str:

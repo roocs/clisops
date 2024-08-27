@@ -1,4 +1,5 @@
 import os
+from multiprocessing.pool import worker
 from pathlib import Path
 from sys import platform
 from typing import Union
@@ -329,47 +330,28 @@ def check_output_nc():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def load_esgf_test_data(worker_id):
+def load_test_data(worker_id, stratus, nimbus):
     """
     This fixture ensures that the required test data repository
     has been cloned to the cache directory within the home directory.
     """
-    target = Path(testing.ESGF_TEST_DATA_CACHE_DIR).joinpath(
-        testing.ESGF_TEST_DATA_VERSION
-    )
+    repositories = {
+        "stratus": {
+            "worker_cache_dir": stratus.path,
+            "repo": testing.ESGF_TEST_DATA_REPO_URL,
+            "branch": testing.ESGF_TEST_DATA_VERSION,
+            "cache_dir": testing.ESGF_TEST_DATA_CACHE_DIR,
+        },
+        "nimbus": {
+            "worker_cache_dir": nimbus.path,
+            "repo": testing.XCLIM_TEST_DATA_REPO_URL,
+            "branch": testing.XCLIM_TEST_DATA_VERSION,
+            "cache_dir": testing.XCLIM_TEST_DATA_CACHE_DIR,
+        },
+    }
 
-    if not target.exists():
-        if (platform == "win32" and worker_id == "gw0") or worker_id == "master":
-            if not target.is_dir():
-                Path(testing.ESGF_TEST_DATA_CACHE_DIR).mkdir(exist_ok=True)
-                repo = Repo.clone_from(testing.ESGF_TEST_DATA_REPO_URL, target)
-                repo.git.checkout(testing.ESGF_TEST_DATA_VERSION)
-            elif (
-                os.environ.get("ROOCS_AUTO_UPDATE_TEST_DATA", "true").lower() != "false"
-            ):
-                repo = Repo(target)
-                repo.git.checkout(testing.ESGF_TEST_DATA_REPO_URL)
-                repo.remotes[0].pull()
-
-        else:
-            lockfile = Path(testing.ESGF_TEST_DATA_CACHE_DIR).joinpath(".lock")
-            test_data_being_written = FileLock(lockfile)
-            with test_data_being_written:
-                if not target.is_dir():
-                    repo = Repo.clone_from(testing.ESGF_TEST_DATA_REPO_URL, target)
-                    repo.git.checkout(testing.ESGF_TEST_DATA_VERSION)
-                elif (
-                    os.environ.get("ROOCS_AUTO_UPDATE_TEST_DATA", "true").lower()
-                    != "false"
-                ):
-                    repo = Repo(target)
-                    repo.git.checkout(testing.ESGF_TEST_DATA_VERSION)
-                    repo.remotes[0].pull()
-                target.joinpath(".data_written").touch()
-
-            with test_data_being_written.acquire():
-                if lockfile.exists():
-                    lockfile.unlink()
+    for name, repo in repositories.items():
+        testing.gather_testing_data(worker_id=worker_id, **repo)
 
 
 @pytest.fixture

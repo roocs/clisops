@@ -427,7 +427,7 @@ def test_grid_from_ds_adaptive_extent(mini_esgf_data):
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
-def test_grid_from_ds_adaptive_reproducibility(open_dataset):
+def test_grid_from_ds_adaptive_reproducibility():
     """Test that the extent is evaluated as global for original and derived adaptive grid."""
     fpathA = get_grid_file("0pt25deg")
     dsA = xr.open_dataset(fpathA, use_cftime=True)
@@ -460,7 +460,7 @@ def test_detect_extent_shifted_lon_frame(mini_esgf_data):
     assert g.extent == "global"
 
 
-def test_compare_grid_same_resolution(open_dataset):
+def test_compare_grid_same_resolution():
     """Test that two grids of same resolution from different sources evaluate as the same grid"""
     ds025 = xr.open_dataset(get_grid_file("0pt25deg_era5"))
     g025 = Grid(grid_id="0pt25deg_era5", compute_bounds=True)
