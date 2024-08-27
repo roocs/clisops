@@ -15,8 +15,6 @@ from clisops.utils import testing
 from clisops.utils.testing import open_dataset as _open_dataset
 from clisops.utils.testing import stratus as _stratus
 
-REAL_C3S_CMIP5_ARCHIVE_BASE = "/gws/nopw/j04/cp4cds1_vol1/data/"
-
 
 @pytest.fixture
 def tmp_netcdf_filename(tmp_path):
@@ -418,10 +416,8 @@ def cmip6_archive_base():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def mini_esgf_data():
-    return testing.get_esgf_file_paths(
-        Path(testing.ESGF_TEST_DATA_CACHE_DIR).joinpath(testing.ESGF_TEST_DATA_VERSION)
-    )
+def mini_esgf_data(stratus):
+    return testing.get_esgf_file_paths(stratus.path)
 
 
 @pytest.fixture(scope="session", autouse=True)
