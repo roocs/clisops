@@ -1,22 +1,63 @@
+import importlib.resources as ilr
 import os
+import warnings
 from pathlib import Path
-from typing import Union
+from shutil import copytree
+from sys import platform
+from typing import Optional, Union
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlparse
+from urllib.request import urlretrieve
 
+from filelock import FileLock
 from jinja2 import Template
-from platformdirs import user_cache_dir
+from loguru import logger
+from xarray import Dataset
+from xarray import open_dataset as _open_dataset
+
+try:
+    import pooch
+except ImportError:
+    warnings.warn(
+        "The `pooch` library is not installed. "
+        "The default cache directory for testing data will not be set."
+    )
+    pooch = None
 
 __all__ = [
-    "MINI_ESGF_CACHE_DIR",
     "ContextLogger",
-    "write_roocs_cfg",
+    "ESGF_TEST_DATA_CACHE_DIR",
+    "ESGF_TEST_DATA_REPO_URL",
+    "XCLIM_TEST_DATA_CACHE_DIR",
+    "XCLIM_TEST_DATA_REPO_URL",
+    "default_mini_esgf_cache",
+    "default_xclim_testdata_cache",
     "get_esgf_file_paths",
+    "load_registry",
+    "open_dataset",
+    "stratus",
+    "write_roocs_cfg",
 ]
 
-MINI_ESGF_CACHE_DIR = user_cache_dir(".mini-esgf-data")
+try:
+    default_mini_esgf_cache = pooch.os_cache("mini-esgf-data")
+    default_xclim_testdata_cache = pooch.os_cache("xclim-testdata")
+except AttributeError:
+    default_mini_esgf_cache = None
+    default_xclim_testdata_cache = None
+
+ESGF_TEST_DATA_REPO_URL = "https://github.com/roocs/mini-esgf-data"
+ESGF_TEST_DATA_VERSION = "master"
+ESGF_TEST_DATA_CACHE_DIR = os.getenv("XCLIM_TESTDATA_CACHE", default_mini_esgf_cache)
+
+XCLIM_TEST_DATA_REPO_URL = "https://github.com/Ouranosinc/xclim-testdata"
+XCLIM_TEST_DATA_VERSION = "v2024.8.23"
+XCLIM_TEST_DATA_CACHE_DIR = os.getenv(
+    "XCLIM_TESTDATA_CACHE", default_xclim_testdata_cache
+)
 
 
 def write_roocs_cfg(cache_dir: Union[str, Path]):
-
     cfg_templ = """
     [project:cmip5]
     base_dir = {{ base_dir }}/test_data/badc/cmip5/data/cmip5
@@ -36,15 +77,15 @@ def write_roocs_cfg(cache_dir: Union[str, Path]):
     [project:c3s-cordex]
     base_dir = {{ base_dir }}/test_data/pool/data/CORDEX/data/cordex
     """
-    roocs_config = Path(cache_dir, "roocs.ini").as_posix()
+    roocs_config = Path(cache_dir, "roocs.ini")
     cfg = Template(cfg_templ).render(
-        base_dir=Path(MINI_ESGF_CACHE_DIR).joinpath("master")
+        base_dir=Path(ESGF_TEST_DATA_CACHE_DIR).joinpath(ESGF_TEST_DATA_VERSION)
     )
     with open(roocs_config, "w") as fp:
         fp.write(cfg)
 
     # point to roocs cfg in environment
-    os.environ["ROOCS_CONFIG"] = roocs_config
+    os.environ["ROOCS_CONFIG"] = roocs_config.as_posix()
 
 
 def get_esgf_file_paths(esgf_cache_dir):
@@ -264,3 +305,275 @@ class ContextLogger:
                 self.logger.remove()
             except ValueError:
                 pass
+
+
+def load_registry(branch: str, repo: str):
+    """Load the registry file for the test data.
+
+    Returns
+    -------
+    dict
+        Dictionary of filenames and hashes.
+    """
+    remote_registry = audit_url(f"{repo}/raw/{branch}/data/registry.txt")
+
+    if repo == ESGF_TEST_DATA_REPO_URL:
+        project = "mini-esgf-data"
+        default_testdata_version = ESGF_TEST_DATA_VERSION
+        default_testdata_repo_url = ESGF_TEST_DATA_REPO_URL
+    elif repo == XCLIM_TEST_DATA_REPO_URL:
+        project = "xclim-testdata"
+        default_testdata_version = XCLIM_TEST_DATA_VERSION
+        default_testdata_repo_url = XCLIM_TEST_DATA_REPO_URL
+    else:
+        raise ValueError(
+            f"Repository URL {repo} not recognized. "
+            f"Please use one of {ESGF_TEST_DATA_REPO_URL} or {XCLIM_TEST_DATA_REPO_URL}"
+        )
+
+    if branch != default_testdata_version:
+        custom_registry_folder = Path(
+            str(ilr.files("clisops").joinpath(f"utils/registries/{branch}"))
+        )
+        custom_registry_folder.mkdir(parents=True, exist_ok=True)
+        registry_file = custom_registry_folder.joinpath(f"{project}_registry.txt")
+        urlretrieve(remote_registry, registry_file)  # noqa: S310
+
+    elif repo != default_testdata_repo_url:
+        registry_file = Path(
+            str(ilr.files("clisops").joinpath(f"utils/{project}_registry.txt"))
+        )
+        urlretrieve(remote_registry, registry_file)  # noqa: S310
+
+    registry_file = Path(
+        str(ilr.files("clisops").joinpath(f"utils/{project}_registry.txt"))
+    )
+    if not registry_file.exists():
+        raise FileNotFoundError(f"Registry file not found: {registry_file}")
+
+    # Load the registry file
+    with registry_file.open() as f:
+        registry = {line.split()[0]: line.split()[1] for line in f}
+    return registry
+
+
+def stratus(  # noqa: PR01
+    repo: str,
+    branch: str,
+    cache_dir: Union[str, Path],
+    data_updates: bool = True,
+):
+    """Pooch registry instance for xclim test data.
+
+    Parameters
+    ----------
+    repo : str
+        URL of the repository to use when fetching testing datasets.
+    branch : str
+        Branch of repository to use when fetching testing datasets.
+    cache_dir : str or Path
+        The path to the directory where the data files are stored.
+    data_updates : bool
+        If True, allow updates to the data files. Default is True.
+
+    Returns
+    -------
+    pooch.Pooch
+        The Pooch instance for accessing the testing data.
+
+    Examples
+    --------
+    Using the registry to download a file:
+
+    .. code-block:: python
+
+        import xarray as xr
+        from clisops.utils.testing import stratus
+
+        s = stratus(data_dir=..., repo=..., branch=...)
+        example_file = s.fetch("example.nc")
+        data = xr.open_dataset(example_file)
+    """
+    if pooch is None:
+        raise ImportError(
+            "The `pooch` package is required to fetch the xclim testing data. "
+            "You can install it with `pip install pooch` or `pip install clisops[dev]`."
+        )
+
+    if repo.endswith("xclim-testdata"):
+        _version = XCLIM_TEST_DATA_VERSION
+    elif repo.endswith("mini-esgf-data"):
+        _version = ESGF_TEST_DATA_VERSION
+    else:
+        raise ValueError(
+            f"Repository URL {repo} not recognized. "
+            f"Please use one of {ESGF_TEST_DATA_REPO_URL} or {XCLIM_TEST_DATA_REPO_URL}"
+        )
+
+    remote = audit_url(f"{repo}/raw/{branch}/data")
+    return pooch.create(
+        path=cache_dir,
+        base_url=remote,
+        version=_version,
+        version_dev=branch,
+        allow_updates=data_updates,
+        registry=load_registry(branch=branch, repo=repo),
+    )
+
+
+# idea copied from raven that it borrowed from xclim that borrowed it from xarray that was borrowed from Seaborn
+def open_dataset(
+    name: Union[str, os.PathLike[str]],
+    branch: str,
+    repo: str,
+    cache_dir: Union[str, os.PathLike[str]],
+    **kwargs,
+) -> Dataset:
+    r"""Open a dataset from the online GitHub-like repository.
+
+    If a local copy is found then always use that to avoid network traffic.
+
+    Parameters
+    ----------
+    name : str
+        Name of the file containing the dataset.
+    branch : str
+        Branch of the repository to use when fetching datasets.
+    repo: str
+        URL of the repository to use when fetching testing datasets.
+    cache_dir : Path
+        The directory in which to search for and write cached data.
+    \*\*kwargs
+        For NetCDF files, keywords passed to :py:func:`xarray.open_dataset`.
+
+    Returns
+    -------
+    Union[Dataset, Path]
+
+    Raises
+    ------
+    OSError
+        If the file is not found in the cache directory or cannot be read.
+
+    See Also
+    --------
+    xarray.open_dataset
+    """
+    if cache_dir is None:
+        raise ValueError(
+            "The cache directory must be set. "
+            "Please set the `cache_dir` parameter or the `XCLIM_DATA_DIR` environment variable."
+        )
+
+    local_file = Path(cache_dir).joinpath(name)
+    if not local_file.exists():
+        try:
+            local_file = stratus(branch=branch, repo=repo, cache_dir=cache_dir).fetch(
+                name
+            )
+        except OSError as e:
+            raise OSError(
+                f"File not found locally. Verify that the testing data is available in remote: {local_file}"
+            ) from e
+    try:
+        ds = _open_dataset(local_file, **kwargs)
+        return ds
+    except OSError:
+        raise
+
+
+def populate_testing_data(
+    repo: str,
+    branch: str,
+    cache_dir: Path,
+) -> None:
+    """Populate the local cache with the testing data.
+
+    Parameters
+    ----------
+    repo : str, optional
+        URL of the repository to use when fetching testing datasets.
+    branch : str, optional
+        Branch of xclim-testdata to use when fetching testing datasets.
+    cache_dir : Path
+        The path to the local cache. Defaults to the location set by the platformdirs library.
+        The testing data will be downloaded to this local cache.
+
+    Returns
+    -------
+    None
+    """
+    # Create the Pooch instance
+    n = stratus(cache_dir=cache_dir, repo=repo, branch=branch)
+
+    # Download the files
+    errored_files = []
+    for file in load_registry(branch=branch, repo=repo):
+        try:
+            n.fetch(file)
+        except HTTPError:
+            msg = f"File `{file}` not accessible in remote repository."
+            logger.error(msg)
+            errored_files.append(file)
+        else:
+            logger.info("Files were downloaded successfully.")
+
+    if errored_files:
+        logger.error(
+            "The following files were unable to be downloaded: %s",
+            errored_files,
+        )
+
+
+def gather_testing_data(
+    worker_cache_dir: Union[str, os.PathLike[str], Path],
+    worker_id: str,
+    branch: str,
+    repo: str,
+    cache_dir: Union[str, os.PathLike[str], Path],
+):
+    """Gather testing data across workers."""
+    cache_dir = Path(cache_dir)
+
+    if worker_id == "master":
+        populate_testing_data(branch=branch, repo=repo, cache_dir=cache_dir)
+    else:
+        if platform == "win32":
+            if not cache_dir.joinpath(branch).exists():
+                raise FileNotFoundError(
+                    "Testing data not found and UNIX-style file-locking is not supported on Windows. "
+                    "Consider running `populate_testing_data()` to download testing data beforehand."
+                )
+        else:
+            cache_dir.mkdir(exist_ok=True, parents=True)
+            lockfile = cache_dir.joinpath(".lock")
+            test_data_being_written = FileLock(lockfile)
+            with test_data_being_written:
+                # This flag prevents multiple calls from re-attempting to download testing data in the same pytest run
+                populate_testing_data(branch=branch, repo=repo, cache_dir=cache_dir)
+                cache_dir.joinpath(".data_written").touch()
+            with test_data_being_written.acquire():
+                if lockfile.exists():
+                    lockfile.unlink()
+        copytree(cache_dir.joinpath(branch), worker_cache_dir)
+
+
+def audit_url(url: str, context: Optional[str] = None) -> str:
+    """Check if the URL is well-formed.
+
+    Raises
+    ------
+    URLError
+        If the URL is not well-formed.
+    """
+    msg = ""
+    result = urlparse(url)
+    if result.scheme == "http":
+        msg = f"{context if context else ''} URL is not using secure HTTP: '{url}'".strip()
+    if not all([result.scheme, result.netloc]):
+        msg = f"{context if context else ''} URL is not well-formed: '{url}'".strip()
+
+    if msg:
+        logger.error(msg)
+        raise URLError(msg)
+    return url

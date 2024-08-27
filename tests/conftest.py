@@ -11,15 +11,9 @@ from _pytest.logging import caplog as _caplog  # noqa
 from filelock import FileLock
 from git import Repo
 
-from clisops.utils import get_file as _get_file
-from clisops.utils import open_dataset as _open_dataset
-from clisops.utils.testing import MINI_ESGF_CACHE_DIR, get_esgf_file_paths
-
-ESGF_TEST_DATA_REPO_URL = "https://github.com/roocs/mini-esgf-data"
-ESGF_TEST_DATA_VERSION = "master"
-
-XCLIM_TEST_DATA_REPO_URL = "https://github.com/Ouranosinc/xclim-testdata"
-XCLIM_TEST_DATA_VERSION = "v2023.12.14"
+from clisops.utils import testing
+from clisops.utils.testing import open_dataset as _open_dataset
+from clisops.utils.testing import stratus as _stratus
 
 REAL_C3S_CMIP5_ARCHIVE_BASE = "/gws/nopw/j04/cp4cds1_vol1/data/"
 
@@ -263,34 +257,59 @@ def ps_series():
 
 @pytest.fixture(scope="session", autouse=True)
 def threadsafe_data_dir(tmp_path_factory):
-    yield tmp_path_factory.getbasetemp().joinpath("data")
+    return tmp_path_factory.getbasetemp().joinpath("data")
 
 
-@pytest.fixture(scope="session", autouse=True)
-def get_file(threadsafe_data_dir):
-    def _get_session_scoped_file(file: str, branch: str = XCLIM_TEST_DATA_VERSION):
-        return _get_file(
-            file,
-            github_url=XCLIM_TEST_DATA_REPO_URL,
-            cache_dir=threadsafe_data_dir,
-            branch=branch,
-        )
+@pytest.fixture(scope="session")
+def stratus(threadsafe_data_dir, worker_id):
+    return _stratus(
+        repo=testing.ESGF_TEST_DATA_REPO_URL,
+        branch=testing.ESGF_TEST_DATA_VERSION,
+        cache_dir=(
+            testing.ESGF_TEST_DATA_CACHE_DIR
+            if worker_id == "master"
+            else threadsafe_data_dir
+        ),
+    )
 
-    return _get_session_scoped_file
+
+@pytest.fixture(scope="session")
+def nimbus(threadsafe_data_dir, worker_id):
+    return _stratus(
+        repo=testing.XCLIM_TEST_DATA_REPO_URL,
+        branch=testing.XCLIM_TEST_DATA_VERSION,
+        cache_dir=(
+            testing.XCLIM_TEST_DATA_CACHE_DIR
+            if worker_id == "master"
+            else threadsafe_data_dir
+        ),
+    )
 
 
-@pytest.fixture(scope="session", autouse=True)
-def open_dataset(threadsafe_data_dir):
-    def _open_session_scoped_file(
-        file: Union[str, os.PathLike],
-        branch: str = XCLIM_TEST_DATA_VERSION,
-        **xr_kwargs,
-    ):
+@pytest.fixture(scope="session")
+def open_esgf_dataset(stratus):
+    def _open_session_scoped_file(file: Union[str, os.PathLike], **xr_kwargs):
+        xr_kwargs.setdefault("cache", True)
         return _open_dataset(
             file,
-            github_url=XCLIM_TEST_DATA_REPO_URL,
-            cache_dir=threadsafe_data_dir,
-            branch=branch,
+            branch=testing.ESGF_TEST_DATA_VERSION,
+            repo=testing.ESGF_TEST_DATA_REPO_URL,
+            cache_dir=stratus.path,
+            **xr_kwargs,
+        )
+
+    return _open_session_scoped_file
+
+
+@pytest.fixture(scope="session")
+def open_xclim_dataset(nimbus):
+    def _open_session_scoped_file(file: Union[str, os.PathLike], **xr_kwargs):
+        xr_kwargs.setdefault("cache", True)
+        return _open_dataset(
+            file,
+            branch=testing.XCLIM_TEST_DATA_VERSION,
+            repo=testing.XCLIM_TEST_DATA_REPO_URL,
+            cache_dir=nimbus.path,
             **xr_kwargs,
         )
 
@@ -311,41 +330,42 @@ def check_output_nc():
     return _check_output_nc
 
 
-# Fixture to load mini-esgf-data repository used by roocs tests
 @pytest.fixture(scope="session", autouse=True)
 def load_esgf_test_data(worker_id):
     """
     This fixture ensures that the required test data repository
     has been cloned to the cache directory within the home directory.
     """
-    target = Path(MINI_ESGF_CACHE_DIR).joinpath(ESGF_TEST_DATA_VERSION)
+    target = Path(testing.ESGF_TEST_DATA_CACHE_DIR).joinpath(
+        testing.ESGF_TEST_DATA_VERSION
+    )
 
     if not target.exists():
         if (platform == "win32" and worker_id == "gw0") or worker_id == "master":
             if not target.is_dir():
-                Path(MINI_ESGF_CACHE_DIR).mkdir(exist_ok=True)
-                repo = Repo.clone_from(ESGF_TEST_DATA_REPO_URL, target)
-                repo.git.checkout(ESGF_TEST_DATA_VERSION)
+                Path(testing.ESGF_TEST_DATA_CACHE_DIR).mkdir(exist_ok=True)
+                repo = Repo.clone_from(testing.ESGF_TEST_DATA_REPO_URL, target)
+                repo.git.checkout(testing.ESGF_TEST_DATA_VERSION)
             elif (
                 os.environ.get("ROOCS_AUTO_UPDATE_TEST_DATA", "true").lower() != "false"
             ):
                 repo = Repo(target)
-                repo.git.checkout(ESGF_TEST_DATA_VERSION)
+                repo.git.checkout(testing.ESGF_TEST_DATA_REPO_URL)
                 repo.remotes[0].pull()
 
         else:
-            lockfile = Path(MINI_ESGF_CACHE_DIR).joinpath(".lock")
+            lockfile = Path(testing.ESGF_TEST_DATA_CACHE_DIR).joinpath(".lock")
             test_data_being_written = FileLock(lockfile)
             with test_data_being_written:
                 if not target.is_dir():
-                    repo = Repo.clone_from(ESGF_TEST_DATA_REPO_URL, target)
-                    repo.git.checkout(ESGF_TEST_DATA_VERSION)
+                    repo = Repo.clone_from(testing.ESGF_TEST_DATA_REPO_URL, target)
+                    repo.git.checkout(testing.ESGF_TEST_DATA_VERSION)
                 elif (
                     os.environ.get("ROOCS_AUTO_UPDATE_TEST_DATA", "true").lower()
                     != "false"
                 ):
                     repo = Repo(target)
-                    repo.git.checkout(ESGF_TEST_DATA_VERSION)
+                    repo.git.checkout(testing.ESGF_TEST_DATA_VERSION)
                     repo.remotes[0].pull()
                 target.joinpath(".data_written").touch()
 
@@ -399,8 +419,8 @@ def cmip6_archive_base():
 
 @pytest.fixture(scope="session", autouse=True)
 def mini_esgf_data():
-    return get_esgf_file_paths(
-        Path(MINI_ESGF_CACHE_DIR).joinpath(ESGF_TEST_DATA_VERSION)
+    return testing.get_esgf_file_paths(
+        Path(testing.ESGF_TEST_DATA_CACHE_DIR).joinpath(testing.ESGF_TEST_DATA_VERSION)
     )
 
 
