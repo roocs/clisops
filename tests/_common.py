@@ -485,3 +485,10 @@ ATLAS_v0_CORDEX_ANT = Path(
     MINI_ESGF_CACHE_DIR,
     "master/test_data/pool/data/c3s-ipcc-ar6-atlas/CORDEX-ANT/rcp45/tnn_CORDEX-ANT_rcp45_mon_200601.nc",
 ).as_posix()
+
+# Kerchunk datasets
+CMIP6_KERCHUNK_HTTPS_OPEN_JSON = (
+    "https://gws-access.jasmin.ac.uk/public/cmip6_prep/eodh-eocis/kc-indexes-cmip6-http-v1/"
+    "CMIP6.CMIP.MOHC.UKESM1-1-LL.1pctCO2.r1i1p1f2.Amon.tasmax.gn.v20220513.json"
+)
+CMIP6_KERCHUNK_HTTPS_OPEN_ZST = CMIP6_KERCHUNK_HTTPS_OPEN_JSON + ".zst"

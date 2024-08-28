@@ -373,9 +373,7 @@ def test_grid_init_ds_tas_unstructured(load_esgf_test_data):
     assert grid.lat_bnds == "latitude_bnds"
     assert grid.lon_bnds == "longitude_bnds"
     assert grid.ncells == 20480
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 def test_grid_init_ds_zonmean(load_esgf_test_data):
@@ -431,7 +429,7 @@ def test_grid_init_ds_erroneous_cf_units_cmip5(load_esgf_test_data):
     assert grid.lat_bnds is None
     assert grid.lon_bnds is None
     assert grid.ncells == 83520
-    assert grid.mask is None
+    assert grid.mask is False
 
 
 def test_grid_init_ds_erroneous_cf_units_cmip6(load_esgf_test_data):
@@ -462,7 +460,7 @@ def test_grid_init_ds_erroneous_cf_units_cmip6(load_esgf_test_data):
     assert grid.lat_bnds is None
     assert grid.lon_bnds is None
     assert grid.ncells == 83520
-    assert grid.mask is None
+    assert grid.mask is False
 
     # Test bounds creation
     grid = Grid(ds=ds.isel(lat=slice(0, 20), lon=slice(0, 20)), compute_bounds=True)
@@ -499,7 +497,7 @@ def test_grid_init_ds_erroneous_cf_attrs_cmip6(load_esgf_test_data):
     assert grid.lat_bnds is None
     assert grid.lon_bnds is None
     assert grid.ncells == 990720
-    assert grid.mask is None
+    assert grid.mask is False
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -525,9 +523,7 @@ def test_grid_instructor_global():
     assert grid.nlat == 120
     assert grid.nlon == 240
     assert grid.ncells == 28800
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -553,9 +549,7 @@ def test_grid_instructor_2d_regional_change_lon():
     assert grid.nlat == 120
     assert grid.nlon == 127
     assert grid.ncells == 15240
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -582,9 +576,7 @@ def test_grid_instructor_2d_regional_change_lat():
     assert grid.nlat == 73
     assert grid.nlon == 240
     assert grid.ncells == 17520
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -610,9 +602,7 @@ def test_grid_instructor_2d_regional_change_lon_and_lat():
     assert grid.nlat == 73
     assert grid.nlon == 127
     assert grid.ncells == 9271
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -638,9 +628,7 @@ def test_grid_instructor_2d_global():
     assert grid.nlat == 120
     assert grid.nlon == 240
     assert grid.ncells == 28800
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 def test_from_grid_id():
@@ -660,9 +648,46 @@ def test_from_grid_id():
     assert grid.nlat == 145
     assert grid.nlon == 288
     assert grid.ncells == 41760
+    assert grid.mask is False
 
-    # not implemented yet
-    # assert self.mask0
+
+@pytest.mark.parametrize(
+    "grid_id",
+    [
+        "0pt5deg_lsm",
+        "0pt25deg_era5_lsm",
+        "1deg_lsm",
+        "2deg_lsm",
+        "0pt25deg_era5_lsm_binary",
+        "1deg_lsm_binary",
+        "2deg_lsm_binary",
+        "T63_lsm_binary",
+        "T127_lsm_binary",
+    ],
+)
+def test_from_grid_id_mask(grid_id):
+    "Test to create grid from grid_id"
+
+    grid = Grid(grid_id=grid_id, mask="ocean")
+    assert grid.format == "CF"
+    assert grid.mask is True
+    np.alltrue(grid.lsm.data == grid.ds["mask"].data)
+    osum = grid.lsm.sum().item()
+    # Make sure it is a binary mask
+    mask = grid.ds["mask"].copy(deep=True)
+    np.alltrue(grid.lsm.astype("bool").astype(np.int32).data == mask.data)
+
+    grid = Grid(grid_id=grid_id, mask="land")
+    assert grid.format == "CF"
+    assert grid.mask is True
+    np.alltrue(grid.lsm.data == grid.ds["mask"].data)
+    lsum = grid.lsm.sum().item()
+    # Make sure it is a binary mask
+    mask = grid.ds["mask"].copy(deep=True).data
+    np.alltrue(grid.lsm.astype("bool").astype(np.int32).data == mask.data)
+
+    # Make sure "land" and "ocean" are interpreted properly
+    assert lsum > osum
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -915,10 +940,10 @@ def test_calculate_bounds_duplicated_cells(load_esgf_test_data):
     ds["lat"][:, 0] = ds["lat"][:, 1]
     ds["lon"][:, 0] = ds["lon"][:, 1]
 
-    # assert raised exception
-    with pytest.raises(
-        Exception,
-        match="This grid contains duplicated cell centers. Therefore bounds cannot be computed.",
+    # assert warning
+    with pytest.warns(
+        UserWarning,
+        match="This grid contains duplicated cell centers, which may affect the quality of the calculated bounds.",
     ):
         Grid(ds=ds, compute_bounds=True)
 
@@ -1048,7 +1073,7 @@ class TestWeights:
         assert w.method == "bilinear"
         assert (
             w.id
-            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_no-degen_bilinear"
+            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_skip-degen_bilinear"
         )
         assert w.periodic
         assert w.id in w.filename
@@ -1075,7 +1100,7 @@ class TestWeights:
         assert w.method == "conservative"
         assert (
             w.id
-            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_no-degen_conservative"
+            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_skip-degen_conservative"
         )
         assert (
             w.periodic != w.regridder.periodic
@@ -1151,10 +1176,10 @@ def test_Weights_compute(tmp_path, load_esgf_test_data):
     assert w.format == "xESMF"
     assert w.regridder.filename == "nearest_s2d_180x360_90x180_peri.nc"
     assert not w.regridder.reuse_weights
-    assert w.regridder.ignore_degenerate is None
+    assert w.regridder.ignore_degenerate is True
     assert w.regridder.n_in == 180 * 360
     assert w.regridder.n_out == 90 * 180
-    assert w.ignore_degenerate is None
+    assert w.ignore_degenerate is True
     assert w.filename == "weights_" + w.id + ".nc"
 
     # Test weight reusage
@@ -1182,7 +1207,7 @@ def test_Weights_compute_unstructured(tmp_path, load_esgf_test_data):
     w = Weights(g, g_out, method="nearest_s2d")
     assert w.regridder.sequence_in
     assert not w.regridder.sequence_out
-    assert w.regridder.ignore_degenerate is None
+    assert w.regridder.ignore_degenerate is True
     assert w.regridder.n_in == g.ncells
     assert w.regridder.n_out == 90 * 180
 
@@ -1197,7 +1222,7 @@ def test_Weights_generate_id(tmp_path, load_esgf_test_data):
     w = Weights(g, g_out, method="bilinear")
 
     assert w.id == w._generate_id()
-    assert w.id == "_".join([g.hash, g_out.hash, "peri", "no-degen", "bilinear"])
+    assert w.id == "_".join([g.hash, g_out.hash, "peri", "skip-degen", "bilinear"])
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -1245,8 +1270,8 @@ def test_cache_init_and_flush(tmp_path):
     flist_ref = [
         "grid_4d324aecaa8302ab0f2f212e9821b00f.nc",
         "grid_96395935b4e81f2a5b55970bd920d82c.nc",
-        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_no-degen_nearest_s2d.json",
-        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_no-degen_nearest_s2d.nc",
+        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_skip-degen_nearest_s2d.json",
+        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_skip-degen_nearest_s2d.nc",
     ]
     assert flist == flist_ref
 

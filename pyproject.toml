@@ -142,7 +142,7 @@ search = "version = \"{current_version}\""
 replace = "version = \"{new_version}\""
 
 [tool.codespell]
-ignore-words-list = "scrip,nam,te,mye,bu,lik,tread"
+ignore-words-list = "scrip,nam,te,mye,bu,lik,tread,fo"
 
 [tool.coverage.run]
 relative_files = true

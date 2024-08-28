@@ -42,6 +42,7 @@ class Regrid(Operation):
         self,
         grid_desc: Union[xr.Dataset, xr.DataArray, int, float, tuple, str],
         compute_bounds: bool,
+        mask: Optional[str] = None,
     ) -> Grid:
         """Create clisops.core.regrid.Grid object as target grid of the regridding operation.
 
@@ -52,14 +53,19 @@ class Regrid(Operation):
         if isinstance(grid_desc, str):
             if grid_desc in ["auto", "adaptive"]:
                 return Grid(
-                    ds=self.ds, grid_id=grid_desc, compute_bounds=compute_bounds
+                    ds=self.ds,
+                    grid_id=grid_desc,
+                    compute_bounds=compute_bounds,
+                    mask=mask,
                 )
             else:
-                return Grid(grid_id=grid_desc, compute_bounds=compute_bounds)
+                return Grid(grid_id=grid_desc, compute_bounds=compute_bounds, mask=mask)
         elif isinstance(grid_desc, (float, int, tuple)):
-            return Grid(grid_instructor=grid_desc, compute_bounds=compute_bounds)
+            return Grid(
+                grid_instructor=grid_desc, compute_bounds=compute_bounds, mask=mask
+            )
         elif isinstance(grid_desc, (xr.Dataset, xr.DataArray)):
-            return Grid(ds=grid_desc, compute_bounds=compute_bounds)
+            return Grid(ds=grid_desc, compute_bounds=compute_bounds, mask=mask)
         else:
             # clisops.core.regrid.Grid will raise the exception
             return Grid()
@@ -86,6 +92,12 @@ class Regrid(Operation):
         grid = params.get("grid", None)
         method = params.get("method", None)
         keep_attrs = params.get("keep_attrs", None)
+        mask = params.get("mask", None)
+
+        if mask not in ["land", "ocean", False, None]:
+            raise ValueError(
+                f"mask must be one of 'land', 'ocean' or None, not '{mask}'."
+            )
 
         if method not in supported_regridding_methods:
             raise Exception(
@@ -94,7 +106,7 @@ class Regrid(Operation):
             )
 
         logger.debug(
-            f"Input parameters: method: {method}, grid: {grid}, adaptive_masking: {adaptive_masking_threshold}"
+            f"Input parameters: method: {method}, grid: {grid}, adaptive_masking: {adaptive_masking_threshold}, mask: {mask}, keep_attrs: {keep_attrs}"
         )
 
         # Compute bounds only when required
@@ -102,7 +114,7 @@ class Regrid(Operation):
 
         # Create and check source and target grids
         grid_in = self._get_grid_in(self.ds, compute_bounds)
-        grid_out = self._get_grid_out(grid, compute_bounds)
+        grid_out = self._get_grid_out(grid, compute_bounds, mask=mask)
 
         if grid_in.hash == grid_out.hash:
             weights = None
@@ -194,6 +206,7 @@ def regrid(
     grid: Optional[
         Union[xr.Dataset, xr.DataArray, int, float, tuple, str]
     ] = "adaptive",
+    mask: Optional[str] = None,
     output_dir: Optional[Union[str, Path]] = None,
     output_type: Optional[str] = "netcdf",
     split_method: Optional[str] = "time:auto",
@@ -208,6 +221,7 @@ def regrid(
     method : {"nearest_s2d", "conservative", "patch", "bilinear"}
     adaptive_masking_threshold : Optional[Union[int, float]]
     grid : Union[xr.Dataset, xr.DataArray, int, float, tuple, str]
+    mask: {"ocean", "land"} = None
     output_dir : Optional[Union[str, Path]] = None
     output_type : {"netcdf", "nc", "zarr", "xarray"}
     split_method : {"time:auto"}
@@ -226,6 +240,7 @@ def regrid(
     | method: "nearest_s2d"
     | adaptive_masking_threshold:
     | grid: "1deg"
+    | mask: "land"
     | output_dir: "/cache/wps/procs/req0111"
     | output_type: "netcdf"
     | split_method: "time:auto"

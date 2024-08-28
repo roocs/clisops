@@ -195,7 +195,8 @@ class Grid:
     compute_bounds : bool, optional
         Compute latitude and longitude bounds if the dataset has none defined.
         The default is False.
-
+    mask : str, optional
+        Whether to mask "ocean" cells or "land" cells if a mask variable is found. The default is None.
     """
 
     def __init__(
@@ -204,6 +205,7 @@ class Grid:
         grid_id: str | None = None,
         grid_instructor: tuple | float | int | None = None,
         compute_bounds: bool | None = False,
+        mask: str | None = None,
     ):
         """Initialise the Grid object. Supporting only 2D horizontal grids."""
         # All attributes - defaults
@@ -221,6 +223,7 @@ class Grid:
         self.lat_bnds = None
         self.lon_bnds = None
         self.mask = None
+        self.lsm = None
         self.source = None
         self.hash = None
         self.coll_mask = None
@@ -300,8 +303,7 @@ class Grid:
                 self._grid_detect_smashed_cells()
 
         # Get a permanent mask if there is
-        #  TODO: implement option to apply a LSM if present
-        # self.mask = self._detect_mask(self.apply_lsm)
+        self.mask = self._apply_lsm(mask=mask)
 
         # Infer mask for degenerated cells
         if self.contains_collapsed_cells or self.contains_smashed_cells:
@@ -322,10 +324,12 @@ class Grid:
         # Define mask
         if self.mask and self.contains_degenerate_cells:
             self.ds["mask"] = (
-                self.ds["mask"].astype(bool) & self.degen_mask.astype(bool)
-            ).astype(int)
+                self.lsm.astype(bool) & self.degen_mask.astype(bool)
+            ).astype(np.int32)
+        elif self.mask:
+            self.ds["mask"] = self.lsm.astype(np.int32)
         elif self.contains_degenerate_cells:
-            self.ds["mask"] = self.degen_mask
+            self.ds["mask"] = self.degen_mask.astype(np.int32)
 
         # Create md5 hash of the coordinate variable arrays
         # Takes into account lat/lon + bnds + mask (if defined)
@@ -585,6 +589,57 @@ class Grid:
 
         return False
 
+    def _apply_lsm(self, mask: str = None) -> xr.DataArray:
+        """Detect mask helper function.
+
+        Parameters
+        ----------
+        self: Grid
+        mask: str, optional
+            Whether to mask "ocean" cells or "land" cells. The default is None.
+
+        Raises
+        ------
+        Warning
+            If mask is specified but not found in dataset.
+
+        Returns
+        -------
+        bool
+            Whether self.lsm was assigned to a 2D-mask in form of a xr.DataArray or not.
+        """
+        if any(maskvar in self.ds for maskvar in ["sftlf", "lsm"]) and mask is not None:
+            if "sftlf" in self.ds:
+                maskvar = "sftlf"
+            elif "lsm" in self.ds:
+                maskvar = "lsm"
+            reduce_dims = [
+                d
+                for d in self.ds[maskvar].dims
+                if d not in self.ds[self.lat].dims and d not in self.ds[self.lon].dims
+            ]
+            if any([self.ds.dims[d] > 1 for d in reduce_dims]):
+                warnings.warn(
+                    "Cannot apply a mask with more than 2 dimensions (lat, lon)."
+                )
+                return False
+            if reduce_dims != []:
+                lsm = self.ds[maskvar].squeeze(reduce_dims, drop=True).astype(np.int32)
+            else:
+                lsm = self.ds[maskvar].astype(np.int32)
+            if mask == "ocean":
+                self.lsm = xr.where(lsm < 0.5, 0, 1)
+                return True
+            elif mask == "land":
+                self.lsm = xr.where(lsm >= 0.5, 0, 1)
+                return True
+        else:
+            if mask:
+                warnings.warn(
+                    "No land sea mask found in the dataset that could be applied."
+                )
+        return False
+
     @staticmethod
     def _create_duplicate_mask(arr):
         """Create duplicate mask helper function."""
@@ -636,21 +691,24 @@ class Grid:
             'regional' or 'global'.
         """
         # TODO: support Units "rad" next to "degree ..."
-        # TODO: additionally check that leftmost and rightmost lon_bnds touch for each row?
 
         # Determine min/max lon/lat values and potentially fix unmasked missing_values
         xfirst, xlast, yfirst, ylast = clidu.determine_lon_lat_range(
             self.ds, self.lon, self.lat, self.lon_bnds, self.lat_bnds, apply_fix=True
         )
 
-        # Perform roll if necessary
-        if xfirst < 0:
-            self.ds, low, high = clidu.cf_convert_between_lon_frames(
-                self.ds, [-180.0, 180.0]
+        # Perform roll to [-180, 180] if necessary
+        if (
+            xlast > 360
+            or xfirst < -180
+            or abs(xlast - xfirst) > 360
+            or (xlast > 180 and xfirst < 0)
+        ):
+            warnings.warn(
+                "Converting grid longitude values to [-180, 180] longitude frame."
             )
-        else:
             self.ds, low, high = clidu.cf_convert_between_lon_frames(
-                self.ds, [0.0, 360.0]
+                self.ds, [-180.0, 180.0], force=True
             )
 
         # Determine min/max lon/lat values after potential conversions/fixes
@@ -705,16 +763,6 @@ class Grid:
             min_range, max_range = (-180.0, 180.0)
         elif lon_min > -atol and lon_max < 360.0 + atol:
             min_range, max_range = (0.0, 360.0)
-        # TODO: for shifted longitudes, eg. (-300,60)? I forgot what it was for but likely it is irrelevant
-        # elif lon_min < -180.0 - atol or lon_max > 360.0 + atol:
-        #    raise Exception(
-        #        "The longitude values have to be within the range (-180, 360)!"
-        #    )
-        # elif lon_max - lon_min > 360.0 - atol and lon_max - lon_min < 360.0 + atol:
-        #    min_range, max_range = (
-        #        lon_min - approx_xres / 2.0,
-        #        lon_max + approx_xres / 2.0,
-        #    )
         elif np.isclose(lon_min, lon_max):
             raise Exception(
                 "Remapping zonal mean datasets or generally datasets without meridional extent is not supported."
@@ -724,7 +772,7 @@ class Grid:
                 "The longitude values have to be within the range (-180, 360)."
             )
 
-        # Generate a histogram with bins for sections along a latitudinal circle,
+        # Generate a histogram with bins for sections along a zonal circle,
         #  width of the bins/sections dependent on the resolution in x-direction
         extent_hist = np.histogram(
             self.ds[self.lon],
@@ -901,12 +949,10 @@ class Grid:
             lat_vertices_0, lon_vertices_0 = np.meshgrid(
                 self.ds[self.lat_bnds].data[:, 0],
                 self.ds[self.lon_bnds].data[:, 0],
-                indexing="ij",
             )
             lat_vertices_1, lon_vertices_1 = np.meshgrid(
                 self.ds[self.lat_bnds].data[:, 1],
                 self.ds[self.lon_bnds].data[:, 1],
-                indexing="ij",
             )
 
             # Create the 4-corner representation for each cell
@@ -950,12 +996,10 @@ class Grid:
             lat_vertices_0, lon_vertices_0 = np.meshgrid(
                 self.ds[self.lat_bnds].data[:, 0],
                 self.ds[self.lon_bnds].data[:, 0],
-                indexing="ij",
             )
             lat_vertices_1, lon_vertices_1 = np.meshgrid(
                 self.ds[self.lat_bnds].data[:, 1],
                 self.ds[self.lon_bnds].data[:, 1],
-                indexing="ij",
             )
 
             # Create the 4-corner representation for each cell
@@ -1182,7 +1226,10 @@ class Grid:
                 ("lon", self.lon),
                 ("lat_bnds", self.lat_bnds),
                 ("lon_bnds", self.lon_bnds),
-                ("mask", self.mask),
+                (
+                    "mask",
+                    "mask" if (self.mask or self.contains_degenerate_cells) else False,
+                ),
             ]
         ).items():
             if coord_var:
@@ -1251,6 +1298,8 @@ class Grid:
         to_keep = [
             var for var in [self.lat, self.lon, self.lat_bnds, self.lon_bnds] if var
         ]
+        if self.mask or self.contains_degenerate_cells:
+            to_keep.append("mask")
         to_drop = [
             var
             for var in list(self.ds.data_vars) + list(self.ds.coords)
@@ -1431,10 +1480,10 @@ class Grid:
         # TODO: This can be a public method as well, but then collapsing grid cells have
         #       to be detected within this function.
 
-        # Bounds cannot be computed if there are duplicated cells
+        # Warn about duplicated cell centers possibly affecting the quality of the calculated bounds
         if self.contains_duplicated_cells:
-            raise Exception(
-                "This grid contains duplicated cell centers. Therefore bounds cannot be computed."
+            warnings.warn(
+                "This grid contains duplicated cell centers, which may affect the quality of the calculated bounds."
             )
 
         # Bounds are only possible for xarray.Datasets
@@ -1447,10 +1496,10 @@ class Grid:
             or np.amax(self.ds[self.lat].values) > 90.0
         ):
             warnings.warn(
-                "At least one latitude value exceeds [-90,90]. The bounds could not be calculated."
+                "At least one latitude value exceeds [-90,90]. Latitude bounds will be clipped to [-90,90]."
             )
             return
-        if self.ncells < 3:
+        if self.nlat < 3 or self.nlon < 3:
             warnings.warn(
                 "The latitude and longitude axes need at least 3 entries"
                 " to be able to calculate the bounds."
@@ -1459,21 +1508,11 @@ class Grid:
 
         # Use clisops.utils.dataset_utils functions to generate the bounds
         if self.format == "CF":
-            if (
-                np.amin(self.ds[self.lat].values) < -90.0
-                or np.amax(self.ds[self.lat].values) > 90.0
-            ):
-                warnings.warn("At least one latitude value exceeds [-90,90].")
-                return
-            if self.ncells < 3:
-                warnings.warn(
-                    "The latitude and longitude axes need at least 3 entries"
-                    " to be able to calculate the bounds."
-                )
-                return
             if self.type == "curvilinear":
                 self.ds = clidu.generate_bounds_curvilinear(
-                    ds=self.ds, lat=self.lat, lon=self.lon
+                    ds=self.ds,
+                    lat=self.lat,
+                    lon=self.lon,
                 )
                 lat_bnds, lon_bnds = "vertices_latitude", "vertices_longitude"
             elif self.type == "regular_lat_lon":
@@ -1668,18 +1707,9 @@ class Weights:
                     "It will be assumed that the input grid is not periodic in longitude."
                 )
 
-        # Activate ignore degenerate cells setting if collapsing cells are found within the grids.
-        #  The default setting within ESMF is None, not False!
-        #  TBD - This setting might not be needed if degenerate cells are identified flawlessly
-        #        else, this setting should always be True to avoid an Exception in (x)ESMF.
-        self.ignore_degenerate = (
-            True
-            if (
-                self.grid_in.contains_degenerate_cells
-                or self.grid_out.contains_degenerate_cells
-            )
-            else None
-        )
+        # Activate ignore degenerate cells setting to avoid potential Errors because of
+        # unidentified / unmasked degenerated cells.
+        self.ignore_degenerate = True
 
         self.id = self._generate_id()
         self.filename = "weights_" + self.id + ".nc"

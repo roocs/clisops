@@ -1,3 +1,4 @@
+import glob
 import os
 
 import cf_xarray as cfxr  # noqa
@@ -20,6 +21,8 @@ from _common import (
     CMIP6_EXTENT_UNMASKED,
     CMIP6_GFDL_EXTENT,
     CMIP6_IITM_EXTENT,
+    CMIP6_KERCHUNK_HTTPS_OPEN_JSON,
+    CMIP6_KERCHUNK_HTTPS_OPEN_ZST,
     CMIP6_OCE_HALO_CNRM,
     CMIP6_SICONC,
     CMIP6_SIMASS_DEGEN,
@@ -935,3 +938,52 @@ def test_get_coords_by_type_with_no_time(load_esgf_test_data):
     ds = ds.drop_dims("time")
     time = clidu.get_coord_by_type(ds, "time", ignore_aux_coords=False)
     assert time is None
+
+
+# Adapted from roocs_utils:tests.test_xarray_utils.test_open_xr_dataset
+def test_open_xr_dataset(load_esgf_test_data):
+    ds = clidu.open_xr_dataset(C3S_CMIP5_TAS)
+    assert isinstance(ds, xr.Dataset)
+
+
+@pytest.mark.xfail(
+    reason="The xarray issue to yield an empty encoding dictionary for 'time' when calling open_mfdataset seems to have been fixed"
+)
+def test_open_xr_dataset_retains_time_encoding(load_esgf_test_data):
+    ds = clidu.open_xr_dataset(C3S_CMIP5_TAS)
+    assert isinstance(ds, xr.Dataset)
+    assert hasattr(ds, "time")
+    assert ds.time.encoding.get("units") == "days since 1850-01-01 00:00:00"
+
+    # Now test without our clever opener - to prove time encoding is lost
+    kwargs = {"use_cftime": True, "decode_timedelta": False, "combine": "by_coords"}
+    ds = xr.open_mfdataset(glob.glob(C3S_CMIP5_TAS), **kwargs)
+    assert ds.time.encoding == {}
+
+
+def _common_test_open_xr_dataset_kerchunk(uri):
+    ds = clidu.open_xr_dataset(uri)
+    assert isinstance(ds, xr.Dataset)
+    assert "tasmax" in ds
+
+    # Also test time encoding is retained
+    assert hasattr(ds, "time")
+    assert ds.time.encoding.get("units") == "days since 1850-01-01"
+
+    return ds
+
+
+def test_open_xr_dataset_kerchunk_json():
+    _common_test_open_xr_dataset_kerchunk(CMIP6_KERCHUNK_HTTPS_OPEN_JSON)
+
+
+def test_open_xr_dataset_kerchunk_zst():
+    _common_test_open_xr_dataset_kerchunk(CMIP6_KERCHUNK_HTTPS_OPEN_ZST)
+
+
+def test_open_xr_dataset_kerchunk_compare_json_vs_zst():
+    ds1 = _common_test_open_xr_dataset_kerchunk(CMIP6_KERCHUNK_HTTPS_OPEN_JSON)
+    ds2 = _common_test_open_xr_dataset_kerchunk(CMIP6_KERCHUNK_HTTPS_OPEN_ZST)
+
+    diff = ds1.isel(time=slice(0, 2)) - ds2.isel(time=slice(0, 2))
+    assert diff.max() == diff.min() == 0.0
