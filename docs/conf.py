@@ -66,7 +66,7 @@ templates_path = ["_templates"]
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = [".rst"]
+source_suffix = {".rst": "restructuredtext"}
 # note: do not add .ipynb when nbspinx is enabled, otherwise you get the "missing title" error
 
 # The master toctree document.
