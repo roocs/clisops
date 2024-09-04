@@ -30,10 +30,10 @@ def _load_ds(fpath: Union[str, Path]):
     return xr.open_mfdataset(fpath)
 
 
-def test_subset_no_params(get_file, tmpdir, check_output_nc):
+def test_subset_no_params(tmpdir, check_output_nc, nimbus):
     """Test subset without area param."""
     result = subset(
-        ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+        ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
         output_dir=tmpdir,
         output_type="nc",
         file_namer="simple",
@@ -41,10 +41,10 @@ def test_subset_no_params(get_file, tmpdir, check_output_nc):
     check_output_nc(result)
 
 
-def test_subset_time(get_file, tmpdir, check_output_nc):
+def test_subset_time(nimbus, tmpdir, check_output_nc):
     """Tests clisops subset function with a time subset."""
     result = subset(
-        ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+        ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
         time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
         area=(0, -90.0, 360.0, 90.0),
         output_dir=tmpdir,
@@ -54,7 +54,7 @@ def test_subset_time(get_file, tmpdir, check_output_nc):
     check_output_nc(result)
 
 
-def test_subset_args_as_parameter_classes(get_file, tmpdir, check_output_nc):
+def test_subset_args_as_parameter_classes(nimbus, tmpdir, check_output_nc):
     """Tests clisops subset function with a time subset with the arguments as parameter classes from roocs-utils."""
 
     time = time_parameter.TimeParameter(
@@ -63,7 +63,7 @@ def test_subset_args_as_parameter_classes(get_file, tmpdir, check_output_nc):
     area = area_parameter.AreaParameter((0, -90.0, 360.0, 90.0))
 
     result = subset(
-        ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+        ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
         time=time,
         area=area,
         output_dir=tmpdir,
@@ -101,11 +101,11 @@ def test_subset_ATLAS_datasets(tmpdir, dset, check_output_nc, mini_esgf_data):
     check_output_nc(result)
 
 
-def test_subset_invalid_time(get_file, tmpdir):
+def test_subset_invalid_time(nimbus, tmpdir):
     """Tests subset with invalid time param."""
     with pytest.raises(InvalidParameterValue):
         subset(
-            ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+            ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
             time=time_interval("yesterday", "2020-12-30T00:00:00"),
             area=(0, -90.0, 360.0, 90.0),
             output_dir=tmpdir,
@@ -135,10 +135,10 @@ def test_subset_no_ds(tmpdir):
         )  # noqa
 
 
-def test_subset_area_simple_file_name(get_file, tmpdir, check_output_nc):
+def test_subset_area_simple_file_name(nimbus, tmpdir, check_output_nc):
     """Tests clisops subset function with an area subset (simple file name)."""
     result = subset(
-        ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+        ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
         area=(0.0, 10.0, 10.0, 65.0),
         output_dir=tmpdir,
         output_type="nc",
@@ -159,10 +159,10 @@ def test_subset_area_project_file_name_atlas(tmpdir, check_output_nc, mini_esgf_
     check_output_nc(result, "t_E-OBS_no-expt_mon_19500101-19500101.nc")
 
 
-def test_subset_area_project_file_name(get_file, tmpdir, check_output_nc):
+def test_subset_area_project_file_name(nimbus, tmpdir, check_output_nc):
     """Tests clisops subset function with an area subset (derived file name)."""
     result = subset(
-        ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+        ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
         area=(0.0, 10.0, 10.0, 65.0),
         output_dir=tmpdir,
         output_type="nc",
@@ -171,17 +171,17 @@ def test_subset_area_project_file_name(get_file, tmpdir, check_output_nc):
     check_output_nc(result, "tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-20301116.nc")
 
 
-def test_subset_invalid_area(get_file, tmpdir):
+def test_subset_invalid_area(nimbus, tmpdir):
     """Tests subset with invalid area param."""
     with pytest.raises(InvalidParameterValue):
         subset(
-            ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+            ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
             area=("zero", 49.0, 10.0, 65.0),
             output_dir=tmpdir,
         )
 
 
-def test_subset_with_time_and_area(get_file, tmpdir):
+def test_subset_with_time_and_area(nimbus, tmpdir):
     """Tests clisops subset function with time and area subsets.
 
     On completion:
@@ -191,7 +191,7 @@ def test_subset_with_time_and_area(get_file, tmpdir):
     bbox = (0.0, -80, 170.0, 65.0)
 
     outputs = subset(
-        ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+        ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
         time=time_interval(start_time, end_time),
         area=bbox,
         output_dir=tmpdir,
@@ -475,10 +475,10 @@ def test_area_within_area_subset_chunked(mini_esgf_data):
         assert area[1] <= ds.lat.data <= area[3]
 
 
-def test_subset_level(get_file):
+def test_subset_level(nimbus):
     """Tests clisops subset function with a level subset."""
     # Levels are: 100000, ..., 100
-    cmip6_o3 = get_file(
+    cmip6_o3 = nimbus.fetch(
         "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
     )
 
@@ -861,9 +861,9 @@ def test_check_lon_alignment_curvilinear_grid():
 
 
 class TestSubset:
-    def test_resolve_params(self, get_file):
+    def test_resolve_params(self, nimbus):
         s = Subset(
-            ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+            ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
             time=time_interval("1999-01-01T00:00:00", "2100-12-30T00:00:00"),
             area=(-5.0, 49.0, 10.0, 65),
             level=level_interval(1000.0, 1000.0),
@@ -874,53 +874,61 @@ class TestSubset:
         assert s.params["lon_bnds"] == (-5, 10)
         assert s.params["lat_bnds"] == (49, 65)
 
-    def test_resolve_params_time(self, get_file):
+    def test_resolve_params_time(self, nimbus):
         s = Subset(
-            ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+            ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
             time=time_interval("1999-01-01", "2100-12"),
             area=(0, -90, 360, 90),
         )
         assert s.params["start_date"] == "1999-01-01T00:00:00"
         assert s.params["end_date"] == "2100-12-31T23:59:59"
 
-    def test_resolve_params_invalid_time(self, get_file):
+    def test_resolve_params_invalid_time(self, nimbus):
         with pytest.raises(InvalidParameterValue):
             Subset(
-                ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+                ds=nimbus.fetch(
+                    "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"
+                ),
                 time=time_interval("1999-01-01T00:00:00", "maybe tomorrow"),
                 area=(0, -90, 360, 90),
             )
         with pytest.raises(InvalidParameterValue):
             Subset(
-                ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+                ds=nimbus.fetch(
+                    "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"
+                ),
                 time=time_interval("", "2100"),
                 area=(0, -90, 360, 90),
             )
 
-    def test_resolve_params_area(self, get_file):
+    def test_resolve_params_area(self, nimbus):
         s = Subset(
-            ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+            ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
             area=(0, 10, 50, 60),
         )
         assert s.params["lon_bnds"] == (0, 50)
         assert s.params["lat_bnds"] == (10, 60)
         # allow also strings
         s = Subset(
-            ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+            ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
             area=("0", "10", "50", "60"),
         )
         assert s.params["lon_bnds"] == (0, 50)
         assert s.params["lat_bnds"] == (10, 60)
 
-    def test_map_params_invalid_area(self, get_file):
+    def test_map_params_invalid_area(self, nimbus):
         with pytest.raises(InvalidParameterValue):
             Subset(
-                ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+                ds=nimbus.fetch(
+                    "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"
+                ),
                 area=(0, 10, 50),
             )
         with pytest.raises(InvalidParameterValue):
             Subset(
-                ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+                ds=nimbus.fetch(
+                    "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"
+                ),
                 area=("zero", 10, 50, 60),
             )
 
@@ -1306,8 +1314,8 @@ class TestReverseBounds:
 
         np.testing.assert_array_equal(result[0].tos, result_rev.tos)
 
-    def test_reverse_level(self, get_file):
-        cmip6_o3 = get_file(
+    def test_reverse_level(self, nimbus):
+        cmip6_o3 = nimbus.fetch(
             "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
         )
 
@@ -1759,10 +1767,10 @@ def test_subset_by_area_and_components_month_day(tmpdir, mini_esgf_data):
         assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
 
 
-def test_subset_nc_no_fill_value(get_file, tmpdir, mini_esgf_data):
+def test_subset_nc_no_fill_value(nimbus, tmpdir, mini_esgf_data):
     """Tests clisops subset function with a time subset."""
     result = subset(
-        ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+        ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
         time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
         output_dir=tmpdir,
         output_type="nc",
@@ -1795,10 +1803,10 @@ def test_subset_nc_no_fill_value(get_file, tmpdir, mini_esgf_data):
     assert "_FillValue" not in res.time_bnds.encoding
 
 
-def test_subset_cmip5_nc_consistent_bounds(get_file, tmpdir):
+def test_subset_cmip5_nc_consistent_bounds(nimbus, tmpdir):
     """Tests clisops subset function with a time subset and check the metadata"""
     result = subset(
-        ds=get_file("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+        ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
         time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
         output_dir=tmpdir,
         output_type="nc",
@@ -1820,7 +1828,7 @@ def test_subset_cmip5_nc_consistent_bounds(get_file, tmpdir):
     assert "coordinates" not in res.time_bnds.encoding
 
 
-def test_subset_cmip6_nc_consistent_bounds(get_file, tmpdir, mini_esgf_data):
+def test_subset_cmip6_nc_consistent_bounds(nimbus, tmpdir, mini_esgf_data):
     """Tests clisops subset function with a time subset and check the metadata"""
     result = subset(
         ds=mini_esgf_data["CMIP6_TASMIN"],

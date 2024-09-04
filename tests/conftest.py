@@ -1,7 +1,5 @@
 import os
-from multiprocessing.pool import worker
 from pathlib import Path
-from sys import platform
 from typing import Union
 
 import numpy as np
@@ -9,8 +7,6 @@ import pandas as pd
 import pytest
 import xarray as xr
 from _pytest.logging import caplog as _caplog  # noqa
-from filelock import FileLock
-from git import Repo
 
 from clisops.utils import testing
 from clisops.utils.testing import open_dataset as _open_dataset
@@ -399,7 +395,9 @@ def cmip6_archive_base():
 
 @pytest.fixture(scope="session", autouse=True)
 def mini_esgf_data(stratus):
-    return testing.get_esgf_file_paths(stratus.path)
+    return testing.get_esgf_file_paths(stratus.path) | testing.get_esgf_glob_paths(
+        stratus.path
+    )
 
 
 @pytest.fixture(scope="session", autouse=True)

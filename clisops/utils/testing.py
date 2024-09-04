@@ -28,11 +28,14 @@ __all__ = [
     "ContextLogger",
     "ESGF_TEST_DATA_CACHE_DIR",
     "ESGF_TEST_DATA_REPO_URL",
+    "ESGF_TEST_DATA_VERSION",
     "XCLIM_TEST_DATA_CACHE_DIR",
     "XCLIM_TEST_DATA_REPO_URL",
+    "XCLIM_TEST_DATA_VERSION",
     "default_esgf_test_data_cache",
     "default_xclim_test_data_cache",
     "get_esgf_file_paths",
+    "get_esgf_glob_paths",
     "load_registry",
     "open_dataset",
     "stratus",
@@ -106,14 +109,6 @@ def get_esgf_file_paths(esgf_cache_dir):
             esgf_cache_dir,
             "badc/cmip5/data/cmip5/output1/INM/inmcm4/rcp45/mon/ocean/Omon/r1i1p1/latest/zostoga/zostoga_Omon_inmcm4_rcp45_r1i1p1_200601-210012.nc",
         ).as_posix(),
-        "CMIP5_TAS": Path(
-            esgf_cache_dir,
-            "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
-        ).as_posix(),
-        "CMIP5_RH": Path(
-            esgf_cache_dir,
-            "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/historical/mon/land/Lmon/r1i1p1/latest/rh/*.nc",
-        ).as_posix(),
         "CMIP6_RLDS": Path(
             esgf_cache_dir,
             "badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc",
@@ -146,22 +141,6 @@ def get_esgf_file_paths(esgf_cache_dir):
             esgf_cache_dir,
             "badc/cmip6/data/CMIP6/CMIP/CCCR-IITM/IITM-ESM/1pctCO2/r1i1p1f1/Omon/tos/gn/v20191204/tos_Omon_IITM-ESM_1pctCO2_r1i1p1f1_gn_193001-193412.nc",
         ).as_posix(),
-        "C3S_CORDEX_AFR_TAS": Path(
-            esgf_cache_dir,
-            "pool/data/CORDEX/data/cordex/output/AFR-22/GERICS/MPI-M-MPI-ESM-LR/historical/r1i1p1/GERICS-REMO2015/v1/day/tas/v20201015/*.nc",
-        ).as_posix(),
-        "C3S_CORDEX_NAM_PR": Path(
-            esgf_cache_dir,
-            "pool/data/CORDEX/data/cordex/output/NAM-22/OURANOS/NOAA-GFDL-GFDL-ESM2M/rcp45/r1i1p1/OURANOS-CRCM5/v1/day/pr/v20200831/*.nc",
-        ).as_posix(),
-        "C3S_CORDEX_EUR_ZG500": Path(
-            esgf_cache_dir,
-            "pool/data/CORDEX/data/cordex/output/EUR-11/IPSL/IPSL-IPSL-CM5A-MR/rcp85/r1i1p1/IPSL-WRF381P/v1/day/zg500/v20190919/*.nc",
-        ).as_posix(),
-        "C3S_CORDEX_ANT_SFC_WIND": Path(
-            esgf_cache_dir,
-            "pool/data/CORDEX/data/cordex/output/ANT-44/KNMI/ECMWF-ERAINT/evaluation/r1i1p1/KNMI-RACMO21P/v1/day/sfcWind/v20201001/*.nc",
-        ).as_posix(),
         "CMIP6_TOS": Path(
             esgf_cache_dir,
             "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tos/gn/v20190710/tos_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001-186912.nc",
@@ -177,10 +156,6 @@ def get_esgf_file_paths(esgf_cache_dir):
         "CMIP5_MRSOS_ONE_TIME_STEP": Path(
             esgf_cache_dir,
             "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/day/land/day/r1i1p1/latest/mrsos/mrsos_day_HadGEM2-ES_rcp85_r1i1p1_20051201.nc",
-        ).as_posix(),
-        "CMIP5_MRSOS_MULTIPLE_TIME_STEPS": Path(
-            esgf_cache_dir,
-            "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp45/day/land/day/r1i1p1/latest/mrsos/*.nc",
         ).as_posix(),
         "CMIP6_GFDL_EXTENT": Path(
             esgf_cache_dir,
@@ -236,7 +211,7 @@ def get_esgf_file_paths(esgf_cache_dir):
         ).as_posix(),
         "CMIP6_FILLVALUE": Path(
             esgf_cache_dir,
-            "pool/data/CMIP6/data/CMIP6/CMIP/NCAR/CESM2-WACCM/historical/r1i1p1f1/day/tas/gn/v20190227/tas_day_CESM2-WACCM_historical_r1i1p1f1_gn_20000101-20091231.nc",
+            "badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2-WACCM/historical/r1i1p1f1/day/tas/gn/v20190227/tas_day_CESM2-WACCM_historical_r1i1p1f1_gn_20000101-20091231.nc",
         ).as_posix(),
         "CMIP6_ZONMEAN_A": Path(
             esgf_cache_dir,
@@ -289,6 +264,39 @@ def get_esgf_file_paths(esgf_cache_dir):
         "ATLAS_v0_CORDEX_ANT": Path(
             esgf_cache_dir,
             "pool/data/c3s-ipcc-ar6-atlas/CORDEX-ANT/rcp45/tnn_CORDEX-ANT_rcp45_mon_200601.nc",
+        ).as_posix(),
+    }
+
+
+def get_esgf_glob_paths(esgf_cache_dir):
+    return {
+        "CMIP5_TAS": Path(
+            esgf_cache_dir,
+            "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
+        ).as_posix(),
+        "CMIP5_RH": Path(
+            esgf_cache_dir,
+            "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/historical/mon/land/Lmon/r1i1p1/latest/rh/*.nc",
+        ).as_posix(),
+        "C3S_CORDEX_AFR_TAS": Path(
+            esgf_cache_dir,
+            "pool/data/CORDEX/data/cordex/output/AFR-22/GERICS/MPI-M-MPI-ESM-LR/historical/r1i1p1/GERICS-REMO2015/v1/day/tas/v20201015/*.nc",
+        ).as_posix(),
+        "C3S_CORDEX_NAM_PR": Path(
+            esgf_cache_dir,
+            "pool/data/CORDEX/data/cordex/output/NAM-22/OURANOS/NOAA-GFDL-GFDL-ESM2M/rcp45/r1i1p1/OURANOS-CRCM5/v1/day/pr/v20200831/*.nc",
+        ).as_posix(),
+        "C3S_CORDEX_EUR_ZG500": Path(
+            esgf_cache_dir,
+            "pool/data/CORDEX/data/cordex/output/EUR-11/IPSL/IPSL-IPSL-CM5A-MR/rcp85/r1i1p1/IPSL-WRF381P/v1/day/zg500/v20190919/*.nc",
+        ).as_posix(),
+        "C3S_CORDEX_ANT_SFC_WIND": Path(
+            esgf_cache_dir,
+            "pool/data/CORDEX/data/cordex/output/ANT-44/KNMI/ECMWF-ERAINT/evaluation/r1i1p1/KNMI-RACMO21P/v1/day/sfcWind/v20201001/*.nc",
+        ).as_posix(),
+        "CMIP5_MRSOS_MULTIPLE_TIME_STEPS": Path(
+            esgf_cache_dir,
+            "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp45/day/land/day/r1i1p1/latest/mrsos/*.nc",
         ).as_posix(),
     }
 

@@ -27,8 +27,8 @@ def _load_ds(fpath):
     return xr.open_mfdataset(fpath, use_cftime=True)
 
 
-def test_average_basic_data_array(open_dataset):
-    ds = open_dataset("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc")
+def test_average_basic_data_array(open_xclim_dataset):
+    ds = open_xclim_dataset("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc")
     result = average_over_dims(
         ds["tas"], dims=["time"], ignore_undetected_dims=False, output_type="xarray"
     )
@@ -68,9 +68,9 @@ def test_average_lon_xarray(mini_esgf_data):
     assert "lon" not in result[0]
 
 
-def test_average_level_xarray(get_file):
+def test_average_level_xarray(nimbus):
     result = average_over_dims(
-        get_file(
+        nimbus.fetch(
             "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
         ),
         dims=["level"],
@@ -123,9 +123,9 @@ def test_average_lon_nc(tmpdir, mini_esgf_data):
     )
 
 
-def test_average_level_nc(get_file, tmpdir):
+def test_average_level_nc(nimbus, tmpdir):
     result = average_over_dims(
-        get_file(
+        nimbus.fetch(
             "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
         ),
         dims=["level"],
