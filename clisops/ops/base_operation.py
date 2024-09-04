@@ -1,10 +1,10 @@
 from collections import ChainMap
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import xarray as xr
 from loguru import logger
-from roocs_utils.xarray_utils.xarray_utils import get_main_variable, open_xr_dataset
+from roocs_utils.xarray_utils.xarray_utils import open_xr_dataset
 
 from clisops.utils.common import expand_wildcards
 from clisops.utils.file_namers import get_file_namer
@@ -199,7 +199,7 @@ class Operation:
                 ds[var].attrs.pop("coordinates", None)
         return ds
 
-    def process(self) -> List[Union[xr.Dataset, Path]]:
+    def process(self) -> list[Union[xr.Dataset, Path]]:
         """Main processing method used by all subclasses.
 
         Returns

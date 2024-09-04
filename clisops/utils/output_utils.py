@@ -6,7 +6,7 @@ import time
 from datetime import datetime as dt
 from datetime import timedelta as td
 from pathlib import Path
-from typing import List, Tuple, Union
+from typing import Union
 
 import dask
 import pandas as pd
@@ -90,7 +90,7 @@ def get_time_slices(
     start=None,
     end=None,
     file_size_limit: str = None,
-) -> List[Tuple[str, str]]:
+) -> list[tuple[str, str]]:
     """
     Take an xarray Dataset or DataArray, assume it can be split on the time axis
     into a sequence of slices. Optionally, take a start and end date to specify

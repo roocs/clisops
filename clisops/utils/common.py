@@ -4,7 +4,7 @@ import sys
 import warnings
 from pathlib import Path
 from types import FunctionType, ModuleType
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from loguru import logger
 from packaging.version import Version
@@ -74,7 +74,7 @@ def _logging_examples() -> None:
     logger.critical("5")
 
 
-def enable_logging() -> List[int]:
+def enable_logging() -> list[int]:
     logger.enable("clisops")
 
     config = dict(

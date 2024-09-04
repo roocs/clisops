@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Tuple
+from typing import Optional
 
 import cf_xarray as cfxr  # noqa
 import cftime
@@ -668,7 +668,7 @@ def detect_format(ds):
         raise Exception("The grid format is not supported.")
 
 
-def detect_shape(ds, lat, lon, grid_type) -> Tuple[int, int, int]:
+def detect_shape(ds, lat, lon, grid_type) -> tuple[int, int, int]:
     """Detect the shape of the grid.
 
     Returns a tuple of (nlat, nlon, ncells). For an unstructured grid nlat and nlon are not defined

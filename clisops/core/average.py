@@ -1,8 +1,9 @@
 """Average module."""
 
 import warnings
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence, Tuple, Union
+from typing import Union
 
 import cf_xarray  # noqa
 import geopandas as gpd
