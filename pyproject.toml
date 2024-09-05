@@ -141,7 +141,7 @@ replace = "version = \"{new_version}\""
 ignore-words-list = "scrip,nam,te,mye,bu,lik,tread"
 
 [tool.coverage.paths]
-source = ["clisops"]
+source = ["clisops", "*/site-packages/clisops/"]
 
 [tool.coverage.run]
 relative_files = true

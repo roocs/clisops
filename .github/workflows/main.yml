@@ -141,7 +141,7 @@ jobs:
           python -m pip check || true
       - name: Test with conda
         run: |
-          python -m pytest --numprocesses=logical --cov tests
+          python -m pytest --numprocesses=logical --durations=10 --cov=clisops --cov-report=term-missing
 
   finish:
     needs:
