@@ -144,9 +144,10 @@ def ndq_series():
     time = xr.IndexVariable(
         "time", dates, attrs={"units": "days since 1900-01-01", "calendar": "standard"}
     )
+    rs = np.random.RandomState()
 
     return xr.DataArray(
-        np.random.lognormal(10, 1, (nt, nx, ny)),
+        rs.lognormal(10, 1, (nt, nx, ny)),
         dims=("time", "x", "y"),
         coords={"time": time, "x": cx, "y": cy},
         attrs={"units": "m^3 s-1", "standard_name": "streamflow"},
