@@ -13,8 +13,10 @@ New Features
 Breaking Changes
 ^^^^^^^^^^^^^^^^
 * `clisops` has dropped support for Python 3.8 (#345).
-* `clisops` now requires `numpy >=1.17` (#345).
-* The development dependencies have been updated to include `filelock >=3.15.4` and `pytest-xdist[psutil] >=3.2` (#345).
+* `clisops` now requires `filelock >=3.15.4`, `jinja2 >=2.11`, `numpy >=1.17`, and `scipy >=1.6` (#345).
+* `clisops` no longer requires `gitpython >=3.1.30` and `requests >=2.0` (#345).
+* The development dependencies have been updated to include `deptry >=0.20.0` and `pytest-xdist[psutil] >=3.2` (#345).
+* `netCDF4` has been moved from core dependency to development dependency (#345).
 
 Other Changes
 ^^^^^^^^^^^^^

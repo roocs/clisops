@@ -16,10 +16,9 @@ from roocs_utils.xarray_utils.xarray_utils import (
     known_coord_types,
 )
 
+from clisops.core.regrid import XESMF_MINIMUM_VERSION
+from clisops.core.subset import shape_bbox_indexer
 from clisops.utils.time_utils import create_time_bounds
-
-from .regrid import XESMF_MINIMUM_VERSION
-from .subset import shape_bbox_indexer
 
 __all__ = ["average_over_dims", "average_shape", "average_time"]
 

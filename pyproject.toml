@@ -51,19 +51,20 @@ dependencies = [
   "cf-xarray >=0.8.6",
   "cftime >=1.4.1",
   "dask[complete] >=2.6",
+  "filelock >=3.15.4",
   "geopandas >=0.11",
+  "jinja2 >=2.11",
   "loguru >=0.5.3",
-  "netCDF4 >=1.4",
   "numpy >=1.17,<2.1",
   "packaging",
   "pandas >=1.0.3",
   "platformdirs >=4.0",
   "pooch",
   "pyproj >=3.3.0",
-  "requests >=2.0",
   # roocs_grids is differently named on conda-forge
   "roocs_grids >=0.1.2",
   "roocs-utils >=0.6.7,<0.7",
+  "scipy>=1.6",
   "shapely >=1.9",
   "xarray >=0.21"
 ]
@@ -74,11 +75,10 @@ dev = [
   "black >=24.8.0",
   "bump-my-version >=0.18.3",
   "coverage[toml] >=7.5.0",
-  "filelock >=3.15.4",
+  "deptry >=0.20.0",
   "flake8 >=7.0.0",
-  "gitpython >=3.1.30",
   "isort >=5.13.2",
-  "jinja2 >=2.11",
+  "netCDF4 >=1.4",
   "pre-commit >=3.0.0",
   "pytest >=8.0.0",
   "pytest-cov >=5.0.0",
@@ -88,7 +88,6 @@ dev = [
   "watchdog >=4.0.0"
 ]
 docs = [
-  "filelock >=3.15.4",
   "ipykernel",
   "ipython",
   "ipython_genutils",
@@ -99,7 +98,7 @@ docs = [
   "sphinx >=6.0.0",
   "sphinx-rtd-theme >=1.0"
 ]
-extra = [
+extras = [
   "xesmf >=0.8.2",
   # See: https://github.com/pydata/xarray/issues/7794
   "xarray >=0.21.0,<2023.03.0"
@@ -148,6 +147,16 @@ source = ["clisops"]
 relative_files = true
 omit = ["*/tests/*.py"]
 source = ["clisops"]
+
+[tool.deptry]
+extend_exclude = ["docs"]
+ignore_notebooks = true
+pep621_dev_dependency_groups = ["dev", "docs", "extras"]
+
+[tool.deptry.per_rule_ignores]
+DEP002 = ["bottleneck", "cartopy", "netcdf4"]
+DEP003 = ["clisops"] # should be removed when restructuring to src layout
+DEP004 = ["xesmf"]
 
 [tool.flit.sdist]
 include = [
