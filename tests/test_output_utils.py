@@ -23,7 +23,8 @@ def _open(coll):
     if isinstance(coll, (str, Path)):
         coll = expand_wildcards(coll)
     if len(coll) > 1:
-        ds = xr.open_mfdataset(coll, use_cftime=True, combine="by_coords")
+        # issues with dask and cftime
+        ds = xr.open_mfdataset(coll, use_cftime=True, combine="by_coords").load()
     else:
         ds = xr.open_dataset(coll[0], use_cftime=True)
     return ds

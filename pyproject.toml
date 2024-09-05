@@ -141,9 +141,13 @@ replace = "version = \"{new_version}\""
 [tool.codespell]
 ignore-words-list = "scrip,nam,te,mye,bu,lik,tread"
 
+[tool.coverage.paths]
+source = ["clisops"]
+
 [tool.coverage.run]
 relative_files = true
 omit = ["*/tests/*.py"]
+source = ["clisops"]
 
 [tool.flit.sdist]
 include = [

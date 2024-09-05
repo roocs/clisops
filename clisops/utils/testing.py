@@ -103,7 +103,7 @@ def write_roocs_cfg(cache_dir: Union[str, Path]):
     os.environ["ROOCS_CONFIG"] = roocs_config.as_posix()
 
 
-def get_esgf_file_paths(esgf_cache_dir):
+def get_esgf_file_paths(esgf_cache_dir: Union[str, os.PathLike[str]]):
     return {
         "CMIP5_ZOSTOGA": Path(
             esgf_cache_dir,
@@ -268,7 +268,7 @@ def get_esgf_file_paths(esgf_cache_dir):
     }
 
 
-def get_esgf_glob_paths(esgf_cache_dir):
+def get_esgf_glob_paths(esgf_cache_dir: Union[str, os.PathLike[str]]):
     return {
         "CMIP5_TAS": Path(
             esgf_cache_dir,
