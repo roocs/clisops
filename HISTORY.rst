@@ -1,6 +1,27 @@
 Version History
 ===============
 
+v0.14.0 (2024-08-20)
+--------------------
+
+New Features
+^^^^^^^^^^^^
+* `clisops` now makes use of `pytest-xdist` for parallel testing. This can be enabled using `--numprocesses={int}`. See the `pytest-xdist documentation <https://pytest-xdist.readthedocs.io/en/latest/>`_ for more information (#345).
+* Testing data caching is now handled by `pooch` and testing data registries ('stratus' for `roocs/mini-esgf-data` and 'nimbus' for `Ouranosinc/xclim-testdata`) (#345).
+* `clisops` coding conventions now use Python3.9+ conventions (#345).
+
+Breaking Changes
+^^^^^^^^^^^^^^^^
+* `clisops` has dropped support for Python 3.8 (#345).
+* `clisops` now requires `numpy >=1.17` (#345).
+* The development dependencies have been updated to include `filelock >=3.15.4` and `pytest-xdist[psutil] >=3.2` (#345).
+
+Other Changes
+^^^^^^^^^^^^^
+* `clisops.utils.testing` has replaced `clisops.utils.tutorial`. This submodule contains several functions and variables for allowing user control over testing data fetching (#345).
+* The `_common` testing tools have been migrated to `clisops.utils.testing` or rewritten as `pytest` fixtures (#345).
+* Testing data fetching now uses worker threads to copy cached data to threadsafe data caches that are separated by worker (#345).
+
 v0.13.1 (2024-08-20)
 --------------------
 
