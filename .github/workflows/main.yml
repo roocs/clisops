@@ -12,7 +12,7 @@ concurrency:
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
 env:
-  ESGF_TEST_DATA_VERSION: restructuring
+  ESGF_TEST_DATA_VERSION: v1
 
 permissions:
   contents: read
@@ -32,9 +32,16 @@ jobs:
         uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
         with:
           python-version: "3.9"
+          cache: pip
       - name: Install tox
         run: |
-          python -m pip install tox~=4.0
+          python -m pip install tox~=4.18.0
+      - name: Environment Caching
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: |
+            .tox
+          key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-lint-${{ env.ESGF_TEST_DATA_VERSION }}
       - name: Run linting suite
         run: |
           python -m tox -e ${{ matrix.tox-env }}
@@ -62,9 +69,18 @@ jobs:
         uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
         with:
           python-version: ${{ matrix.python-version }}
+          cache: pip
       - name: Install tox
         run: |
-          python -m pip install tox~=4.0
+          python -m pip install tox~=4.18.0
+      - name: Environment Caching
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: |
+            ~/.cache/mini-esgf-data
+            ~/.cache/xclim-testdata
+            .tox
+          key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-Python${{ matrix.python-version }}-${{ env.ESGF_TEST_DATA_VERSION }}
       - name: Test with tox
         run: |
           python -m tox -e ${{ matrix.tox-env }}
@@ -112,6 +128,13 @@ jobs:
         if: ${{ matrix.upstream }}
         run: |
           python -m pip install -r requirements_upstream.txt
+      - name: Test Data Caching
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: |
+            ~/.cache/mini-esgf-data
+            ~/.cache/xclim-testdata
+          key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-conda-Python${{ matrix.python-version }}-${{ env.ESGF_TEST_DATA_VERSION }}
       - name: Check versions
         run: |
           micromamba list
