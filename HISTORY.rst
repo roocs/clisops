@@ -13,7 +13,9 @@ New Features
 Breaking Changes
 ^^^^^^^^^^^^^^^^
 * `clisops` has dropped support for Python 3.8 (#345).
-* `clisops` now requires `filelock >=3.15.4`, `jinja2 >=2.11`, `numpy >=1.17`, and `scipy >=1.6` (#345).
+* Several dependencies have been updated to include lower bounds for clearer compatibility and easier maintenance (#345, #XYZ).
+    * The affected core dependencies are: `dask >=2023.6.0`, `filelock >=3.15.4`, `geopandas >=0.14.0`, `jinja2 >=2.11`, `numpy >=1.23.0`, `packaging >=23.2`, `pandas >=1.5.0`, `pooch >=1.8.0`, `scipy >=1.9.0`, and `xarray >=2022.6.0`.
+    * Extra dependencies are `ipython >=8.5.0`, `matplotlib >=3.6.0`, `nbconvert >=7.14.0`, `nbsphinx >=0.9.5`, `pre-commit >=3.5.0`, and `sphinx >=7.0.0`.
 * `clisops` no longer requires `gitpython >=3.1.30` and `requests >=2.0` (#345).
 * The development dependencies have been updated to include `deptry >=0.20.0` and `pytest-xdist[psutil] >=3.2` (#345).
 * `netCDF4` has been moved from core dependency to development dependency (#345).
