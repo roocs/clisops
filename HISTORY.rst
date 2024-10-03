@@ -1,7 +1,32 @@
 Version History
 ===============
 
-v0.13.1 (unreleased)
+v0.14.0 (2024-10-03)
+--------------------
+
+New Features
+^^^^^^^^^^^^
+* `clisops` now makes use of `pytest-xdist` for parallel testing. This can be enabled using `--numprocesses={int}`. See the `pytest-xdist documentation <https://pytest-xdist.readthedocs.io/en/latest/>`_ for more information (#345).
+* Testing data caching is now handled by `pooch` and testing data registries ('stratus' for `roocs/mini-esgf-data` and 'nimbus' for `Ouranosinc/xclim-testdata`) (#345).
+* `clisops` coding conventions now use Python 3.9+ conventions (#345).
+
+Breaking Changes
+^^^^^^^^^^^^^^^^
+* `clisops` has dropped support for Python 3.8 (#345).
+* Several dependencies have been updated to include lower bounds for clearer compatibility and easier maintenance (#345, #XYZ).
+    * The affected core dependencies are: `dask >=2023.6.0`, `filelock >=3.15.4`, `geopandas >=0.14.0`, `jinja2 >=2.11`, `numpy >=1.23.0`, `packaging >=23.2`, `pandas >=1.5.0`, `pooch >=1.8.0`, `scipy >=1.9.0`, and `xarray >=2022.6.0`.
+    * Extra dependencies are `ipython >=8.5.0`, `matplotlib >=3.6.0`, `nbconvert >=7.14.0`, `nbsphinx >=0.9.5`, `pre-commit >=3.5.0`, and `sphinx >=7.0.0`.
+* `clisops` no longer requires `gitpython >=3.1.30` and `requests >=2.0` (#345).
+* The development dependencies have been updated to include `deptry >=0.20.0` and `pytest-xdist[psutil] >=3.2` (#345).
+* `netCDF4` has been moved from core dependency to development dependency (#345).
+
+Other Changes
+^^^^^^^^^^^^^
+* `clisops.utils.testing` has replaced `clisops.utils.tutorial`. This submodule contains several functions and variables for allowing user control over testing data fetching (#345).
+* The `_common` testing tools have been migrated to `clisops.utils.testing` or rewritten as `pytest` fixtures (#345).
+* Testing data fetching now uses worker threads to copy cached data to threadsafe data caches that are separated by worker (#345).
+
+v0.13.1 (2024-08-20)
 --------------------
 
 Bug Fixes
@@ -11,10 +36,12 @@ Bug Fixes
 Breaking Changes
 ^^^^^^^^^^^^^^^^
 * Anaconda builds now require `cartopy >=0.23` and only support Python 3.9 and above (#340).
+* Many dependency version pins now include lower bounds for clearer compatibility and easier maintenance (#343).
 
 Other Changes
 ^^^^^^^^^^^^^
 * Internal warnings now consistently use the `clisops` configured `loguru` logger (#335).
+* CI Actions now use the commit hashes for version tracking (#343).
 
 v0.13.0 (2024-02-16)
 --------------------

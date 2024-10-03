@@ -1,6 +1,6 @@
 from collections import ChainMap
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import xarray as xr
 from loguru import logger
@@ -199,7 +199,7 @@ class Operation:
                 ds[var].attrs.pop("coordinates", None)
         return ds
 
-    def process(self) -> List[Union[xr.Dataset, Path]]:
+    def process(self) -> list[Union[xr.Dataset, Path]]:
         """Main processing method used by all subclasses.
 
         Returns

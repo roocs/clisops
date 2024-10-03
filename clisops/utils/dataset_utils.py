@@ -1,7 +1,7 @@
 import inspect
 import os
 import warnings
-from typing import Optional, Tuple
+from typing import Optional
 
 import cf_xarray as cfxr  # noqa
 import cftime
@@ -1135,14 +1135,14 @@ def reformat_SCRIP_to_CF(ds, keep_attrs=False):
             (
                 ds.grid_dims.values[1],
                 ds.grid_dims.values[0],
-                ds.dims["grid_corners"],
+                ds.sizes["grid_corners"],
             )
         ).astype(np.float32)
         lon_b = ds.grid_corner_lon.values.reshape(
             (
                 ds.grid_dims.values[1],
                 ds.grid_dims.values[0],
-                ds.dims["grid_corners"],
+                ds.sizes["grid_corners"],
             )
         ).astype(np.float32)
         lat_bnds = np.zeros((ds.grid_dims.values[1], 2), dtype=np.float32)
@@ -1305,7 +1305,7 @@ def detect_format(ds):
         raise Exception("The grid format is not supported.")
 
 
-def detect_shape(ds, lat, lon, grid_type) -> Tuple[int, int, int]:
+def detect_shape(ds, lat, lon, grid_type) -> tuple[int, int, int]:
     """Detect the shape of the grid.
 
     Returns a tuple of (nlat, nlon, ncells). For an unstructured grid nlat and nlon are not defined
@@ -1737,7 +1737,7 @@ def detect_gridtype(ds, lon, lat, lon_bnds=None, lat_bnds=None):
                 and all([ds[bnds].ndim == 2 for bnds in [lon_bnds, lat_bnds]])
                 and all(
                     [
-                        ds.dims[dim] > 2
+                        ds.sizes[dim] > 2
                         for dim in [
                             ds[lon_bnds].dims[-1],
                             ds[lat_bnds].dims[-1],
@@ -1749,10 +1749,10 @@ def detect_gridtype(ds, lon, lat, lon_bnds=None, lat_bnds=None):
             # rectilinear: bounds [nlat/nlon, 2]
             elif all([ds[bnds].ndim == 2 for bnds in [lon_bnds, lat_bnds]]) and all(
                 [
-                    ds.dims[dim] == 2
+                    ds.sizes[dim] == 2
                     for dim in [
-                        ds[lon_bnds].dims[-1],
-                        ds[lat_bnds].dims[-1],
+                        ds[lon_bnds].sizes[-1],
+                        ds[lat_bnds].sizes[-1],
                     ]
                 ]
             ):

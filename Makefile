@@ -51,9 +51,10 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .pytest_cache
 
 lint: ## check style with flake8
-	black --check clisops tests
-	isort --check-only clisops tests
-	flake8 --config=.flake8 clisops tests
+	python -m black --check clisops tests
+	python -m isort --check-only clisops tests
+	python -m flake8 --config=.flake8 clisops tests
+	python -m deptry .
 
 test: ## run tests quickly with the default Python
 	python -m pytest

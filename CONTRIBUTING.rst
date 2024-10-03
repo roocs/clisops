@@ -76,7 +76,7 @@ Ready to contribute? Here's how to set up `clisops` for local development.
         $ mkvirtualenv clisops
 
         # For Anaconda/Miniconda environments:
-        $ conda create -n clisops python=(3.8, 3.9, 3.10, etc.)
+        $ conda create -n clisops python=(3.9, 3.10, 3.11, etc.)
 
         $ cd clisops/
         $ pip install -e .
@@ -204,7 +204,7 @@ Before you submit a pull request, please follow these guidelines:
     Remember to add the feature or bug fixes explanation to the appropriate section in the HISTORY.rst.
 
 #.
-    The pull request should work for Python 3.8+ as well as raise test coverage.
+    The pull request should work for Python 3.9+ as well as raise test coverage.
     Pull requests are also checked for documentation build status and for `PEP8`_ compliance.
 
     The build statuses and build errors for pull requests can be found at:

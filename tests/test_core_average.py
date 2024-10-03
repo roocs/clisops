@@ -1,5 +1,3 @@
-import os
-
 import geopandas as gpd
 import numpy as np
 import pytest
@@ -8,10 +6,8 @@ from packaging.version import Version
 from roocs_utils.exceptions import InvalidParameterValue
 from roocs_utils.xarray_utils import xarray_utils as xu
 
-from _common import CMIP5_RH, CMIP6_SICONC_DAY, TESTS_DATA
 from clisops.core import average
 from clisops.core.regrid import XESMF_MINIMUM_VERSION
-from clisops.utils import get_file
 
 try:
     import xesmf
@@ -28,24 +24,15 @@ except ImportError:
 )
 class TestAverageShape:
     # Fetch remote netcdf files
-    nc_file = get_file("cmip5/tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc")
-    lons_2d_nc_file = get_file("cmip6/sic_SImon_CCCma-CanESM5_ssp245_r13i1p2f1_2020.nc")
-    nc_file_neglons = get_file("NRCANdaily/nrcan_canada_daily_tasmax_1990.nc")
+    nc_file = "cmip5/tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc"
+    lons_2d_nc_file = "cmip6/sic_SImon_CCCma-CanESM5_ssp245_r13i1p2f1_2020.nc"
+    nc_file_neglons = "NRCANdaily/nrcan_canada_daily_tasmax_1990.nc"
 
-    # Fetch local JSON files
-    meridian_geojson = os.path.join(TESTS_DATA, "meridian.json")
-    meridian_multi_geojson = os.path.join(TESTS_DATA, "meridian_multi.json")
-    poslons_geojson = os.path.join(TESTS_DATA, "poslons.json")
-    eastern_canada_geojson = os.path.join(TESTS_DATA, "eastern_canada.json")
-    southern_qc_geojson = os.path.join(TESTS_DATA, "southern_qc_geojson.json")
-    small_geojson = os.path.join(TESTS_DATA, "small_geojson.json")
-    multi_regions_geojson = os.path.join(TESTS_DATA, "multi_regions.json")
-
-    def test_wraps(self, tmp_netcdf_filename):
-        ds = xr.open_dataset(self.nc_file)
+    def test_wraps(self, tmp_netcdf_filename, open_xclim_dataset, clisops_test_data):
+        ds = open_xclim_dataset(self.nc_file)
 
         # xESMF has a problem with averaging over dataset when non-averaged variables are present...
-        avg = average.average_shape(ds.tas, self.meridian_geojson)
+        avg = average.average_shape(ds.tas, clisops_test_data["meridian_geojson"])
 
         # Check attributes are copied
         assert avg.attrs["units"] == ds.tas.attrs["units"]
@@ -57,19 +44,19 @@ class TestAverageShape:
         np.testing.assert_array_almost_equal(avg.isel(time=0), 285.533, 3)
 
         # Test with Dataset input
-        davg = average.average_shape(ds, self.meridian_geojson).tas
+        davg = average.average_shape(ds, clisops_test_data["meridian_geojson"]).tas
         xr.testing.assert_equal(davg, avg)
 
         # With multiple polygons
-        poly = gpd.read_file(self.meridian_multi_geojson)
+        poly = gpd.read_file(clisops_test_data["meridian_multi_geojson"])
 
         avg = average.average_shape(ds, poly).tas
         np.testing.assert_array_almost_equal(avg.isel(time=0), 280.965, 3)
 
-    def test_no_wraps(self, tmp_netcdf_filename):
-        ds = xr.open_dataset(self.nc_file)
+    def test_no_wraps(self, tmp_netcdf_filename, open_xclim_dataset, clisops_test_data):
+        ds = open_xclim_dataset(self.nc_file)
 
-        avg = average.average_shape(ds.tas, self.poslons_geojson)
+        avg = average.average_shape(ds.tas, clisops_test_data["poslons_geojson"])
 
         # No time subsetting should occur.
         assert len(avg.time) == 12
@@ -77,10 +64,10 @@ class TestAverageShape:
         # Average temperature at surface for region in January (time=0)
         np.testing.assert_array_almost_equal(avg.isel(time=0), 276.152, 3)
 
-    def test_all_neglons(self):
-        ds = xr.open_dataset(self.nc_file_neglons)
+    def test_all_neglons(self, open_xclim_dataset, clisops_test_data):
+        ds = open_xclim_dataset(self.nc_file_neglons)
 
-        avg = average.average_shape(ds.tasmax, self.southern_qc_geojson)
+        avg = average.average_shape(ds.tasmax, clisops_test_data["southern_qc_geojson"])
 
         # Average temperature at surface for region in January (time=0)
         np.testing.assert_array_almost_equal(avg.isel(time=0), 269.257, 3)
@@ -91,35 +78,37 @@ class TestAverageShape:
 
     #     avg = average.average_shape(ds.rename(vertices='bounds'), self.eastern_canada_geojson)
 
-    def test_average_multiregions(self):
-        ds = xr.open_dataset(self.nc_file)
-        regions = gpd.read_file(self.multi_regions_geojson).set_index("id")
+    def test_average_multiregions(self, open_xclim_dataset, clisops_test_data):
+        ds = open_xclim_dataset(self.nc_file)
+        regions = gpd.read_file(clisops_test_data["multi_regions_geojson"]).set_index(
+            "id"
+        )
         avg = average.average_shape(ds.tas, shape=regions)
         np.testing.assert_array_almost_equal(
             avg.isel(time=0), [268.620, 278.290, 277.863], decimal=3
         )
         np.testing.assert_array_equal(avg.geom, ["Québec", "Europe", "Newfoundland"])
 
-    def test_non_overlapping_regions(self):
-        ds = xr.open_dataset(self.nc_file_neglons)
-        regions = gpd.read_file(self.meridian_geojson)
+    def test_non_overlapping_regions(self, open_xclim_dataset, clisops_test_data):
+        ds = open_xclim_dataset(self.nc_file_neglons)
+        regions = gpd.read_file(clisops_test_data["meridian_geojson"])
 
         with pytest.raises(ValueError):
             average.average_shape(ds.tasmax, shape=regions)
 
 
 class TestAverageOverDims:
-    nc_file = get_file("cmip5/tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc")
+    nc_file = "cmip5/tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc"
 
-    def test_average_no_dims(self):
-        ds = xr.open_dataset(self.nc_file)
+    def test_average_no_dims(self, open_xclim_dataset):
+        ds = open_xclim_dataset(self.nc_file)
 
         with pytest.raises(InvalidParameterValue) as exc:
             average.average_over_dims(ds)
         assert str(exc.value) == "At least one dimension for averaging must be provided"
 
-    def test_average_one_dim(self):
-        ds = xr.open_dataset(self.nc_file)
+    def test_average_one_dim(self, open_xclim_dataset):
+        ds = open_xclim_dataset(self.nc_file)
 
         avg_ds = average.average_over_dims(ds, ["latitude"])
 
@@ -129,8 +118,8 @@ class TestAverageOverDims:
         # lat has been averaged over
         assert "lat" not in avg_ds.dims
 
-    def test_average_two_dims(self):
-        ds = xr.open_dataset(self.nc_file)
+    def test_average_two_dims(self, open_xclim_dataset):
+        ds = open_xclim_dataset(self.nc_file)
 
         avg_ds = average.average_over_dims(ds, ["latitude", "time"])
 
@@ -140,8 +129,8 @@ class TestAverageOverDims:
         # lat has been averaged over
         assert "lat" not in avg_ds.dims
 
-    def test_average_wrong_dim(self):
-        ds = xr.open_dataset(self.nc_file)
+    def test_average_wrong_dim(self, open_xclim_dataset):
+        ds = open_xclim_dataset(self.nc_file)
 
         with pytest.raises(InvalidParameterValue) as exc:
             average.average_over_dims(ds, ["wrong", "latitude"])
@@ -150,8 +139,8 @@ class TestAverageOverDims:
             == "Dimensions for averaging must be one of ['time', 'level', 'latitude', 'longitude', 'realization']"
         )
 
-    def test_undetected_dim(self):
-        ds = xr.open_dataset(self.nc_file)
+    def test_undetected_dim(self, open_xclim_dataset):
+        ds = open_xclim_dataset(self.nc_file)
 
         with pytest.raises(InvalidParameterValue) as exc:
             average.average_over_dims(ds, ["level", "time"])
@@ -160,8 +149,8 @@ class TestAverageOverDims:
             == "Requested dimensions were not found in input dataset: {'level'}."
         )
 
-    def test_average_undetected_dim_ignore(self):
-        ds = xr.open_dataset(self.nc_file)
+    def test_average_undetected_dim_ignore(self, open_xclim_dataset):
+        ds = open_xclim_dataset(self.nc_file)
 
         # exception should not be raised as ignore_undetected_dims set to True
         avg_ds = average.average_over_dims(
@@ -171,8 +160,8 @@ class TestAverageOverDims:
         # time has been averaged over
         assert "time" not in avg_ds.dims
 
-    def test_average_wrong_format(self):
-        ds = xr.open_dataset(self.nc_file)
+    def test_average_wrong_format(self, open_xclim_dataset):
+        ds = open_xclim_dataset(self.nc_file)
 
         with pytest.raises(InvalidParameterValue) as exc:
             average.average_over_dims(ds, [0, "time"])
@@ -183,33 +172,32 @@ class TestAverageOverDims:
 
 
 class TestAverageTime:
-    month_ds = CMIP5_RH
-    day_ds = CMIP6_SICONC_DAY
+    month_ds = "CMIP5_RH"
 
-    def test_average_month(self):
-        ds = xu.open_xr_dataset(self.day_ds)
+    def test_average_month(self, mini_esgf_data):
+        ds = xu.open_xr_dataset(mini_esgf_data["CMIP6_SICONC_DAY"])
         assert ds.time.shape == (60225,)
 
         avg_ds = average.average_time(ds, freq="month")
         assert avg_ds.time.shape == (1980,)
 
-    def test_average_year(self):
-        ds = xu.open_xr_dataset(self.month_ds)
+    def test_average_year(self, mini_esgf_data):
+        ds = xu.open_xr_dataset(mini_esgf_data[self.month_ds])
         assert ds.time.shape == (1752,)
 
         avg_ds = average.average_time(ds, freq="year")
         assert avg_ds.time.shape == (147,)
 
-    def test_no_freq(self):
-        ds = xu.open_xr_dataset(self.month_ds)
+    def test_no_freq(self, mini_esgf_data):
+        ds = xu.open_xr_dataset(mini_esgf_data[self.month_ds])
 
         with pytest.raises(InvalidParameterValue) as exc:
             average.average_time(ds, freq=None)  # noqa
 
         assert str(exc.value) == "At least one frequency for averaging must be provided"
 
-    def test_incorrect_freq(self):
-        ds = xu.open_xr_dataset(self.month_ds)
+    def test_incorrect_freq(self, mini_esgf_data):
+        ds = xu.open_xr_dataset(mini_esgf_data[self.month_ds])
 
         with pytest.raises(InvalidParameterValue) as exc:
             average.average_time(ds, freq="wrong")
@@ -218,16 +206,16 @@ class TestAverageTime:
             == "Time frequency for averaging must be one of ['day', 'month', 'year']."
         )
 
-    def test_freq_wrong_format(self):
-        ds = xu.open_xr_dataset(self.month_ds)
+    def test_freq_wrong_format(self, mini_esgf_data):
+        ds = xu.open_xr_dataset(mini_esgf_data[self.month_ds])
 
         with pytest.raises(InvalidParameterValue) as exc:
             average.average_time(ds, freq=0)  # noqa
 
         assert str(exc.value) == "At least one frequency for averaging must be provided"
 
-    def test_no_time(self):
-        ds = xu.open_xr_dataset(self.month_ds)
+    def test_no_time(self, mini_esgf_data):
+        ds = xu.open_xr_dataset(mini_esgf_data[self.month_ds])
         ds = ds.drop_dims("time")
 
         with pytest.raises(Exception) as exc:

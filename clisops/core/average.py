@@ -1,8 +1,9 @@
 """Average module."""
 
 import warnings
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Sequence, Tuple, Union
+from typing import Union
 
 import cf_xarray  # noqa
 import geopandas as gpd
@@ -10,15 +11,14 @@ import numpy as np
 import xarray as xr
 from roocs_utils.exceptions import InvalidParameterValue
 
+from clisops.core.regrid import XESMF_MINIMUM_VERSION
+from clisops.core.subset import shape_bbox_indexer
 from clisops.utils.dataset_utils import (
     get_coord_by_type,
     get_coord_type,
     known_coord_types,
 )
 from clisops.utils.time_utils import create_time_bounds
-
-from .regrid import XESMF_MINIMUM_VERSION
-from .subset import shape_bbox_indexer
 
 __all__ = ["average_over_dims", "average_shape", "average_time"]
 

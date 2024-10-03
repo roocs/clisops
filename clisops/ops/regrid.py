@@ -1,7 +1,7 @@
 import warnings
 from datetime import datetime as dt
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 import xarray as xr
 from loguru import logger
@@ -212,7 +212,7 @@ def regrid(
     split_method: Optional[str] = "time:auto",
     file_namer: Optional[str] = "standard",
     keep_attrs: Optional[Union[bool, str]] = True,
-) -> List[Union[xr.Dataset, str]]:
+) -> list[Union[xr.Dataset, str]]:
     """Regrid specified input file or xarray object.
 
     Parameters

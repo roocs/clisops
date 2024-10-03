@@ -2,9 +2,10 @@
 
 import numbers
 import re
+from collections.abc import Sequence
 from functools import wraps
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Optional, Union
 
 import cf_xarray  # noqa
 import geopandas as gpd
@@ -1185,8 +1186,8 @@ def subset_shape(
 @check_lons
 def subset_bbox(
     da: Union[xarray.DataArray, xarray.Dataset],
-    lon_bnds: Union[np.array, Tuple[Optional[float], Optional[float]]] = None,
-    lat_bnds: Union[np.array, Tuple[Optional[float], Optional[float]]] = None,
+    lon_bnds: Union[np.array, tuple[Optional[float], Optional[float]]] = None,
+    lat_bnds: Union[np.array, tuple[Optional[float], Optional[float]]] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     first_level: Optional[Union[float, int]] = None,
@@ -1370,8 +1371,8 @@ def subset_bbox(
 
 
 def assign_bounds(
-    bounds: Tuple[Optional[float], Optional[float]], coord: xarray.DataArray
-) -> Tuple[Optional[float], Optional[float]]:
+    bounds: tuple[Optional[float], Optional[float]], coord: xarray.DataArray
+) -> tuple[Optional[float], Optional[float]]:
     """Replace unset boundaries by the minimum and maximum coordinates.
 
     Parameters
@@ -1395,7 +1396,7 @@ def assign_bounds(
     return bn, bx
 
 
-def in_bounds(bounds: Tuple[float, float], coord: xarray.DataArray) -> xarray.DataArray:
+def in_bounds(bounds: tuple[float, float], coord: xarray.DataArray) -> xarray.DataArray:
     """Check which coordinates are within the boundaries.
 
     Parameters
@@ -1416,9 +1417,9 @@ def in_bounds(bounds: Tuple[float, float], coord: xarray.DataArray) -> xarray.Da
 
 def _check_desc_coords(
     coord: xarray.Dataset,
-    bounds: Union[Tuple[float, float], List[np.ndarray]],
+    bounds: Union[tuple[float, float], list[np.ndarray]],
     dim: str,
-) -> Tuple[float, float]:
+) -> tuple[float, float]:
     """If Dataset coordinates are descending, and bounds are ascending, reverse bounds."""
     if np.all(coord.diff(dim=dim) < 0) and len(coord) > 1 and bounds[1] > bounds[0]:
         bounds = np.flip(bounds)
@@ -1715,7 +1716,7 @@ def subset_time_by_values(
 def subset_time_by_components(
     da: Union[xarray.DataArray, xarray.Dataset],
     *,
-    time_components: Union[Dict, None] = None,
+    time_components: Union[dict, None] = None,
 ) -> xarray.DataArray:
     """Subsets by one or more time components (year, month, day etc).
 
