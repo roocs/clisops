@@ -8,7 +8,7 @@ New Features
 ^^^^^^^^^^^^
 * `clisops` now makes use of `pytest-xdist` for parallel testing. This can be enabled using `--numprocesses={int}`. See the `pytest-xdist documentation <https://pytest-xdist.readthedocs.io/en/latest/>`_ for more information (#345).
 * Testing data caching is now handled by `pooch` and testing data registries ('stratus' for `roocs/mini-esgf-data` and 'nimbus' for `Ouranosinc/xclim-testdata`) (#345).
-* `clisops` coding conventions now use Python3.9+ conventions (#345).
+* `clisops` coding conventions now use Python 3.9+ conventions (#345).
 
 Breaking Changes
 ^^^^^^^^^^^^^^^^

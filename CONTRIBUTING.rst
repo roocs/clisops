@@ -76,7 +76,7 @@ Ready to contribute? Here's how to set up `clisops` for local development.
         $ mkvirtualenv clisops
 
         # For Anaconda/Miniconda environments:
-        $ conda create -n clisops python=(3.8, 3.9, 3.10, etc.)
+        $ conda create -n clisops python=(3.9, 3.10, 3.11, etc.)
 
         $ cd clisops/
         $ pip install -e .

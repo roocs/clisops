@@ -56,9 +56,7 @@ Install clisops in development mode:
 
 .. code-block:: console
 
-  $ pip install -r requirements.txt
-  $ pip install -r requirements_dev.txt
-  $ python setup.py develop
+  $ pip install --editable ".[dev]"
 
 Run tests:
 
