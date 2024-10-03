@@ -1,5 +1,6 @@
+from collections.abc import Sequence
 from pathlib import Path
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import Optional, Union
 
 import geopandas as gpd
 import xarray as xr
@@ -50,7 +51,7 @@ def average_over_dims(
     output_type: str = "netcdf",
     split_method: str = "time:auto",
     file_namer: str = "standard",
-) -> List[Union[xr.Dataset, str]]:
+) -> list[Union[xr.Dataset, str]]:
     """Calculate an average over given dimensions.
 
     Parameters
@@ -125,7 +126,7 @@ def average_shape(
     output_type: str = "netcdf",
     split_method: str = "time:auto",
     file_namer: str = "standard",
-) -> List[Union[xr.Dataset, str]]:
+) -> list[Union[xr.Dataset, str]]:
     """Calculate a spatial average over a given shape.
 
     Parameters
@@ -201,7 +202,7 @@ def average_time(
     output_type: str = "netcdf",
     split_method: str = "time:auto",
     file_namer: str = "standard",
-) -> List[Union[xr.Dataset, str]]:
+) -> list[Union[xr.Dataset, str]]:
     """
 
     Parameters

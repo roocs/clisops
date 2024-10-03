@@ -7,19 +7,9 @@ import pytest
 import xarray as xr
 from roocs_grids import get_grid_file, grid_dict
 
-from _common import (  # noqa
-    CMIP5_MRSOS_ONE_TIME_STEP,
-    CMIP6_ATM_VERT_ONE_TIMESTEP,
-    CMIP6_IITM_EXTENT,
-    CMIP6_OCE_HALO_CNRM,
-    CMIP6_TOS_ONE_TIME_STEP,
-    ATLAS_v0_CORDEX_ANT,
-    ATLAS_v1_CORDEX,
-    ATLAS_v1_EOBS_GRID,
-    ContextLogger,
-)
 from clisops.core.regrid import XESMF_MINIMUM_VERSION, weights_cache_init, xe
 from clisops.ops.regrid import regrid
+from clisops.utils.testing import ContextLogger
 
 XESMF_IMPORT_MSG = (
     f"xESMF >= {XESMF_MINIMUM_VERSION} is needed for regridding functionalities."
@@ -35,9 +25,9 @@ def _load_ds(fpath):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_basic(tmpdir, load_esgf_test_data, tmp_path):
+def test_regrid_basic(tmpdir, tmp_path, mini_esgf_data):
     """Test a basic regridding operation."""
-    fpath = CMIP5_MRSOS_ONE_TIME_STEP
+    fpath = mini_esgf_data["CMIP5_MRSOS_ONE_TIME_STEP"]
     basename = os.path.splitext(os.path.basename(fpath))[0]
     method = "nearest_s2d"
 
@@ -59,12 +49,12 @@ def test_regrid_basic(tmpdir, load_esgf_test_data, tmp_path):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_grid_as_none(tmpdir, load_esgf_test_data, tmp_path):
+def test_regrid_grid_as_none(tmpdir, tmp_path, mini_esgf_data):
     """Test behaviour when none passed as method and grid.
 
     Should use the default regridding.
     """
-    fpath = CMIP5_MRSOS_ONE_TIME_STEP
+    fpath = mini_esgf_data["CMIP5_MRSOS_ONE_TIME_STEP"]
 
     weights_cache_init(Path(tmp_path, "weights"))
 
@@ -84,10 +74,10 @@ def test_regrid_grid_as_none(tmpdir, load_esgf_test_data, tmp_path):
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 @pytest.mark.parametrize("grid_id", sorted(grid_dict))
 def test_regrid_regular_grid_to_all_roocs_grids(
-    tmpdir, load_esgf_test_data, grid_id, tmp_path
+    tmpdir, tmp_path, grid_id, mini_esgf_data
 ):
     """Test regridded a regular lat/lon field to all roocs grid types."""
-    fpath = CMIP5_MRSOS_ONE_TIME_STEP
+    fpath = mini_esgf_data["CMIP5_MRSOS_ONE_TIME_STEP"]
     basename = os.path.splitext(os.path.basename(fpath))[0]
     method = "nearest_s2d"
 
@@ -116,10 +106,10 @@ def test_regrid_regular_grid_to_all_roocs_grids(
 @pytest.mark.parametrize(
     "dset", ["ATLAS_v1_CORDEX", "ATLAS_v1_EOBS_GRID", "ATLAS_v0_CORDEX_ANT"]
 )
-def test_regrid_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
+def test_regrid_ATLAS_datasets(tmpdir, dset, mini_esgf_data):
     """Test regridding for several ATLAS datasets."""
     result = regrid(
-        ds=globals()[dset],
+        ds=mini_esgf_data[dset],
         method="bilinear",
         adaptive_masking_threshold=0.5,
         grid="0pt5deg_lsm",
@@ -133,7 +123,7 @@ def test_regrid_ATLAS_datasets(tmpdir, load_esgf_test_data, dset):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_ATLAS_CORDEX(tmpdir, load_esgf_test_data, caplog):  # noqa
+def test_regrid_ATLAS_CORDEX(tmpdir, caplog, mini_esgf_data):  # noqa
     """Test regridding for ATLAS CORDEX dataset."""
     import netCDF4
 
@@ -145,7 +135,7 @@ def test_regrid_ATLAS_CORDEX(tmpdir, load_esgf_test_data, caplog):  # noqa
         _logger.info("HDF5 lib version:       %s" % netCDF4.__hdf5libversion__)
         _logger.info("netcdf lib version:     %s" % netCDF4.__netcdf4libversion__)
 
-    ds = xr.open_dataset(ATLAS_v0_CORDEX_ANT, use_cftime=True)
+    ds = xr.open_dataset(mini_esgf_data["ATLAS_v0_CORDEX_ANT"], use_cftime=True)
 
     # Might trigger KeyError in future netcdf-c versions
     # PR: https://github.com/Unidata/netcdf-c/pull/2716
@@ -176,9 +166,9 @@ def test_regrid_ATLAS_CORDEX(tmpdir, load_esgf_test_data, caplog):  # noqa
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_keep_attrs(load_esgf_test_data, tmp_path):
+def test_regrid_keep_attrs(tmp_path, mini_esgf_data):
     """Test if dataset and variable attributes are kept / removed as specified."""
-    fpath = CMIP6_TOS_ONE_TIME_STEP
+    fpath = mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"]
     method = "nearest_s2d"
 
     weights_cache_init(Path(tmp_path, "weights"))
@@ -248,9 +238,9 @@ def test_regrid_keep_attrs(load_esgf_test_data, tmp_path):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_halo_simple(load_esgf_test_data, tmp_path):
+def test_regrid_halo_simple(tmp_path, mini_esgf_data):
     """Test regridding with a simple halo."""
-    fpath = CMIP6_TOS_ONE_TIME_STEP
+    fpath = mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"]
     ds = xr.open_dataset(fpath).isel(time=0)
 
     weights_cache_init(Path(tmp_path, "weights"))
@@ -270,9 +260,9 @@ def test_regrid_halo_simple(load_esgf_test_data, tmp_path):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_halo_adv(load_esgf_test_data, tmp_path):
+def test_regrid_halo_adv(tmp_path, mini_esgf_data):
     """Test regridding of dataset with a more complex halo."""
-    fpath = CMIP6_OCE_HALO_CNRM
+    fpath = mini_esgf_data["CMIP6_OCE_HALO_CNRM"]
     ds = xr.open_dataset(fpath).isel(time=0)
 
     weights_cache_init(Path(tmp_path, "weights"))
@@ -289,9 +279,9 @@ def test_regrid_halo_adv(load_esgf_test_data, tmp_path):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_shifted_lon_frame(load_esgf_test_data, tmp_path):
+def test_regrid_shifted_lon_frame(tmp_path, mini_esgf_data):
     """Test regridding of dataset with shifted longitude frame."""
-    fpath = CMIP6_IITM_EXTENT
+    fpath = mini_esgf_data["CMIP6_IITM_EXTENT"]
     ds = xr.open_dataset(fpath).isel(time=0)
 
     weights_cache_init(Path(tmp_path, "weights"))
@@ -330,10 +320,10 @@ def test_regrid_same_grid_exception(tmpdir, tmp_path):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_cmip6_nc_consistent_bounds_and_coords(load_esgf_test_data, tmpdir):
+def test_regrid_cmip6_nc_consistent_bounds_and_coords(tmpdir, mini_esgf_data):
     """Tests clisops regrid function and check metadata added by xarray"""
     result = regrid(
-        ds=CMIP6_ATM_VERT_ONE_TIMESTEP,
+        ds=mini_esgf_data["CMIP6_ATM_VERT_ONE_TIMESTEP"],
         method="nearest_s2d",
         grid=10.0,
         output_dir=tmpdir,

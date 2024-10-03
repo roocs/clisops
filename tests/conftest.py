@@ -1,18 +1,16 @@
 import os
+from pathlib import Path
+from typing import Union
 
 import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
 from _pytest.logging import caplog as _caplog  # noqa
-from git import Repo
 
-from _common import MINI_ESGF_CACHE_DIR, write_roocs_cfg
-from clisops.utils import get_file
-
-write_roocs_cfg()
-
-ESGF_TEST_DATA_REPO_URL = "https://github.com/roocs/mini-esgf-data"
+from clisops.utils import testing
+from clisops.utils.testing import open_dataset as _open_dataset
+from clisops.utils.testing import stratus as _stratus
 
 
 @pytest.fixture
@@ -146,9 +144,10 @@ def ndq_series():
     time = xr.IndexVariable(
         "time", dates, attrs={"units": "days since 1900-01-01", "calendar": "standard"}
     )
+    rs = np.random.RandomState()
 
     return xr.DataArray(
-        np.random.lognormal(10, 1, (nt, nx, ny)),
+        rs.lognormal(10, 1, (nt, nx, ny)),
         dims=("time", "x", "y"),
         coords={"time": time, "x": cx, "y": cy},
         attrs={"units": "m^3 s-1", "standard_name": "streamflow"},
@@ -252,42 +251,168 @@ def ps_series():
     return _ps_series
 
 
-@pytest.fixture
-def cmip5_tas_file():
-    return str(
-        get_file(
-            "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc",
-        )
-    )
-
-
-@pytest.fixture
-def cmip6_o3():
-    return str(
-        get_file(
-            "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc",
-        )
-    )
-
-
-# Fixture to load mini-esgf-data repository used by roocs tests
 @pytest.fixture(scope="session", autouse=True)
-def load_esgf_test_data():
+def threadsafe_data_dir(tmp_path_factory):
+    return tmp_path_factory.getbasetemp().joinpath("data")
+
+
+@pytest.fixture(scope="session")
+def stratus(threadsafe_data_dir, worker_id):
+    return _stratus(
+        repo=testing.ESGF_TEST_DATA_REPO_URL,
+        branch=testing.ESGF_TEST_DATA_VERSION,
+        cache_dir=(
+            testing.ESGF_TEST_DATA_CACHE_DIR
+            if worker_id == "master"
+            else threadsafe_data_dir
+        ),
+    )
+
+
+@pytest.fixture(scope="session")
+def nimbus(threadsafe_data_dir, worker_id):
+    return _stratus(
+        repo=testing.XCLIM_TEST_DATA_REPO_URL,
+        branch=testing.XCLIM_TEST_DATA_VERSION,
+        cache_dir=(
+            testing.XCLIM_TEST_DATA_CACHE_DIR
+            if worker_id == "master"
+            else threadsafe_data_dir
+        ),
+    )
+
+
+@pytest.fixture(scope="session")
+def open_esgf_dataset(stratus):
+    def _open_session_scoped_file(file: Union[str, os.PathLike], **xr_kwargs):
+        xr_kwargs.setdefault("cache", True)
+        return _open_dataset(
+            file,
+            branch=testing.ESGF_TEST_DATA_VERSION,
+            repo=testing.ESGF_TEST_DATA_REPO_URL,
+            cache_dir=stratus.path,
+            **xr_kwargs,
+        )
+
+    return _open_session_scoped_file
+
+
+@pytest.fixture(scope="session")
+def open_xclim_dataset(nimbus):
+    def _open_session_scoped_file(file: Union[str, os.PathLike], **xr_kwargs):
+        xr_kwargs.setdefault("cache", True)
+        return _open_dataset(
+            file,
+            branch=testing.XCLIM_TEST_DATA_VERSION,
+            repo=testing.XCLIM_TEST_DATA_REPO_URL,
+            cache_dir=nimbus.path,
+            **xr_kwargs,
+        )
+
+    return _open_session_scoped_file
+
+
+@pytest.fixture
+def check_output_nc():
+    def _check_output_nc(result, fname="output_001.nc", time=None):
+        assert fname in [Path(_).name for _ in result]
+        if time:
+            ds = xr.open_mfdataset(result, use_cftime=True, decode_timedelta=False)
+            time_ = (
+                f"{ds.time.values.min().isoformat()}/{ds.time.values.max().isoformat()}"
+            )
+            assert time == time_
+
+    return _check_output_nc
+
+
+@pytest.fixture(scope="session", autouse=True)
+def load_test_data(worker_id, stratus, nimbus):
     """
     This fixture ensures that the required test data repository
     has been cloned to the cache directory within the home directory.
     """
-    branch = "master"
-    target = os.path.join(MINI_ESGF_CACHE_DIR, branch)
+    repositories = {
+        "stratus": {
+            "worker_cache_dir": stratus.path,
+            "repo": testing.ESGF_TEST_DATA_REPO_URL,
+            "branch": testing.ESGF_TEST_DATA_VERSION,
+            "cache_dir": testing.ESGF_TEST_DATA_CACHE_DIR,
+        },
+        "nimbus": {
+            "worker_cache_dir": nimbus.path,
+            "repo": testing.XCLIM_TEST_DATA_REPO_URL,
+            "branch": testing.XCLIM_TEST_DATA_VERSION,
+            "cache_dir": testing.XCLIM_TEST_DATA_CACHE_DIR,
+        },
+    }
 
-    if not os.path.isdir(MINI_ESGF_CACHE_DIR):
-        os.makedirs(MINI_ESGF_CACHE_DIR)
+    for name, repo in repositories.items():
+        testing.gather_testing_data(worker_id=worker_id, **repo)
 
-    if not os.path.isdir(target):
-        repo = Repo.clone_from(ESGF_TEST_DATA_REPO_URL, target)
-        repo.git.checkout(branch)
 
-    elif os.environ.get("ROOCS_AUTO_UPDATE_TEST_DATA", "true").lower() != "false":
-        repo = Repo(target)
-        repo.git.checkout(branch)
-        repo.remotes[0].pull()
+@pytest.fixture
+def c3s_cmip5_tsice():
+    return Path(
+        # This is now only required for json files
+        Path(__file__).parent.absolute(),
+        "data",
+        "c3s-cmip5/output1/NCC/NorESM1-ME/rcp60/mon/seaIce/OImon/r1i1p1/tsice/v20120614/*.nc",
+    ).as_posix()
+
+
+@pytest.fixture
+def c3s_cmip5_tos():
+    return Path(
+        Path(__file__).parent.absolute(),
+        "data",
+        "c3s-cmip5/output1/BCC/bcc-csm1-1-m/historical/mon/ocean/Omon/r1i1p1/tos/v20120709/*.nc",
+    ).as_posix()
+
+
+@pytest.fixture
+def cmip5_archive_base():
+    if "CMIP5_ARCHIVE_BASE" in os.environ:
+        return os.environ["CMIP5_ARCHIVE_BASE"]
+    return (
+        Path(__file__)
+        .parent.absolute()
+        .joinpath("mini-esgf-data/test_data/badc/cmip5/data")
+        .as_posix()
+    )
+
+
+@pytest.fixture
+def cmip6_archive_base():
+    if "CMIP6_ARCHIVE_BASE" in os.environ:
+        return os.environ["CMIP6_ARCHIVE_BASE"]
+    return (
+        Path(__file__)
+        .parent.absolute()
+        .joinpath("mini-esgf-data/test_data/badc/cmip6/data")
+        .as_posix()
+    )
+
+
+@pytest.fixture(scope="session", autouse=True)
+def mini_esgf_data(stratus):
+    return testing.get_esgf_file_paths(stratus.path) | testing.get_esgf_glob_paths(
+        stratus.path
+    )
+
+
+@pytest.fixture(scope="session", autouse=True)
+def clisops_test_data():
+    test_data = Path(__file__).parent.absolute().joinpath("data")
+
+    return {
+        "meridian_geojson": test_data.joinpath("meridian.json").as_posix(),
+        "meridian_multi_geojson": test_data.joinpath("meridian_multi.json").as_posix(),
+        "poslons_geojson": test_data.joinpath("poslons.json").as_posix(),
+        "eastern_canada_geojson": test_data.joinpath("eastern_canada.json").as_posix(),
+        "southern_qc_geojson": test_data.joinpath(
+            "southern_qc_geojson.json"
+        ).as_posix(),
+        "small_geojson": test_data.joinpath("small_geojson.json").as_posix(),
+        "multi_regions_geojson": test_data.joinpath("multi_regions.json").as_posix(),
+    }

@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import List, Optional, Union
 
 import xarray as xr
 from loguru import logger
@@ -162,11 +162,11 @@ class Subset(Operation):
 def subset(
     ds: Union[xr.Dataset, str, Path],
     *,
-    time: Optional[Union[str, Tuple[str, str], TimeParameter, Series, Interval]] = None,
+    time: Optional[Union[str, tuple[str, str], TimeParameter, Series, Interval]] = None,
     area: Optional[
         Union[
             str,
-            Tuple[
+            tuple[
                 Union[int, float, str],
                 Union[int, float, str],
                 Union[int, float, str],
@@ -178,19 +178,19 @@ def subset(
     level: Optional[
         Union[
             str,
-            Tuple[Union[int, float, str], Union[int, float, str]],
+            tuple[Union[int, float, str], Union[int, float, str]],
             LevelParameter,
             Interval,
         ]
     ] = None,
     time_components: Optional[
-        Union[str, Dict, TimeComponents, TimeComponentsParameter]
+        Union[str, dict, TimeComponents, TimeComponentsParameter]
     ] = None,
     output_dir: Optional[Union[str, Path]] = None,
     output_type="netcdf",
     split_method="time:auto",
     file_namer="standard",
-) -> List[Union[xr.Dataset, str]]:
+) -> list[Union[xr.Dataset, str]]:
     """Subset operation.
 
     Parameters

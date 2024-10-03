@@ -99,8 +99,7 @@ def weights_cache_init(
         weights_dir = config["clisops:grid_weights"]["local_weights_dir"]
 
     # Create directory tree if required
-    if not os.path.isdir(weights_dir):
-        os.makedirs(weights_dir)
+    os.makedirs(weights_dir, exist_ok=True)
 
 
 # Initialize weights cache as defined in the clisops configuration (roocs.ini)
@@ -638,7 +637,7 @@ class Grid:
                         )
                         and all(
                             [
-                                self.ds.dims[dim] > 2
+                                self.ds.sizes[dim] > 2
                                 for dim in [
                                     self.ds[self.lon_bnds].dims[-1],
                                     self.ds[self.lat_bnds].dims[-1],

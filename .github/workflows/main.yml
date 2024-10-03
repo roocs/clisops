@@ -11,6 +11,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
 
+env:
+  ESGF_TEST_DATA_VERSION: v1
+
 permissions:
   contents: read
 
@@ -29,9 +32,16 @@ jobs:
         uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
         with:
           python-version: "3.9"
+          cache: pip
       - name: Install tox
         run: |
-          python -m pip install tox~=4.0
+          python -m pip install tox~=4.18.0
+      - name: Environment Caching
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: |
+            .tox
+          key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-lint-${{ env.ESGF_TEST_DATA_VERSION }}
       - name: Run linting suite
         run: |
           python -m tox -e ${{ matrix.tox-env }}
@@ -44,8 +54,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - python-version: "3.8"
-            tox-env: py38
           - python-version: "3.9"
             tox-env: py39
           - python-version: "3.10"
@@ -61,9 +69,18 @@ jobs:
         uses: actions/setup-python@39cd14951b08e74b54015e9e001cdefcf80e669f # v5.1.1
         with:
           python-version: ${{ matrix.python-version }}
+          cache: "pip"
       - name: Install tox
         run: |
-          python -m pip install tox~=4.0
+          python -m pip install tox~=4.18.0
+      - name: Environment Caching
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: |
+            ~/.cache/mini-esgf-data
+            ~/.cache/xclim-testdata
+            .tox
+          key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-Python${{ matrix.python-version }}-${{ env.ESGF_TEST_DATA_VERSION }}
       - name: Test with tox
         run: |
           python -m tox -e ${{ matrix.tox-env }}
@@ -104,6 +121,7 @@ jobs:
           environment-file: environment.yml
           create-args: >-
             python=${{ matrix.python-version }}
+          micromamba-version: "1.5.10-0"  # pinned to avoid the breaking changes with mamba and micromamba (2.0.0).
       - name: Install CLISOPS
         run: |
           python -m pip install --no-user --editable ".[dev]"
@@ -111,13 +129,20 @@ jobs:
         if: ${{ matrix.upstream }}
         run: |
           python -m pip install -r requirements_upstream.txt
+      - name: Test Data Caching
+        uses: actions/cache@0c45773b623bea8c8e75f6c82b208c3cf94ea4f9 # v4.0.2
+        with:
+          path: |
+            ~/.cache/mini-esgf-data
+            ~/.cache/xclim-testdata
+          key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-conda-Python${{ matrix.python-version }}-${{ env.ESGF_TEST_DATA_VERSION }}
       - name: Check versions
         run: |
           micromamba list
           python -m pip check || true
       - name: Test with conda
         run: |
-          python -m pytest --cov tests
+          python -m pytest --numprocesses=logical --durations=10 --cov=clisops --cov-report=term-missing
 
   finish:
     needs:
