@@ -30,7 +30,7 @@ dependencies:
   # Dev tools and testing
  - black >=24.8.0
  - bump-my-version >=0.18.3
- - coverage[toml] >=7.5.0
+ - coverage >=7.5.0
  - flake8 >=7.0.0
  - ipython
  - isort >=5.13.2
