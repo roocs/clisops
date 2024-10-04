@@ -23,7 +23,7 @@ from clisops.utils.time_utils import create_time_bounds
 __all__ = ["average_over_dims", "average_shape", "average_time"]
 
 # see https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
-freqs = {"day": "1D", "month": "1MS", "year": "1AS"}
+freqs = {"day": "1D", "month": "1MS", "year": "1YS"}
 
 
 def average_shape(

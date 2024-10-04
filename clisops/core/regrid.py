@@ -434,6 +434,8 @@ class Grid:
                 grid_instructor[-2],
                 grid_instructor[-1],
             )
+        else:
+            raise InvalidParameterValue("The grid_instructor variable is malformed.")
 
         # Set attributes
         self.ds = grid
@@ -588,7 +590,7 @@ class Grid:
 
         return False
 
-    def _apply_lsm(self, mask: str = None) -> xr.DataArray:
+    def _apply_lsm(self, mask: str = None) -> bool:
         """Detect mask helper function.
 
         Parameters
@@ -617,12 +619,12 @@ class Grid:
                 for d in self.ds[maskvar].dims
                 if d not in self.ds[self.lat].dims and d not in self.ds[self.lon].dims
             ]
-            if any([self.ds.dims[d] > 1 for d in reduce_dims]):
+            if any([self.ds.sizes[d] > 1 for d in reduce_dims]):
                 warnings.warn(
                     "Cannot apply a mask with more than 2 dimensions (lat, lon)."
                 )
                 return False
-            if reduce_dims != []:
+            if reduce_dims:
                 lsm = self.ds[maskvar].squeeze(reduce_dims, drop=True).astype(np.int32)
             else:
                 lsm = self.ds[maskvar].astype(np.int32)
@@ -758,7 +760,7 @@ class Grid:
         atol = 2.0 * approx_res
         lon_max = float(self.ds[self.lon].max())
         lon_min = float(self.ds[self.lon].min())
-        if lon_min < -atol and lon_min > -180.0 - atol and lon_max < 180.0 + atol:
+        if -atol > lon_min > -180.0 - atol and lon_max < 180.0 + atol:
             min_range, max_range = (-180.0, 180.0)
         elif lon_min > -atol and lon_max < 360.0 + atol:
             min_range, max_range = (0.0, 360.0)
@@ -1889,7 +1891,7 @@ class Weights:
             "method": self.method,
             "uid": self.id,
             "filename": self.filename,
-            "def_filename": self.regridder._get_default_filename(),
+            "def_filename": self.regridder._get_default_filename(),  # noqa
             "tool": self.tool,
         }
 
@@ -2008,11 +2010,11 @@ def regrid(
     Parameters
     ----------
     grid_in : Grid
-        Grid object of the source grid, e.g. created out of source xarray.Dataset.
+        The Grid object of the source grid, e.g. created out of source xarray.Dataset.
     grid_out : Grid
-        Grid object of the target grid.
+        The Grid object of the target grid.
     weights : Weights
-        Weights object, as created by using grid_in and grid_out Grid objects as input.
+        The Weights object, as created by using grid_in and grid_out Grid objects as input.
     adaptive_masking_threshold : float, optional
         (AMT) A value within the [0., 1.] interval that defines the maximum `RATIO` of missing_values amongst the total
         number of data values contributing to the calculation of the target grid cell value. For a fraction [0., AMT[

@@ -186,7 +186,7 @@ def get_esgf_file_paths(esgf_cache_dir: Union[str, os.PathLike[str]]):
         # CMIP6 ocean with collapsing cells, cells extending over 50 degrees, missing_values in lat/lon
         "CMIP6_SIMASS_DEGEN": Path(
             esgf_cache_dir,
-            "pool/data/CMIP6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp126/r1i1p1f1/SImon/simass/gn/v20191108/simass_SImon_NorESM2-MM_ssp126_r1i1p1f1_gn_201501.nc",
+            "pool/data/c3s-cica-atlas/CMIP5/rcp26/pr_CMIP5_rcp26_mon_200601-210012.nc",
         ).as_posix(),
         # CMIP5 rlat,rlon uncompliant CF units
         "CMIP5_WRONG_CF_UNITS": Path(
@@ -196,12 +196,12 @@ def get_esgf_file_paths(esgf_cache_dir: Union[str, os.PathLike[str]]):
         # CMIP6 rlat,rlon uncompliant CF units
         "CMIP6_WRONG_CF_UNITS": Path(
             esgf_cache_dir,
-            "pool/data/CMIP6/data/CMIP6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1p1f1/Omon/pbo/gn/v20190624/pbo_Omon_BCC-ESM1_ssp370_r1i1p1f1_gn_201501.nc",
+            "badc/cmip6/data/CMIP6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1p1f1/Omon/pbo/gn/v20190624/pbo_Omon_BCC-ESM1_ssp370_r1i1p1f1_gn_201501.nc",
         ).as_posix(),
         # CMIP6 lat, lon with uncompliant CF units and standard_name
         "CMIP6_WRONG_CF_ATTRS": Path(
             esgf_cache_dir,
-            "pool/data/CMIP6/data/CMIP6/HighResMIP/BCC/BCC-CSM2-HR/hist-1950/r1i1p1f1/Omon/tos/gn/v20200922/tos_Omon_BCC-CSM2-HR_hist-1950_r1i1p1f1_gn_198001.nc",
+            "badc/cmip6/data/CMIP6/HighResMIP/BCC/BCC-CSM2-HR/hist-1950/r1i1p1f1/Omon/tos/gn/v20200922/tos_Omon_BCC-CSM2-HR_hist-1950_r1i1p1f1_gn_198001.nc",
         ).as_posix(),
         "CMIP5_MRSOS_ONE_TIME_STEP": Path(
             esgf_cache_dir,
@@ -235,7 +235,7 @@ def get_esgf_file_paths(esgf_cache_dir: Union[str, os.PathLike[str]]):
         #   and unmasked missing values in the latitude and longitude coordinates
         "CMIP6_EXTENT_UNMASKED": Path(
             esgf_cache_dir,
-            "pool/data/CMIP6/data/CMIP6/OMIP/NOAA-GFDL/GFDL-OM4p5B/omip1/r1i1p1f1/Omon/volcello/gn/v20180701/volcello_Omon_GFDL-OM4p5B_omip1_r1i1p1f1_gn_176801.nc",
+            "badc/cmip6/data/CMIP6/OMIP/NOAA-GFDL/GFDL-OM4p5B/omip1/r1i1p1f1/Omon/volcello/gn/v20180701/volcello_Omon_GFDL-OM4p5B_omip1_r1i1p1f1_gn_176801.nc",
         ).as_posix(),
         "CMIP6_OCE_HALO_CNRM": Path(
             esgf_cache_dir,

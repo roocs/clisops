@@ -647,20 +647,20 @@ def test_from_grid_id_mask(grid_id):
     grid = Grid(grid_id=grid_id, mask="ocean")
     assert grid.format == "CF"
     assert grid.mask is True
-    np.alltrue(grid.lsm.data == grid.ds["mask"].data)
+    np.all(grid.lsm.data == grid.ds["mask"].data)
     osum = grid.lsm.sum().item()
     # Make sure it is a binary mask
     mask = grid.ds["mask"].copy(deep=True)
-    np.alltrue(grid.lsm.astype("bool").astype(np.int32).data == mask.data)
+    np.all(grid.lsm.astype("bool").astype(np.int32).data == mask.data)
 
     grid = Grid(grid_id=grid_id, mask="land")
     assert grid.format == "CF"
     assert grid.mask is True
-    np.alltrue(grid.lsm.data == grid.ds["mask"].data)
+    np.all(grid.lsm.data == grid.ds["mask"].data)
     lsum = grid.lsm.sum().item()
     # Make sure it is a binary mask
     mask = grid.ds["mask"].copy(deep=True).data
-    np.alltrue(grid.lsm.astype("bool").astype(np.int32).data == mask.data)
+    np.all(grid.lsm.astype("bool").astype(np.int32).data == mask.data)
 
     # Make sure "land" and "ocean" are interpreted properly
     assert lsum > osum
@@ -797,8 +797,9 @@ def test_to_netcdf(tmp_path, mini_esgf_data):
     assert "coordinates" not in dsB.attrs.keys()
 
 
-def test_detect_collapsed_cells(mini_esgf_data):
-    """Test that collapsed cells are properly identified"""
+def test_detect_collapsed_cells(mini_esgf_data, load_test_data):
+    """Test that collapsed cells are properly identified."""
+
     dsA = xr.open_dataset(mini_esgf_data["CMIP6_OCE_HALO_CNRM"], use_cftime=True)
     dsB = xr.open_dataset(mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True)
     dsC = xr.open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)

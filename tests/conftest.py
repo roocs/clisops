@@ -396,8 +396,10 @@ def cmip6_archive_base():
 
 @pytest.fixture(scope="session", autouse=True)
 def mini_esgf_data(stratus):
-    return testing.get_esgf_file_paths(stratus.path) | testing.get_esgf_glob_paths(
-        stratus.path
+    return (
+        testing.get_esgf_file_paths(stratus.path)
+        | testing.get_esgf_glob_paths(stratus.path)
+        | testing.get_kerchunk_datasets()
     )
 
 

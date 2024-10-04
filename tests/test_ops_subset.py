@@ -1650,7 +1650,7 @@ def test_subset_by_time_components_31_days_360_day(tmpdir, mini_esgf_data):
     ds31 = xr.open_mfdataset(str(tmpdir31) + "/*.nc")
 
     assert ds30.identical(ds31)
-    assert ds30.dims["time"] == 8490
+    assert ds30.sizes["time"] == 8490
 
 
 def test_subset_by_time_components_month_day(tmpdir, mini_esgf_data):
