@@ -20,7 +20,6 @@ from clisops import CONFIG
 from clisops.ops.subset import Subset, subset
 from clisops.utils.dataset_utils import determine_lon_lat_range
 from clisops.utils.output_utils import _format_time  # noqa
-from tests.conftest import mini_esgf_data
 
 
 def _load_ds(fpath: Union[str, Path]):
@@ -730,7 +729,7 @@ def test_0_360_cross(tmpdir, mini_esgf_data, check_output_nc):
     check_output_nc(result)
 
 
-def test_300_60_no_cross(tmpdir, check_output_nc):
+def test_300_60_no_cross(tmpdir, mini_esgf_data, check_output_nc):
     # longitude is -300 to 60
     ds = _load_ds(mini_esgf_data["CMIP6_AREACELLO"])
 

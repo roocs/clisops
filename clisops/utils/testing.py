@@ -176,12 +176,12 @@ def get_esgf_file_paths(esgf_cache_dir: Union[str, os.PathLike[str]]):
         # CMIP6 ocean with collapsing cells
         "CMIP6_TOS_LR_DEGEN": Path(
             esgf_cache_dir,
-            "pool/data/CMIP6/data/CMIP6/ScenarioMIP/HAMMOZ-Consortium/MPI-ESM-1-2-HAM/ssp370/r1i1p1f1/Omon/tos/gn/v20190628/tos_Omon_MPI-ESM-1-2-HAM_ssp370_r1i1p1f1_gn_201501.nc",
+            "badc/cmip6/data/CMIP6/ScenarioMIP/HAMMOZ-Consortium/MPI-ESM-1-2-HAM/ssp370/r1i1p1f1/Omon/tos/gn/v20190628/tos_Omon_MPI-ESM-1-2-HAM_ssp370_r1i1p1f1_gn_201501.nc",
         ).as_posix(),
         # 2nd dataset CMIP6 ocean with collapsing cells
         "CMIP6_FX_DEGEN": Path(
             esgf_cache_dir,
-            "pool/data/CMIP6/data/CMIP6/ScenarioMIP/EC-Earth-Consortium/EC-Earth3-Veg/ssp245/r5i1p1f1/Ofx/deptho/gn/v20200312/deptho_Ofx_EC-Earth3-Veg_ssp245_r5i1p1f1_gn.nc",
+            "badc/cmip6/data/CMIP6/ScenarioMIP/EC-Earth-Consortium/EC-Earth3-Veg/ssp245/r5i1p1f1/Ofx/deptho/gn/v20200312/deptho_Ofx_EC-Earth3-Veg_ssp245_r5i1p1f1_gn.nc",
         ).as_posix(),
         # CMIP6 ocean with collapsing cells, cells extending over 50 degrees, missing_values in lat/lon
         "CMIP6_SIMASS_DEGEN": Path(
@@ -280,7 +280,7 @@ def get_esgf_file_paths(esgf_cache_dir: Union[str, os.PathLike[str]]):
         # CMIP6 dataset without defined bounds on curvilinear grid
         "CMIP6_NO_BOUNDS": Path(
             esgf_cache_dir,
-            "pool/data/CMIP6/data/CMIP6/ScenarioMIP/CAS/FGOALS-f3-L/ssp126/r1i1p1f1/Omon/tos/gn/v20191008/tos_Omon_FGOALS-f3-L_ssp126_r1i1p1f1_gn_201501.nc",
+            "badc/cmip6/data/CMIP6/ScenarioMIP/CAS/FGOALS-f3-L/ssp126/r1i1p1f1/Omon/tos/gn/v20191008/tos_Omon_FGOALS-f3-L_ssp126_r1i1p1f1_gn_201501.nc",
         ).as_posix(),
         # CMIP6 dataset with character dimension 'sector'
         "CMIP6_CHAR_DIM": Path(
