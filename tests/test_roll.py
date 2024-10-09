@@ -26,7 +26,7 @@ class TestRoll:
     def test_roll_lon_minus_180(self, mini_esgf_data):
         ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
-        lon = get_coord_by_type(ds, "longitude")
+        lon = ds[get_coord_by_type(ds, "longitude")]
 
         # check longitude is 0 to 360 initially
         assert isclose(lon.values.min(), 0, abs_tol=10**2)
@@ -46,7 +46,7 @@ class TestRoll:
     def test_roll_lon_minus_180_use_res(self, mini_esgf_data):
         ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
-        lon = get_coord_by_type(ds, "longitude")
+        lon = ds[get_coord_by_type(ds, "longitude")]
 
         # work out how much to roll by
         offset = self.calculate_offset(-180, lon)
@@ -73,7 +73,7 @@ class TestRoll:
     def test_roll_lon_plus_180(self, mini_esgf_data):
         ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
-        lon = get_coord_by_type(ds, "longitude")
+        lon = ds[get_coord_by_type(ds, "longitude")]
 
         ds = ds.roll(shifts={f"{lon.name}": 180}, roll_coords=True)
 
@@ -87,7 +87,7 @@ class TestRoll:
     def test_roll_lon_plus_180_use_res(self, mini_esgf_data):
         ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
-        lon = get_coord_by_type(ds, "longitude")
+        lon = ds[get_coord_by_type(ds, "longitude")]
 
         # work out how much to roll by
         offset = self.calculate_offset(180, lon)
@@ -104,7 +104,7 @@ class TestRoll:
         # check that rolling +180 and -180 gives the same result - when taking the resolution into account
         ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
-        lon = get_coord_by_type(ds, "longitude")
+        lon = ds[get_coord_by_type(ds, "longitude")]
 
         # work out how much to roll by
         offset_minus = self.calculate_offset(-180, lon)
@@ -119,7 +119,7 @@ class TestRoll:
     def test_roll_compare_roll_coords(self, mini_esgf_data):
         ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
-        lon = get_coord_by_type(ds, "longitude")
+        lon = ds[get_coord_by_type(ds, "longitude")]
 
         # work out how much to roll by
         offset = self.calculate_offset(180, lon)

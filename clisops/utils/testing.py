@@ -186,7 +186,7 @@ def get_esgf_file_paths(esgf_cache_dir: Union[str, os.PathLike[str]]):
         # CMIP6 ocean with collapsing cells, cells extending over 50 degrees, missing_values in lat/lon
         "CMIP6_SIMASS_DEGEN": Path(
             esgf_cache_dir,
-            "pool/data/c3s-cica-atlas/CMIP5/rcp26/pr_CMIP5_rcp26_mon_200601-210012.nc",
+            "badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp126/r1i1p1f1/SImon/simass/gn/v20191108/simass_SImon_NorESM2-MM_ssp126_r1i1p1f1_gn_201501.nc",
         ).as_posix(),
         # CMIP5 rlat,rlon uncompliant CF units
         "CMIP5_WRONG_CF_UNITS": Path(

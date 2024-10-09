@@ -1751,8 +1751,8 @@ def detect_gridtype(ds, lon, lat, lon_bnds=None, lat_bnds=None):
                 [
                     ds.sizes[dim] == 2
                     for dim in [
-                        ds[lon_bnds].sizes[-1],
-                        ds[lat_bnds].sizes[-1],
+                        ds[lon_bnds].dims[-1],
+                        ds[lat_bnds].dims[-1],
                     ]
                 ]
             ):

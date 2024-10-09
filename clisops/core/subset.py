@@ -149,9 +149,9 @@ def check_start_end_levels(func: Callable) -> Callable:
         """Verify that first and last levels are valid in a level subsetting function."""
         da = args[0]
 
-        level = da[get_coord_by_type(da, "level", ignore_aux_coords=True)]
-
-        if level is None:
+        try:
+            level = da[get_coord_by_type(da, "level", ignore_aux_coords=True)]
+        except ValueError:
             raise Exception(
                 f"{subset_level.__name__} requires input data that has a "
                 'recognisable "level" coordinate.'
