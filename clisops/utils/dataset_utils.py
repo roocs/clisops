@@ -323,11 +323,13 @@ def open_xr_dataset(dset, **kwargs):
     """
     Opens an xarray dataset from a dataset input.
 
-    :param dset: (Str or Path) ds_id, directory path or file path ending in *.nc.
-    :param kwargs: Any further keyword arguments to include when opening the dataset.
-                   use_cftime=True and decode_timedelta=False are used by default,
-                   along with combine="by_coords" for open_mfdataset only.
-    Any list will be interpreted as list of files
+    :param dset: (str or Path) A dataset identifier, directory path, or file path ending in ``*.nc``.
+    :param kwargs: Any additional keyword arguments for opening the dataset.
+                   ``use_cftime=True`` and ``decode_timedelta=False`` are used by default,
+                   along with ``combine="by_coords"`` for ``open_mfdataset`` only.
+
+    Notes:
+        - Any list will be interpreted as a list of files.
     """
     # Set up dictionaries of arguments to send to all `xr.open_*dataset()` calls
     single_file_kwargs = _get_kwargs_for_opener("single", **kwargs)
