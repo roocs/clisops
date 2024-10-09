@@ -13,6 +13,7 @@ concurrency:
 
 env:
   ESGF_TEST_DATA_VERSION: v1
+  XCLIM_TEST_DATA_VERSION: v2024.8.23
 
 permissions:
   contents: read
@@ -50,7 +51,7 @@ jobs:
     name: Python${{ matrix.python-version }} (PyPI + Tox)
     needs: lint
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     strategy:
       matrix:
         include:
@@ -94,7 +95,7 @@ jobs:
     name: Python${{ matrix.python-version }} (Anaconda, upstream=${{ matrix.upstream }})
     needs: lint
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
