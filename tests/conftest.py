@@ -7,7 +7,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 from _pytest.logging import caplog as _caplog  # noqa
-from packaging import version
+from packaging.version import Version
 
 from clisops.core.regrid import XARRAY_INCOMPATIBLE_VERSION
 from clisops.utils import testing
@@ -424,9 +424,9 @@ def clisops_test_data():
 
 # Temporarily required until https://github.com/pydata/xarray/issues/7794 is addressed
 @pytest.fixture(scope="session")
-def skip_if_xarray_incompatible():
-    if version.parse(xr.__version__) >= version.parse(XARRAY_INCOMPATIBLE_VERSION):
-        pytest.skip(
+def xfail_if_xarray_incompatible():
+    if Version(xr.__version__) >= Version(XARRAY_INCOMPATIBLE_VERSION):
+        pytest.xfail(
             f"xarray version >= {XARRAY_INCOMPATIBLE_VERSION} "
             f"is not supported for several operations with cf-time indexed arrays. "
             "For more information, see: https://github.com/pydata/xarray/issues/7794."
