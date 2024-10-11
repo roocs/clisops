@@ -1280,7 +1280,7 @@ def test_cache_lock_mechanism(tmp_path, mini_esgf_data):
     lock.acquire(timeout=10)
 
     # Fail test if lockfile is not recognized
-    with pytest.warns(UserWarning, match="lockfile") as issuedWarnings:
+    with pytest.warns(UserWarning, match=r"lockfile|xarray") as issuedWarnings:
         Weights(grid_in=grid_in, grid_out=grid_out, method="nearest_s2d")
         if not issuedWarnings:
             raise RuntimeError("Lockfile not recognized/ignored.")
@@ -1288,16 +1288,6 @@ def test_cache_lock_mechanism(tmp_path, mini_esgf_data):
     # Filter matches and assert number of warnings
     issuedWarningsLockfile = [w for w in issuedWarnings if "lockfile" in str(w.message)]
     assert len(issuedWarningsLockfile) == 1
-    issuedWarningsIncompatibleXarray = [
-        w
-        for w in issuedWarnings
-        if "is greater than the suggested version" in str(w.message)
-    ]
-    if Version(xr.__version__) >= Version("2023.3.0"):
-        assert len(issuedWarningsIncompatibleXarray) == 1
-    else:
-        assert len(issuedWarningsIncompatibleXarray) == 0
-
     lock.release()
 
 

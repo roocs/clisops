@@ -7,7 +7,9 @@ import pandas as pd
 import pytest
 import xarray as xr
 from _pytest.logging import caplog as _caplog  # noqa
+from packaging import version
 
+from clisops.core.regrid import XARRAY_INCOMPATIBLE_VERSION
 from clisops.utils import testing
 from clisops.utils.testing import open_dataset as _open_dataset
 from clisops.utils.testing import stratus as _stratus
@@ -418,3 +420,14 @@ def clisops_test_data():
         "small_geojson": test_data.joinpath("small_geojson.json").as_posix(),
         "multi_regions_geojson": test_data.joinpath("multi_regions.json").as_posix(),
     }
+
+
+# Temporarily required until https://github.com/pydata/xarray/issues/7794 is addressed
+@pytest.fixture(scope="session")
+def skip_if_xarray_incompatible():
+    if version.parse(xr.__version__) >= version.parse(XARRAY_INCOMPATIBLE_VERSION):
+        pytest.skip(
+            f"xarray version >= {XARRAY_INCOMPATIBLE_VERSION} "
+            f"is not supported for several operations with cf-time indexed arrays. "
+            "For more information, see: https://github.com/pydata/xarray/issues/7794."
+        )

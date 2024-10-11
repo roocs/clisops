@@ -42,7 +42,7 @@ def test_subset_no_params(tmpdir, check_output_nc, nimbus):
     check_output_nc(result)
 
 
-def test_subset_time(nimbus, tmpdir, check_output_nc):
+def test_subset_time(nimbus, tmpdir, check_output_nc, skip_if_xarray_incompatible):
     """Tests clisops subset function with a time subset."""
     result = subset(
         ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
@@ -55,7 +55,9 @@ def test_subset_time(nimbus, tmpdir, check_output_nc):
     check_output_nc(result)
 
 
-def test_subset_args_as_parameter_classes(nimbus, tmpdir, check_output_nc):
+def test_subset_args_as_parameter_classes(
+    nimbus, tmpdir, check_output_nc, skip_if_xarray_incompatible
+):
     """Tests clisops subset function with a time subset with the arguments as parameter classes from roocs-utils."""
 
     time = time_parameter.TimeParameter(
@@ -84,7 +86,9 @@ def test_subset_args_as_parameter_classes(nimbus, tmpdir, check_output_nc):
         "ATLAS_v0_CMIP6",
     ],
 )
-def test_subset_ATLAS_datasets(tmpdir, dset, check_output_nc, mini_esgf_data):
+def test_subset_ATLAS_datasets(
+    tmpdir, dset, check_output_nc, mini_esgf_data, skip_if_xarray_incompatible
+):
     """Test temporal and spatial subset for several ATLAS datasets."""
     time = time_parameter.TimeParameter(
         time_interval("2000-01-01T00:00:00", "2020-12-30T00:00:00")
@@ -136,7 +140,9 @@ def test_subset_no_ds(tmpdir):
         )  # noqa
 
 
-def test_subset_area_simple_file_name(nimbus, tmpdir, check_output_nc):
+def test_subset_area_simple_file_name(
+    nimbus, tmpdir, check_output_nc, skip_if_xarray_incompatible
+):
     """Tests clisops subset function with an area subset (simple file name)."""
     result = subset(
         ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
@@ -148,7 +154,9 @@ def test_subset_area_simple_file_name(nimbus, tmpdir, check_output_nc):
     check_output_nc(result)
 
 
-def test_subset_area_project_file_name_atlas(tmpdir, check_output_nc, mini_esgf_data):
+def test_subset_area_project_file_name_atlas(
+    tmpdir, check_output_nc, mini_esgf_data, skip_if_xarray_incompatible
+):
     """Tests clisops subset function with an area subset (derived file name)."""
     result = subset(
         ds=mini_esgf_data["ATLAS_v1_EOBS_GRID"],
@@ -160,7 +168,9 @@ def test_subset_area_project_file_name_atlas(tmpdir, check_output_nc, mini_esgf_
     check_output_nc(result, "t_E-OBS_no-expt_mon_19500101-19500101.nc")
 
 
-def test_subset_area_project_file_name(nimbus, tmpdir, check_output_nc):
+def test_subset_area_project_file_name(
+    nimbus, tmpdir, check_output_nc, skip_if_xarray_incompatible
+):
     """Tests clisops subset function with an area subset (derived file name)."""
     result = subset(
         ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
@@ -634,7 +644,9 @@ def test_time_invariant_subset_standard_name(tmpdir, check_output_nc, mini_esgf_
     check_output_nc(result, fname="mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc")
 
 
-def test_longitude_and_latitude_coords_only(tmpdir, check_output_nc, mini_esgf_data):
+def test_longitude_and_latitude_coords_only(
+    tmpdir, check_output_nc, mini_esgf_data, skip_if_xarray_incompatible
+):
     """Test subset succeeds when latitude and longitude are coordinates not dims and are not called lat/lon"""
     result = subset(
         ds=mini_esgf_data["CMIP6_TOS"],
