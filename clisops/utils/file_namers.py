@@ -2,9 +2,9 @@ from typing import Optional, Union
 
 import xarray as xr
 from roocs_utils.project_utils import get_project_name
-from roocs_utils.xarray_utils import xarray_utils as xu
 
 from clisops import CONFIG
+from clisops.utils.dataset_utils import get_main_variable
 from clisops.utils.output_utils import get_format_extension
 
 
@@ -86,7 +86,7 @@ class StandardFileNamer(SimpleFileNamer):
     ) -> None:
         """Finds var_id, time_range and format_extension of dataset and output to generate output file name."""
         if "__derive__var_id" in template:
-            attrs["__derive__var_id"] = xu.get_main_variable(ds)
+            attrs["__derive__var_id"] = get_main_variable(ds)
 
         if "__derive__time_range" in template:
             attrs["__derive__time_range"] = self._get_time_range(ds)

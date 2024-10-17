@@ -4,7 +4,8 @@ from math import isclose
 import numpy as np
 import pytest
 import xarray as xr
-from roocs_utils.xarray_utils.xarray_utils import get_coord_by_type
+
+from clisops.utils.dataset_utils import get_coord_by_type
 
 
 class TestRoll:
@@ -25,7 +26,7 @@ class TestRoll:
     def test_roll_lon_minus_180(self, mini_esgf_data):
         ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
-        lon = get_coord_by_type(ds, "longitude")
+        lon = ds[get_coord_by_type(ds, "longitude")]
 
         # check longitude is 0 to 360 initially
         assert isclose(lon.values.min(), 0, abs_tol=10**2)
@@ -45,7 +46,7 @@ class TestRoll:
     def test_roll_lon_minus_180_use_res(self, mini_esgf_data):
         ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
-        lon = get_coord_by_type(ds, "longitude")
+        lon = ds[get_coord_by_type(ds, "longitude")]
 
         # work out how much to roll by
         offset = self.calculate_offset(-180, lon)
@@ -72,7 +73,7 @@ class TestRoll:
     def test_roll_lon_plus_180(self, mini_esgf_data):
         ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
-        lon = get_coord_by_type(ds, "longitude")
+        lon = ds[get_coord_by_type(ds, "longitude")]
 
         ds = ds.roll(shifts={f"{lon.name}": 180}, roll_coords=True)
 
@@ -86,7 +87,7 @@ class TestRoll:
     def test_roll_lon_plus_180_use_res(self, mini_esgf_data):
         ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
-        lon = get_coord_by_type(ds, "longitude")
+        lon = ds[get_coord_by_type(ds, "longitude")]
 
         # work out how much to roll by
         offset = self.calculate_offset(180, lon)
@@ -103,7 +104,7 @@ class TestRoll:
         # check that rolling +180 and -180 gives the same result - when taking the resolution into account
         ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
-        lon = get_coord_by_type(ds, "longitude")
+        lon = ds[get_coord_by_type(ds, "longitude")]
 
         # work out how much to roll by
         offset_minus = self.calculate_offset(-180, lon)
@@ -118,7 +119,7 @@ class TestRoll:
     def test_roll_compare_roll_coords(self, mini_esgf_data):
         ds = xr.open_dataset(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
         # gets longitude by the correct name as used in the dataset
-        lon = get_coord_by_type(ds, "longitude")
+        lon = ds[get_coord_by_type(ds, "longitude")]
 
         # work out how much to roll by
         offset = self.calculate_offset(180, lon)
@@ -153,34 +154,30 @@ class TestRoll:
         )
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
-def test_irregular_grid_dataset():
-    ds = xr.open_mfdataset(
-        "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/"
-        "ssp370/r1i1p1f1/Ofx/sftof/gn/v20191108/*.nc"
-    )
+def test_irregular_grid_dataset(mini_esgf_data):
+    ds = xr.open_dataset(mini_esgf_data["CMIP6_SIMASS_DEGEN"])
     lon = get_coord_by_type(ds, "longitude", ignore_aux_coords=False)
 
     assert "lon" not in ds.dims
 
     with pytest.raises(ValueError) as exc:
-        ds.roll(shifts={f"{lon.name}": 180}, roll_coords=False)
-    assert str(exc.value) == "dimensions ['longitude'] do not exist"
+        ds.roll(shifts={f"{lon}": 180}, roll_coords=False)
+    assert str(exc.value) in [
+        "dimensions ['longitude'] do not exist",
+        "Dimensions ['longitude'] not found in data dimensions ('i', 'j', 'time', 'bnds', 'vertices')",
+    ]
 
 
-@pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
-def test_3d_grid_dataset():
-    ds = xr.open_mfdataset(
-        "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp370/r1i1p1f1/Amon/ta/gn/v20191108/*.nc"
-    )
+def test_3d_grid_dataset(mini_esgf_data):
+    ds = xr.open_mfdataset(mini_esgf_data["CMIP6_TA"])
     lon = get_coord_by_type(ds, "longitude", ignore_aux_coords=False)
 
     assert "lon" in ds.dims
 
     offset = 180
 
-    ds_roll_coords = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=True)
-    ds_not_roll_coords = ds.roll(shifts={f"{lon.name}": offset}, roll_coords=False)
+    ds_roll_coords = ds.roll(shifts={f"{lon}": offset}, roll_coords=True)
+    ds_not_roll_coords = ds.roll(shifts={f"{lon}": offset}, roll_coords=False)
 
     # check plev doesn't change with/without rolling coords
     np.testing.assert_array_equal(

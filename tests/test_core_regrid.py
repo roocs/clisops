@@ -66,6 +66,83 @@ def test_grid_init_ds_tas_regular(mini_esgf_data):
     # assert self.mask
 
 
+def test_grid_init_ds_simass_degenerated_cells(mini_esgf_data):
+    ds = xr.open_dataset(mini_esgf_data["CMIP6_SIMASS_DEGEN"], use_cftime=True)
+    grid = Grid(ds=ds)
+
+    assert grid.format == "CF"
+    assert grid.source == "Dataset"
+    assert grid.lat == "latitude"
+    assert grid.lon == "longitude"
+    assert grid.type == "curvilinear"
+    assert grid.extent == "global"
+    assert grid.contains_collapsed_cells
+    assert grid.contains_smashed_cells
+    assert grid.contains_duplicated_cells is False
+    assert grid.lat_bnds == "vertices_latitude"
+    assert grid.lon_bnds == "vertices_longitude"
+    assert grid.nlat == 384
+    assert grid.nlon == 360
+    assert grid.ncells == 138240
+
+    # Degenerated cells / Collapsing cells
+    # We expect the mask to be the inverted coll_mask
+    assert np.array_equal(grid.ds["mask"].data, grid.degen_mask.data)
+
+
+def test_grid_init_ds_tos_degenerated_cells(mini_esgf_data):
+    ds = xr.open_dataset(mini_esgf_data["CMIP6_TOS_LR_DEGEN"], use_cftime=True)
+    grid = Grid(ds=ds)
+
+    assert grid.format == "CF"
+    assert grid.source == "Dataset"
+    assert grid.lat == "latitude"
+    assert grid.lon == "longitude"
+    assert grid.type == "curvilinear"
+    assert grid.extent == "global"
+    assert grid.contains_collapsed_cells
+    assert grid.contains_smashed_cells is False
+    assert grid.contains_duplicated_cells
+    assert grid.lat_bnds == "vertices_latitude"
+    assert grid.lon_bnds == "vertices_longitude"
+    assert grid.nlat == 220
+    assert grid.nlon == 256
+    assert grid.ncells == 56320
+
+    # Degenerated cells / Collapsing cells
+    assert np.array_equal(grid.ds["mask"].data, grid.degen_mask.data)
+    assert np.array_equal(grid.ds["mask"].data, grid.coll_mask.data)
+
+    # And to be equal
+    assert list(np.where(grid.ds.mask.data.ravel() == 0)[0]) == [
+        255,
+        511,
+        1279,
+        2047,
+        2303,
+        3071,
+        3327,
+        3583,
+        3839,
+        4095,
+        4863,
+        5119,
+        7679,
+        9471,
+        9727,
+        9983,
+        10751,
+        12031,
+        12287,
+        37631,
+        49407,
+        53247,
+        55039,
+        55295,
+        56063,
+    ]
+
+
 def test_grid_init_da_tas_regular(mini_esgf_data):
     ds = xr.open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
     da = ds.tas
@@ -134,6 +211,37 @@ def test_grid_init_ds_tas_cordex(mini_esgf_data):
         Grid(ds=ds)
 
 
+def test_grid_init_ds_cordex_erroneous_bounds(mini_esgf_data):
+    ds = xr.open_dataset(mini_esgf_data["CORDEX_ERRONEOUS_BOUNDS"])
+    # Warnings will be raised due to erroneous bounds
+    with pytest.warns(UserWarning) as issuedWarnings:
+        grid = Grid(ds=ds)
+        if not issuedWarnings:
+            raise RuntimeError("Expected warnings.")
+
+    issuedWarnings = [
+        w
+        for w in issuedWarnings
+        if "Latitude and longitude bounds definition is invalid. The bounds will be dropped"
+        in str(w.message)
+    ]
+    assert len(issuedWarnings) == 1
+
+    assert grid.format == "CF"
+    assert grid.source == "Dataset"
+    assert grid.lat == "lat"
+    assert grid.lon == "lon"
+    assert grid.type == "curvilinear"
+    assert grid.extent == "global"  # extent in lon only!
+    assert grid.lat_bnds is None
+    assert grid.lon_bnds is None
+    assert not grid.contains_collapsed_cells
+    assert not grid.contains_duplicated_cells
+    assert grid.nlat == 133
+    assert grid.nlon == 116
+    assert grid.ncells == 15428
+
+
 def test_grid_init_ds_tas_cordex_ant(mini_esgf_data):
     ds = xr.open_dataset(mini_esgf_data["CORDEX_TAS_ONE_TIMESTEP_ANT"], use_cftime=True)
 
@@ -200,6 +308,30 @@ def test_grid_init_shifted_lon_frame_IITM(mini_esgf_data):
     assert grid.extent == "global"
 
 
+def test_grid_init_unmasked_missing_lon_lat(mini_esgf_data):
+    """
+    Test that the grid is initialized correctly even if the dataset
+    has unmasked missing lat/lon coordinates.
+    """
+    # Test case 1
+    ds = xr.open_dataset(mini_esgf_data["CMIP6_EXTENT_UNMASKED"])
+    g = Grid(ds=ds)
+    x0, x1, y0, y1 = clidu.determine_lon_lat_range(
+        g.ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=False
+    )
+    for i, j in [(x0, -180), (x1, 180), (y0, -77.9), (y1, 89.8)]:
+        assert np.isclose(i, j, atol=0.1)
+
+    # Test case 2
+    ds = xr.open_dataset(mini_esgf_data["CMIP6_UNTAGGED_MISSVALS"])
+    g = Grid(ds=ds)
+    x0, x1, y0, y1 = clidu.determine_lon_lat_range(
+        g.ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=False
+    )
+    for i, j in [(x0, 0), (x1, 360), (y0, -79.2), (y1, 89.8)]:
+        assert np.isclose(i, j, atol=0.1)
+
+
 def test_grid_init_ds_tas_unstructured(mini_esgf_data):
     ds = xr.open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"], use_cftime=True)
     grid = Grid(ds=ds)
@@ -215,14 +347,13 @@ def test_grid_init_ds_tas_unstructured(mini_esgf_data):
     assert grid.lat_bnds == "latitude_bnds"
     assert grid.lon_bnds == "longitude_bnds"
     assert grid.ncells == 20480
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 def test_grid_init_ds_zonmean(mini_esgf_data):
     dsA = xr.open_dataset(mini_esgf_data["CMIP6_ZONMEAN_A"], use_cftime=True)
-    dsB = xr.open_dataset(
+    dsB = xr.open_dataset(mini_esgf_data["CMIP6_ZONMEAN_B"], use_cftime=True)
+    dsC = xr.open_dataset(
         mini_esgf_data["CMIP6_ATM_VERT_ONE_TIMESTEP_ZONMEAN"], use_cftime=True
     )
 
@@ -232,13 +363,117 @@ def test_grid_init_ds_zonmean(mini_esgf_data):
         match="The grid format is not supported.",
     ):
         Grid(ds=dsA)
-
+    with pytest.raises(
+        Exception,
+        match="The grid format is not supported.",
+    ):
+        Grid(ds=dsB)
     # Zonal mean dataset with "lon" singleton dimension
     with pytest.raises(
         Exception,
         match="Remapping zonal mean datasets or generally datasets without meridional extent is not supported.",
     ):
-        Grid(ds=dsB)
+        Grid(ds=dsC)
+
+
+def test_grid_init_ds_erroneous_cf_units_cmip5(mini_esgf_data):
+    ds = xr.open_dataset(mini_esgf_data["CMIP5_WRONG_CF_UNITS"], use_cftime=True)
+
+    # Warnings will be raised due to erroneous CF units
+    with pytest.warns(UserWarning) as issuedWarnings:
+        grid = Grid(ds=ds)
+        if not issuedWarnings:
+            raise RuntimeError("Expected warnings.")
+
+    issuedWarnings = [
+        w
+        for w in issuedWarnings
+        if "Removing attribute" in str(w.message)
+        or "Selecting the best fit." in str(w.message)
+    ]
+    assert len(issuedWarnings) == 8
+
+    assert grid.format == "CF"
+    assert grid.source == "Dataset"
+    assert grid.lat == "lat"
+    assert grid.lon == "lon"
+    assert grid.type == "curvilinear"
+    assert grid.extent == "global"
+    assert not grid.contains_collapsed_cells
+    assert not grid.contains_duplicated_cells
+    # Only the bounds for grid_latitude/longitude are specified
+    assert grid.lat_bnds is None
+    assert grid.lon_bnds is None
+    assert grid.ncells == 83520
+    assert grid.mask is False
+
+
+def test_grid_init_ds_erroneous_cf_units_cmip6(mini_esgf_data):
+    ds = xr.open_dataset(mini_esgf_data["CMIP6_WRONG_CF_UNITS"], use_cftime=True)
+    # Warnings will be raised due to erroneous CF units
+    with pytest.warns(UserWarning) as issuedWarnings:
+        grid = Grid(ds=ds)
+        if not issuedWarnings:
+            raise RuntimeError("Expected warnings.")
+
+    issuedWarnings = [
+        w
+        for w in issuedWarnings
+        if "Removing attribute" in str(w.message)
+        or "Selecting the best fit." in str(w.message)
+    ]
+    assert len(issuedWarnings) == 8
+
+    assert grid.format == "CF"
+    assert grid.source == "Dataset"
+    assert grid.lat == "latitude"
+    assert grid.lon == "longitude"
+    assert grid.type == "curvilinear"
+    assert grid.extent == "global"
+    assert not grid.contains_collapsed_cells
+    assert not grid.contains_duplicated_cells
+    # Only the bounds for grid_latitude/longitude are specified
+    assert grid.lat_bnds is None
+    assert grid.lon_bnds is None
+    assert grid.ncells == 83520
+    assert grid.mask is False
+
+    # Test bounds creation
+    grid = Grid(ds=ds.isel(lat=slice(0, 20), lon=slice(0, 20)), compute_bounds=True)
+    assert grid.lat_bnds == "vertices_latitude"
+    assert grid.lon_bnds == "vertices_longitude"
+    assert grid.ncells == 400
+
+
+def test_grid_init_ds_erroneous_cf_attrs_cmip6(mini_esgf_data):
+    ds = xr.open_dataset(mini_esgf_data["CMIP6_WRONG_CF_ATTRS"], use_cftime=True)
+    # Warnings will be raised due to erroneous CF units
+    with pytest.warns(UserWarning) as issuedWarnings:
+        grid = Grid(ds=ds)
+        if not issuedWarnings:
+            raise RuntimeError("Expected warnings.")
+
+    issuedWarnings = [
+        w
+        for w in issuedWarnings
+        if "Removing attribute" in str(w.message)
+        or "Selecting the best fit." in str(w.message)
+    ]
+    assert len(issuedWarnings) == 8
+
+    assert grid.format == "CF"
+    assert grid.source == "Dataset"
+    assert grid.lat == "latitude"
+    assert grid.lon == "longitude"
+    assert grid.type == "curvilinear"
+    assert grid.extent == "global"
+    assert not grid.contains_collapsed_cells
+    assert not grid.contains_duplicated_cells
+    # Only the bounds for grid_latitude/longitude are specified
+    assert grid.lat_bnds is None
+    assert grid.lon_bnds is None
+    assert grid.ncells == 990720
+    assert grid.mask is False
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -264,9 +499,7 @@ def test_grid_instructor_global():
     assert grid.nlat == 120
     assert grid.nlon == 240
     assert grid.ncells == 28800
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -292,9 +525,7 @@ def test_grid_instructor_2d_regional_change_lon():
     assert grid.nlat == 120
     assert grid.nlon == 127
     assert grid.ncells == 15240
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -321,9 +552,7 @@ def test_grid_instructor_2d_regional_change_lat():
     assert grid.nlat == 73
     assert grid.nlon == 240
     assert grid.ncells == 17520
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -349,9 +578,7 @@ def test_grid_instructor_2d_regional_change_lon_and_lat():
     assert grid.nlat == 73
     assert grid.nlon == 127
     assert grid.ncells == 9271
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -377,9 +604,7 @@ def test_grid_instructor_2d_global():
     assert grid.nlat == 120
     assert grid.nlon == 240
     assert grid.ncells == 28800
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 def test_from_grid_id():
@@ -399,9 +624,46 @@ def test_from_grid_id():
     assert grid.nlat == 145
     assert grid.nlon == 288
     assert grid.ncells == 41760
+    assert grid.mask is False
 
-    # not implemented yet
-    # assert self.mask0
+
+@pytest.mark.parametrize(
+    "grid_id",
+    [
+        "0pt5deg_lsm",
+        "0pt25deg_era5_lsm",
+        "1deg_lsm",
+        "2deg_lsm",
+        "0pt25deg_era5_lsm_binary",
+        "1deg_lsm_binary",
+        "2deg_lsm_binary",
+        "T63_lsm_binary",
+        "T127_lsm_binary",
+    ],
+)
+def test_from_grid_id_mask(grid_id):
+    "Test to create grid from grid_id"
+
+    grid = Grid(grid_id=grid_id, mask="ocean")
+    assert grid.format == "CF"
+    assert grid.mask is True
+    np.all(grid.lsm.data == grid.ds["mask"].data)
+    osum = grid.lsm.sum().item()
+    # Make sure it is a binary mask
+    mask = grid.ds["mask"].copy(deep=True)
+    np.all(grid.lsm.astype("bool").astype(np.int32).data == mask.data)
+
+    grid = Grid(grid_id=grid_id, mask="land")
+    assert grid.format == "CF"
+    assert grid.mask is True
+    np.all(grid.lsm.data == grid.ds["mask"].data)
+    lsum = grid.lsm.sum().item()
+    # Make sure it is a binary mask
+    mask = grid.ds["mask"].copy(deep=True).data
+    np.all(grid.lsm.astype("bool").astype(np.int32).data == mask.data)
+
+    # Make sure "land" and "ocean" are interpreted properly
+    assert lsum > osum
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -535,8 +797,9 @@ def test_to_netcdf(tmp_path, mini_esgf_data):
     assert "coordinates" not in dsB.attrs.keys()
 
 
-def test_detect_collapsed_cells(mini_esgf_data):
-    """Test that collapsed cells are properly identified"""
+def test_detect_collapsed_cells(mini_esgf_data, load_test_data):
+    """Test that collapsed cells are properly identified."""
+
     dsA = xr.open_dataset(mini_esgf_data["CMIP6_OCE_HALO_CNRM"], use_cftime=True)
     dsB = xr.open_dataset(mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True)
     dsC = xr.open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
@@ -656,10 +919,10 @@ def test_calculate_bounds_duplicated_cells(mini_esgf_data):
     ds["lat"][:, 0] = ds["lat"][:, 1]
     ds["lon"][:, 0] = ds["lon"][:, 1]
 
-    # assert raised exception
-    with pytest.raises(
-        Exception,
-        match="This grid contains duplicated cell centers. Therefore bounds cannot be computed.",
+    # assert warning
+    with pytest.warns(
+        UserWarning,
+        match="This grid contains duplicated cell centers, which may affect the quality of the calculated bounds.",
     ):
         Grid(ds=ds, compute_bounds=True)
 
@@ -789,7 +1052,7 @@ class TestWeights:
         assert w.method == "bilinear"
         assert (
             w.id
-            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_no-degen_bilinear"
+            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_skip-degen_bilinear"
         )
         assert w.periodic
         assert w.id in w.filename
@@ -816,7 +1079,7 @@ class TestWeights:
         assert w.method == "conservative"
         assert (
             w.id
-            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_no-degen_conservative"
+            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_skip-degen_conservative"
         )
         assert (
             w.periodic != w.regridder.periodic
@@ -892,10 +1155,10 @@ def test_Weights_compute(tmp_path):
     assert w.format == "xESMF"
     assert w.regridder.filename == "nearest_s2d_180x360_90x180_peri.nc"
     assert not w.regridder.reuse_weights
-    assert w.regridder.ignore_degenerate is None
+    assert w.regridder.ignore_degenerate is True
     assert w.regridder.n_in == 180 * 360
     assert w.regridder.n_out == 90 * 180
-    assert w.ignore_degenerate is None
+    assert w.ignore_degenerate is True
     assert w.filename == "weights_" + w.id + ".nc"
 
     # Test weight reusage
@@ -923,7 +1186,7 @@ def test_Weights_compute_unstructured(tmp_path, mini_esgf_data):
     w = Weights(g, g_out, method="nearest_s2d")
     assert w.regridder.sequence_in
     assert not w.regridder.sequence_out
-    assert w.regridder.ignore_degenerate is None
+    assert w.regridder.ignore_degenerate is True
     assert w.regridder.n_in == g.ncells
     assert w.regridder.n_out == 90 * 180
 
@@ -938,7 +1201,7 @@ def test_Weights_generate_id(tmp_path):
     w = Weights(g, g_out, method="bilinear")
 
     assert w.id == w._generate_id()
-    assert w.id == "_".join([g.hash, g_out.hash, "peri", "no-degen", "bilinear"])
+    assert w.id == "_".join([g.hash, g_out.hash, "peri", "skip-degen", "bilinear"])
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -986,8 +1249,8 @@ def test_cache_init_and_flush(tmp_path):
     flist_ref = [
         "grid_4d324aecaa8302ab0f2f212e9821b00f.nc",
         "grid_96395935b4e81f2a5b55970bd920d82c.nc",
-        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_no-degen_nearest_s2d.json",
-        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_no-degen_nearest_s2d.nc",
+        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_skip-degen_nearest_s2d.json",
+        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_skip-degen_nearest_s2d.nc",
     ]
     assert flist == flist_ref
 
@@ -1017,16 +1280,14 @@ def test_cache_lock_mechanism(tmp_path, mini_esgf_data):
     lock.acquire(timeout=10)
 
     # Fail test if lockfile is not recognized
-    with pytest.warns(UserWarning, match="lockfile") as issuedWarnings:
+    with pytest.warns(UserWarning, match=r"lockfile|xarray") as issuedWarnings:
         Weights(grid_in=grid_in, grid_out=grid_out, method="nearest_s2d")
         if not issuedWarnings:
             raise RuntimeError("Lockfile not recognized/ignored.")
-        elif Version(xr.__version__) >= Version("2023.3.0"):
-            # Warning will also be issued for xarray being too new
-            assert len(issuedWarnings) == 2
-        else:
-            assert len(issuedWarnings) == 1
 
+    # Filter matches and assert number of warnings
+    issuedWarningsLockfile = [w for w in issuedWarnings if "lockfile" in str(w.message)]
+    assert len(issuedWarningsLockfile) == 1
     lock.release()
 
 
