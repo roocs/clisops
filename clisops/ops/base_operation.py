@@ -6,7 +6,7 @@ import xarray as xr
 from loguru import logger
 
 from clisops.utils.common import expand_wildcards
-from clisops.utils.dataset_utils import get_main_variable, open_xr_dataset
+from clisops.utils.dataset_utils import open_xr_dataset
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import get_output, get_time_slices
 

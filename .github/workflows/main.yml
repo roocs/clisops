@@ -141,9 +141,10 @@ jobs:
         run: |
           micromamba list
           python -m pip check || true
+          pip install pytest-timeout
       - name: Test with conda
         run: |
-          python -m pytest -m "not slow" --durations=10 --cov=clisops --cov-report=term-missing
+          python -m pytest -m "not slow" --timeout=60 --durations=10 --cov=clisops --cov-report=term-missing
 
   finish:
     needs:
