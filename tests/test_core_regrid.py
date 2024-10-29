@@ -728,6 +728,7 @@ class TestGridFromDS:
         assert gB.compare_grid(gBa)
 
 
+@pytest.mark.slow
 def test_compare_grid_same_resolution():
     """Test that two grids of same resolution from different sources evaluate as the same grid"""
     ds025 = xr.open_dataset(get_grid_file("0pt25deg_era5"))
@@ -803,6 +804,7 @@ def test_to_netcdf(tmp_path, mini_esgf_data):
     assert "coordinates" not in dsB.attrs.keys()
 
 
+@pytest.mark.slow
 class TestDetect:
 
     def test_detect_extent_shifted_lon_frame(self, mini_esgf_data):
@@ -994,6 +996,7 @@ def test_centers_within_bounds_curvilinear(mini_esgf_data):
     )
 
 
+@pytest.mark.slow
 def test_centers_within_bounds_regular_lat_lon():
     """Test for bounds calculation of regular lat lon grid"""
     g = Grid(grid_id="0pt25deg_era5_lsm", compute_bounds=True)
@@ -1291,34 +1294,38 @@ def test_cache_init_and_flush(tmp_path):
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_cache_lock_mechanism(tmp_path, mini_esgf_data):
     """Test lock mechanism of local regrid weights cache."""
-    ds = xr.open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True
+    ) as ds:
 
-    grid_in = Grid(ds=ds)
-    grid_out = Grid(grid_instructor=10)
+        grid_in = Grid(ds=ds)
+        grid_out = Grid(grid_instructor=10)
 
-    # First round - creating the weights should work without problems
-    weights_cache_init(Path(tmp_path, "weights"))
-    w = Weights(grid_in=grid_in, grid_out=grid_out, method="nearest_s2d")
+        # First round - creating the weights should work without problems
+        weights_cache_init(Path(tmp_path, "weights"))
+        w = Weights(grid_in=grid_in, grid_out=grid_out, method="nearest_s2d")
 
-    # Remove grid files to suppress related warnings of already existing files
-    os.remove(Path(tmp_path, "weights", "grid_" + grid_in.hash + ".nc"))
-    os.remove(Path(tmp_path, "weights", "grid_" + grid_out.hash + ".nc"))
+        # Remove grid files to suppress related warnings of already existing files
+        os.remove(Path(tmp_path, "weights", "grid_" + grid_in.hash + ".nc"))
+        os.remove(Path(tmp_path, "weights", "grid_" + grid_out.hash + ".nc"))
 
-    # Second round, but manually put lockfile in place
-    LOCK_FILE = Path(tmp_path, "weights", w.filename + ".lock")
-    lock = FileLock(LOCK_FILE)
-    lock.acquire(timeout=10)
+        # Second round, but manually put lockfile in place
+        LOCK_FILE = Path(tmp_path, "weights", w.filename + ".lock")
+        lock = FileLock(LOCK_FILE)
+        lock.acquire(timeout=10)
 
-    # Fail test if lockfile is not recognized
-    with pytest.warns(UserWarning, match=r"lockfile|xarray") as issuedWarnings:
-        Weights(grid_in=grid_in, grid_out=grid_out, method="nearest_s2d")
-        if not issuedWarnings:
-            raise RuntimeError("Lockfile not recognized/ignored.")
+        # Fail test if lockfile is not recognized
+        with pytest.warns(UserWarning, match=r"lockfile|xarray") as issuedWarnings:
+            Weights(grid_in=grid_in, grid_out=grid_out, method="nearest_s2d")
+            if not issuedWarnings:
+                raise RuntimeError("Lockfile not recognized/ignored.")
 
-    # Filter matches and assert number of warnings
-    issuedWarningsLockfile = [w for w in issuedWarnings if "lockfile" in str(w.message)]
-    assert len(issuedWarningsLockfile) == 1
-    lock.release()
+        # Filter matches and assert number of warnings
+        issuedWarningsLockfile = [
+            w for w in issuedWarnings if "lockfile" in str(w.message)
+        ]
+        assert len(issuedWarningsLockfile) == 1
+        lock.release()
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -1373,144 +1380,151 @@ def test_read_metadata(tmp_path):
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 class TestRegrid:
-    ds = None
     c6tots = "CMIP6_TAS_ONE_TIME_STEP"
 
-    def _setup(self):
+    def _setup(self, ds):
         if hasattr(self, "setup_done"):
             return
 
-        self.grid_in = Grid(ds=self.ds)
+        self.grid_in = Grid(ds=ds)
 
         self.grid_instructor_out = (0, 360, 1.5, -90, 90, 1.5)
         self.grid_out = Grid(grid_instructor=self.grid_instructor_out)
         self.setup_done = True
 
     def test_adaptive_masking(self, tmp_path, mini_esgf_data):
-        self.ds = xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True)
-        self._setup()
+        with xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True) as ds:
+            self._setup(ds)
 
-        weights_cache_init(Path(tmp_path, "weights"))
-        w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="conservative")
-        regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.7)
+            weights_cache_init(Path(tmp_path, "weights"))
+            w = Weights(
+                grid_in=self.grid_in, grid_out=self.grid_out, method="conservative"
+            )
+            regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.7)
 
     def test_no_adaptive_masking(self, tmp_path, mini_esgf_data):
-        self.ds = xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True)
-        self._setup()
+        with xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True) as ds:
+            self._setup(ds)
 
-        weights_cache_init(Path(tmp_path, "weights"))
-        w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="bilinear")
-        regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=-1.0)
+            weights_cache_init(Path(tmp_path, "weights"))
+            w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="bilinear")
+            regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=-1.0)
 
     def test_duplicated_cells_warning_issued(self, tmp_path, mini_esgf_data):
-        self.ds = xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True)
-        self._setup()
+        with xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True) as ds:
+            self._setup(ds)
 
-        weights_cache_init(Path(tmp_path, "weights"))
-        w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="conservative")
+            weights_cache_init(Path(tmp_path, "weights"))
+            w = Weights(
+                grid_in=self.grid_in, grid_out=self.grid_out, method="conservative"
+            )
 
-        # Cheat regrid into thinking, grid_in contains duplicated cells
-        self.grid_in.contains_duplicated_cells = True
+            # Cheat regrid into thinking, grid_in contains duplicated cells
+            self.grid_in.contains_duplicated_cells = True
 
-        with pytest.warns(
-            UserWarning,
-            match="The grid of the selected dataset contains duplicated cells. "
-            "For the conservative remapping method, "
-            "duplicated grid cells contribute to the resulting value, "
-            "which is in most parts counter-acted by the applied re-normalization. "
-            "However, please be wary with the results and consider removing / masking "
-            "the duplicated cells before remapping.",
-        ) as issuedWarnings:
-            regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.0)
-            if not issuedWarnings:
-                raise RuntimeError(
-                    "No warning issued regarding the duplicated cells in the grid."
-                )
-            elif Version(xr.__version__) >= Version("2023.3.0"):
-                # Warning will also be issued for xarray being too new
-                assert len(issuedWarnings) == 2
-            else:
-                assert len(issuedWarnings) == 1
+            with pytest.warns(
+                UserWarning,
+                match="The grid of the selected dataset contains duplicated cells. "
+                "For the conservative remapping method, "
+                "duplicated grid cells contribute to the resulting value, "
+                "which is in most parts counter-acted by the applied re-normalization. "
+                "However, please be wary with the results and consider removing / masking "
+                "the duplicated cells before remapping.",
+            ) as issuedWarnings:
+                regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.0)
+                if not issuedWarnings:
+                    raise RuntimeError(
+                        "No warning issued regarding the duplicated cells in the grid."
+                    )
+                elif Version(xr.__version__) >= Version("2023.3.0"):
+                    # Warning will also be issued for xarray being too new
+                    assert len(issuedWarnings) == 2
+                else:
+                    assert len(issuedWarnings) == 1
 
     def test_regrid_dataarray(self, tmp_path, mini_esgf_data):
-        self.ds = xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True)
-        self._setup()
+        with xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True) as ds:
+            self._setup(ds)
 
-        weights_cache_init(Path(tmp_path, "weights"))
-        w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="nearest_s2d")
-        grid_da = Grid(self.grid_in.ds.tas)
+            weights_cache_init(Path(tmp_path, "weights"))
+            w = Weights(
+                grid_in=self.grid_in, grid_out=self.grid_out, method="nearest_s2d"
+            )
+            grid_da = Grid(self.grid_in.ds.tas)
 
-        vattrs = (
-            "regrid_method",
-            "standard_name",
-            "long_name",
-            "comment",
-            "units",
-            "cell_methods",
-            "cell_measures",
-            "history",
-        )
-        gattrs = (
-            "grid",
-            "grid_label",
-            "regrid_operation",
-            "regrid_tool",
-            "regrid_weights_uid",
-        )
+            vattrs = (
+                "regrid_method",
+                "standard_name",
+                "long_name",
+                "comment",
+                "units",
+                "cell_methods",
+                "cell_measures",
+                "history",
+            )
+            gattrs = (
+                "grid",
+                "grid_label",
+                "regrid_operation",
+                "regrid_tool",
+                "regrid_weights_uid",
+            )
 
-        r1 = regrid(grid_da, self.grid_out, w, keep_attrs=True)
-        assert vattrs == tuple(r1["tas"].attrs.keys())
-        assert gattrs == tuple(r1.attrs.keys())
+            r1 = regrid(grid_da, self.grid_out, w, keep_attrs=True)
+            assert vattrs == tuple(r1["tas"].attrs.keys())
+            assert gattrs == tuple(r1.attrs.keys())
 
-        r2 = regrid(grid_da, self.grid_out, w, keep_attrs=False)
-        assert ("regrid_method",) == tuple(r2["tas"].attrs.keys())
-        assert gattrs == tuple(r2.attrs.keys())
+            r2 = regrid(grid_da, self.grid_out, w, keep_attrs=False)
+            assert ("regrid_method",) == tuple(r2["tas"].attrs.keys())
+            assert gattrs == tuple(r2.attrs.keys())
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_duplicated_cells_renormalization(tmp_path, mini_esgf_data):
     # todo: Should probably be an xesmf test as well, will do PR there in the future
-    ds = xr.open_dataset(mini_esgf_data["CMIP6_STAGGERED_UCOMP"], use_cftime=True)
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_STAGGERED_UCOMP"], use_cftime=True
+    ) as ds:
 
-    # some internal xesmf code to create array of ones
-    missing = np.isnan(ds.tauuo)
-    ds["tauuo"] = (~missing).astype("d")
+        # some internal xesmf code to create array of ones
+        missing = np.isnan(ds.tauuo)
+        ds["tauuo"] = (~missing).astype("d")
 
-    grid_in = Grid(ds=ds)
-    assert grid_in.contains_collapsed_cells is True
-    assert grid_in.contains_duplicated_cells is True
+        grid_in = Grid(ds=ds)
+        assert grid_in.contains_collapsed_cells is True
+        assert grid_in.contains_duplicated_cells is True
 
-    # Make sure all values that are not missing, are equal to one
-    assert grid_in.ncells == ds["tauuo"].where(~missing, 1.0).sum()
-    # Make sure all values that are missing are equal to 0
-    assert 0.0 == ds["tauuo"].where(missing, 0.0).sum()
+        # Make sure all values that are not missing, are equal to one
+        assert grid_in.ncells == ds["tauuo"].where(~missing, 1.0).sum()
+        # Make sure all values that are missing are equal to 0
+        assert 0.0 == ds["tauuo"].where(missing, 0.0).sum()
 
-    grid_out = Grid(grid_instructor=(0, 360, 1.5, -90, 90, 1.5))
-    weights_cache_init(Path(tmp_path, "weights"))
-    w = Weights(grid_in=grid_in, grid_out=grid_out, method="conservative")
+        grid_out = Grid(grid_instructor=(0, 360, 1.5, -90, 90, 1.5))
+        weights_cache_init(Path(tmp_path, "weights"))
+        w = Weights(grid_in=grid_in, grid_out=grid_out, method="conservative")
 
-    # Remap using adaptive masking
-    r1 = regrid(grid_in, grid_out, w, adaptive_masking_threshold=0.5)
+        # Remap using adaptive masking
+        r1 = regrid(grid_in, grid_out, w, adaptive_masking_threshold=0.5)
 
-    # Remap using default setting (na_thres = 0.5)
-    r2 = regrid(grid_in, grid_out, w)
+        # Remap using default setting (na_thres = 0.5)
+        r2 = regrid(grid_in, grid_out, w)
 
-    # Make sure both options yield equal results
-    xr.testing.assert_equal(r1, r2)
+        # Make sure both options yield equal results
+        xr.testing.assert_equal(r1, r2)
 
-    # Remap without using adaptive masking - internally, then adaptive masking is used
-    #   with threshold 0., to still re-normalize contributions from duplicated cells
-    #   but not from masked cells or out-of-source-domain area
-    r3 = regrid(grid_in, grid_out, w, adaptive_masking_threshold=-1.0)
+        # Remap without using adaptive masking - internally, then adaptive masking is used
+        #   with threshold 0., to still re-normalize contributions from duplicated cells
+        #   but not from masked cells or out-of-source-domain area
+        r3 = regrid(grid_in, grid_out, w, adaptive_masking_threshold=-1.0)
 
-    # Make sure, contributions from duplicated cells (i.e. values > 1) are re-normalized
-    assert r2["tauuo"].where(r2["tauuo"] > 1.0, 0.0).sum() == 0.0
-    assert r3["tauuo"].where(r2["tauuo"] > 1.0, 0.0).sum() == 0.0
+        # Make sure, contributions from duplicated cells (i.e. values > 1) are re-normalized
+        assert r2["tauuo"].where(r2["tauuo"] > 1.0, 0.0).sum() == 0.0
+        assert r3["tauuo"].where(r2["tauuo"] > 1.0, 0.0).sum() == 0.0
 
-    # Make sure xesmf behaves as expected:
-    #   test that deactivated adaptive masking in xesmf will yield results > 1
-    #   and else, contributions from duplicated cells will be re-normalized
-    r4 = w.regridder(ds["tauuo"], skipna=False)
-    r5 = w.regridder(ds["tauuo"], skipna=True, na_thres=0.0)
-    assert r4.where(r4 > 1.0, 0.0).sum() > 0.0
-    assert r5.where(r5 > 1.0, 0.0).sum() == 0.0
+        # Make sure xesmf behaves as expected:
+        #   test that deactivated adaptive masking in xesmf will yield results > 1
+        #   and else, contributions from duplicated cells will be re-normalized
+        r4 = w.regridder(ds["tauuo"], skipna=False)
+        r5 = w.regridder(ds["tauuo"], skipna=True, na_thres=0.0)
+        assert r4.where(r4 > 1.0, 0.0).sum() > 0.0
+        assert r5.where(r5 > 1.0, 0.0).sum() == 0.0
