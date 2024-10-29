@@ -68,6 +68,7 @@ def test_regrid_grid_as_none(tmpdir, tmp_path, mini_esgf_data):
         )
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 @pytest.mark.parametrize("grid_id", sorted(grid_dict))
 def test_regrid_regular_grid_to_all_roocs_grids(
@@ -278,42 +279,44 @@ def test_regrid_keep_attrs(tmp_path, mini_esgf_data):
     )
 
 
-@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_halo_simple(tmp_path, mini_esgf_data):
-    """Test regridding with a simple halo."""
-    fpath = mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"]
-    ds = xr.open_dataset(fpath).isel(time=0)
+@pytest.mark.slow
+class TestRegridHalo:
 
-    weights_cache_init(Path(tmp_path, "weights"))
+    @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+    def test_regrid_halo_simple(self, tmp_path, mini_esgf_data):
+        """Test regridding with a simple halo."""
+        fpath = mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"]
+        ds = xr.open_dataset(fpath).isel(time=0)
 
-    ds_out = regrid(
-        ds,
-        method="conservative",
-        adaptive_masking_threshold=-1,
-        grid=5,
-        output_type="xarray",
-    )[0]
+        weights_cache_init(Path(tmp_path, "weights"))
 
-    assert ds_out.attrs["regrid_operation"] == "conservative_404x802_36x72"
+        ds_out = regrid(
+            ds,
+            method="conservative",
+            adaptive_masking_threshold=-1,
+            grid=5,
+            output_type="xarray",
+        )[0]
 
+        assert ds_out.attrs["regrid_operation"] == "conservative_404x802_36x72"
 
-@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_halo_adv(tmp_path, mini_esgf_data):
-    """Test regridding of dataset with a more complex halo."""
-    fpath = mini_esgf_data["CMIP6_OCE_HALO_CNRM"]
-    ds = xr.open_dataset(fpath).isel(time=0)
+    @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+    def test_regrid_halo_adv(self, tmp_path, mini_esgf_data):
+        """Test regridding of dataset with a more complex halo."""
+        fpath = mini_esgf_data["CMIP6_OCE_HALO_CNRM"]
+        ds = xr.open_dataset(fpath).isel(time=0)
 
-    weights_cache_init(Path(tmp_path, "weights"))
+        weights_cache_init(Path(tmp_path, "weights"))
 
-    ds_out = regrid(
-        ds,
-        method="conservative",
-        adaptive_masking_threshold=-1,
-        grid=5,
-        output_type="xarray",
-    )[0]
+        ds_out = regrid(
+            ds,
+            method="conservative",
+            adaptive_masking_threshold=-1,
+            grid=5,
+            output_type="xarray",
+        )[0]
 
-    assert ds_out.attrs["regrid_operation"] == "conservative_1050x1442_36x72"
+        assert ds_out.attrs["regrid_operation"] == "conservative_1050x1442_36x72"
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
@@ -335,6 +338,7 @@ def test_regrid_shifted_lon_frame(tmp_path, mini_esgf_data):
     assert ds_out.attrs["regrid_operation"] == "bilinear_200x360_36x72_peri"
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_same_grid_exception(tmpdir, tmp_path):
     """Test that a warning is issued when source and target grid are the same."""

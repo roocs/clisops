@@ -679,6 +679,7 @@ def test_from_grid_id_mask(grid_id):
     assert lsum > osum
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 class TestGridFromDS:
 
@@ -1237,6 +1238,7 @@ def test_Weights_generate_id(tmp_path):
     assert w.id == "_".join([g.hash, g_out.hash, "peri", "skip-degen", "bilinear"])
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_Weights_init_with_collapsed_cells(tmp_path, mini_esgf_data):
     "Test the creation of remapping weights for a grid containing collapsed cells"
