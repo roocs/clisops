@@ -214,5 +214,6 @@ addopts = [
 filterwarnings = ["ignore::UserWarning"]
 markers = [
   "online: mark test to need internet connection",
-  "slow: mark test to be slow"
+  "slow: mark test to be slow",
+  "thread_unsafe: mark test to be thread unsafe"
 ]
