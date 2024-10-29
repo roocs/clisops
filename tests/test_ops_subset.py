@@ -1797,6 +1797,7 @@ def test_subset_nc_no_fill_value(nimbus, tmpdir, mini_esgf_data):
         assert "_FillValue" not in res.time_bnds.encoding
 
 
+@pytest.mark.slow
 def test_subset_cmip5_nc_consistent_bounds(nimbus, tmpdir):
     """Tests clisops subset function with a time subset and check the metadata"""
     # FIXME: The `subset` operation relies on opening a file with xarray as a reference.
