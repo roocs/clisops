@@ -204,6 +204,7 @@ skip = ["clisops/core/__init__.py"]
 
 [tool.pytest.ini_options]
 addopts = [
+  "-ra",
   "--verbose",
   "--color=yes",
   "--numprocesses=0",

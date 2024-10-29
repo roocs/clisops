@@ -21,10 +21,6 @@ def _check_output_nc(result, fname="output_001.nc"):
     assert fname in [os.path.basename(_) for _ in result]
 
 
-def _load_ds(fpath):
-    return xr.open_mfdataset(fpath)
-
-
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_basic(tmpdir, tmp_path, mini_esgf_data):
     """Test a basic regridding operation."""
@@ -103,6 +99,7 @@ def test_regrid_regular_grid_to_all_roocs_grids(
     assert ds.mrsos.size > 100
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_subset_and_regrid_erroneous_cf_units_cmip5(tmpdir, mini_esgf_data, tmp_path):
     """Test subset and regrid ds with erroneous cf units."""
@@ -145,6 +142,7 @@ def test_subset_and_regrid_erroneous_cf_units_cmip5(tmpdir, mini_esgf_data, tmp_
     assert ds.zos.count() == 163
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 @pytest.mark.parametrize(
     "dset", ["ATLAS_v1_CORDEX", "ATLAS_v1_EOBS_GRID", "ATLAS_v0_CORDEX_ANT"]
@@ -373,7 +371,7 @@ def test_regrid_cmip6_nc_consistent_bounds_and_coords(tmpdir, mini_esgf_data):
         output_type="nc",
         file_namer="standard",
     )
-    res = _load_ds(result)
+    res = xr.open_mfdataset(result)
     # check fill value in bounds
     assert "_FillValue" not in res.lat_bnds.encoding
     assert "_FillValue" not in res.lon_bnds.encoding
