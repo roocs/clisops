@@ -6,18 +6,19 @@ from typing import Union
 import numpy as np
 import pytest
 import xarray as xr
-from roocs_utils.exceptions import InvalidParameterValue
-from roocs_utils.parameter import area_parameter, time_parameter
-from roocs_utils.parameter.param_utils import (
+
+from clisops import CONFIG
+from clisops.exceptions import InvalidParameterValue
+from clisops.ops.subset import Subset, subset
+from clisops.parameter import (
+    area_parameter,
     level_interval,
     level_series,
     time_components,
     time_interval,
+    time_parameter,
     time_series,
 )
-
-from clisops import CONFIG
-from clisops.ops.subset import Subset, subset
 from clisops.utils.dataset_utils import determine_lon_lat_range
 from clisops.utils.output_utils import _format_time  # noqa
 

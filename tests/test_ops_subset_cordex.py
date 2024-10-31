@@ -1,6 +1,5 @@
-from roocs_utils.parameter.param_utils import time_interval
-
 from clisops.ops.subset import subset
+from clisops.parameter import time_interval
 
 
 def test_subset_cordex_afr(tmpdir, check_output_nc, mini_esgf_data):

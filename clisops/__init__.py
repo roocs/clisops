@@ -4,10 +4,9 @@ import os
 import warnings
 
 from loguru import logger
-from roocs_utils.config import get_config
 
-from .__version__ import __author__, __copyright__, __email__, __license__, __version__
-from .utils.common import enable_logging
+from clisops.config import get_config
+from clisops.utils.common import enable_logging
 
 
 def showwarning(message, *args, **kwargs):
@@ -24,7 +23,7 @@ logger.disable("clisops")
 logger.remove()
 
 
-# Workaround for roocs_utils to not re-import clisops
+# Workaround to prevent reimporting
 class Package:
     __file__ = __file__  # noqa
 
@@ -32,8 +31,18 @@ class Package:
 package = Package()
 CONFIG = get_config(package)
 
-# Set the memory limit for each dask chunk
-chunk_memory_limit = CONFIG["clisops:read"].get("chunk_memory_limit", None)
+try:
+    # Set the memory limit for each dask chunk
+    chunk_memory_limit = CONFIG["clisops:read"].get("chunk_memory_limit", None)
+except KeyError:
+    logger.warning(
+        "No chunk_memory_limit set in configuration file. Defaulting to None."
+    )
+    chunk_memory_limit = None
+
+from clisops.parameter import *
+from clisops.utils import *
+from clisops.xarray_utils import *
 
 # if get_chunk_mem_limit():
 #     dask.config.set({"array.chunk-size": get_chunk_mem_limit()})

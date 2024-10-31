@@ -17,7 +17,6 @@ from pandas.api.types import is_integer_dtype  # noqa
 from pyproj import Geod
 from pyproj.crs import CRS
 from pyproj.exceptions import CRSError
-from roocs_utils.utils.time_utils import to_isoformat
 from shapely import vectorized
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import split, unary_union
@@ -25,6 +24,7 @@ from xarray.core import indexing
 from xarray.core.utils import get_temp_dimname
 
 from clisops.utils.dataset_utils import adjust_date_to_calendar, get_coord_by_type
+from clisops.utils.time_utils import to_isoformat
 
 from .regrid import XESMF_MINIMUM_VERSION
 

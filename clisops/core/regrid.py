@@ -18,11 +18,11 @@ import platformdirs
 import roocs_grids
 import xarray as xr
 from packaging.version import Version
-from roocs_utils.exceptions import InvalidParameterValue
 
 import clisops.utils.dataset_utils as clidu
 from clisops import CONFIG
 from clisops import __version__ as __clisops_version__
+from clisops.exceptions import InvalidParameterValue
 from clisops.utils.common import check_dir, require_module
 from clisops.utils.output_utils import FileLock, create_lock
 

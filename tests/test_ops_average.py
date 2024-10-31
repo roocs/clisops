@@ -3,9 +3,9 @@ import os
 import pytest
 import xarray as xr
 from packaging.version import Version
-from roocs_utils.exceptions import InvalidParameterValue
 
 from clisops.core.average import XESMF_MINIMUM_VERSION  # noqa
+from clisops.exceptions import InvalidParameterValue
 from clisops.ops.average import average_over_dims, average_shape, average_time
 
 try:

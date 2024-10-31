@@ -1,3 +1,4 @@
+# NOTE: This has been copied over from CLISOPS with the intention to eventually merge roocs-utils and clisops
 import importlib.resources as ilr
 import os
 import warnings
@@ -12,8 +13,6 @@ from urllib.request import urlretrieve
 from filelock import FileLock
 from jinja2 import Template
 from loguru import logger
-from xarray import Dataset
-from xarray import open_dataset as _open_dataset
 
 try:
     import pooch
@@ -37,7 +36,6 @@ __all__ = [
     "get_esgf_file_paths",
     "get_esgf_glob_paths",
     "load_registry",
-    "open_dataset",
     "stratus",
     "write_roocs_cfg",
 ]
@@ -50,7 +48,7 @@ except AttributeError:
     default_xclim_test_data_cache = None
 
 ESGF_TEST_DATA_REPO_URL = os.getenv(
-    "ESGF_TEST_DATA_REPO_UR", "https://github.com/roocs/mini-esgf-data"
+    "ESGF_TEST_DATA_REPO_UR", "https://raw.githubusercontent.com/roocs/mini-esgf-data"
 )
 default_esgf_test_data_version = "v1"
 ESGF_TEST_DATA_VERSION = os.getenv(
@@ -61,7 +59,8 @@ ESGF_TEST_DATA_CACHE_DIR = os.getenv(
 )
 
 XCLIM_TEST_DATA_REPO_URL = os.getenv(
-    "XCLIM_TEST_DATA_REPO_URL", "https://github.com/Ouranosinc/xclim-testdata"
+    "XCLIM_TEST_DATA_REPO_URL",
+    "https://raw.githubusercontent.com/Ouranosinc/xclim-testdata",
 )
 default_xclim_test_data_version = "v2024.8.23"
 XCLIM_TEST_DATA_VERSION = os.getenv(
@@ -72,8 +71,11 @@ XCLIM_TEST_DATA_CACHE_DIR = os.getenv(
 )
 
 
-def write_roocs_cfg(cache_dir: Union[str, Path]):
-    cfg_templ = """
+def write_roocs_cfg(
+    template: Optional[str] = None,
+    cache_dir: Union[str, Path] = default_esgf_test_data_cache,
+):
+    default_template = """
     [project:cmip5]
     base_dir = {{ base_dir }}/badc/cmip5/data/cmip5
 
@@ -91,9 +93,20 @@ def write_roocs_cfg(cache_dir: Union[str, Path]):
 
     [project:c3s-cordex]
     base_dir = {{ base_dir }}/pool/data/CORDEX/data/cordex
+
+    [project:proj_test]
+    base_dir = /projects/test/proj
+    fixed_path_modifiers =
+        variable:rain sun cloud
+    fixed_path_mappings =
+        proj_test.my.first.test:first/test/something.nc
+        proj_test.my.second.test:second/test/data_*.txt
+        proj_test.another.{variable}.test:good/test/{variable}.nc
     """
+
+    cfg_template = template or default_template
     roocs_config = Path(cache_dir, "roocs.ini")
-    cfg = Template(cfg_templ).render(
+    cfg = Template(cfg_template).render(
         base_dir=Path(ESGF_TEST_DATA_CACHE_DIR).joinpath(ESGF_TEST_DATA_VERSION)
     )
     with open(roocs_config, "w") as fp:
@@ -360,13 +373,13 @@ def get_esgf_glob_paths(esgf_cache_dir: Union[str, os.PathLike[str]]):
             esgf_cache_dir,
             "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
         ).as_posix(),
+        "CMIP5_TAS_EC_EARTH": Path(
+            esgf_cache_dir,
+            "badc/cmip5/data/cmip5/output1/ICHEC/EC-EARTH/historical/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
+        ).as_posix(),
         "CMIP5_RH": Path(
             esgf_cache_dir,
             "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/historical/mon/land/Lmon/r1i1p1/latest/rh/*.nc",
-        ).as_posix(),
-        "C3S_CMIP5_TAS": Path(
-            esgf_cache_dir,
-            "gws/nopw/j04/cp4cds1_vol1/data/c3s-cmip5/output1/ICHEC/EC-EARTH/historical/day/atmos/day/r1i1p1/tas/v20131231/*.nc",
         ).as_posix(),
         "C3S_CMIP5_TSICE": Path(
             esgf_cache_dir,
@@ -392,6 +405,10 @@ def get_esgf_glob_paths(esgf_cache_dir: Union[str, os.PathLike[str]]):
             esgf_cache_dir,
             "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp45/day/land/day/r1i1p1/latest/mrsos/*.nc",
         ).as_posix(),
+        "C3S_CMIP5_TAS": Path(
+            esgf_cache_dir,
+            "gws/nopw/j04/cp4cds1_vol1/data/c3s-cmip5/output1/ICHEC/EC-EARTH/historical/day/atmos/day/r1i1p1/tas/v20131231/*.nc",
+        ).as_posix(),
     }
 
 
@@ -406,14 +423,15 @@ class ContextLogger:
         if caplog:
             self.using_caplog = True
 
-    def __enter__(self):
-        self.logger.enable("clisops")
+    def __enter__(self, package_name: str = "clisops"):
+        self.logger.enable(package_name)
+        self._package = package_name
         return self.logger
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         """If test is supplying caplog, pytest will manage teardown."""
 
-        self.logger.disable("clisops")
+        self.logger.disable(self._package)
         if not self.using_caplog:
             try:
                 self.logger.remove()
@@ -443,22 +461,22 @@ def load_registry(branch: str, repo: str):
             f"Please use one of {ESGF_TEST_DATA_REPO_URL} or {XCLIM_TEST_DATA_REPO_URL}"
         )
 
-    remote_registry = audit_url(f"{repo}/raw/{branch}/data/{project}_registry.txt")
+    remote_registry = audit_url(f"{repo}{branch}/data/{project}_registry.txt")
     if branch != default_testdata_version:
         custom_registry_folder = Path(
-            str(ilr.files("clisops").joinpath(f"utils/registries/{branch}"))
+            str(ilr.files("roocs_utils").joinpath(f"utils/registries/{branch}"))
         )
         custom_registry_folder.mkdir(parents=True, exist_ok=True)
         registry_file = custom_registry_folder.joinpath(f"{project}_registry.txt")
         urlretrieve(remote_registry, registry_file)  # noqa: S310
     elif repo != default_testdata_repo_url:
         registry_file = Path(
-            str(ilr.files("clisops").joinpath(f"utils/{project}_registry.txt"))
+            str(ilr.files("roocs_utils").joinpath(f"utils/{project}_registry.txt"))
         )
         urlretrieve(remote_registry, registry_file)  # noqa: S310
 
     registry_file = Path(
-        str(ilr.files("clisops").joinpath(f"utils/{project}_registry.txt"))
+        str(ilr.files("roocs_utils").joinpath(f"utils/{project}_registry.txt"))
     )
     if not registry_file.exists():
         raise FileNotFoundError(f"Registry file not found: {registry_file}")
@@ -508,8 +526,8 @@ def stratus(  # noqa: PR01
     """
     if pooch is None:
         raise ImportError(
-            "The `pooch` package is required to fetch the xclim testing data. "
-            "You can install it with `pip install pooch` or `pip install clisops[dev]`."
+            "The `pooch` package is required to fetch the remote testing data. "
+            "You can install it with `pip install pooch` or `pip install roocs-utils[dev]`."
         )
 
     if repo.endswith("xclim-testdata"):
@@ -524,7 +542,7 @@ def stratus(  # noqa: PR01
             f"Please use one of {ESGF_TEST_DATA_REPO_URL} or {XCLIM_TEST_DATA_REPO_URL}"
         )
 
-    remote = audit_url(f"{repo}/raw/{branch}/data")
+    remote = audit_url(f"{repo}/{branch}/data")
     return pooch.create(
         path=cache_dir,
         base_url=remote,
@@ -533,67 +551,6 @@ def stratus(  # noqa: PR01
         allow_updates=data_updates,
         registry=load_registry(branch=branch, repo=repo),
     )
-
-
-# idea copied from raven that it borrowed from xclim that borrowed it from xarray that was borrowed from Seaborn
-def open_dataset(
-    name: Union[str, os.PathLike[str]],
-    branch: str,
-    repo: str,
-    cache_dir: Union[str, os.PathLike[str]],
-    **kwargs,
-) -> Dataset:
-    r"""Open a dataset from the online GitHub-like repository.
-
-    If a local copy is found then always use that to avoid network traffic.
-
-    Parameters
-    ----------
-    name : str
-        Name of the file containing the dataset.
-    branch : str
-        Branch of the repository to use when fetching datasets.
-    repo: str
-        URL of the repository to use when fetching testing datasets.
-    cache_dir : Path
-        The directory in which to search for and write cached data.
-    \*\*kwargs
-        For NetCDF files, keywords passed to :py:func:`xarray.open_dataset`.
-
-    Returns
-    -------
-    Union[Dataset, Path]
-
-    Raises
-    ------
-    OSError
-        If the file is not found in the cache directory or cannot be read.
-
-    See Also
-    --------
-    xarray.open_dataset
-    """
-    if cache_dir is None:
-        raise ValueError(
-            "The cache directory must be set. "
-            "Please set the `cache_dir` parameter or the `XCLIM_DATA_DIR` environment variable."
-        )
-
-    local_file = Path(cache_dir).joinpath(name)
-    if not local_file.exists():
-        try:
-            local_file = stratus(branch=branch, repo=repo, cache_dir=cache_dir).fetch(
-                name
-            )
-        except OSError as e:
-            raise OSError(
-                f"File not found locally. Verify that the testing data is available in remote: {local_file}"
-            ) from e
-    try:
-        ds = _open_dataset(local_file, **kwargs)
-        return ds
-    except OSError:
-        raise
 
 
 def populate_testing_data(

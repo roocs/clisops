@@ -1,9 +1,9 @@
 from typing import Optional, Union
 
 import xarray as xr
-from roocs_utils.project_utils import get_project_name
 
 from clisops import CONFIG
+from clisops.project_utils import get_project_name
 from clisops.utils.dataset_utils import get_main_variable
 from clisops.utils.output_utils import get_format_extension
 

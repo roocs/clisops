@@ -4,11 +4,11 @@ from typing import Optional, Union
 
 import geopandas as gpd
 import xarray as xr
-from roocs_utils.exceptions import InvalidParameterValue
-from roocs_utils.parameter.dimension_parameter import DimensionParameter
 
 from clisops.core import average
+from clisops.exceptions import InvalidParameterValue
 from clisops.ops.base_operation import Operation
+from clisops.parameter import DimensionParameter
 from clisops.utils.dataset_utils import convert_coord_to_axis
 from clisops.utils.file_namers import get_file_namer
 
