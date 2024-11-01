@@ -557,6 +557,35 @@ def test_convert_lon_frame_bounds():
         assert lu == 350.0
 
 
+def test_convert_lon_frame_force():
+    """Test the force option of function cf_convert_between_lon_frames"""
+    # Load tutorial dataset defined on [200,330]
+    ds = xr.tutorial.open_dataset("air_temperature")
+    assert ds["lon"].min().item() == 200.0
+    assert ds["lon"].max().item() == 330.0
+
+    # Convert to other lon frame
+    conv, ll, lu = clidu.cf_convert_between_lon_frames(ds, (-180, 180))
+
+    assert conv["lon"].values[0] == -160.0
+    assert conv["lon"].values[-1] == -30.0
+
+    # Convert only lon_interval
+    conv, ll, lu = clidu.cf_convert_between_lon_frames(ds, (-180, -10))
+
+    assert conv["lon"].min().item() == 200.0
+    assert conv["lon"].max().item() == 330.0
+    assert ll == 180.0
+    assert lu == 350.0
+
+    # The same, but forcing the conversion of the longitudes
+    conv, ll, lu = clidu.cf_convert_between_lon_frames(ds, (-180, -10), force=True)
+    assert conv["lon"].min().item() == -160.0
+    assert conv["lon"].max().item() == -30.0
+    assert ll == -180.0
+    assert lu == -10.0
+
+
 def test_convert_lon_frame_shifted_bounds(mini_esgf_data):
     with xr.open_dataset(mini_esgf_data["CMIP6_GFDL_EXTENT"], use_cftime=True) as ds:
 
