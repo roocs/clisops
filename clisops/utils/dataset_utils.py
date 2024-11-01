@@ -810,7 +810,7 @@ def cf_convert_between_lon_frames(ds_in, lon_interval, force=False):
             ds[lon] = ds[lon].where(ds[lon] <= 180, ds[lon] - 360.0)
             if lon_bnds:
                 ds[lon_bnds] = ds[lon_bnds].where(
-                    ds[lon_bnds] > 180, ds[lon_bnds] - 360.0
+                    ds[lon_bnds] <= 180, ds[lon_bnds] - 360.0
                 )
         elif low > 0 and lon_min < 0:
             ds[lon] = ds[lon].where(ds[lon] >= 0, ds[lon] + 360.0)
@@ -868,7 +868,14 @@ def cf_convert_between_lon_frames(ds_in, lon_interval, force=False):
             # interval does not include 180°-meridian: convert interval to [-180,180]
             else:
                 if low >= 0:
-                    low, high = _convert_interval_between_lon_frames(low, high)
+                    if not force:
+                        low, high = _convert_interval_between_lon_frames(low, high)
+                    else:
+                        ds[lon] = ds[lon].where(ds[lon] >= 0, ds[lon] + 360.0)
+                        if lon_bnds:
+                            ds[lon_bnds] = ds[lon_bnds].where(
+                                ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0
+                            )
                 return ds, low, high
 
         # [0 ... 360]
@@ -885,9 +892,15 @@ def cf_convert_between_lon_frames(ds_in, lon_interval, force=False):
                     )
             # interval negative
             else:
-                low, high = _convert_interval_between_lon_frames(low, high)
-                return ds, low, high
-
+                if not force:
+                    low, high = _convert_interval_between_lon_frames(low, high)
+                    return ds, low, high
+                else:
+                    ds[lon] = ds[lon].where(ds[lon] <= 180, ds[lon] - 360.0)
+                    if lon_bnds:
+                        ds[lon_bnds] = ds[lon_bnds].where(
+                            ds[lon_bnds] <= 180, ds[lon_bnds] - 360.0
+                        )
         # 1D coordinate variable: Sort, since order might no longer be ascending / descending
         if gridtype == "regular_lat_lon":
             ds = ds.sortby(lon)
