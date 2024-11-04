@@ -18,6 +18,7 @@ from roocs_utils.parameter.param_utils import (
 
 from clisops import CONFIG
 from clisops.ops.subset import Subset, subset
+from clisops.utils.dataset_utils import determine_lon_lat_range
 from clisops.utils.output_utils import _format_time  # noqa
 
 
@@ -41,7 +42,7 @@ def test_subset_no_params(tmpdir, check_output_nc, nimbus):
     check_output_nc(result)
 
 
-def test_subset_time(nimbus, tmpdir, check_output_nc):
+def test_subset_time(nimbus, tmpdir, check_output_nc, xfail_if_xarray_incompatible):
     """Tests clisops subset function with a time subset."""
     result = subset(
         ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
@@ -54,7 +55,9 @@ def test_subset_time(nimbus, tmpdir, check_output_nc):
     check_output_nc(result)
 
 
-def test_subset_args_as_parameter_classes(nimbus, tmpdir, check_output_nc):
+def test_subset_args_as_parameter_classes(
+    nimbus, tmpdir, check_output_nc, xfail_if_xarray_incompatible
+):
     """Tests clisops subset function with a time subset with the arguments as parameter classes from roocs-utils."""
 
     time = time_parameter.TimeParameter(
@@ -83,7 +86,9 @@ def test_subset_args_as_parameter_classes(nimbus, tmpdir, check_output_nc):
         "ATLAS_v0_CMIP6",
     ],
 )
-def test_subset_ATLAS_datasets(tmpdir, dset, check_output_nc, mini_esgf_data):
+def test_subset_ATLAS_datasets(
+    tmpdir, dset, check_output_nc, mini_esgf_data, xfail_if_xarray_incompatible
+):
     """Test temporal and spatial subset for several ATLAS datasets."""
     time = time_parameter.TimeParameter(
         time_interval("2000-01-01T00:00:00", "2020-12-30T00:00:00")
@@ -135,7 +140,9 @@ def test_subset_no_ds(tmpdir):
         )  # noqa
 
 
-def test_subset_area_simple_file_name(nimbus, tmpdir, check_output_nc):
+def test_subset_area_simple_file_name(
+    nimbus, tmpdir, check_output_nc, xfail_if_xarray_incompatible
+):
     """Tests clisops subset function with an area subset (simple file name)."""
     result = subset(
         ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
@@ -147,7 +154,9 @@ def test_subset_area_simple_file_name(nimbus, tmpdir, check_output_nc):
     check_output_nc(result)
 
 
-def test_subset_area_project_file_name_atlas(tmpdir, check_output_nc, mini_esgf_data):
+def test_subset_area_project_file_name_atlas(
+    tmpdir, check_output_nc, mini_esgf_data, xfail_if_xarray_incompatible
+):
     """Tests clisops subset function with an area subset (derived file name)."""
     result = subset(
         ds=mini_esgf_data["ATLAS_v1_EOBS_GRID"],
@@ -159,7 +168,9 @@ def test_subset_area_project_file_name_atlas(tmpdir, check_output_nc, mini_esgf_
     check_output_nc(result, "t_E-OBS_no-expt_mon_19500101-19500101.nc")
 
 
-def test_subset_area_project_file_name(nimbus, tmpdir, check_output_nc):
+def test_subset_area_project_file_name(
+    nimbus, tmpdir, check_output_nc, xfail_if_xarray_incompatible
+):
     """Tests clisops subset function with an area subset (derived file name)."""
     result = subset(
         ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
@@ -506,7 +517,6 @@ def test_aux_variables():
     test auxiliary variables are remembered in output dataset
     Have to create a netcdf file with auxiliary variable
     """
-
     ds = _load_ds("tests/data/test_file.nc")
 
     assert "do_i_get_written" in ds.variables
@@ -521,19 +531,18 @@ def test_aux_variables():
     assert "do_i_get_written" in result[0].variables
 
 
-@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
-def test_coord_variables_exist(c3s_cmip5_tsice):
+def test_coord_variables_exist(mini_esgf_data):
     """
     check coord variables e.g. lat/lon when original data
     is on an irregular grid exist in output dataset
     """
-    ds = _load_ds(c3s_cmip5_tsice)
+    ds = _load_ds(mini_esgf_data["C3S_CMIP5_TSICE"])
 
     assert "lat" in ds.coords
     assert "lon" in ds.coords
 
     result = subset(
-        ds=c3s_cmip5_tsice,
+        ds=mini_esgf_data["C3S_CMIP5_TSICE"],
         time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
         area=(0.0, 10.0, 10.0, 65.0),
         output_type="xarray",
@@ -543,14 +552,12 @@ def test_coord_variables_exist(c3s_cmip5_tsice):
     assert "lon" in result[0].coords
 
 
-@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
-def test_coord_variables_subsetted_i_j(c3s_cmip5_tsice):
+def test_coord_variables_subsetted_i_j(mini_esgf_data):
     """
     check coord variables e.g. lat/lon when original data
     is on an irregular grid are subsetted correctly in output dataset
     """
-
-    ds = _load_ds(c3s_cmip5_tsice)
+    ds = _load_ds(mini_esgf_data["C3S_CMIP5_TSICE"])
 
     assert "lat" in ds.coords
     assert "lon" in ds.coords
@@ -560,14 +567,14 @@ def test_coord_variables_subsetted_i_j(c3s_cmip5_tsice):
     area = (50, -65.0, 250.0, 65.0)
 
     result = subset(
-        ds=c3s_cmip5_tsice,
+        ds=mini_esgf_data["C3S_CMIP5_TSICE"],
         time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
         area=area,
         output_type="xarray",
     )
 
     out = result[0].tsice
-    assert out.values.shape == (180, 318, 178)
+    assert out.values.shape == (180, 7, 4)
 
     # all lats and lons (hence i and j) have been dropped in these ranges as they are all masked, only time dim remains
     assert out.where(
@@ -585,14 +592,12 @@ def test_coord_variables_subsetted_i_j(c3s_cmip5_tsice):
     assert np.all(out.lat.values[mask1.values] <= area[3])
 
 
-@pytest.mark.skipif(Path("/gws").is_dir() is False, reason="data not available")
-def test_coord_variables_subsetted_rlat_rlon(c3s_cmip5_tos):
+def test_coord_variables_subsetted_rlat_rlon(mini_esgf_data):
     """
     check coord variables e.g. lat/lon when original data
     is on an irregular grid are subsetted correctly in output dataset
     """
-
-    ds = _load_ds(c3s_cmip5_tos)
+    ds = _load_ds(mini_esgf_data["CMIP5_WRONG_CF_UNITS"])
 
     assert "lat" in ds.coords
     assert "lon" in ds.coords
@@ -602,22 +607,22 @@ def test_coord_variables_subsetted_rlat_rlon(c3s_cmip5_tos):
     area = (5.0, 10.0, 20.0, 65.0)
 
     result = subset(
-        ds=c3s_cmip5_tos,
+        ds=mini_esgf_data["CMIP5_WRONG_CF_UNITS"],
         time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
         area=area,
         output_type="xarray",
     )
 
-    out = result[0].tos
-    assert out.values.shape == (96, 65, 15)
+    out = result[0].zos
+    assert out.values.shape == (1, 65, 15)
 
     # all lats and lons (hence rlat and rlon) have been dropped in these ranges as they are all masked, only time dim remains
     assert out.where(
         np.logical_and(out.lon < area[0], out.lon > area[2]), drop=True
-    ).values.shape == (96, 0, 0)
+    ).values.shape == (1, 0, 0)
     assert out.where(
         np.logical_and(out.lat < area[1], out.lat > area[3]), drop=True
-    ).values.shape == (96, 0, 0)
+    ).values.shape == (1, 0, 0)
 
     mask1 = ~(np.isnan(out.sel(time=out.time[0])))
 
@@ -639,9 +644,10 @@ def test_time_invariant_subset_standard_name(tmpdir, check_output_nc, mini_esgf_
     check_output_nc(result, fname="mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc")
 
 
-def test_longitude_and_latitude_coords_only(tmpdir, check_output_nc, mini_esgf_data):
+def test_longitude_and_latitude_coords_only(
+    tmpdir, check_output_nc, mini_esgf_data, xfail_if_xarray_incompatible
+):
     """Test subset succeeds when latitude and longitude are coordinates not dims and are not called lat/lon"""
-
     result = subset(
         ds=mini_esgf_data["CMIP6_TOS"],
         area=(10, -70, 260, 70),
@@ -678,37 +684,24 @@ def test_time_invariant_subset_with_time(mini_esgf_data):
     assert str(exc.value) == "'Dataset' object has no attribute 'time'"
 
 
-# test known bug
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
-@pytest.mark.skip(reason="bug no longer exists")
-def test_cross_prime_meridian(tmpdir):
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/day/tas/gn/v20191016"
-        "/tas_day_MIROC6_ssp119_r1i1p1f1_gn_20150101-20241231.nc"
+def test_cross_prime_meridian(tmpdir, mini_esgf_data, check_output_nc):
+    """Test subset with crossing prime meridian"""
+    ds = _load_ds(mini_esgf_data["CMIP6_TAS_DAY"])
+
+    result = subset(
+        ds=ds,
+        area=(-5, 50, 30, 65),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
     )
 
-    with pytest.raises(NotImplementedError) as exc:
-        subset(
-            ds=ds,
-            area=(-5, 50, 30, 65),
-            output_dir=tmpdir,
-            output_type="nc",
-            file_namer="simple",
-        )
-    assert (
-        str(exc.value)
-        == "Input longitude bounds ([-5. 30.]) cross the 0 degree meridian "
-        "but dataset longitudes are all positive."
-    )
+    check_output_nc(result)
 
 
-# test it works when not crossing 0 meridian
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
-def test_do_not_cross_prime_meridian(tmpdir, check_output_nc):
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/day/tas/gn/v20191016"
-        "/tas_day_MIROC6_ssp119_r1i1p1f1_gn_20150101-20241231.nc"
-    )
+def test_do_not_cross_prime_meridian(tmpdir, mini_esgf_data, check_output_nc):
+    """Test subset without crossing prime meridian"""
+    ds = _load_ds(mini_esgf_data["CMIP6_TAS_DAY"])
 
     result = subset(
         ds=ds,
@@ -721,12 +714,9 @@ def test_do_not_cross_prime_meridian(tmpdir, check_output_nc):
     check_output_nc(result)
 
 
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
-def test_0_360_no_cross(tmpdir, check_output_nc):
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803"
-        "/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc"
-    )
+def test_0_360_no_cross(tmpdir, mini_esgf_data, check_output_nc):
+    ds = _load_ds(mini_esgf_data["CMIP6_RLDS_ONE_TIME_STEP"])
+
     result = subset(
         ds=ds,
         area=(10.0, -90.0, 200.0, 90.0),
@@ -738,30 +728,22 @@ def test_0_360_no_cross(tmpdir, check_output_nc):
     check_output_nc(result)
 
 
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
-@pytest.mark.skip(reason="bug no longer exists")
-def test_0_360_cross(tmpdir):
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/"
-        "rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc"
+def test_0_360_cross(tmpdir, mini_esgf_data, check_output_nc):
+    ds = _load_ds(mini_esgf_data["CMIP6_RLDS"])
+
+    result = subset(
+        ds=ds,
+        area=(-50.0, -90.0, 100.0, 90.0),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
     )
-
-    with pytest.raises(NotImplementedError):
-        subset(
-            ds=ds,
-            area=(-50.0, -90.0, 100.0, 90.0),
-            output_dir=tmpdir,
-            output_type="nc",
-            file_namer="simple",
-        )
+    check_output_nc(result)
 
 
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
-def test_300_60_no_cross(tmpdir, check_output_nc):
+def test_300_60_no_cross(tmpdir, mini_esgf_data, check_output_nc):
     # longitude is -300 to 60
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/Ofx/areacello/gn/v20190726/*.nc"
-    )
+    ds = _load_ds(mini_esgf_data["CMIP6_AREACELLO"])
 
     result = subset(
         ds=ds,
@@ -774,12 +756,9 @@ def test_300_60_no_cross(tmpdir, check_output_nc):
     check_output_nc(result)
 
 
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
-def test_300_60_cross(tmpdir, check_output_nc):
+def test_300_60_cross(tmpdir, mini_esgf_data, check_output_nc):
     # longitude is -300 to 60
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/Ofx/areacello/gn/v20190726/*.nc"
-    )
+    ds = _load_ds(mini_esgf_data["CMIP6_AREACELLO"])
 
     result = subset(
         ds=ds,
@@ -792,12 +771,8 @@ def test_300_60_cross(tmpdir, check_output_nc):
     check_output_nc(result)
 
 
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
-def test_roll_positive_real_data():
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/"
-        "rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc"
-    )
+def test_roll_positive_real_data(mini_esgf_data):
+    ds = _load_ds(mini_esgf_data["CMIP6_RLUS_ONE_TIME_STEP"])
 
     area = (-50.0, -90.0, 100.0, 90.0)
 
@@ -838,26 +813,49 @@ def test_roll_positive_mini_data(mini_esgf_data):
     )
 
 
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
-def test_check_lon_alignment_curvilinear_grid():
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp370/r1i1p1f1/Ofx/sftof/gn/v20191108/*.nc"
-    )
+def test_lon_alignment_curvilinear_grid(mini_esgf_data):
+    ds = _load_ds(mini_esgf_data["CMIP6_SFTOF"])
 
+    # Assert lon frame is (0, 360)
+    x0, x1, *y = determine_lon_lat_range(
+        ds,
+        "longitude",
+        "latitude",
+        "vertices_longitude",
+        "vertices_latitude",
+        apply_fix=False,
+    )
+    assert np.isclose(x0, 0.0, atol=0.1)
+    assert np.isclose(x1, 360.0, atol=0.1)
+
+    # Define an area with another lon frame (-180, 180)
     area = (-50.0, -90.0, 100.0, 90.0)
 
-    with pytest.raises(Exception) as exc:
-        subset(
-            ds=ds,
-            area=area,
-            output_type="xarray",
-        )
-    assert (
-        str(exc.value)
-        == "The requested longitude subset (-50.0, 100.0) is not within the longitude bounds "
-        "of this dataset and the data could not be converted to this longitude frame successfully. "
-        "Please re-run your request with longitudes within the bounds of the dataset: (0.00, 359.99)"
+    ds_subset = subset(
+        ds=ds,
+        area=area,
+        output_type="xarray",
+    )[0]
+
+    # Assert data includes the desired area
+    #  (lon_frame was converted to -180, 180 before subsetting)
+    # Since it is a curvilinear grid, the minimum longitude is smaller than -50
+    #  and the maximum longitude is larger than 100
+    x0, x1, *y = determine_lon_lat_range(
+        ds_subset,
+        "longitude",
+        "latitude",
+        "longitude_bnds",
+        "latitude_bnds",
+        apply_fix=False,
     )
+    assert np.isclose(x0, -155.0, atol=0.1)
+    assert np.isclose(x1, 159.5, atol=0.1)
+
+    # But we can confirm that the majority of points lie between -50 and 100
+    #  (in this case more than 2/3 of the points)
+    hist = np.histogram(ds_subset["longitude"], bins=(x0, -51, 101, x1))
+    assert hist[0][1] > 2 * (hist[0][0] + hist[0][2])
 
 
 class TestSubset:
@@ -1077,11 +1075,8 @@ def test_no_lat_lon_in_range(mini_esgf_data):
     )
 
 
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
-def test_curvilinear_ds_no_data_in_bbox_real_data():
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/ScenarioMIP/CNRM-CERFACS/CNRM-CM6-1/ssp245/r1i1p1f2/Omon/tos/gn/v20190219/tos_Omon_CNRM-CM6-1_ssp245_r1i1p1f2_gn_201501-210012.nc"
-    )
+def test_curvilinear_ds_no_data_in_bbox_real_data(mini_esgf_data):
+    ds = _load_ds(mini_esgf_data["CMIP6_TOS_CNRM"])
     with pytest.raises(ValueError) as exc:
         subset(
             ds=ds,
@@ -1095,16 +1090,13 @@ def test_curvilinear_ds_no_data_in_bbox_real_data():
     )
 
 
-@pytest.mark.skipif(Path("/badc").is_dir() is False, reason="data not available")
-def test_curvilinear_ds_no_data_in_bbox_real_data_swap_lat():
-    ds = _load_ds(
-        "/badc/cmip6/data/CMIP6/ScenarioMIP/CNRM-CERFACS/CNRM-CM6-1/ssp245/r1i1p1f2/Omon/tos/gn/v20190219/tos_Omon_CNRM-CM6-1_ssp245_r1i1p1f2_gn_201501-210012.nc"
-    )
+def test_curvilinear_ds_no_data_in_bbox_real_data_swap_lat(mini_esgf_data):
+    ds = _load_ds(mini_esgf_data["CMIP6_TOS_CNRM"])
     with pytest.raises(ValueError) as exc:
         subset(
             ds=ds,
             area="1,4,2,40",
-            time=time_interval("2021-01-01/2050-12-31"),
+            time=time_interval("2015-01-01/2050-12-31"),
             output_type="xarray",
         )
     assert (
@@ -1628,10 +1620,9 @@ def test_subset_by_time_components_year_month(tmpdir, mini_esgf_data):
     kwargs = {"output_dir": tmpdir, "output_type": "xarray"}
 
     for tc in (tc1, tc2):
-        ds = subset(mini_esgf_data["CMIP6_TA"], time_components=tc, **kwargs)[0]
-
-        assert set(ds.time.dt.year.values) == {2021, 2022}
-        assert set(ds.time.dt.month.values) == {12, 1, 2}
+        with subset(mini_esgf_data["CMIP6_TA"], time_components=tc, **kwargs)[0] as ds:
+            assert set(ds.time.dt.year.values) == {2021, 2022}
+            assert set(ds.time.dt.month.values) == {12, 1, 2}
 
 
 def test_subset_empty(tmpdir, mini_esgf_data):
@@ -1665,11 +1656,12 @@ def test_subset_by_time_components_31_days_360_day(tmpdir, mini_esgf_data):
         output_dir=tmpdir31,
         time_components="month:12,1,2|day:1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31",
     )
-    ds30 = xr.open_mfdataset(str(tmpdir30) + "/*.nc")
-    ds31 = xr.open_mfdataset(str(tmpdir31) + "/*.nc")
-
-    assert ds30.identical(ds31)
-    assert ds30.dims["time"] == 8490
+    with (
+        xr.open_mfdataset(f"{tmpdir30}/*.nc") as ds30,
+        xr.open_mfdataset(f"{tmpdir31}/*.nc") as ds31,
+    ):
+        assert ds30.identical(ds31)
+        assert ds30.sizes["time"] == 8490
 
 
 def test_subset_by_time_components_month_day(tmpdir, mini_esgf_data):
@@ -1680,11 +1672,12 @@ def test_subset_by_time_components_month_day(tmpdir, mini_esgf_data):
     kwargs = {"output_dir": tmpdir, "output_type": "xarray"}
 
     for tc in (tc1, tc2):
-        ds = subset(mini_esgf_data["CMIP6_SICONC_DAY"], time_components=tc, **kwargs)[0]
-
-        assert set(ds.time.dt.month.values) == {7}
-        assert set(ds.time.dt.day.values) == {1, 11, 21}
-        assert len(ds.time.values) == (2014 - 1850 + 1) * 3
+        with subset(mini_esgf_data["CMIP6_SICONC_DAY"], time_components=tc, **kwargs)[
+            0
+        ] as ds:
+            assert set(ds.time.dt.month.values) == {7}
+            assert set(ds.time.dt.day.values) == {1, 11, 21}
+            assert len(ds.time.values) == (2014 - 1850 + 1) * 3
 
 
 def test_subset_by_time_interval_and_components_month_day(tmpdir, mini_esgf_data):
@@ -1701,13 +1694,12 @@ def test_subset_by_time_interval_and_components_month_day(tmpdir, mini_esgf_data
     kwargs = {"output_dir": tmpdir, "output_type": "xarray"}
 
     for tc in (tc1, tc2):
-        ds = subset(
+        with subset(
             mini_esgf_data["CMIP6_SICONC_DAY"], time=ti, time_components=tc, **kwargs
-        )[0]
-
-        assert set(ds.time.dt.month.values) == set(months)
-        assert set(ds.time.dt.day.values) == set(days)
-        assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
+        )[0] as ds:
+            assert set(ds.time.dt.month.values) == set(months)
+            assert set(ds.time.dt.day.values) == set(days)
+            assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
 
 
 def test_subset_by_time_series_and_components_month_day(tmpdir, mini_esgf_data):
@@ -1729,13 +1721,12 @@ def test_subset_by_time_series_and_components_month_day(tmpdir, mini_esgf_data):
     kwargs = {"output_dir": tmpdir, "output_type": "xarray"}
 
     for tc in (tc1, tc2):
-        ds = subset(
+        with subset(
             mini_esgf_data["CMIP6_SICONC_DAY"], time=ts, time_components=tc, **kwargs
-        )[0]
-
-        assert set(ds.time.dt.month.values) == set(months)
-        assert set(ds.time.dt.day.values) == set(days)
-        assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
+        )[0] as ds:
+            assert set(ds.time.dt.month.values) == set(months)
+            assert set(ds.time.dt.day.values) == set(days)
+            assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
 
 
 def test_subset_by_area_and_components_month_day(tmpdir, mini_esgf_data):
@@ -1754,134 +1745,144 @@ def test_subset_by_area_and_components_month_day(tmpdir, mini_esgf_data):
     kwargs = {"output_dir": tmpdir, "output_type": "xarray"}
 
     for tc in (tc1, tc2):
-        ds = subset(
+        with subset(
             mini_esgf_data["CMIP6_SICONC_DAY"],
             time=ti,
             time_components=tc,
             area=area,
             **kwargs,
-        )[0]
-
-        assert set(ds.time.dt.month.values) == set(months)
-        assert set(ds.time.dt.day.values) == set(days)
-        assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
-
-
-def test_subset_nc_no_fill_value(nimbus, tmpdir, mini_esgf_data):
-    """Tests clisops subset function with a time subset."""
-    result = subset(
-        ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
-        time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
-        output_dir=tmpdir,
-        output_type="nc",
-        file_namer="simple",
-    )
-
-    # check that with just opening the file with xarray, saving to netcdf, then opening again, these fill values get added
-    ds = _load_ds(mini_esgf_data["CMIP5_TAS"])
-    ds.to_netcdf(f"{tmpdir}/test_fill_values.nc")
-    ds = _load_ds(f"{tmpdir}/test_fill_values.nc")
-
-    # assert np.isnan(float(ds.time.encoding.get("_FillValue")))
-    assert np.isnan(float(ds.lat.encoding.get("_FillValue")))
-    assert np.isnan(float(ds.lon.encoding.get("_FillValue")))
-    assert np.isnan(float(ds.height.encoding.get("_FillValue")))
-
-    assert np.isnan(float(ds.lat_bnds.encoding.get("_FillValue")))
-    assert np.isnan(float(ds.lon_bnds.encoding.get("_FillValue")))
-    assert np.isnan(float(ds.time_bnds.encoding.get("_FillValue")))
-
-    # check that there is no fill value in encoding for coordinate variables and bounds
-    res = _load_ds(result)
-    assert "_FillValue" not in res.time.encoding
-    assert "_FillValue" not in res.lat.encoding
-    assert "_FillValue" not in res.lon.encoding
-    assert "_FillValue" not in res.height.encoding
-
-    assert "_FillValue" not in res.lat_bnds.encoding
-    assert "_FillValue" not in res.lon_bnds.encoding
-    assert "_FillValue" not in res.time_bnds.encoding
+        )[0] as ds:
+            assert set(ds.time.dt.month.values) == set(months)
+            assert set(ds.time.dt.day.values) == set(days)
+            assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
 
 
-def test_subset_cmip5_nc_consistent_bounds(nimbus, tmpdir):
-    """Tests clisops subset function with a time subset and check the metadata"""
-    result = subset(
-        ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
-        time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
-        output_dir=tmpdir,
-        output_type="nc",
-        file_namer="simple",
-    )
-    res = _load_ds(result)
-    # check fill value in bounds
-    assert "_FillValue" not in res.lat_bnds.encoding
-    assert "_FillValue" not in res.lon_bnds.encoding
-    assert "_FillValue" not in res.time_bnds.encoding
-    # check fill value in coordinates
-    assert "_FillValue" not in res.time.encoding
-    assert "_FillValue" not in res.lat.encoding
-    assert "_FillValue" not in res.lon.encoding
-    assert "_FillValue" not in res.height.encoding
-    # check coordinates in bounds
-    assert "coordinates" not in res.lat_bnds.encoding
-    assert "coordinates" not in res.lon_bnds.encoding
-    assert "coordinates" not in res.time_bnds.encoding
+@pytest.mark.thread_unsafe
+@pytest.mark.slow
+class TestSubsetResultLocking:
 
-
-def test_subset_cmip6_nc_consistent_bounds(nimbus, tmpdir, mini_esgf_data):
-    """Tests clisops subset function with a time subset and check the metadata"""
-    result = subset(
-        ds=mini_esgf_data["CMIP6_TASMIN"],
-        time=time_interval("2010-01-01T00:00:00", "2010-12-31T00:00:00"),
-        output_dir=tmpdir,
-        output_type="nc",
-        file_namer="simple",
-    )
-    res = _load_ds(result)
-    # check fill value in bounds
-    assert "_FillValue" not in res.lat_bnds.encoding
-    assert "_FillValue" not in res.lon_bnds.encoding
-    assert "_FillValue" not in res.time_bnds.encoding
-    # check fill value in coordinates
-    assert "_FillValue" not in res.time.encoding
-    assert "_FillValue" not in res.lat.encoding
-    assert "_FillValue" not in res.lon.encoding
-    assert "_FillValue" not in res.height.encoding
-    # check coordinates in bounds
-    assert "coordinates" not in res.lat_bnds.encoding
-    assert "coordinates" not in res.lon_bnds.encoding
-    assert "coordinates" not in res.time_bnds.encoding
-
-
-def test_subset_cmip6_issue_308_fillvalue(tmpdir, capsys, mini_esgf_data):
-    """Tests clisops subset function with a time subset and check the metadata.
-
-    Notes
-    -----
-    This test is used for fillvalue issues. See: https://github.com/roocs/clisops/issues/308
-    """
-    from clisops.utils.common import enable_logging
-    from clisops.utils.testing import ContextLogger
-
-    with ContextLogger():
-        enable_logging()
+    def test_subset_nc_no_fill_value(self, nimbus, tmpdir, mini_esgf_data):
+        """Tests clisops subset function with a time subset."""
+        # FIXME: The `subset` operation relies on opening a file with xarray as a reference.
+        # This can cause issues when modifications are done to the file from other processes.
         result = subset(
-            ds=mini_esgf_data["CMIP6_FILLVALUE"],
-            time=time_interval("2000-01-01T00:00:00", "2000-12-31T00:00:00"),
+            ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+            time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
             output_dir=tmpdir,
             output_type="nc",
             file_namer="simple",
         )
-        res = _load_ds(result)
-        # check fill value in bounds
-        assert "_FillValue" not in res.lat_bnds.encoding
-        assert "_FillValue" not in res.lon_bnds.encoding
-        assert "_FillValue" not in res.time_bnds.encoding
-        # xarray should set the appropriate dtype
-        assert res.tas.encoding["_FillValue"].dtype == np.float32
-        assert res.tas.encoding["missing_value"].dtype == np.float32
-        captured = capsys.readouterr()
-        assert (
-            "The defined _FillValue and missing_value for 'tas' are not the same '1.0000000200408773e+20' != '1e+20'. Setting '1e+20' for both."
-            in captured.err
+
+        # check that with just opening the file with xarray, saving to netcdf, then opening again, these fill values get added
+        with _load_ds(mini_esgf_data["CMIP5_TAS"]) as ds:
+            ds.to_netcdf(f"{tmpdir}/test_fill_values.nc")
+
+        with _load_ds(f"{tmpdir}/test_fill_values.nc") as ds:
+            # assert np.isnan(float(ds.time.encoding.get("_FillValue")))
+            assert np.isnan(float(ds.lat.encoding.get("_FillValue")))
+            assert np.isnan(float(ds.lon.encoding.get("_FillValue")))
+            assert np.isnan(float(ds.height.encoding.get("_FillValue")))
+
+            assert np.isnan(float(ds.lat_bnds.encoding.get("_FillValue")))
+            assert np.isnan(float(ds.lon_bnds.encoding.get("_FillValue")))
+            assert np.isnan(float(ds.time_bnds.encoding.get("_FillValue")))
+
+        # FIXME: The `subset` operation relies on opening a file with xarray as a reference.
+        # This can cause issues when modifications are done to the file from other processes.
+        # check that there is no fill value in encoding for coordinate variables and bounds
+        with _load_ds(result) as res:
+            assert "_FillValue" not in res.time.encoding
+            assert "_FillValue" not in res.lat.encoding
+            assert "_FillValue" not in res.lon.encoding
+            assert "_FillValue" not in res.height.encoding
+
+            assert "_FillValue" not in res.lat_bnds.encoding
+            assert "_FillValue" not in res.lon_bnds.encoding
+            assert "_FillValue" not in res.time_bnds.encoding
+
+    def test_subset_cmip5_nc_consistent_bounds(self, nimbus, tmpdir):
+        """Tests clisops subset function with a time subset and check the metadata"""
+        # FIXME: The `subset` operation relies on opening a file with xarray as a reference.
+        # This can cause issues when modifications are done to the file from other processes.
+        result = subset(
+            ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
+            time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
+            output_dir=tmpdir,
+            output_type="nc",
+            file_namer="simple",
         )
+        with _load_ds(result) as res:
+            # check fill value in bounds
+            assert "_FillValue" not in res.lat_bnds.encoding
+            assert "_FillValue" not in res.lon_bnds.encoding
+            assert "_FillValue" not in res.time_bnds.encoding
+            # check fill value in coordinates
+            assert "_FillValue" not in res.time.encoding
+            assert "_FillValue" not in res.lat.encoding
+            assert "_FillValue" not in res.lon.encoding
+            assert "_FillValue" not in res.height.encoding
+            # check coordinates in bounds
+            assert "coordinates" not in res.lat_bnds.encoding
+            assert "coordinates" not in res.lon_bnds.encoding
+            assert "coordinates" not in res.time_bnds.encoding
+
+    def test_subset_cmip6_nc_consistent_bounds(self, nimbus, tmpdir, mini_esgf_data):
+        """Tests clisops subset function with a time subset and check the metadata"""
+        # FIXME: The `subset` operation relies on opening a file with xarray as a reference.
+        # This can cause issues when modifications are done to the file from other processes.
+        result = subset(
+            ds=mini_esgf_data["CMIP6_TASMIN"],
+            time=time_interval("2010-01-01T00:00:00", "2010-12-31T00:00:00"),
+            output_dir=tmpdir,
+            output_type="nc",
+            file_namer="simple",
+        )
+        with _load_ds(result) as res:
+            # check fill value in bounds
+            assert "_FillValue" not in res.lat_bnds.encoding
+            assert "_FillValue" not in res.lon_bnds.encoding
+            assert "_FillValue" not in res.time_bnds.encoding
+            # check fill value in coordinates
+            assert "_FillValue" not in res.time.encoding
+            assert "_FillValue" not in res.lat.encoding
+            assert "_FillValue" not in res.lon.encoding
+            assert "_FillValue" not in res.height.encoding
+            # check coordinates in bounds
+            assert "coordinates" not in res.lat_bnds.encoding
+            assert "coordinates" not in res.lon_bnds.encoding
+            assert "coordinates" not in res.time_bnds.encoding
+
+    def test_subset_cmip6_issue_308_fillvalue(self, tmpdir, capsys, mini_esgf_data):
+        """Tests clisops subset function with a time subset and check the metadata.
+
+        Notes
+        -----
+        This test is used for fillvalue issues. See: https://github.com/roocs/clisops/issues/308
+        """
+        from clisops.utils.common import enable_logging
+        from clisops.utils.testing import ContextLogger
+
+        with ContextLogger():
+            enable_logging()
+            # FIXME: The `subset` operation relies on opening a file with xarray as a reference.
+            # This can cause issues when modifications are done to the file from other processes.
+            result = subset(
+                ds=mini_esgf_data["CMIP6_FILLVALUE"],
+                time=time_interval("2000-01-01T00:00:00", "2000-12-31T00:00:00"),
+                output_dir=tmpdir,
+                output_type="nc",
+                file_namer="simple",
+            )
+            with _load_ds(result) as res:
+                # check fill value in bounds
+                assert "_FillValue" not in res.lat_bnds.encoding
+                assert "_FillValue" not in res.lon_bnds.encoding
+                assert "_FillValue" not in res.time_bnds.encoding
+                # xarray should set the appropriate dtype
+                assert res.tas.encoding["_FillValue"].dtype == np.float32
+                assert res.tas.encoding["missing_value"].dtype == np.float32
+                captured = capsys.readouterr()
+                assert (
+                    "The defined _FillValue and missing_value for 'tas' are not the same '1.0000000200408773e+20' != '1e+20'. Setting '1e+20' for both."
+                    in captured.err
+                )

@@ -18,14 +18,13 @@ from pyproj import Geod
 from pyproj.crs import CRS
 from pyproj.exceptions import CRSError
 from roocs_utils.utils.time_utils import to_isoformat
-from roocs_utils.xarray_utils import xarray_utils as xu
 from shapely import vectorized
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import split, unary_union
 from xarray.core import indexing
 from xarray.core.utils import get_temp_dimname
 
-from clisops.utils.dataset_utils import adjust_date_to_calendar
+from clisops.utils.dataset_utils import adjust_date_to_calendar, get_coord_by_type
 
 from .regrid import XESMF_MINIMUM_VERSION
 
@@ -150,9 +149,9 @@ def check_start_end_levels(func: Callable) -> Callable:
         """Verify that first and last levels are valid in a level subsetting function."""
         da = args[0]
 
-        level = xu.get_coord_by_type(da, "level", ignore_aux_coords=True)
-
-        if level is None:
+        try:
+            level = da[get_coord_by_type(da, "level", ignore_aux_coords=True)]
+        except ValueError:
             raise Exception(
                 f"{subset_level.__name__} requires input data that has a "
                 'recognisable "level" coordinate.'
@@ -286,7 +285,7 @@ def check_levels_exist(func: Callable) -> Callable:
         da = args[0]
 
         req_levels = set(kwargs.get("level_values", set()))
-        da_levels = xu.get_coord_by_type(da, "level")
+        da_levels = da[get_coord_by_type(da, "level")]
         # round levels to precision 4. There might be level values like 1000.00000001 ... which would not match to 1000
         levels = {round(lev, 4) for lev in da_levels.values}
 
@@ -322,7 +321,7 @@ def check_datetimes_exist(func: Callable) -> Callable:
         """
         da = args[0]
 
-        da_times = xu.get_coord_by_type(da, "time")
+        da_times = da[get_coord_by_type(da, "time")]
         tm_class = da_times.values[0].__class__
         times = {tm for tm in da_times.values}
 
@@ -1814,7 +1813,7 @@ def subset_level(
     -----
     TBA
     """
-    level = xu.get_coord_by_type(da, "level")
+    level = da[get_coord_by_type(da, "level")]
 
     first_level, last_level = _check_desc_coords(
         level, (first_level, last_level), level.name
@@ -1865,7 +1864,7 @@ def subset_level_by_values(
     The requested levels will automatically be re-ordered to match the order in the
     input dataset.
     """
-    level = xu.get_coord_by_type(da, "level")
+    level = da[get_coord_by_type(da, "level")]
     return da.sel(**{level.name: level_values}, method="nearest")
 
 

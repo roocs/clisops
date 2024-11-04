@@ -52,6 +52,7 @@ dependencies = [
   "cftime >=1.4.1",
   "dask[complete] >=2023.6.0",
   "filelock >=3.15.4",
+  "fsspec >=2023.9.0",
   "geopandas >=0.14.0",
   "jinja2 >=2.11",
   "loguru >=0.5.3",
@@ -139,7 +140,7 @@ search = "version = \"{current_version}\""
 replace = "version = \"{new_version}\""
 
 [tool.codespell]
-ignore-words-list = "scrip,nam,te,mye,bu,lik,tread"
+ignore-words-list = "scrip,nam,te,mye,bu,lik,tread,fo"
 
 [tool.coverage.paths]
 source = ["clisops", "*/site-packages/clisops/"]
@@ -203,6 +204,7 @@ skip = ["clisops/core/__init__.py"]
 
 [tool.pytest.ini_options]
 addopts = [
+  "-ra",
   "--verbose",
   "--color=yes",
   "--numprocesses=0",
@@ -212,5 +214,6 @@ addopts = [
 filterwarnings = ["ignore::UserWarning"]
 markers = [
   "online: mark test to need internet connection",
-  "slow: mark test to be slow"
+  "slow: mark test to be slow",
+  "thread_unsafe: mark test to be thread unsafe"
 ]

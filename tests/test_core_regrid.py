@@ -45,200 +45,448 @@ XESMF_IMPORT_MSG = (
 
 
 def test_grid_init_ds_tas_regular(mini_esgf_data):
-    ds = xr.open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
-    grid = Grid(ds=ds)
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True
+    ) as ds:
+        grid = Grid(ds=ds)
 
-    assert grid.format == "CF"
-    assert grid.source == "Dataset"
-    assert grid.lat == ds.lat.name
-    assert grid.lon == ds.lon.name
-    assert grid.type == "regular_lat_lon"
-    assert grid.extent == "global"
-    assert not grid.contains_collapsed_cells
-    assert not grid.contains_duplicated_cells
-    assert grid.lat_bnds == ds.lat_bnds.name
-    assert grid.lon_bnds == ds.lon_bnds.name
-    assert grid.nlat == 80
-    assert grid.nlon == 180
-    assert grid.ncells == 14400
+        assert grid.format == "CF"
+        assert grid.source == "Dataset"
+        assert grid.lat == ds.lat.name
+        assert grid.lon == ds.lon.name
+        assert grid.type == "regular_lat_lon"
+        assert grid.extent == "global"
+        assert not grid.contains_collapsed_cells
+        assert not grid.contains_duplicated_cells
+        assert grid.lat_bnds == ds.lat_bnds.name
+        assert grid.lon_bnds == ds.lon_bnds.name
+        assert grid.nlat == 80
+        assert grid.nlon == 180
+        assert grid.ncells == 14400
 
     # not implemented yet
     # assert self.mask
+
+
+def test_grid_init_ds_simass_degenerated_cells(mini_esgf_data):
+    with xr.open_dataset(mini_esgf_data["CMIP6_SIMASS_DEGEN"], use_cftime=True) as ds:
+        grid = Grid(ds=ds)
+
+        assert grid.format == "CF"
+        assert grid.source == "Dataset"
+        assert grid.lat == "latitude"
+        assert grid.lon == "longitude"
+        assert grid.type == "curvilinear"
+        assert grid.extent == "global"
+        assert grid.contains_collapsed_cells
+        assert grid.contains_smashed_cells
+        assert grid.contains_duplicated_cells is False
+        assert grid.lat_bnds == "vertices_latitude"
+        assert grid.lon_bnds == "vertices_longitude"
+        assert grid.nlat == 384
+        assert grid.nlon == 360
+        assert grid.ncells == 138240
+
+        # Degenerated cells / Collapsing cells
+        # We expect the mask to be the inverted coll_mask
+        assert np.array_equal(grid.ds["mask"].data, grid.degen_mask.data)
+
+
+def test_grid_init_ds_tos_degenerated_cells(mini_esgf_data):
+    with xr.open_dataset(mini_esgf_data["CMIP6_TOS_LR_DEGEN"], use_cftime=True) as ds:
+        grid = Grid(ds=ds)
+
+        assert grid.format == "CF"
+        assert grid.source == "Dataset"
+        assert grid.lat == "latitude"
+        assert grid.lon == "longitude"
+        assert grid.type == "curvilinear"
+        assert grid.extent == "global"
+        assert grid.contains_collapsed_cells
+        assert grid.contains_smashed_cells is False
+        assert grid.contains_duplicated_cells
+        assert grid.lat_bnds == "vertices_latitude"
+        assert grid.lon_bnds == "vertices_longitude"
+        assert grid.nlat == 220
+        assert grid.nlon == 256
+        assert grid.ncells == 56320
+
+        # Degenerated cells / Collapsing cells
+        assert np.array_equal(grid.ds["mask"].data, grid.degen_mask.data)
+        assert np.array_equal(grid.ds["mask"].data, grid.coll_mask.data)
+
+        # And to be equal
+        assert list(np.where(grid.ds.mask.data.ravel() == 0)[0]) == [
+            255,
+            511,
+            1279,
+            2047,
+            2303,
+            3071,
+            3327,
+            3583,
+            3839,
+            4095,
+            4863,
+            5119,
+            7679,
+            9471,
+            9727,
+            9983,
+            10751,
+            12031,
+            12287,
+            37631,
+            49407,
+            53247,
+            55039,
+            55295,
+            56063,
+        ]
 
 
 def test_grid_init_da_tas_regular(mini_esgf_data):
-    ds = xr.open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
-    da = ds.tas
-    grid = Grid(ds=da)
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True
+    ) as ds:
+        da = ds.tas
+        grid = Grid(ds=da)
 
-    assert grid.format == "CF"
-    assert grid.source == "Dataset"
-    assert grid.lat == da.lat.name
-    assert grid.lon == da.lon.name
-    assert grid.type == "regular_lat_lon"
-    assert grid.extent == "global"
-    assert grid.contains_collapsed_cells is None
-    assert grid.contains_duplicated_cells is False
-    assert grid.lat_bnds is None
-    assert grid.lon_bnds is None
-    assert grid.nlat == 80
-    assert grid.nlon == 180
-    assert grid.ncells == 14400
+        assert grid.format == "CF"
+        assert grid.source == "Dataset"
+        assert grid.lat == da.lat.name
+        assert grid.lon == da.lon.name
+        assert grid.type == "regular_lat_lon"
+        assert grid.extent == "global"
+        assert grid.contains_collapsed_cells is None
+        assert grid.contains_duplicated_cells is False
+        assert grid.lat_bnds is None
+        assert grid.lon_bnds is None
+        assert grid.nlat == 80
+        assert grid.nlon == 180
+        assert grid.ncells == 14400
 
 
 def test_grid_init_ds_tos_curvilinear(mini_esgf_data):
-    ds = xr.open_dataset(mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True)
-    grid = Grid(ds=ds)
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True
+    ) as ds:
+        grid = Grid(ds=ds)
 
-    assert grid.format == "CF"
-    assert grid.source == "Dataset"
-    assert grid.lat == ds.latitude.name
-    assert grid.lon == ds.longitude.name
-    assert grid.type == "curvilinear"
-    assert grid.extent == "global"
-    assert grid.lat_bnds == "vertices_latitude"
-    assert grid.lon_bnds == "vertices_longitude"
-    assert grid.contains_collapsed_cells
-    assert grid.contains_duplicated_cells
-    assert grid.nlat == 404  # 402 w/o halo  # this is number of 'j's
-    assert grid.nlon == 802  # 800 w/o halo  # this is the number of 'i's
-    assert grid.ncells == 324008  # 321600 w/o halo
+        assert grid.format == "CF"
+        assert grid.source == "Dataset"
+        assert grid.lat == ds.latitude.name
+        assert grid.lon == ds.longitude.name
+        assert grid.type == "curvilinear"
+        assert grid.extent == "global"
+        assert grid.lat_bnds == "vertices_latitude"
+        assert grid.lon_bnds == "vertices_longitude"
+        assert grid.contains_collapsed_cells
+        assert grid.contains_duplicated_cells
+        assert grid.nlat == 404  # 402 w/o halo  # this is number of 'j's
+        assert grid.nlon == 802  # 800 w/o halo  # this is the number of 'i's
+        assert grid.ncells == 324008  # 321600 w/o halo
 
-    # not implemented yet
-    # assert self.mask
+        # not implemented yet
+        # assert self.mask
 
 
 def test_grid_init_ds_tas_cordex(mini_esgf_data):
-    ds = xr.open_dataset(mini_esgf_data["CORDEX_TAS_ONE_TIMESTEP"], use_cftime=True)
-    grid = Grid(ds=ds)
+    with xr.open_dataset(
+        mini_esgf_data["CORDEX_TAS_ONE_TIMESTEP"], use_cftime=True
+    ) as ds:
+        grid = Grid(ds=ds)
 
-    assert grid.format == "CF"
-    assert grid.source == "Dataset"
-    assert grid.lat == "lat"
-    assert grid.lon == "lon"
-    assert grid.type == "curvilinear"
-    assert grid.extent == "regional"
-    assert grid.lat_bnds == "lat_vertices"
-    assert grid.lon_bnds == "lon_vertices"
-    assert not grid.contains_collapsed_cells
-    assert not grid.contains_duplicated_cells
-    assert grid.nlat == 201
-    assert grid.nlon == 225
-    assert grid.ncells == 45225
+        assert grid.format == "CF"
+        assert grid.source == "Dataset"
+        assert grid.lat == "lat"
+        assert grid.lon == "lon"
+        assert grid.type == "curvilinear"
+        assert grid.extent == "regional"
+        assert grid.lat_bnds == "lat_vertices"
+        assert grid.lon_bnds == "lon_vertices"
+        assert not grid.contains_collapsed_cells
+        assert not grid.contains_duplicated_cells
+        assert grid.nlat == 201
+        assert grid.nlon == 225
+        assert grid.ncells == 45225
 
-    ds = ds.drop_vars(["lat", "lon", "lat_vertices", "lon_vertices"])
-    with pytest.raises(
-        Exception,
-        match="The grid format is not supported.",
-    ):
-        Grid(ds=ds)
+        ds = ds.drop_vars(["lat", "lon", "lat_vertices", "lon_vertices"])
+        with pytest.raises(
+            Exception,
+            match="The grid format is not supported.",
+        ):
+            Grid(ds=ds)
+
+
+def test_grid_init_ds_cordex_erroneous_bounds(mini_esgf_data):
+    with xr.open_dataset(mini_esgf_data["CORDEX_ERRONEOUS_BOUNDS"]) as ds:
+        # Warnings will be raised due to erroneous bounds
+        with pytest.warns(UserWarning) as issuedWarnings:
+            grid = Grid(ds=ds)
+            if not issuedWarnings:
+                raise RuntimeError("Expected warnings.")
+
+        issuedWarnings = [
+            w
+            for w in issuedWarnings
+            if "Latitude and longitude bounds definition is invalid. The bounds will be dropped"
+            in str(w.message)
+        ]
+        assert len(issuedWarnings) == 1
+
+        assert grid.format == "CF"
+        assert grid.source == "Dataset"
+        assert grid.lat == "lat"
+        assert grid.lon == "lon"
+        assert grid.type == "curvilinear"
+        assert grid.extent == "global"  # extent in lon only!
+        assert grid.lat_bnds is None
+        assert grid.lon_bnds is None
+        assert not grid.contains_collapsed_cells
+        assert not grid.contains_duplicated_cells
+        assert grid.nlat == 133
+        assert grid.nlon == 116
+        assert grid.ncells == 15428
 
 
 def test_grid_init_ds_tas_cordex_ant(mini_esgf_data):
-    ds = xr.open_dataset(mini_esgf_data["CORDEX_TAS_ONE_TIMESTEP_ANT"], use_cftime=True)
+    with xr.open_dataset(
+        mini_esgf_data["CORDEX_TAS_ONE_TIMESTEP_ANT"], use_cftime=True
+    ) as ds:
 
-    # assert shifted lon frame
-    assert np.isclose(ds["lon"].min(), -165.7, atol=0.5)
-    assert np.isclose(ds["lon"].max(), 193.1, atol=0.5)
+        # assert shifted lon frame
+        assert np.isclose(ds["lon"].min(), -165.7, atol=0.5)
+        assert np.isclose(ds["lon"].max(), 193.1, atol=0.5)
 
-    # Create Grid object
-    grid = Grid(ds=ds)
+        # Create Grid object
+        grid = Grid(ds=ds)
 
-    # assert fixed shifted lon frame and further attributes
-    assert np.isclose(grid.ds["lon"].min(), -180, atol=0.5)
-    assert np.isclose(grid.ds["lon"].max(), 180, atol=0.5)
-    assert grid.format == "CF"
-    assert grid.source == "Dataset"
-    assert grid.lat == "lat"
-    assert grid.lon == "lon"
-    assert grid.type == "curvilinear"
-    assert grid.extent == "global"  # only extent in longitude is checked
-    assert grid.lat_bnds is None
-    assert grid.lon_bnds is None
-    assert not grid.contains_collapsed_cells
-    assert not grid.contains_duplicated_cells
-    assert grid.nlat == 97
-    assert grid.nlon == 125
-    assert grid.ncells == 12125
+        # assert fixed shifted lon frame and further attributes
+        assert np.isclose(grid.ds["lon"].min(), -180, atol=0.5)
+        assert np.isclose(grid.ds["lon"].max(), 180, atol=0.5)
+        assert grid.format == "CF"
+        assert grid.source == "Dataset"
+        assert grid.lat == "lat"
+        assert grid.lon == "lon"
+        assert grid.type == "curvilinear"
+        assert grid.extent == "global"  # only extent in longitude is checked
+        assert grid.lat_bnds is None
+        assert grid.lon_bnds is None
+        assert not grid.contains_collapsed_cells
+        assert not grid.contains_duplicated_cells
+        assert grid.nlat == 97
+        assert grid.nlon == 125
+        assert grid.ncells == 12125
 
 
+@pytest.mark.slow
 def test_grid_init_shifted_lon_frame_GFDL(mini_esgf_data):
-    ds = xr.open_dataset(mini_esgf_data["CMIP6_GFDL_EXTENT"], use_cftime=True)
+    with xr.open_dataset(mini_esgf_data["CMIP6_GFDL_EXTENT"], use_cftime=True) as ds:
 
-    # confirm shifted lon frame
-    assert np.isclose(ds["lon"].min(), -300.0, atol=0.5)
-    assert np.isclose(ds["lon"].max(), 60.0, atol=0.5)
+        # confirm shifted lon frame
+        assert np.isclose(ds["lon"].min(), -300.0, atol=0.5)
+        assert np.isclose(ds["lon"].max(), 60.0, atol=0.5)
 
-    # Create Grid object
-    grid = Grid(ds=ds)
+        # Create Grid object
+        grid = Grid(ds=ds)
 
-    # assert fix of shifted lon frame
-    assert np.isclose(grid.ds["lon"].min(), -180.0, atol=0.5)
-    assert np.isclose(grid.ds["lon"].max(), 180.0, atol=0.5)
-    assert np.isclose(grid.ds["lon_bnds"].min(), -180.0, atol=0.5)
-    assert np.isclose(grid.ds["lon_bnds"].max(), 180.0, atol=0.5)
+        # assert fix of shifted lon frame
+        assert np.isclose(grid.ds["lon"].min(), -180.0, atol=0.5)
+        assert np.isclose(grid.ds["lon"].max(), 180.0, atol=0.5)
+        assert np.isclose(grid.ds["lon_bnds"].min(), -180.0, atol=0.5)
+        assert np.isclose(grid.ds["lon_bnds"].max(), 180.0, atol=0.5)
 
-    assert grid.type == "curvilinear"
-    assert grid.extent == "global"
+        assert grid.type == "curvilinear"
+        assert grid.extent == "global"
 
 
 def test_grid_init_shifted_lon_frame_IITM(mini_esgf_data):
-    ds = xr.open_dataset(mini_esgf_data["CMIP6_IITM_EXTENT"], use_cftime=True)
+    with xr.open_dataset(mini_esgf_data["CMIP6_IITM_EXTENT"], use_cftime=True) as ds:
 
-    # confirm shifted lon frame
-    assert np.isclose(ds["longitude"].min(), -280.0, atol=1.0)
-    assert np.isclose(ds["longitude"].max(), 80.0, atol=1.0)
+        # confirm shifted lon frame
+        assert np.isclose(ds["longitude"].min(), -280.0, atol=1.0)
+        assert np.isclose(ds["longitude"].max(), 80.0, atol=1.0)
 
-    # Create Grid object
-    grid = Grid(ds=ds)
+        # Create Grid object
+        grid = Grid(ds=ds)
 
-    # assert fix of shifted lon frame
-    assert np.isclose(grid.ds["longitude"].min(), -180.0, atol=1.0)
-    assert np.isclose(grid.ds["longitude"].max(), 180.0, atol=1.0)
+        # assert fix of shifted lon frame
+        assert np.isclose(grid.ds["longitude"].min(), -180.0, atol=1.0)
+        assert np.isclose(grid.ds["longitude"].max(), 180.0, atol=1.0)
 
-    assert grid.type == "curvilinear"
-    assert grid.extent == "global"
+        assert grid.type == "curvilinear"
+        assert grid.extent == "global"
+
+
+@pytest.mark.slow
+def test_grid_init_unmasked_missing_lon_lat(mini_esgf_data):
+    """
+    Test that the grid is initialized correctly even if the dataset has unmasked missing lat/lon coordinates.
+    """
+    # Test case 1
+    with xr.open_dataset(mini_esgf_data["CMIP6_EXTENT_UNMASKED"]) as ds:
+        g = Grid(ds=ds)
+        x0, x1, y0, y1 = clidu.determine_lon_lat_range(
+            g.ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=False
+        )
+        for i, j in [(x0, -180), (x1, 180), (y0, -77.9), (y1, 89.8)]:
+            assert np.isclose(i, j, atol=0.1)
+
+        # Test case 2
+        ds = xr.open_dataset(mini_esgf_data["CMIP6_UNTAGGED_MISSVALS"])
+        g = Grid(ds=ds)
+        x0, x1, y0, y1 = clidu.determine_lon_lat_range(
+            g.ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=False
+        )
+        for i, j in [(x0, 0), (x1, 360), (y0, -79.2), (y1, 89.8)]:
+            assert np.isclose(i, j, atol=0.1)
 
 
 def test_grid_init_ds_tas_unstructured(mini_esgf_data):
-    ds = xr.open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"], use_cftime=True)
-    grid = Grid(ds=ds)
+    with xr.open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"], use_cftime=True) as ds:
+        grid = Grid(ds=ds)
 
-    assert grid.format == "CF"
-    assert grid.source == "Dataset"
-    assert grid.lat == ds.latitude.name
-    assert grid.lon == ds.longitude.name
-    assert grid.type == "unstructured"
-    assert grid.extent == "global"
-    assert not grid.contains_collapsed_cells
-    assert not grid.contains_duplicated_cells
-    assert grid.lat_bnds == "latitude_bnds"
-    assert grid.lon_bnds == "longitude_bnds"
-    assert grid.ncells == 20480
-
-    # not implemented yet
-    # assert self.mask
+        assert grid.format == "CF"
+        assert grid.source == "Dataset"
+        assert grid.lat == ds.latitude.name
+        assert grid.lon == ds.longitude.name
+        assert grid.type == "unstructured"
+        assert grid.extent == "global"
+        assert not grid.contains_collapsed_cells
+        assert not grid.contains_duplicated_cells
+        assert grid.lat_bnds == "latitude_bnds"
+        assert grid.lon_bnds == "longitude_bnds"
+        assert grid.ncells == 20480
+        assert grid.mask is False
 
 
 def test_grid_init_ds_zonmean(mini_esgf_data):
-    dsA = xr.open_dataset(mini_esgf_data["CMIP6_ZONMEAN_A"], use_cftime=True)
-    dsB = xr.open_dataset(
-        mini_esgf_data["CMIP6_ATM_VERT_ONE_TIMESTEP_ZONMEAN"], use_cftime=True
-    )
-
-    # Zonal mean dataset without "lon" dimension
-    with pytest.raises(
-        Exception,
-        match="The grid format is not supported.",
+    with (
+        xr.open_dataset(mini_esgf_data["CMIP6_ZONMEAN_A"], use_cftime=True) as dsA,
+        xr.open_dataset(mini_esgf_data["CMIP6_ZONMEAN_B"], use_cftime=True) as dsB,
+        xr.open_dataset(
+            mini_esgf_data["CMIP6_ATM_VERT_ONE_TIMESTEP_ZONMEAN"], use_cftime=True
+        ) as dsC,
     ):
-        Grid(ds=dsA)
 
-    # Zonal mean dataset with "lon" singleton dimension
-    with pytest.raises(
-        Exception,
-        match="Remapping zonal mean datasets or generally datasets without meridional extent is not supported.",
-    ):
-        Grid(ds=dsB)
+        # Zonal mean dataset without "lon" dimension
+        with pytest.raises(
+            Exception,
+            match="The grid format is not supported.",
+        ):
+            Grid(ds=dsA)
+        with pytest.raises(
+            Exception,
+            match="The grid format is not supported.",
+        ):
+            Grid(ds=dsB)
+        # Zonal mean dataset with "lon" singleton dimension
+        with pytest.raises(
+            Exception,
+            match="Remapping zonal mean datasets or generally datasets without meridional extent is not supported.",
+        ):
+            Grid(ds=dsC)
+
+
+def test_grid_init_ds_erroneous_cf_units_cmip5(mini_esgf_data):
+    with xr.open_dataset(mini_esgf_data["CMIP5_WRONG_CF_UNITS"], use_cftime=True) as ds:
+
+        # Warnings will be raised due to erroneous CF units
+        with pytest.warns(UserWarning) as issuedWarnings:
+            grid = Grid(ds=ds)
+            if not issuedWarnings:
+                raise RuntimeError("Expected warnings.")
+
+        issuedWarnings = [
+            w
+            for w in issuedWarnings
+            if "Removing attribute" in str(w.message)
+            or "Selecting the best fit." in str(w.message)
+        ]
+        assert len(issuedWarnings) == 8
+
+        assert grid.format == "CF"
+        assert grid.source == "Dataset"
+        assert grid.lat == "lat"
+        assert grid.lon == "lon"
+        assert grid.type == "curvilinear"
+        assert grid.extent == "global"
+        assert not grid.contains_collapsed_cells
+        assert not grid.contains_duplicated_cells
+        # Only the bounds for grid_latitude/longitude are specified
+        assert grid.lat_bnds is None
+        assert grid.lon_bnds is None
+        assert grid.ncells == 83520
+        assert grid.mask is False
+
+
+def test_grid_init_ds_erroneous_cf_units_cmip6(mini_esgf_data):
+    with xr.open_dataset(mini_esgf_data["CMIP6_WRONG_CF_UNITS"], use_cftime=True) as ds:
+        # Warnings will be raised due to erroneous CF units
+        with pytest.warns(UserWarning) as issuedWarnings:
+            grid = Grid(ds=ds)
+            if not issuedWarnings:
+                raise RuntimeError("Expected warnings.")
+
+        issuedWarnings = [
+            w
+            for w in issuedWarnings
+            if "Removing attribute" in str(w.message)
+            or "Selecting the best fit." in str(w.message)
+        ]
+        assert len(issuedWarnings) == 8
+
+        assert grid.format == "CF"
+        assert grid.source == "Dataset"
+        assert grid.lat == "latitude"
+        assert grid.lon == "longitude"
+        assert grid.type == "curvilinear"
+        assert grid.extent == "global"
+        assert not grid.contains_collapsed_cells
+        assert not grid.contains_duplicated_cells
+        # Only the bounds for grid_latitude/longitude are specified
+        assert grid.lat_bnds is None
+        assert grid.lon_bnds is None
+        assert grid.ncells == 83520
+        assert grid.mask is False
+
+        # Test bounds creation
+        grid = Grid(ds=ds.isel(lat=slice(0, 20), lon=slice(0, 20)), compute_bounds=True)
+        assert grid.lat_bnds == "vertices_latitude"
+        assert grid.lon_bnds == "vertices_longitude"
+        assert grid.ncells == 400
+
+
+def test_grid_init_ds_erroneous_cf_attrs_cmip6(mini_esgf_data):
+    with xr.open_dataset(mini_esgf_data["CMIP6_WRONG_CF_ATTRS"], use_cftime=True) as ds:
+        # Warnings will be raised due to erroneous CF units
+        with pytest.warns(UserWarning) as issuedWarnings:
+            grid = Grid(ds=ds)
+            if not issuedWarnings:
+                raise RuntimeError("Expected warnings.")
+
+        issuedWarnings = [
+            w
+            for w in issuedWarnings
+            if "Removing attribute" in str(w.message)
+            or "Selecting the best fit." in str(w.message)
+        ]
+        assert len(issuedWarnings) == 8
+
+        assert grid.format == "CF"
+        assert grid.source == "Dataset"
+        assert grid.lat == "latitude"
+        assert grid.lon == "longitude"
+        assert grid.type == "curvilinear"
+        assert grid.extent == "global"
+        assert not grid.contains_collapsed_cells
+        assert not grid.contains_duplicated_cells
+        # Only the bounds for grid_latitude/longitude are specified
+        assert grid.lat_bnds is None
+        assert grid.lon_bnds is None
+        assert grid.ncells == 990720
+        assert grid.mask is False
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -264,9 +512,7 @@ def test_grid_instructor_global():
     assert grid.nlat == 120
     assert grid.nlon == 240
     assert grid.ncells == 28800
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -292,9 +538,7 @@ def test_grid_instructor_2d_regional_change_lon():
     assert grid.nlat == 120
     assert grid.nlon == 127
     assert grid.ncells == 15240
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -321,9 +565,7 @@ def test_grid_instructor_2d_regional_change_lat():
     assert grid.nlat == 73
     assert grid.nlon == 240
     assert grid.ncells == 17520
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -349,9 +591,7 @@ def test_grid_instructor_2d_regional_change_lon_and_lat():
     assert grid.nlat == 73
     assert grid.nlon == 127
     assert grid.ncells == 9271
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -377,9 +617,7 @@ def test_grid_instructor_2d_global():
     assert grid.nlat == 120
     assert grid.nlon == 240
     assert grid.ncells == 28800
-
-    # not implemented yet
-    # assert self.mask
+    assert grid.mask is False
 
 
 def test_from_grid_id():
@@ -399,67 +637,99 @@ def test_from_grid_id():
     assert grid.nlat == 145
     assert grid.nlon == 288
     assert grid.ncells == 41760
-
-    # not implemented yet
-    # assert self.mask0
+    assert grid.mask is False
 
 
+@pytest.mark.parametrize(
+    "grid_id",
+    [
+        "0pt5deg_lsm",
+        "0pt25deg_era5_lsm",
+        "1deg_lsm",
+        "2deg_lsm",
+        "0pt25deg_era5_lsm_binary",
+        "1deg_lsm_binary",
+        "2deg_lsm_binary",
+        "T63_lsm_binary",
+        "T127_lsm_binary",
+    ],
+)
+def test_from_grid_id_mask(grid_id):
+    """Test to create grid from grid_id"""
+
+    grid = Grid(grid_id=grid_id, mask="ocean")
+    assert grid.format == "CF"
+    assert grid.mask is True
+    np.all(grid.lsm.data == grid.ds["mask"].data)
+    osum = grid.lsm.sum().item()
+    # Make sure it is a binary mask
+    mask = grid.ds["mask"].copy(deep=True)
+    np.all(grid.lsm.astype("bool").astype(np.int32).data == mask.data)
+
+    grid = Grid(grid_id=grid_id, mask="land")
+    assert grid.format == "CF"
+    assert grid.mask is True
+    np.all(grid.lsm.data == grid.ds["mask"].data)
+    lsum = grid.lsm.sum().item()
+    # Make sure it is a binary mask
+    mask = grid.ds["mask"].copy(deep=True).data
+    np.all(grid.lsm.astype("bool").astype(np.int32).data == mask.data)
+
+    # Make sure "land" and "ocean" are interpreted properly
+    assert lsum > osum
+
+
+@pytest.mark.slow
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
-def test_grid_from_ds_adaptive_extent(mini_esgf_data):
-    """Test that the extent is evaluated as global for original and derived adaptive grid."""
-    dsA = xr.open_dataset(mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True)
-    dsB = xr.open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
-    dsC = xr.open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"], use_cftime=True)
+class TestGridFromDS:
 
-    gA = Grid(ds=dsA)
-    gB = Grid(ds=dsB)
-    gC = Grid(ds=dsC)
-    gAa = Grid(ds=dsA, grid_id="adaptive")
-    gBa = Grid(ds=dsB, grid_id="adaptive")
-    gCa = Grid(ds=dsC, grid_id="auto")
+    def test_grid_from_ds_adaptive_extent(self, mini_esgf_data):
+        """Test that the extent is evaluated as global for original and derived adaptive grid."""
+        with (
+            xr.open_dataset(
+                mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True
+            ) as dsA,
+            xr.open_dataset(
+                mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True
+            ) as dsB,
+            xr.open_dataset(
+                mini_esgf_data["CMIP6_UNSTR_ICON_A"], use_cftime=True
+            ) as dsC,
+        ):
 
-    assert gA.extent == "global"
-    assert gB.extent == "global"
-    assert gC.extent == "global"
-    assert gAa.extent == "global"
-    assert gBa.extent == "global"
-    assert gCa.extent == "global"
+            gA = Grid(ds=dsA)
+            gB = Grid(ds=dsB)
+            gC = Grid(ds=dsC)
+            gAa = Grid(ds=dsA, grid_id="adaptive")
+            gBa = Grid(ds=dsB, grid_id="adaptive")
+            gCa = Grid(ds=dsC, grid_id="auto")
 
+            assert gA.extent == "global"
+            assert gB.extent == "global"
+            assert gC.extent == "global"
+            assert gAa.extent == "global"
+            assert gBa.extent == "global"
+            assert gCa.extent == "global"
 
-@pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
-def test_grid_from_ds_adaptive_reproducibility():
-    """Test that the extent is evaluated as global for original and derived adaptive grid."""
-    fpathA = get_grid_file("0pt25deg")
-    dsA = xr.open_dataset(fpathA, use_cftime=True)
-    fpathB = get_grid_file("1deg")
-    dsB = xr.open_dataset(fpathB, use_cftime=True)
+    def test_grid_from_ds_adaptive_reproducibility(self):
+        """Test that the extent is evaluated as global for original and derived adaptive grid."""
+        fpathA = get_grid_file("0pt25deg")
+        dsA = xr.open_dataset(fpathA, use_cftime=True)
+        fpathB = get_grid_file("1deg")
+        dsB = xr.open_dataset(fpathB, use_cftime=True)
 
-    gAa = Grid(ds=dsA, grid_id="adaptive")
-    gA = Grid(grid_id="0pt25deg")
-    gBa = Grid(ds=dsB, grid_id="adaptive")
-    gB = Grid(grid_id="1deg")
+        gAa = Grid(ds=dsA, grid_id="adaptive")
+        gA = Grid(grid_id="0pt25deg")
+        gBa = Grid(ds=dsB, grid_id="adaptive")
+        gB = Grid(grid_id="1deg")
 
-    assert gA.extent == "global"
-    assert gA.compare_grid(gAa)
-    assert gB.extent == "global"
-    assert gB.compare_grid(gBa)
-
-
-# @pytest.mark.xfail
-def test_detect_extent_shifted_lon_frame(mini_esgf_data):
-    """Test whether the extent can be correctly inferred for a dataset with shifted longitude frame."""
-    # Load dataset with longitude ranging from (-300, 60)
-    ds = xr.open_dataset(mini_esgf_data["CMIP6_GFDL_EXTENT"], use_cftime=True)
-
-    # Convert the longitude frame to 0,360 (shall happen implicitly in the future)
-    ds, ll, lu = clidu.cf_convert_between_lon_frames(ds, (0, 360))
-    assert (ll, lu) == (0, 360)
-
-    # Create Grid object and assert zonal extent
-    g = Grid(ds=ds)
-    assert g.extent == "global"
+        assert gA.extent == "global"
+        assert gA.compare_grid(gAa)
+        assert gB.extent == "global"
+        assert gB.compare_grid(gBa)
 
 
+@pytest.mark.slow
 def test_compare_grid_same_resolution():
     """Test that two grids of same resolution from different sources evaluate as the same grid"""
     ds025 = xr.open_dataset(get_grid_file("0pt25deg_era5"))
@@ -535,34 +805,58 @@ def test_to_netcdf(tmp_path, mini_esgf_data):
     assert "coordinates" not in dsB.attrs.keys()
 
 
-def test_detect_collapsed_cells(mini_esgf_data):
-    """Test that collapsed cells are properly identified"""
-    dsA = xr.open_dataset(mini_esgf_data["CMIP6_OCE_HALO_CNRM"], use_cftime=True)
-    dsB = xr.open_dataset(mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True)
-    dsC = xr.open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
+@pytest.mark.slow
+class TestDetect:
 
-    gA = Grid(ds=dsA)
-    gB = Grid(ds=dsB)
-    gC = Grid(ds=dsC)
+    def test_detect_extent_shifted_lon_frame(self, mini_esgf_data):
+        """Test whether the extent can be correctly inferred for a dataset with shifted longitude frame."""
+        # Load dataset with longitude ranging from (-300, 60)
+        ds = xr.open_dataset(mini_esgf_data["CMIP6_GFDL_EXTENT"], use_cftime=True)
 
-    assert gA.contains_collapsed_cells
-    assert gB.contains_collapsed_cells
-    assert not gC.contains_collapsed_cells
+        # Convert the longitude frame to 0,360 (shall happen implicitly in the future)
+        ds, ll, lu = clidu.cf_convert_between_lon_frames(ds, (0, 360))
+        assert (ll, lu) == (0, 360)
 
+        # Create Grid object and assert zonal extent
+        g = Grid(ds=ds)
+        assert g.extent == "global"
 
-def test_detect_duplicated_cells(mini_esgf_data):
-    """Test that collapsed cells are properly identified"""
-    dsA = xr.open_dataset(mini_esgf_data["CMIP6_OCE_HALO_CNRM"], use_cftime=True)
-    dsB = xr.open_dataset(mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True)
-    dsC = xr.open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
+    def test_detect_collapsed_cells(self, mini_esgf_data, load_test_data):
+        """Test that collapsed cells are properly identified."""
 
-    gA = Grid(ds=dsA)
-    gB = Grid(ds=dsB)
-    gC = Grid(ds=dsC)
+        dsA = xr.open_dataset(mini_esgf_data["CMIP6_OCE_HALO_CNRM"], use_cftime=True)
+        dsB = xr.open_dataset(
+            mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True
+        )
+        dsC = xr.open_dataset(
+            mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True
+        )
 
-    assert gA.contains_duplicated_cells
-    assert gB.contains_duplicated_cells
-    assert not gC.contains_duplicated_cells
+        gA = Grid(ds=dsA)
+        gB = Grid(ds=dsB)
+        gC = Grid(ds=dsC)
+
+        assert gA.contains_collapsed_cells
+        assert gB.contains_collapsed_cells
+        assert not gC.contains_collapsed_cells
+
+    def test_detect_duplicated_cells(self, mini_esgf_data):
+        """Test that collapsed cells are properly identified"""
+        dsA = xr.open_dataset(mini_esgf_data["CMIP6_OCE_HALO_CNRM"], use_cftime=True)
+        dsB = xr.open_dataset(
+            mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True
+        )
+        dsC = xr.open_dataset(
+            mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True
+        )
+
+        gA = Grid(ds=dsA)
+        gB = Grid(ds=dsB)
+        gC = Grid(ds=dsC)
+
+        assert gA.contains_duplicated_cells
+        assert gB.contains_duplicated_cells
+        assert not gC.contains_duplicated_cells
 
 
 def test_subsetted_grid(mini_esgf_data):
@@ -599,6 +893,7 @@ def test_subsetted_grid(mini_esgf_data):
     # assert self.mask
 
 
+@pytest.mark.slow
 def test_drop_vars_transfer_coords(mini_esgf_data):
     """Test for Grid methods drop_vars and transfer_coords"""
     ds = xr.open_dataset(mini_esgf_data["CMIP6_ATM_VERT_ONE_TIMESTEP"])
@@ -656,10 +951,10 @@ def test_calculate_bounds_duplicated_cells(mini_esgf_data):
     ds["lat"][:, 0] = ds["lat"][:, 1]
     ds["lon"][:, 0] = ds["lon"][:, 1]
 
-    # assert raised exception
-    with pytest.raises(
-        Exception,
-        match="This grid contains duplicated cell centers. Therefore bounds cannot be computed.",
+    # assert warning
+    with pytest.warns(
+        UserWarning,
+        match="This grid contains duplicated cell centers, which may affect the quality of the calculated bounds.",
     ):
         Grid(ds=ds, compute_bounds=True)
 
@@ -702,6 +997,7 @@ def test_centers_within_bounds_curvilinear(mini_esgf_data):
     )
 
 
+@pytest.mark.slow
 def test_centers_within_bounds_regular_lat_lon():
     """Test for bounds calculation of regular lat lon grid"""
     g = Grid(grid_id="0pt25deg_era5_lsm", compute_bounds=True)
@@ -772,6 +1068,7 @@ def test_data_vars_coords_reset_and_cfxr(mini_esgf_data):
 # test all methods
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 class TestWeights:
+
     def test_grids_in_and_out_bilinear(self, tmp_path, mini_esgf_data):
         ds = xr.open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
         grid_in = Grid(ds=ds)
@@ -789,7 +1086,7 @@ class TestWeights:
         assert w.method == "bilinear"
         assert (
             w.id
-            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_no-degen_bilinear"
+            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_skip-degen_bilinear"
         )
         assert w.periodic
         assert w.id in w.filename
@@ -816,7 +1113,7 @@ class TestWeights:
         assert w.method == "conservative"
         assert (
             w.id
-            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_no-degen_conservative"
+            == "8edb4ee828dbebc2dc8e193281114093_bf73249f1725126ad3577727f3652019_peri_skip-degen_conservative"
         )
         assert (
             w.periodic != w.regridder.periodic
@@ -892,10 +1189,10 @@ def test_Weights_compute(tmp_path):
     assert w.format == "xESMF"
     assert w.regridder.filename == "nearest_s2d_180x360_90x180_peri.nc"
     assert not w.regridder.reuse_weights
-    assert w.regridder.ignore_degenerate is None
+    assert w.regridder.ignore_degenerate is True
     assert w.regridder.n_in == 180 * 360
     assert w.regridder.n_out == 90 * 180
-    assert w.ignore_degenerate is None
+    assert w.ignore_degenerate is True
     assert w.filename == "weights_" + w.id + ".nc"
 
     # Test weight reusage
@@ -923,7 +1220,7 @@ def test_Weights_compute_unstructured(tmp_path, mini_esgf_data):
     w = Weights(g, g_out, method="nearest_s2d")
     assert w.regridder.sequence_in
     assert not w.regridder.sequence_out
-    assert w.regridder.ignore_degenerate is None
+    assert w.regridder.ignore_degenerate is True
     assert w.regridder.n_in == g.ncells
     assert w.regridder.n_out == 90 * 180
 
@@ -938,9 +1235,10 @@ def test_Weights_generate_id(tmp_path):
     w = Weights(g, g_out, method="bilinear")
 
     assert w.id == w._generate_id()
-    assert w.id == "_".join([g.hash, g_out.hash, "peri", "no-degen", "bilinear"])
+    assert w.id == "_".join([g.hash, g_out.hash, "peri", "skip-degen", "bilinear"])
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_Weights_init_with_collapsed_cells(tmp_path, mini_esgf_data):
     "Test the creation of remapping weights for a grid containing collapsed cells"
@@ -986,8 +1284,8 @@ def test_cache_init_and_flush(tmp_path):
     flist_ref = [
         "grid_4d324aecaa8302ab0f2f212e9821b00f.nc",
         "grid_96395935b4e81f2a5b55970bd920d82c.nc",
-        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_no-degen_nearest_s2d.json",
-        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_no-degen_nearest_s2d.nc",
+        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_skip-degen_nearest_s2d.json",
+        "weights_4d324aecaa8302ab0f2f212e9821b00f_96395935b4e81f2a5b55970bd920d82c_peri_skip-degen_nearest_s2d.nc",
     ]
     assert flist == flist_ref
 
@@ -998,36 +1296,38 @@ def test_cache_init_and_flush(tmp_path):
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_cache_lock_mechanism(tmp_path, mini_esgf_data):
     """Test lock mechanism of local regrid weights cache."""
-    ds = xr.open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True
+    ) as ds:
 
-    grid_in = Grid(ds=ds)
-    grid_out = Grid(grid_instructor=10)
+        grid_in = Grid(ds=ds)
+        grid_out = Grid(grid_instructor=10)
 
-    # First round - creating the weights should work without problems
-    weights_cache_init(Path(tmp_path, "weights"))
-    w = Weights(grid_in=grid_in, grid_out=grid_out, method="nearest_s2d")
+        # First round - creating the weights should work without problems
+        weights_cache_init(Path(tmp_path, "weights"))
+        w = Weights(grid_in=grid_in, grid_out=grid_out, method="nearest_s2d")
 
-    # Remove grid files to suppress related warnings of already existing files
-    os.remove(Path(tmp_path, "weights", "grid_" + grid_in.hash + ".nc"))
-    os.remove(Path(tmp_path, "weights", "grid_" + grid_out.hash + ".nc"))
+        # Remove grid files to suppress related warnings of already existing files
+        os.remove(Path(tmp_path, "weights", "grid_" + grid_in.hash + ".nc"))
+        os.remove(Path(tmp_path, "weights", "grid_" + grid_out.hash + ".nc"))
 
-    # Second round, but manually put lockfile in place
-    LOCK_FILE = Path(tmp_path, "weights", w.filename + ".lock")
-    lock = FileLock(LOCK_FILE)
-    lock.acquire(timeout=10)
+        # Second round, but manually put lockfile in place
+        LOCK_FILE = Path(tmp_path, "weights", w.filename + ".lock")
+        lock = FileLock(LOCK_FILE)
+        lock.acquire(timeout=10)
 
-    # Fail test if lockfile is not recognized
-    with pytest.warns(UserWarning, match="lockfile") as issuedWarnings:
-        Weights(grid_in=grid_in, grid_out=grid_out, method="nearest_s2d")
-        if not issuedWarnings:
-            raise RuntimeError("Lockfile not recognized/ignored.")
-        elif Version(xr.__version__) >= Version("2023.3.0"):
-            # Warning will also be issued for xarray being too new
-            assert len(issuedWarnings) == 2
-        else:
-            assert len(issuedWarnings) == 1
+        # Fail test if lockfile is not recognized
+        with pytest.warns(UserWarning, match=r"lockfile|xarray") as issuedWarnings:
+            Weights(grid_in=grid_in, grid_out=grid_out, method="nearest_s2d")
+            if not issuedWarnings:
+                raise RuntimeError("Lockfile not recognized/ignored.")
 
-    lock.release()
+        # Filter matches and assert number of warnings
+        issuedWarningsLockfile = [
+            w for w in issuedWarnings if "lockfile" in str(w.message)
+        ]
+        assert len(issuedWarningsLockfile) == 1
+        lock.release()
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -1082,144 +1382,151 @@ def test_read_metadata(tmp_path):
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 class TestRegrid:
-    ds = None
     c6tots = "CMIP6_TAS_ONE_TIME_STEP"
 
-    def _setup(self):
+    def _setup(self, ds):
         if hasattr(self, "setup_done"):
             return
 
-        self.grid_in = Grid(ds=self.ds)
+        self.grid_in = Grid(ds=ds)
 
         self.grid_instructor_out = (0, 360, 1.5, -90, 90, 1.5)
         self.grid_out = Grid(grid_instructor=self.grid_instructor_out)
         self.setup_done = True
 
     def test_adaptive_masking(self, tmp_path, mini_esgf_data):
-        self.ds = xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True)
-        self._setup()
+        with xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True) as ds:
+            self._setup(ds)
 
-        weights_cache_init(Path(tmp_path, "weights"))
-        w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="conservative")
-        regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.7)
+            weights_cache_init(Path(tmp_path, "weights"))
+            w = Weights(
+                grid_in=self.grid_in, grid_out=self.grid_out, method="conservative"
+            )
+            regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.7)
 
     def test_no_adaptive_masking(self, tmp_path, mini_esgf_data):
-        self.ds = xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True)
-        self._setup()
+        with xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True) as ds:
+            self._setup(ds)
 
-        weights_cache_init(Path(tmp_path, "weights"))
-        w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="bilinear")
-        regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=-1.0)
+            weights_cache_init(Path(tmp_path, "weights"))
+            w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="bilinear")
+            regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=-1.0)
 
     def test_duplicated_cells_warning_issued(self, tmp_path, mini_esgf_data):
-        self.ds = xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True)
-        self._setup()
+        with xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True) as ds:
+            self._setup(ds)
 
-        weights_cache_init(Path(tmp_path, "weights"))
-        w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="conservative")
+            weights_cache_init(Path(tmp_path, "weights"))
+            w = Weights(
+                grid_in=self.grid_in, grid_out=self.grid_out, method="conservative"
+            )
 
-        # Cheat regrid into thinking, grid_in contains duplicated cells
-        self.grid_in.contains_duplicated_cells = True
+            # Cheat regrid into thinking, grid_in contains duplicated cells
+            self.grid_in.contains_duplicated_cells = True
 
-        with pytest.warns(
-            UserWarning,
-            match="The grid of the selected dataset contains duplicated cells. "
-            "For the conservative remapping method, "
-            "duplicated grid cells contribute to the resulting value, "
-            "which is in most parts counter-acted by the applied re-normalization. "
-            "However, please be wary with the results and consider removing / masking "
-            "the duplicated cells before remapping.",
-        ) as issuedWarnings:
-            regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.0)
-            if not issuedWarnings:
-                raise RuntimeError(
-                    "No warning issued regarding the duplicated cells in the grid."
-                )
-            elif Version(xr.__version__) >= Version("2023.3.0"):
-                # Warning will also be issued for xarray being too new
-                assert len(issuedWarnings) == 2
-            else:
-                assert len(issuedWarnings) == 1
+            with pytest.warns(
+                UserWarning,
+                match="The grid of the selected dataset contains duplicated cells. "
+                "For the conservative remapping method, "
+                "duplicated grid cells contribute to the resulting value, "
+                "which is in most parts counter-acted by the applied re-normalization. "
+                "However, please be wary with the results and consider removing / masking "
+                "the duplicated cells before remapping.",
+            ) as issuedWarnings:
+                regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.0)
+                if not issuedWarnings:
+                    raise RuntimeError(
+                        "No warning issued regarding the duplicated cells in the grid."
+                    )
+                elif Version(xr.__version__) >= Version("2023.3.0"):
+                    # Warning will also be issued for xarray being too new
+                    assert len(issuedWarnings) == 2
+                else:
+                    assert len(issuedWarnings) == 1
 
     def test_regrid_dataarray(self, tmp_path, mini_esgf_data):
-        self.ds = xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True)
-        self._setup()
+        with xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True) as ds:
+            self._setup(ds)
 
-        weights_cache_init(Path(tmp_path, "weights"))
-        w = Weights(grid_in=self.grid_in, grid_out=self.grid_out, method="nearest_s2d")
-        grid_da = Grid(self.grid_in.ds.tas)
+            weights_cache_init(Path(tmp_path, "weights"))
+            w = Weights(
+                grid_in=self.grid_in, grid_out=self.grid_out, method="nearest_s2d"
+            )
+            grid_da = Grid(self.grid_in.ds.tas)
 
-        vattrs = (
-            "regrid_method",
-            "standard_name",
-            "long_name",
-            "comment",
-            "units",
-            "cell_methods",
-            "cell_measures",
-            "history",
-        )
-        gattrs = (
-            "grid",
-            "grid_label",
-            "regrid_operation",
-            "regrid_tool",
-            "regrid_weights_uid",
-        )
+            vattrs = (
+                "regrid_method",
+                "standard_name",
+                "long_name",
+                "comment",
+                "units",
+                "cell_methods",
+                "cell_measures",
+                "history",
+            )
+            gattrs = (
+                "grid",
+                "grid_label",
+                "regrid_operation",
+                "regrid_tool",
+                "regrid_weights_uid",
+            )
 
-        r1 = regrid(grid_da, self.grid_out, w, keep_attrs=True)
-        assert vattrs == tuple(r1["tas"].attrs.keys())
-        assert gattrs == tuple(r1.attrs.keys())
+            r1 = regrid(grid_da, self.grid_out, w, keep_attrs=True)
+            assert vattrs == tuple(r1["tas"].attrs.keys())
+            assert gattrs == tuple(r1.attrs.keys())
 
-        r2 = regrid(grid_da, self.grid_out, w, keep_attrs=False)
-        assert ("regrid_method",) == tuple(r2["tas"].attrs.keys())
-        assert gattrs == tuple(r2.attrs.keys())
+            r2 = regrid(grid_da, self.grid_out, w, keep_attrs=False)
+            assert ("regrid_method",) == tuple(r2["tas"].attrs.keys())
+            assert gattrs == tuple(r2.attrs.keys())
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_duplicated_cells_renormalization(tmp_path, mini_esgf_data):
     # todo: Should probably be an xesmf test as well, will do PR there in the future
-    ds = xr.open_dataset(mini_esgf_data["CMIP6_STAGGERED_UCOMP"], use_cftime=True)
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_STAGGERED_UCOMP"], use_cftime=True
+    ) as ds:
 
-    # some internal xesmf code to create array of ones
-    missing = np.isnan(ds.tauuo)
-    ds["tauuo"] = (~missing).astype("d")
+        # some internal xesmf code to create array of ones
+        missing = np.isnan(ds.tauuo)
+        ds["tauuo"] = (~missing).astype("d")
 
-    grid_in = Grid(ds=ds)
-    assert grid_in.contains_collapsed_cells is True
-    assert grid_in.contains_duplicated_cells is True
+        grid_in = Grid(ds=ds)
+        assert grid_in.contains_collapsed_cells is True
+        assert grid_in.contains_duplicated_cells is True
 
-    # Make sure all values that are not missing, are equal to one
-    assert grid_in.ncells == ds["tauuo"].where(~missing, 1.0).sum()
-    # Make sure all values that are missing are equal to 0
-    assert 0.0 == ds["tauuo"].where(missing, 0.0).sum()
+        # Make sure all values that are not missing, are equal to one
+        assert grid_in.ncells == ds["tauuo"].where(~missing, 1.0).sum()
+        # Make sure all values that are missing are equal to 0
+        assert 0.0 == ds["tauuo"].where(missing, 0.0).sum()
 
-    grid_out = Grid(grid_instructor=(0, 360, 1.5, -90, 90, 1.5))
-    weights_cache_init(Path(tmp_path, "weights"))
-    w = Weights(grid_in=grid_in, grid_out=grid_out, method="conservative")
+        grid_out = Grid(grid_instructor=(0, 360, 1.5, -90, 90, 1.5))
+        weights_cache_init(Path(tmp_path, "weights"))
+        w = Weights(grid_in=grid_in, grid_out=grid_out, method="conservative")
 
-    # Remap using adaptive masking
-    r1 = regrid(grid_in, grid_out, w, adaptive_masking_threshold=0.5)
+        # Remap using adaptive masking
+        r1 = regrid(grid_in, grid_out, w, adaptive_masking_threshold=0.5)
 
-    # Remap using default setting (na_thres = 0.5)
-    r2 = regrid(grid_in, grid_out, w)
+        # Remap using default setting (na_thres = 0.5)
+        r2 = regrid(grid_in, grid_out, w)
 
-    # Make sure both options yield equal results
-    xr.testing.assert_equal(r1, r2)
+        # Make sure both options yield equal results
+        xr.testing.assert_equal(r1, r2)
 
-    # Remap without using adaptive masking - internally, then adaptive masking is used
-    #   with threshold 0., to still re-normalize contributions from duplicated cells
-    #   but not from masked cells or out-of-source-domain area
-    r3 = regrid(grid_in, grid_out, w, adaptive_masking_threshold=-1.0)
+        # Remap without using adaptive masking - internally, then adaptive masking is used
+        #   with threshold 0., to still re-normalize contributions from duplicated cells
+        #   but not from masked cells or out-of-source-domain area
+        r3 = regrid(grid_in, grid_out, w, adaptive_masking_threshold=-1.0)
 
-    # Make sure, contributions from duplicated cells (i.e. values > 1) are re-normalized
-    assert r2["tauuo"].where(r2["tauuo"] > 1.0, 0.0).sum() == 0.0
-    assert r3["tauuo"].where(r2["tauuo"] > 1.0, 0.0).sum() == 0.0
+        # Make sure, contributions from duplicated cells (i.e. values > 1) are re-normalized
+        assert r2["tauuo"].where(r2["tauuo"] > 1.0, 0.0).sum() == 0.0
+        assert r3["tauuo"].where(r2["tauuo"] > 1.0, 0.0).sum() == 0.0
 
-    # Make sure xesmf behaves as expected:
-    #   test that deactivated adaptive masking in xesmf will yield results > 1
-    #   and else, contributions from duplicated cells will be re-normalized
-    r4 = w.regridder(ds["tauuo"], skipna=False)
-    r5 = w.regridder(ds["tauuo"], skipna=True, na_thres=0.0)
-    assert r4.where(r4 > 1.0, 0.0).sum() > 0.0
-    assert r5.where(r5 > 1.0, 0.0).sum() == 0.0
+        # Make sure xesmf behaves as expected:
+        #   test that deactivated adaptive masking in xesmf will yield results > 1
+        #   and else, contributions from duplicated cells will be re-normalized
+        r4 = w.regridder(ds["tauuo"], skipna=False)
+        r5 = w.regridder(ds["tauuo"], skipna=True, na_thres=0.0)
+        assert r4.where(r4 > 1.0, 0.0).sum() > 0.0
+        assert r5.where(r5 > 1.0, 0.0).sum() == 0.0

@@ -1,6 +1,47 @@
 Version History
 ===============
 
+v0.14.1 (unreleased)
+--------------------
+
+New Features
+^^^^^^^^^^^^
+* Added new methods to `clisops.core.regrid.Grid`
+    * Added possibility to apply land or ocean mask if present in the file
+    * Adapted method from ESMF to detect smashed cells
+    * Masking degenerate (i.e. collapsed and smashed) cells
+    * Dropping lat/lon bounds if an integrity check fails
+    * Added a few attributes to the `Grid` object
+* `clisops.ops.regrid`: added option to request a land/sea mask for the output grid
+* `clisops.utils.dataset_utils`
+    * Added function `determine_lon_lat_range` to determine the min. and max. lat and lon values
+    * Added function `fix_unmasked_missing_values_lon_lat` to identify and mask yet unmasked missing values in lat and lon arrays
+    * Added `force` parameter to `cf_convert_between_lon_frames`
+
+Bug Fixes
+^^^^^^^^^
+* `clisops.utils.dataset_utils`
+    * Fixed issue in `cf_convert_between_lon_frames` causing the longitude frame to not be adjusted in case of NaNs in the longitude array
+    * Addressed issues in `generate_bounds_curvilinear`
+        * latitudes are now clipped above 90 or below -90 degrees north
+        * longitudes are converted to longitude frame -180, 180
+        * longitude bounds are adjusted at the Greenwich meridian or anti meridian to avoid grid cells wrapping once or more times around the globe
+        * Bounds are generated significantly faster due to making use of index slicing and `numpy.vectorize`
+
+Breaking Changes
+^^^^^^^^^^^^^^^^
+* Adapted functions from `roocs_utils.xarray_utils.xarray_utils` into `clisops.utils.dataset_utils`
+    * `get_coord_by_type` now returns the name of the coordinate variable and not the coordinate variable
+    * `get_coord_by_type` optionally returns a list with further matches for the coordinate variable
+    * `get_coord_by_type` does no longer raise an exception when more than one coordinate variable matches the requested type
+    * `get_coord_by_type` raises `ValueError` instead of `Exception` when the coordinate type is unknown
+    * `detect_coordinate` raises `KeyError` instead of `AttributeError` if no coordinate could be detected
+    * `detect_gridtype` raises `ValueError` for unsupported grid types rather than `InvalidParameterValue` and `Exception`
+* `clisops.core.regrid`
+    * `Grid.detect_coordinate`: raises `KeyError` instead of `AttributeError` if no coordinate could be detected
+* `clisops.ops.regrid`
+    * `Regrid._calculate`: issues `UserWarning` instead of letting `clisops.core.Weights.__init__` raise an `Exception` when input and output grid are alike
+
 v0.14.0 (2024-10-03)
 --------------------
 

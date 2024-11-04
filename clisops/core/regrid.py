@@ -194,7 +194,8 @@ class Grid:
     compute_bounds : bool, optional
         Compute latitude and longitude bounds if the dataset has none defined.
         The default is False.
-
+    mask : str, optional
+        Whether to mask "ocean" cells or "land" cells if a mask variable is found. The default is None.
     """
 
     def __init__(
@@ -203,6 +204,7 @@ class Grid:
         grid_id: str | None = None,
         grid_instructor: tuple | float | int | None = None,
         compute_bounds: bool | None = False,
+        mask: str | None = None,
     ):
         """Initialise the Grid object. Supporting only 2D horizontal grids."""
         # All attributes - defaults
@@ -212,16 +214,24 @@ class Grid:
         self.nlat = 0
         self.nlon = 0
         self.ncells = 0
+        self.res = None
+        self.xinc = None
+        self.yinc = None
         self.lat = None
         self.lon = None
         self.lat_bnds = None
         self.lon_bnds = None
         self.mask = None
+        self.lsm = None
         self.source = None
         self.hash = None
         self.coll_mask = None
-        self.contains_collapsed_cells = None
+        self.smash_mask = None
+        self.degen_mask = None
         self.contains_duplicated_cells = None
+        self.contains_collapsed_cells = None
+        self.contains_smashed_cells = None
+        self.contains_degenerate_cells = None
 
         # Create grid_instructor as empty tuple if None
         grid_instructor = grid_instructor or tuple()
@@ -252,6 +262,7 @@ class Grid:
         self.lon = self.detect_coordinate("longitude")
         self.lat_bnds = self.detect_bounds(self.lat)
         self.lon_bnds = self.detect_bounds(self.lon)
+        self._verify_bounds()
 
         # Make sure standard_names are set for the coordinates
         self.ds[self.lat].attrs["standard_name"] = "latitude"
@@ -261,7 +272,7 @@ class Grid:
         if not self.type:
             self.type = self.detect_type()
 
-        # Unstagger the grid if necessary (to be done before halo removal - not yet implemented)
+        # Unstagger the grid if necessary (to be done before halo removal - not implemented)
         self._grid_unstagger()
 
         # Lon/Lat dimension sizes
@@ -270,13 +281,6 @@ class Grid:
         # Extent of the grid (global or regional)
         if not self.extent:
             self.extent = self.detect_extent()
-
-        # Get a permanent mask if there is
-        # self.mask = self._detect_mask()
-
-        # Clean coordinate variables out of data_vars
-        if isinstance(self.ds, xr.Dataset):
-            self._set_data_vars_and_coords()
 
         # Detect duplicated grid cells / halos
         if self.contains_duplicated_cells is None:
@@ -290,13 +294,45 @@ class Grid:
         # 6 decimals corresponds to precision of ~ 0.1m (deg), 6m (rad)
         self._cap_precision(coord_precision_hor)
 
+        # Detect collapsing and smashed grid cells
+        if self.lat_bnds and self.lon_bnds:
+            if self.contains_collapsed_cells is None:
+                self._grid_detect_collapsed_cells()
+            if self.contains_smashed_cells is None:
+                self._grid_detect_smashed_cells()
+
+        # Get a permanent mask if there is
+        self.mask = self._apply_lsm(mask=mask)
+
+        # Infer mask for degenerated cells
+        if self.contains_collapsed_cells or self.contains_smashed_cells:
+            self.contains_degenerate_cells = True
+            self.degen_mask = (
+                self.coll_mask.astype(bool) & self.smash_mask.astype(bool)
+            ).astype(int)
+        elif (
+            self.contains_collapsed_cells is False
+            and self.contains_smashed_cells is False
+        ):
+            self.contains_degenerate_cells = False
+
+        # Clean coordinate variables out of data_vars
+        if isinstance(self.ds, xr.Dataset):
+            self._set_data_vars_and_coords()
+
+        # Define mask
+        if self.mask and self.contains_degenerate_cells:
+            self.ds["mask"] = (
+                self.lsm.astype(bool) & self.degen_mask.astype(bool)
+            ).astype(np.int32)
+        elif self.mask:
+            self.ds["mask"] = self.lsm.astype(np.int32)
+        elif self.contains_degenerate_cells:
+            self.ds["mask"] = self.degen_mask.astype(np.int32)
+
         # Create md5 hash of the coordinate variable arrays
         # Takes into account lat/lon + bnds + mask (if defined)
         self.hash = self._compute_hash()
-
-        # Detect collapsing grid cells
-        if self.lat_bnds and self.lon_bnds and self.contains_collapsed_cells is None:
-            self._grid_detect_collapsed_cells()
 
         self.title = self._get_title()
 
@@ -317,17 +353,24 @@ class Grid:
                 if self.type != "unstructured"
                 else ""
             )
+            + (
+                f"Average resolution: {self.res}\n"
+                if self.type == "unstructured"
+                else f"Average resolution (x,y): {self.xinc, self.yinc}\n"
+            )
             + f"Gridcells:        {self.ncells}\n"
             + f"Format:           {self.format}\n"
             + f"Type:             {self.type}\n"
-            + f"Extent:           {self.extent}\n"
+            + f"Extent (x):       {self.extent}\n"
             + f"Source:           {self.source}\n"
             + "Bounds?           {}\n".format(
                 self.lat_bnds is not None and self.lon_bnds is not None
             )
-            + f"Collapsed cells? {self.contains_collapsed_cells}\n"
+            + f"Degenerate cells? {self.contains_degenerate_cells}\n"
             + f"Duplicated cells? {self.contains_duplicated_cells}\n"
-            + f"Permanent Mask:   {self.mask}\n"
+            + f"Permanent Mask:   {'land sea mask' if self.mask else ''}"
+            f"{', ' if self.mask and self.contains_degenerate_cells else ''}"
+            f"{'masked degenerate cells' if self.contains_degenerate_cells else ''}\n"
             + f"md5 hash:         {self.hash}"
         )
         return info
@@ -366,6 +409,11 @@ class Grid:
     @require_older_xarray
     def _grid_from_instructor(self, grid_instructor: tuple | float | int):
         """Process instructions to create regional or global grid (uses xESMF utility functions)."""
+        # grid_instructor:
+        # (d_lonlat), (d_lon, d_lat),
+        # (lonlat_0, lonlat_1, d_lonlat),
+        # (lon_0, lon_1, d_lon, lat_0, lat_1, d_lat)
+
         # Create tuple of length 1 if input is either float or int
         if isinstance(grid_instructor, (int, float)):
             grid_instructor = (grid_instructor,)
@@ -386,6 +434,8 @@ class Grid:
                 grid_instructor[-2],
                 grid_instructor[-1],
             )
+        else:
+            raise InvalidParameterValue("The grid_instructor variable is malformed.")
 
         # Set attributes
         self.ds = grid
@@ -397,11 +447,6 @@ class Grid:
     @require_older_xarray
     def _grid_from_ds_adaptive(self, ds: xr.Dataset | xr.DataArray):
         """Create Grid of similar extent and resolution of input dataset."""
-        # TODO: dachar/daops to deal with missing values occurring in the coordinate variables
-        #       while no _FillValue/missing_value attribute is set
-        #  -> FillValues else might get selected as minimum/maximum lat/lon value
-        #     since they are not masked
-
         # Create temporary Grid object out of input dataset
         grid_tmp = Grid(ds=ds)
 
@@ -510,7 +555,7 @@ class Grid:
 
     def _grid_detect_duplicated_cells(self) -> bool:
         """Detect a possible grid halo / duplicated cells."""
-        # Create array of (ilat, ilon) tuples
+        # Curvilinear or unstructured grid
         if self.ds[self.lon].ndim == 2 or (
             self.ds[self.lon].ndim == 1 and self.type == "unstructured"
         ):
@@ -523,65 +568,77 @@ class Grid:
                 ),
                 dtype=("float32,float32"),
             ).reshape(self.ds[self.lon].values.shape)
+            mask_duplicates = self._create_duplicate_mask(latlon_halo)
+            if np.any(mask_duplicates):
+                return True
+        # regular_lat_lon
         else:
-            latlon_halo = list()
-
-        # For 1D regular_lat_lon
-        if isinstance(latlon_halo, list):
+            unique_rows = np.unique(self.ds[self.lat], return_index=True)[1]
+            unique_cols = np.unique(self.ds[self.lon], return_index=True)[1]
             dup_rows = [
                 i
                 for i in list(range(self.ds[self.lat].shape[0]))
-                if i not in np.unique(self.ds[self.lat], return_index=True)[1]
+                if i not in unique_rows
             ]
             dup_cols = [
                 i
                 for i in list(range(self.ds[self.lon].shape[0]))
-                if i not in np.unique(self.ds[self.lon], return_index=True)[1]
+                if i not in unique_cols
             ]
             if dup_cols != [] or dup_rows != []:
                 return True
 
-        # For 1D unstructured
-        elif self.type == "unstructured" and self.ds[self.lon].ndim == 1:
-            mask_duplicates = self._create_duplicate_mask(latlon_halo)
-            dup_cells = np.where(mask_duplicates is True)[0]
-            if dup_cells.size > 0:
-                return True
+        return False
 
-        # For 2D coordinate variables
-        else:
-            mask_duplicates = self._create_duplicate_mask(latlon_halo)
-            # All duplicate rows indices:
-            dup_rows = list()
-            for i in range(mask_duplicates.shape[0]):
-                if all(mask_duplicates[i, :]):
-                    dup_rows.append(i)
-            # All duplicate columns indices:
-            dup_cols = list()
-            for j in range(mask_duplicates.shape[1]):
-                if all(mask_duplicates[:, j]):
-                    dup_cols.append(j)
-            for i in dup_rows:
-                mask_duplicates[i, :] = False
-            for j in dup_cols:
-                mask_duplicates[:, j] = False
-            # All duplicate rows indices:
-            dup_part_rows = list()
-            for i in range(mask_duplicates.shape[0]):
-                if any(mask_duplicates[i, :]):
-                    dup_part_rows.append(i)
-            # All duplicate columns indices:
-            dup_part_cols = list()
-            for j in range(mask_duplicates.shape[1]):
-                if any(mask_duplicates[:, j]):
-                    dup_part_cols.append(j)
-            if (
-                dup_part_cols != []
-                or dup_part_rows != []
-                or dup_cols != []
-                or dup_rows != []
-            ):
+    def _apply_lsm(self, mask: str = None) -> bool:
+        """Detect mask helper function.
+
+        Parameters
+        ----------
+        self: Grid
+        mask: str, optional
+            Whether to mask "ocean" cells or "land" cells. The default is None.
+
+        Raises
+        ------
+        Warning
+            If mask is specified but not found in dataset.
+
+        Returns
+        -------
+        bool
+            Whether self.lsm was assigned to a 2D-mask in form of a xr.DataArray or not.
+        """
+        if any(maskvar in self.ds for maskvar in ["sftlf", "lsm"]) and mask is not None:
+            if "sftlf" in self.ds:
+                maskvar = "sftlf"
+            elif "lsm" in self.ds:
+                maskvar = "lsm"
+            reduce_dims = [
+                d
+                for d in self.ds[maskvar].dims
+                if d not in self.ds[self.lat].dims and d not in self.ds[self.lon].dims
+            ]
+            if any([self.ds.sizes[d] > 1 for d in reduce_dims]):
+                warnings.warn(
+                    "Cannot apply a mask with more than 2 dimensions (lat, lon)."
+                )
+                return False
+            if reduce_dims:
+                lsm = self.ds[maskvar].squeeze(reduce_dims, drop=True).astype(np.int32)
+            else:
+                lsm = self.ds[maskvar].astype(np.int32)
+            if mask == "ocean":
+                self.lsm = xr.where(lsm < 0.5, 0, 1)
                 return True
+            elif mask == "land":
+                self.lsm = xr.where(lsm >= 0.5, 0, 1)
+                return True
+        else:
+            if mask:
+                warnings.warn(
+                    "No land sea mask found in the dataset that could be applied."
+                )
         return False
 
     @staticmethod
@@ -615,95 +672,14 @@ class Grid:
         """
         # TODO: Extend for other formats for regular_lat_lon, curvilinear / rotated_pole, unstructured
 
+        # CF
         if self.format == "CF":
-            # 1D coordinate variables
-            if self.ds[self.lat].ndim == 1 and self.ds[self.lon].ndim == 1:
-                lat_1D = self.ds[self.lat].dims[0]
-                lon_1D = self.ds[self.lon].dims[0]
-                # if lat_1D in ds[var].dims and lon_1D in ds[var].dims:
-                if not self.lat_bnds or not self.lon_bnds:
-                    if lat_1D == lon_1D:
-                        return "unstructured"
-                    else:
-                        return "regular_lat_lon"
-                else:
-                    if (
-                        lat_1D == lon_1D
-                        and all(
-                            [
-                                self.ds[bnds].ndim == 2
-                                for bnds in [self.lon_bnds, self.lat_bnds]
-                            ]
-                        )
-                        and all(
-                            [
-                                self.ds.sizes[dim] > 2
-                                for dim in [
-                                    self.ds[self.lon_bnds].dims[-1],
-                                    self.ds[self.lat_bnds].dims[-1],
-                                ]
-                            ]
-                        )
-                    ):
-                        return "unstructured"
-                    elif all(
-                        [
-                            self.ds[bnds].ndim == 2
-                            for bnds in [self.lon_bnds, self.lat_bnds]
-                        ]
-                    ) and all(
-                        [
-                            self.ds.dims[dim] == 2
-                            for dim in [
-                                self.ds[self.lon_bnds].dims[-1],
-                                self.ds[self.lat_bnds].dims[-1],
-                            ]
-                        ]
-                    ):
-                        return "regular_lat_lon"
-                    else:
-                        raise Exception("The grid type is not supported.")
-
-            # 2D coordinate variables
-            elif self.ds[self.lat].ndim == 2 and self.ds[self.lon].ndim == 2:
-                # Test for curvilinear or restructure lat/lon coordinate variables
-                # TODO: Check if regular_lat_lon despite 2D
-                #  - requires additional function checking
-                #      lat[:,i]==lat[:,j] for all i,j
-                #      lon[i,:]==lon[j,:] for all i,j
-                #  - and if that is the case to extract lat/lon and *_bnds
-                #      lat[:]=lat[:,j], lon[:]=lon[j,:]
-                #      lat_bnds[:, 2]=[min(lat_bnds[:,j, :]), max(lat_bnds[:,j, :])]
-                #      lon_bnds similar
-                if not self.ds[self.lat].shape == self.ds[self.lon].shape:
-                    raise Exception("The grid type is not supported.")
-                else:
-                    if not self.lat_bnds or not self.lon_bnds:
-                        return "curvilinear"
-                    else:
-                        # Shape of curvilinear bounds either [nlat, nlon, 4] or [nlat+1, nlon+1]
-                        if list(self.ds[self.lat].shape) + [4] == list(
-                            self.ds[self.lat_bnds].shape
-                        ) and list(self.ds[self.lon].shape) + [4] == list(
-                            self.ds[self.lon_bnds].shape
-                        ):
-                            return "curvilinear"
-                        elif [si + 1 for si in self.ds[self.lat].shape] == list(
-                            self.ds[self.lat_bnds].shape
-                        ) and [si + 1 for si in self.ds[self.lon].shape] == list(
-                            self.ds[self.lon_bnds].shape
-                        ):
-                            return "curvilinear"
-                        else:
-                            raise Exception("The grid type is not supported.")
-
-            # >2D coordinate variables, or coordinate variables of different dimensionality
-            else:
-                raise Exception("The grid type is not supported.")
-
+            return clidu.detect_gridtype(
+                self.ds, self.lon, self.lat, self.lon_bnds, self.lat_bnds
+            )
         # Other formats
         else:
-            raise Exception(
+            raise InvalidParameterValue(
                 "Grid type can only be determined for datasets following the CF conventions."
             )
 
@@ -716,32 +692,30 @@ class Grid:
             'regional' or 'global'.
         """
         # TODO: support Units "rad" next to "degree ..."
-        # TODO: additionally check that leftmost and rightmost lon_bnds touch for each row?
-        #
-        # TODO: perform a roll if necessary in case the longitude values are not in the range (0,360)
-        # - Grids that range for example from (-1. , 359.)
-        # - Grids that are totally out of range, like GFDL (-300, 60)
-        # ds=dataset_utils.check_lon_alignment(ds, (0,360)) # does not work yet for this purpose
 
-        # Determine min/max lon/lat values
-        xfirst = float(self.ds[self.lon].min())
-        xlast = float(self.ds[self.lon].max())
-        yfirst = float(self.ds[self.lat].min())
-        ylast = float(self.ds[self.lat].max())
+        # Determine min/max lon/lat values and potentially fix unmasked missing_values
+        xfirst, xlast, yfirst, ylast = clidu.determine_lon_lat_range(
+            self.ds, self.lon, self.lat, self.lon_bnds, self.lat_bnds, apply_fix=True
+        )
 
-        # Perform roll if necessary
-        if xfirst < 0:
-            self.ds, low, high = clidu.cf_convert_between_lon_frames(
-                self.ds, [-180.0, 180.0]
+        # Perform roll to [-180, 180] if necessary
+        if (
+            xlast > 360
+            or xfirst < -180
+            or abs(xlast - xfirst) > 360
+            or (xlast > 180 and xfirst < 0)
+        ):
+            warnings.warn(
+                "Converting grid longitude values to [-180, 180] longitude frame."
             )
-        else:
             self.ds, low, high = clidu.cf_convert_between_lon_frames(
-                self.ds, [0.0, 360.0]
+                self.ds, [-180.0, 180.0], force=True
             )
 
-        # Determine min/max lon/lat values
-        xfirst = float(self.ds[self.lon].min())
-        xlast = float(self.ds[self.lon].max())
+        # Determine min/max lon/lat values after potential conversions/fixes
+        xfirst, xlast, yfirst, ylast = clidu.determine_lon_lat_range(
+            self.ds, self.lon, self.lat, self.lon_bnds, self.lat_bnds, apply_fix=False
+        )
 
         # Approximate the grid resolution
         if self.ds[self.lon].ndim == 2 and self.ds[self.lat].ndim == 2:
@@ -766,11 +740,17 @@ class Grid:
                 yinc = (ylast - yfirst) / (ysize - 1)
                 approx_res = (xinc + yinc) / 2.0
             else:
+                yinc = np.average(
+                    np.absolute(
+                        self.ds[self.lat].values[1:] - self.ds[self.lat].values[:-1]
+                    )
+                )
                 approx_res = np.average(
                     np.absolute(
                         self.ds[self.lon].values[1:] - self.ds[self.lon].values[:-1]
                     )
                 )
+                xinc = approx_res
         else:
             raise Exception(
                 "Only 1D and 2D longitude and latitude coordinate variables supported."
@@ -780,20 +760,10 @@ class Grid:
         atol = 2.0 * approx_res
         lon_max = float(self.ds[self.lon].max())
         lon_min = float(self.ds[self.lon].min())
-        if lon_min < -atol and lon_min > -180.0 - atol and lon_max < 180.0 + atol:
+        if -atol > lon_min > -180.0 - atol and lon_max < 180.0 + atol:
             min_range, max_range = (-180.0, 180.0)
         elif lon_min > -atol and lon_max < 360.0 + atol:
             min_range, max_range = (0.0, 360.0)
-        # TODO: for shifted longitudes, eg. (-300,60)? I forgot what it was for but likely it is irrelevant
-        # elif lon_min < -180.0 - atol or lon_max > 360.0 + atol:
-        #    raise Exception(
-        #        "The longitude values have to be within the range (-180, 360)!"
-        #    )
-        # elif lon_max - lon_min > 360.0 - atol and lon_max - lon_min < 360.0 + atol:
-        #    min_range, max_range = (
-        #        lon_min - approx_xres / 2.0,
-        #        lon_max + approx_xres / 2.0,
-        #    )
         elif np.isclose(lon_min, lon_max):
             raise Exception(
                 "Remapping zonal mean datasets or generally datasets without meridional extent is not supported."
@@ -803,12 +773,17 @@ class Grid:
                 "The longitude values have to be within the range (-180, 360)."
             )
 
-        # Generate a histogram with bins for sections along a latitudinal circle,
+        # Generate a histogram with bins for sections along a zonal circle,
         #  width of the bins/sections dependent on the resolution in x-direction
         extent_hist = np.histogram(
             self.ds[self.lon],
             bins=np.arange(min_range - approx_res, max_range + approx_res, atol),
         )
+
+        # Set attributes
+        self.xinc = xinc
+        self.yinc = yinc
+        self.res = approx_res
 
         # If the counts for all bins are greater than zero, the grid is considered global in x-direction
         # Yet, this information is only needed for xesmf.Regridder, as "periodic in longitude"
@@ -868,11 +843,11 @@ class Grid:
         Parameters
         ----------
         coord_type : str
-            Coordinate type understood by cf-xarray, eg. 'lat', 'lon', ...
+            Coordinate type, e.g. 'latitude', 'longitude', 'level', 'time'.
 
         Raises
         ------
-        AttributeError
+        KeyError
             Raised if the requested coordinate cannot be identified.
 
         Returns
@@ -880,15 +855,27 @@ class Grid:
         str
             Coordinate variable name.
         """
-        # Make use of cf-xarray accessor
-        coord = self.ds.cf[coord_type]
-        # coord = get_coord_by_type(self.ds, coord_type, ignore_aux_coords=False)
+        coord, further_matches = clidu.get_coord_by_type(
+            self.ds, coord_type, ignore_aux_coords=False, return_further_matches=True
+        )
+        # Remove standard_name and other attributes for further matches to not confuse cf_xarray
+        #  when calling xesmf.Regridder later on
+        if further_matches:
+            for match in further_matches:
+                for attr in ["standard_name", "units", "long_name"]:
+                    if attr in self.ds[match].attrs:
+                        warnings.warn(
+                            "Removing attribute '{}' from variable '{}' as it is likely not CF compliant.".format(
+                                attr, match
+                            )
+                        )
+                        self.ds[match].attrs.pop(attr)
 
         # Return the name of the coordinate variable
-        try:
-            return coord.name
-        except AttributeError:
-            raise AttributeError(
+        if coord:
+            return coord
+        else:
+            raise KeyError(
                 "A %s coordinate cannot be identified in the dataset." % coord_type
             )
 
@@ -906,37 +893,279 @@ class Grid:
             Returns the variable name of the requested coordinate bounds.
             Returns None if the variable has no bounds or if they cannot be identified.
         """
-        try:
-            return self.ds.cf.bounds[coordinate][0]
-        except (KeyError, AttributeError):
-            warnings.warn(
-                "For coordinate variable '%s' no bounds can be identified." % coordinate
-            )
-            return
+        return clidu.detect_bounds(self.ds, coordinate)
+
+    def _verify_bounds(self) -> None:
+        """Use cf_xarray to obtain the variable name of the requested coordinates bounds.
+
+        Parameters
+        ----------
+        coordinate : str
+            Name of the coordinate variable to determine the bounds from.
+
+        Returns
+        -------
+        str, optional
+            Returns the variable name of the requested coordinate bounds.
+            Returns None if the variable has no bounds or if they cannot be identified.
+        """
+        if self.lat_bnds and self.lon_bnds:
+            lat_bnds = self.lat_bnds
+            lon_bnds = self.lon_bnds
+            # If bounds are defined, try to detect the grid type
+            try:
+                gtype = self.detect_type()
+            except ValueError:
+                gtype = False
+            # If grid type is not supported (ValueError), try determining
+            #   the grid type without the bounds, to see if they are
+            #   the issue
+            if not gtype:
+                self.lat_bnds = None
+                self.lon_bnds = None
+                try:
+                    gtype = self.detect_type()
+                except ValueError:
+                    gtype = False
+                # If indeed the bounds were the issue, raise a warning and drop them
+                if gtype:
+                    warnings.warn(
+                        "Latitude and longitude bounds definition is invalid. The bounds will be dropped and potentially recomputed."
+                    )
+                    self.ds = self.ds.drop_vars([lat_bnds, lon_bnds])
+                    if "bounds" in self.ds[self.lat].attrs:
+                        self.ds[self.lat].attrs.pop("bounds")
+                    if "bounds" in self.ds[self.lon].attrs:
+                        self.ds[self.lon].attrs.pop("bounds")
+                # Else change nothing and let detect_type raise an Exception
+                else:
+                    self.lat_bnds = lat_bnds
+                    self.lon_bnds = lon_bnds
 
     def _grid_detect_collapsed_cells(self):
         """Detect collapsing grid cells. Requires defined bounds."""
-        mask_lat = self._create_collapse_mask(self.ds[self.lat_bnds].data)
-        mask_lon = self._create_collapse_mask(self.ds[self.lon_bnds].data)
-        # for regular lat-lon grids, create 2D coordinate arrays
-        if (
-            mask_lat.shape != mask_lon.shape
-            and mask_lat.ndim == 1
-            and mask_lon.ndim == 1
-        ):
-            mask_lon, mask_lat = np.meshgrid(mask_lon, mask_lat)
-        self.coll_mask = mask_lat | mask_lon
-        self.contains_collapsed_cells = bool(np.any(self.coll_mask))
+        # For regular lat-lon grids, create 2D coordinate arrays
+        if self.type == "regular_lat_lon":
+            # Create meshgrid for latitude and longitude bounds
+            lat_vertices_0, lon_vertices_0 = np.meshgrid(
+                self.ds[self.lat_bnds].data[:, 0],
+                self.ds[self.lon_bnds].data[:, 0],
+            )
+            lat_vertices_1, lon_vertices_1 = np.meshgrid(
+                self.ds[self.lat_bnds].data[:, 1],
+                self.ds[self.lon_bnds].data[:, 1],
+            )
+
+            # Create the 4-corner representation for each cell
+            lat_corners = np.stack(
+                [lat_vertices_0, lat_vertices_0, lat_vertices_1, lat_vertices_1],
+                axis=-1,
+            )
+            lon_corners = np.stack(
+                [lon_vertices_0, lon_vertices_1, lon_vertices_1, lon_vertices_0],
+                axis=-1,
+            )
+
+            dsll = xr.Dataset(
+                data_vars=dict(
+                    lat_vertices=(["nlat", "nlon", "ncorners"], lat_corners),
+                    lon_vertices=(["nlat", "nlon", "ncorners"], lon_corners),
+                )
+            )
+
+            # Mask degenerated cells and specify if there are any in the dataset
+            self.coll_mask = (
+                self._create_collapse_mask(dsll, "lat_vertices", "lon_vertices")
+                .rename("coll_mask")
+                .reset_coords(drop=True)
+            )
+        else:
+            # Mask degenerated cells and specify if there are any in the dataset
+            self.coll_mask = (
+                self._create_collapse_mask(self.ds, self.lat_bnds, self.lon_bnds)
+                .rename("coll_mask")
+                .reset_coords(drop=True)
+            )
+
+        self.contains_collapsed_cells = bool(np.any(self.coll_mask == 0))
+
+    def _grid_detect_smashed_cells(self):
+        """Detect smashed grid cells (i.e. cells with nearly identical vertices). Requires defined bounds."""
+        # For regular lat-lon grids, create 2D coordinate arrays
+        if self.type == "regular_lat_lon":
+            # Create meshgrid for latitude and longitude bounds
+            lat_vertices_0, lon_vertices_0 = np.meshgrid(
+                self.ds[self.lat_bnds].data[:, 0],
+                self.ds[self.lon_bnds].data[:, 0],
+            )
+            lat_vertices_1, lon_vertices_1 = np.meshgrid(
+                self.ds[self.lat_bnds].data[:, 1],
+                self.ds[self.lon_bnds].data[:, 1],
+            )
+
+            # Create the 4-corner representation for each cell
+            lat_corners = np.stack(
+                [lat_vertices_0, lat_vertices_0, lat_vertices_1, lat_vertices_1],
+                axis=-1,
+            )
+            lon_corners = np.stack(
+                [lon_vertices_0, lon_vertices_1, lon_vertices_1, lon_vertices_0],
+                axis=-1,
+            )
+
+            dsll = xr.Dataset(
+                data_vars=dict(
+                    lat_vertices=(["nlat", "nlon", "ncorners"], lat_corners),
+                    lon_vertices=(["nlat", "nlon", "ncorners"], lon_corners),
+                )
+            )
+
+            # Mask degenerated cells and specify if there are any in the dataset
+            self.smash_mask = (
+                self._create_smashed_mask(dsll, "lat_vertices", "lon_vertices")
+                .rename("smash_mask")
+                .reset_coords(drop=True)
+            )
+        else:
+            # Mask degenerated cells and specify if there are any in the dataset
+            self.smash_mask = (
+                self._create_smashed_mask(self.ds, self.lat_bnds, self.lon_bnds)
+                .rename("smash_mask")
+                .reset_coords(drop=True)
+            )
+
+        self.contains_smashed_cells = bool(np.any(self.smash_mask == 0))
 
     @staticmethod
-    def _create_collapse_mask(arr):
-        """Grid cells collapsing to lines or points."""
-        orig_shape = arr.shape[:-1]  # [nlon, nlat, nbnds] -> [nlon, nlat]
-        arr_flat = arr.reshape(-1, arr.shape[-1])  # -> [nlon x nlat, nbnds]
-        arr_set = np.apply_along_axis(lambda x: len(set(x)), -1, arr_flat)
-        mask = np.zeros(arr_flat.shape[:-1], dtype=bool)
-        mask[arr_set == 1] = True
-        return mask.reshape(orig_shape)
+    def points_equal(p1, p2, tol=1e-15):
+        """Check if two points are equal within a given tolerance."""
+        return np.abs(p1[0] - p2[0]) < tol and np.abs(p1[1] - p2[1]) < tol
+
+    @staticmethod
+    def is_smashed_quad2D(coords):
+        """
+        Determine if a quadrilateral (quad) is smashed or degenerate.
+
+        Args:
+            coords (numpy.ndarray): Array of shape (4, 2) representing the
+                                    coordinates of the four corners of the quad.
+
+        Returns:
+            bool: True if the quad is smashed, otherwise False.
+        """
+        # Ensure the input is for a quad
+        if coords.shape[0] != 4:
+            return False
+
+        # Check if the first point is equal to the third (opposite corners)
+        if Grid.points_equal(coords[0], coords[2]):
+            return True
+
+        # Check if the second point is equal to the fourth (opposite corners)
+        if Grid.points_equal(coords[1], coords[3]):
+            return True
+
+        # If neither condition is met, the quad is not smashed
+        return False
+
+    @staticmethod
+    def _create_smashed_mask(ds, lat_bnds, lon_bnds):
+        """
+        Create a boolean mask indicating which cells are smashed (i.e. cells with nearly identical opposite vertices)
+
+        Args:
+            ds (xarray.Dataset): A dataset containing latitude and longitude bounds.
+            lat_bnds (str): The name of the latitude bounds variable in the dataset.
+            lon_bnds (str): The name of the longitude bounds variable in the dataset.
+
+        Returns:
+            xarray.DataArray: An integer mask indicating which cells are smashed (1: ok, 0: smashed).
+        """
+        # Combine latitude_bnds and longitude_bnds into a single DataArray
+        if len(ds[lat_bnds].dims) == 3:
+            lat_lon_bnds = xr.concat(
+                [ds[lat_bnds], ds[lon_bnds]], dim="coord"
+            ).transpose(
+                ds[lat_bnds].dims[0],
+                ds[lat_bnds].dims[1],
+                ds[lat_bnds].dims[2],
+                "coord",
+            )
+        elif len(ds[lat_bnds].dims) == 2:
+            lat_lon_bnds = xr.concat(
+                [ds[lat_bnds], ds[lon_bnds]], dim="coord"
+            ).transpose(ds[lat_bnds].dims[0], ds[lat_bnds].dims[1], "coord")
+        else:
+            raise ValueError(
+                "Vertices should have two dimensions (unstructured: [ncells x ncorners]) or three dimensions (else: [nlat x nlon x ncorners])"
+            )
+
+        # Apply the function across the nlat and nlon dimensions
+        smash_mask = xr.apply_ufunc(
+            Grid.is_smashed_quad2D,
+            lat_lon_bnds,
+            input_core_dims=[[ds[lat_bnds].dims[-1], "coord"]],
+            vectorize=True,  # Apply the function element-wise
+            dask="parallelized",  # Parallelize if using Dask
+            output_dtypes=[bool],
+        )
+        # Convert to (inverted) binary integer mask
+        return xr.where(smash_mask, 0, 1)
+
+    @staticmethod
+    def _create_collapse_mask(ds, lat_bnds, lon_bnds):
+        """
+        Create a boolean mask indicating which grid cells collapse to lines or points.
+
+        Args:
+            ds (xarray.Dataset): A dataset containing latitude and longitude bounds.
+            lat_bnds (str): The name of the latitude bounds variable in the dataset.
+            lon_bnds (str): The name of the longitude bounds variable in the dataset.
+
+        Returns:
+            xarray.DataArray: An integer mask indicating which grid cells collapse to lines or points (1: ok, 0: collapsed).
+        """
+
+        # Define a function to count unique (lat, lon) tuples for each cell
+        def unique_tuple_count(cell):
+            # Remove np.nan values
+            valid_coords = cell[~np.isnan(cell).any(axis=1)]
+            return np.unique(valid_coords, axis=0).shape[0]
+
+        # Combine latitude_bnds and longitude_bnds into a single DataArray
+        if len(ds[lat_bnds].dims) == 3:
+            lat_lon_bnds = xr.concat(
+                [ds[lat_bnds], ds[lon_bnds]], dim="coord"
+            ).transpose(
+                ds[lat_bnds].dims[0],
+                ds[lat_bnds].dims[1],
+                ds[lat_bnds].dims[2],
+                "coord",
+            )
+        elif len(ds[lat_bnds].dims) == 2:
+            lat_lon_bnds = xr.concat(
+                [ds[lat_bnds], ds[lon_bnds]], dim="coord"
+            ).transpose(ds[lat_bnds].dims[0], ds[lat_bnds].dims[1], "coord")
+        else:
+            raise ValueError(
+                "Vertices should have two dimensions (unstructured: [ncells x ncorners]) or three dimensions (else: [nlat x nlon x ncorners])"
+            )
+
+        # Apply the function across the nlat and nlon dimensions
+        unique_counts = xr.apply_ufunc(
+            unique_tuple_count,
+            lat_lon_bnds,
+            input_core_dims=[[ds[lat_bnds].dims[-1], "coord"]],
+            vectorize=True,
+            dask="parallelized",
+            output_dtypes=[int],
+        )
+
+        # Create a binary mask for cells with fewer than 3 unique (lat, lon) tuples
+        # 3 unique tuples: cell is triangular (can be handled by (x)ESMF)
+        # 2 unique tuples: cell collapses to a line ((x)ESMF raises exception)
+        # 1 unique tuple: cell collapses to a point ((x)ESMF raises exception)
+        return xr.where(unique_counts < 3, 0, 1)
 
     def _cap_precision(self, decimals: int) -> None:
         """Round horizontal coordinate variables to specified precision using numpy.around.
@@ -998,7 +1227,10 @@ class Grid:
                 ("lon", self.lon),
                 ("lat_bnds", self.lat_bnds),
                 ("lon_bnds", self.lon_bnds),
-                ("mask", self.mask),
+                (
+                    "mask",
+                    "mask" if (self.mask or self.contains_degenerate_cells) else False,
+                ),
             ]
         ).items():
             if coord_var:
@@ -1067,6 +1299,8 @@ class Grid:
         to_keep = [
             var for var in [self.lat, self.lon, self.lat_bnds, self.lon_bnds] if var
         ]
+        if self.mask or self.contains_degenerate_cells:
+            to_keep.append("mask")
         to_drop = [
             var
             for var in list(self.ds.data_vars) + list(self.ds.coords)
@@ -1247,10 +1481,10 @@ class Grid:
         # TODO: This can be a public method as well, but then collapsing grid cells have
         #       to be detected within this function.
 
-        # Bounds cannot be computed if there are duplicated cells
+        # Warn about duplicated cell centers possibly affecting the quality of the calculated bounds
         if self.contains_duplicated_cells:
-            raise Exception(
-                "This grid contains duplicated cell centers. Therefore bounds cannot be computed."
+            warnings.warn(
+                "This grid contains duplicated cell centers, which may affect the quality of the calculated bounds."
             )
 
         # Bounds are only possible for xarray.Datasets
@@ -1263,10 +1497,10 @@ class Grid:
             or np.amax(self.ds[self.lat].values) > 90.0
         ):
             warnings.warn(
-                "At least one latitude value exceeds [-90,90]. The bounds could not be calculated."
+                "At least one latitude value exceeds [-90,90]. Latitude bounds will be clipped to [-90,90]."
             )
             return
-        if self.ncells < 3:
+        if self.nlat < 3 or self.nlon < 3:
             warnings.warn(
                 "The latitude and longitude axes need at least 3 entries"
                 " to be able to calculate the bounds."
@@ -1275,26 +1509,18 @@ class Grid:
 
         # Use clisops.utils.dataset_utils functions to generate the bounds
         if self.format == "CF":
-            if (
-                np.amin(self.ds[self.lat].values) < -90.0
-                or np.amax(self.ds[self.lat].values) > 90.0
-            ):
-                warnings.warn("At least one latitude value exceeds [-90,90].")
-                return
-            if self.ncells < 3:
-                warnings.warn(
-                    "The latitude and longitude axes need at least 3 entries"
-                    " to be able to calculate the bounds."
-                )
-                return
             if self.type == "curvilinear":
                 self.ds = clidu.generate_bounds_curvilinear(
-                    ds=self.ds, lat=self.lat, lon=self.lon
+                    ds=self.ds,
+                    lat=self.lat,
+                    lon=self.lon,
                 )
+                lat_bnds, lon_bnds = "vertices_latitude", "vertices_longitude"
             elif self.type == "regular_lat_lon":
                 self.ds = clidu.generate_bounds_rectilinear(
                     ds=self.ds, lat=self.lat, lon=self.lon
                 )
+                lat_bnds, lon_bnds = "lat_bnds", "lon_bnds"
             else:
                 warnings.warn(
                     "The bounds cannot be calculated for grid_type '%s' and format '%s'."
@@ -1303,14 +1529,18 @@ class Grid:
                 return
 
             # Add common set of attributes and set as coordinates
-            self.ds = self.ds.set_coords(["lat_bnds", "lon_bnds"])
+            self.ds = self.ds.set_coords([lat_bnds, lon_bnds])
             self.ds = clidu.add_hor_CF_coord_attrs(
-                ds=self.ds, lat=self.lat, lon=self.lon
+                ds=self.ds,
+                lat=self.lat,
+                lon=self.lon,
+                lat_bnds=lat_bnds,
+                lon_bnds=lon_bnds,
             )
 
             # Set the Class attributes
-            self.lat_bnds = "lat_bnds"
-            self.lon_bnds = "lon_bnds"
+            self.lat_bnds = lat_bnds
+            self.lon_bnds = lon_bnds
 
             # Issue warning
             warnings.warn(
@@ -1478,16 +1708,9 @@ class Weights:
                     "It will be assumed that the input grid is not periodic in longitude."
                 )
 
-        # Activate ignore degenerate cells setting if collapsing cells are found within the grids.
-        #  The default setting within ESMF is None, not False!
-        self.ignore_degenerate = (
-            True
-            if (
-                self.grid_in.contains_collapsed_cells
-                or self.grid_out.contains_collapsed_cells
-            )
-            else None
-        )
+        # Activate ignore degenerate cells setting to avoid potential Errors because of
+        # unidentified / unmasked degenerated cells.
+        self.ignore_degenerate = True
 
         self.id = self._generate_id()
         self.filename = "weights_" + self.id + ".nc"
@@ -1668,7 +1891,7 @@ class Weights:
             "method": self.method,
             "uid": self.id,
             "filename": self.filename,
-            "def_filename": self.regridder._get_default_filename(),
+            "def_filename": self.regridder._get_default_filename(),  # noqa
             "tool": self.tool,
         }
 
@@ -1787,11 +2010,11 @@ def regrid(
     Parameters
     ----------
     grid_in : Grid
-        Grid object of the source grid, e.g. created out of source xarray.Dataset.
+        The Grid object of the source grid, e.g. created out of source xarray.Dataset.
     grid_out : Grid
-        Grid object of the target grid.
+        The Grid object of the target grid.
     weights : Weights
-        Weights object, as created by using grid_in and grid_out Grid objects as input.
+        The Weights object, as created by using grid_in and grid_out Grid objects as input.
     adaptive_masking_threshold : float, optional
         (AMT) A value within the [0., 1.] interval that defines the maximum `RATIO` of missing_values amongst the total
         number of data values contributing to the calculation of the target grid cell value. For a fraction [0., AMT[

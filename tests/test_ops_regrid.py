@@ -9,6 +9,7 @@ from roocs_grids import get_grid_file, grid_dict
 
 from clisops.core.regrid import XESMF_MINIMUM_VERSION, weights_cache_init, xe
 from clisops.ops.regrid import regrid
+from clisops.ops.subset import subset
 from clisops.utils.testing import ContextLogger
 
 XESMF_IMPORT_MSG = (
@@ -18,10 +19,6 @@ XESMF_IMPORT_MSG = (
 
 def _check_output_nc(result, fname="output_001.nc"):
     assert fname in [os.path.basename(_) for _ in result]
-
-
-def _load_ds(fpath):
-    return xr.open_mfdataset(fpath)
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
@@ -71,12 +68,13 @@ def test_regrid_grid_as_none(tmpdir, tmp_path, mini_esgf_data):
         )
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 @pytest.mark.parametrize("grid_id", sorted(grid_dict))
 def test_regrid_regular_grid_to_all_roocs_grids(
     tmpdir, tmp_path, grid_id, mini_esgf_data
 ):
-    """Test regridded a regular lat/lon field to all roocs grid types."""
+    """Test for regridding a regular lat/lon field to all roocs grid types."""
     fpath = mini_esgf_data["CMIP5_MRSOS_ONE_TIME_STEP"]
     basename = os.path.splitext(os.path.basename(fpath))[0]
     method = "nearest_s2d"
@@ -102,6 +100,50 @@ def test_regrid_regular_grid_to_all_roocs_grids(
     assert ds.mrsos.size > 100
 
 
+@pytest.mark.slow
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+def test_subset_and_regrid_erroneous_cf_units_cmip5(tmpdir, mini_esgf_data, tmp_path):
+    """Test subset and regrid ds with erroneous cf units."""
+    fpath = mini_esgf_data["CMIP5_WRONG_CF_UNITS"]
+    basename = os.path.splitext(os.path.basename(fpath))[0]
+    method = "conservative"
+    weights_cache_init(Path(tmp_path, "weights"))
+
+    # subset
+    result = subset(
+        ds=fpath,
+        area=(0, -10.0, 20.0, 10.0),
+        output_dir=tmpdir,
+        output_type="nc",
+        file_namer="simple",
+    )
+    _check_output_nc(result)
+
+    # regrid
+    result = regrid(
+        result[0],
+        method=method,
+        adaptive_masking_threshold=0.5,
+        grid="1deg",
+        output_dir=tmpdir,
+        output_type="netcdf",
+        file_namer="standard",
+    )
+
+    nc_file = result[0]
+    assert (
+        os.path.basename(nc_file)
+        == f"{basename.replace('Omon', 'mon')}16-20060116_regrid-{method}-180x360_cells_grid.nc"
+    )
+
+    # Can we read the output file
+    ds = xr.open_dataset(nc_file)
+    assert "zos" in ds
+    assert ds.zos.size == 360 * 180
+    assert ds.zos.count() == 163
+
+
+@pytest.mark.slow
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 @pytest.mark.parametrize(
     "dset", ["ATLAS_v1_CORDEX", "ATLAS_v1_EOBS_GRID", "ATLAS_v0_CORDEX_ANT"]
@@ -237,45 +279,44 @@ def test_regrid_keep_attrs(tmp_path, mini_esgf_data):
     )
 
 
-@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_halo_simple(tmp_path, mini_esgf_data):
-    """Test regridding with a simple halo."""
-    fpath = mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"]
-    ds = xr.open_dataset(fpath).isel(time=0)
+@pytest.mark.slow
+class TestRegridHalo:
 
-    weights_cache_init(Path(tmp_path, "weights"))
+    @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+    def test_regrid_halo_simple(self, tmp_path, mini_esgf_data):
+        """Test regridding with a simple halo."""
+        fpath = mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"]
+        ds = xr.open_dataset(fpath).isel(time=0)
 
-    ds_out = regrid(
-        ds,
-        method="conservative",
-        adaptive_masking_threshold=-1,
-        grid=5,
-        output_type="xarray",
-    )[0]
+        weights_cache_init(Path(tmp_path, "weights"))
 
-    ## if halo removed
-    # assert ds_out.attrs["regrid_operation"] == "conservative_402x800_36x72"
-    ## if halo present
-    assert ds_out.attrs["regrid_operation"] == "conservative_404x802_36x72"
+        ds_out = regrid(
+            ds,
+            method="conservative",
+            adaptive_masking_threshold=-1,
+            grid=5,
+            output_type="xarray",
+        )[0]
 
+        assert ds_out.attrs["regrid_operation"] == "conservative_404x802_36x72"
 
-@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_halo_adv(tmp_path, mini_esgf_data):
-    """Test regridding of dataset with a more complex halo."""
-    fpath = mini_esgf_data["CMIP6_OCE_HALO_CNRM"]
-    ds = xr.open_dataset(fpath).isel(time=0)
+    @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+    def test_regrid_halo_adv(self, tmp_path, mini_esgf_data):
+        """Test regridding of dataset with a more complex halo."""
+        fpath = mini_esgf_data["CMIP6_OCE_HALO_CNRM"]
+        ds = xr.open_dataset(fpath).isel(time=0)
 
-    weights_cache_init(Path(tmp_path, "weights"))
+        weights_cache_init(Path(tmp_path, "weights"))
 
-    ds_out = regrid(
-        ds,
-        method="conservative",
-        adaptive_masking_threshold=-1,
-        grid=5,
-        output_type="xarray",
-    )[0]
+        ds_out = regrid(
+            ds,
+            method="conservative",
+            adaptive_masking_threshold=-1,
+            grid=5,
+            output_type="xarray",
+        )[0]
 
-    assert ds_out.attrs["regrid_operation"] == "conservative_1050x1442_36x72"
+        assert ds_out.attrs["regrid_operation"] == "conservative_1050x1442_36x72"
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
@@ -297,26 +338,30 @@ def test_regrid_shifted_lon_frame(tmp_path, mini_esgf_data):
     assert ds_out.attrs["regrid_operation"] == "bilinear_200x360_36x72_peri"
 
 
+@pytest.mark.slow
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_same_grid_exception(tmpdir, tmp_path):
-    """Test that an exception is raised when source and target grid are the same."""
+    """Test that a warning is issued when source and target grid are the same."""
     fpath = get_grid_file("0pt25deg_era5")
+    ds = xr.open_dataset(fpath)
 
     weights_cache_init(Path(tmp_path, "weights"))
 
-    with pytest.raises(
-        Exception,
-        match="The selected source and target grids are the same. No regridding operation required.",
+    with pytest.warns(
+        UserWarning,
+        match="The selected source and target grids are the same.",
     ):
-        regrid(
+        ds_regrid = regrid(
             fpath,
             method="conservative",
             adaptive_masking_threshold=0.5,
             grid="0pt25deg_era5_lsm",
             output_dir=tmpdir,
-            output_type="netcdf",
+            output_type="xarray",
             file_namer="standard",
-        )
+        )[0]
+    # It is expected that the input ds is simply passed through
+    xr.testing.assert_identical(ds, ds_regrid)
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
@@ -330,7 +375,7 @@ def test_regrid_cmip6_nc_consistent_bounds_and_coords(tmpdir, mini_esgf_data):
         output_type="nc",
         file_namer="standard",
     )
-    res = _load_ds(result)
+    res = xr.open_mfdataset(result)
     # check fill value in bounds
     assert "_FillValue" not in res.lat_bnds.encoding
     assert "_FillValue" not in res.lon_bnds.encoding
