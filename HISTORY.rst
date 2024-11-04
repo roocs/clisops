@@ -1,14 +1,14 @@
 Version History
 ===============
 
-v0.14.1 (unreleased)
+v0.14.1 (2024-11-05)
 --------------------
 
 New Features
 ^^^^^^^^^^^^
 * Added new methods to `clisops.core.regrid.Grid`
     * Added possibility to apply land or ocean mask if present in the file
-    * Adapted method from ESMF to detect smashed cells
+    * Adapted method from `ESMF` to detect smashed cells
     * Masking degenerate (i.e. collapsed and smashed) cells
     * Dropping lat/lon bounds if an integrity check fails
     * Added a few attributes to the `Grid` object
@@ -41,6 +41,12 @@ Breaking Changes
     * `Grid.detect_coordinate`: raises `KeyError` instead of `AttributeError` if no coordinate could be detected
 * `clisops.ops.regrid`
     * `Regrid._calculate`: issues `UserWarning` instead of letting `clisops.core.Weights.__init__` raise an `Exception` when input and output grid are alike
+
+Other Changes
+^^^^^^^^^^^^^
+* The testing suite has been refactored to make better use of context handlers when opening files with `xarray`, preventing synonymous read errors and improving the overall performance of the tests.
+* Several tests that were failing due to significantly long runtimes have been marked as `slow` and are now skipped by default.
+* GitHub Workflows now use a timeout of 20 minutes for the build suite to prevent hanging builds.
 
 v0.14.0 (2024-10-03)
 --------------------
