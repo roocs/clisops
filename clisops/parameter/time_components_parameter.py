@@ -1,5 +1,6 @@
 from clisops.exceptions import InvalidParameterValue
-from clisops.parameter import _BaseParameter, string_to_dict, time_components
+from clisops.parameter._utils import string_to_dict, time_components
+from clisops.parameter.base_parameter import _BaseParameter
 
 
 class TimeComponentsParameter(_BaseParameter):

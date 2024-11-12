@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -11,8 +10,13 @@ from packaging.version import Version
 
 from clisops.core.regrid import XARRAY_INCOMPATIBLE_VERSION
 from clisops.utils import testing
-from clisops.utils.testing import open_dataset as _open_dataset
 from clisops.utils.testing import stratus as _stratus
+from clisops.utils.testing import write_roocs_cfg as _write_roocs_cfg
+
+
+@pytest.fixture
+def write_roocs_cfg(stratus, tmp_path) -> str:
+    return _write_roocs_cfg(stratus.path, tmp_path)
 
 
 @pytest.fixture
@@ -282,36 +286,6 @@ def nimbus(threadsafe_data_dir, worker_id):
             else threadsafe_data_dir
         ),
     )
-
-
-@pytest.fixture(scope="session")
-def open_esgf_dataset(stratus):
-    def _open_session_scoped_file(file: Union[str, os.PathLike], **xr_kwargs):
-        xr_kwargs.setdefault("cache", True)
-        return _open_dataset(
-            file,
-            branch=testing.ESGF_TEST_DATA_VERSION,
-            repo=testing.ESGF_TEST_DATA_REPO_URL,
-            cache_dir=stratus.path,
-            **xr_kwargs,
-        )
-
-    return _open_session_scoped_file
-
-
-@pytest.fixture(scope="session")
-def open_xclim_dataset(nimbus):
-    def _open_session_scoped_file(file: Union[str, os.PathLike], **xr_kwargs):
-        xr_kwargs.setdefault("cache", True)
-        return _open_dataset(
-            file,
-            branch=testing.XCLIM_TEST_DATA_VERSION,
-            repo=testing.XCLIM_TEST_DATA_REPO_URL,
-            cache_dir=nimbus.path,
-            **xr_kwargs,
-        )
-
-    return _open_session_scoped_file
 
 
 @pytest.fixture

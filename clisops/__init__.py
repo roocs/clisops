@@ -1,6 +1,5 @@
 """CLISOPS - Climate simulation operations."""
 
-import os
 import warnings
 
 from loguru import logger
@@ -22,14 +21,8 @@ warnings.showwarning = showwarning
 logger.disable("clisops")
 logger.remove()
 
-
-# Workaround to prevent reimporting
-class Package:
-    __file__ = __file__  # noqa
-
-
-package = Package()
-CONFIG = get_config(package)
+# Load configuration
+CONFIG = get_config(__file__)
 
 try:
     # Set the memory limit for each dask chunk
@@ -42,10 +35,6 @@ except KeyError:
 
 from clisops.parameter import *
 from clisops.utils import *
-from clisops.xarray_utils import *
-
-# if get_chunk_mem_limit():
-#     dask.config.set({"array.chunk-size": get_chunk_mem_limit()})
 
 for key, value in CONFIG["environment"].items():
     os.environ[key.upper()] = value

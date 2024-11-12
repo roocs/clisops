@@ -20,8 +20,8 @@ except ImportError:
 class TestSubsetTime:
     nc_poslons = "cmip3/tas.sresb1.giss_model_e_r.run1.atm.da.nc"
 
-    def test_simple(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_poslons).tas
+    def test_simple(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         yr_st = "2050"
         yr_ed = "2059"
 
@@ -36,10 +36,10 @@ class TestSubsetTime:
         np.testing.assert_array_equal(out.time.dt.year.max(), int(yr_ed))
         np.testing.assert_array_equal(out.time.dt.year.min(), int(yr_st))
 
-    def test_time_dates_outofbounds(self, caplog, open_xclim_dataset):
+    def test_time_dates_outofbounds(self, caplog, nimbus):
         caplog.set_level("WARNING", logger="clisops")
 
-        da = open_xclim_dataset(self.nc_poslons).tas
+        da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         yr_st = "1776"
         yr_ed = "2077"
 
@@ -59,10 +59,10 @@ class TestSubsetTime:
             in caplog.text
         )
 
-    def test_warnings(self, caplog, open_xclim_dataset):
+    def test_warnings(self, caplog, nimbus):
         caplog.set_level("WARNING", logger="clisops")
 
-        da = open_xclim_dataset(self.nc_poslons).tas
+        da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
 
         with pytest.raises(ValueError):
             subset.subset_time(da, start_date="2059", end_date="2050")
@@ -95,8 +95,8 @@ class TestSubsetTime:
                 in caplog.text
             )
 
-    def test_time_start_only(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_poslons).tas
+    def test_time_start_only(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         yr_st = "2050"
 
         # start date only
@@ -125,8 +125,8 @@ class TestSubsetTime:
         np.testing.assert_array_equal(out.time.dt.year.max(), da.time.dt.year.max())
         np.testing.assert_array_equal(out.time.max(), da.time.max())
 
-    def test_time_end_only(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_poslons).tas
+    def test_time_end_only(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         yr_ed = "2059"
 
         # end date only
@@ -148,8 +148,8 @@ class TestSubsetTime:
         np.testing.assert_array_equal(out.time.max().dt.day, 15)
         np.testing.assert_array_equal(out.time.min(), da.time.min())
 
-    def test_time_incomplete_years(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_poslons).tas
+    def test_time_incomplete_years(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         yr_st = "2050"
         yr_ed = "2059"
 
@@ -172,8 +172,8 @@ class TestSubsetGridPoint:
     nc_tasmin_file = "NRCANdaily/nrcan_canada_daily_tasmin_1990.nc"
     nc_2dlonlat = "CRCM5/tasmax_bby_198406_se.nc"
 
-    def test_time_simple(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_poslons).tas
+    def test_time_simple(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         da = da.assign_coords(lon=(da.lon - 360))
         lon = -72.4
         lat = 46.1
@@ -205,8 +205,8 @@ class TestSubsetGridPoint:
         "lon,lat", [([-72.4], [46.1]), ([-67.4, -67.3], [43.1, 46.1])]
     )
     @pytest.mark.parametrize("add_distance", [True, False])
-    def test_simple(self, lat, lon, add_distance, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_tasmax_file).tasmax
+    def test_simple(self, lat, lon, add_distance, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_tasmax_file)).tasmax
 
         out = subset.subset_gridpoint(da, lon=lon, lat=lat, add_distance=add_distance)
         np.testing.assert_almost_equal(out.lon, lon, 1)
@@ -215,8 +215,8 @@ class TestSubsetGridPoint:
         assert ("site" in out.dims) ^ (len(lat) == 1)
         assert ("distance" in out.coords) ^ (not add_distance)
 
-    def test_irregular(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_2dlonlat).tasmax
+    def test_irregular(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat)).tasmax
         lon = -72.4
         lat = 46.1
         out = subset.subset_gridpoint(da, lon=lon, lat=lat)
@@ -239,7 +239,7 @@ class TestSubsetGridPoint:
         np.testing.assert_almost_equal(out.lat, lat, 1)
 
         # test_irregular transposed:
-        da1 = open_xclim_dataset(self.nc_2dlonlat).tasmax
+        da1 = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat)).tasmax
         dims = list(da1.dims)
         dims.reverse()
         daT = xr.DataArray(np.transpose(da1.values), dims=dims)
@@ -290,8 +290,8 @@ class TestSubsetGridPoint:
         np.testing.assert_almost_equal(gp.lat, lat)
         assert gp.site == 0
 
-    def test_positive_lons(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_poslons).tas
+    def test_positive_lons(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         lon = -72.4
         lat = 46.1
         out = subset.subset_gridpoint(da, lon=lon, lat=lat)
@@ -302,8 +302,8 @@ class TestSubsetGridPoint:
         np.testing.assert_almost_equal(out.lon, lon + 360, 1)
         np.testing.assert_almost_equal(out.lat, lat, 1)
 
-    def test_raise(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_poslons).tas
+    def test_raise(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         with pytest.raises(ValueError):
             subset.subset_gridpoint(
                 da, lon=-72.4, lat=46.1, start_date="2055-03-15", end_date="2055-03-14"
@@ -311,12 +311,14 @@ class TestSubsetGridPoint:
             subset.subset_gridpoint(
                 da, lon=-72.4, lat=46.1, start_date="2055", end_date="2052"
             )
-        da = open_xclim_dataset(self.nc_2dlonlat).tasmax.drop_vars(names=["lon", "lat"])
+        da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat)).tasmax.drop_vars(
+            names=["lon", "lat"]
+        )
         with pytest.raises(Exception):
             subset.subset_gridpoint(da, lon=-72.4, lat=46.1)
 
-    def test_tolerance(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_poslons).tas
+    def test_tolerance(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         lon = -72.5
         lat = 46.2
         out = subset.subset_gridpoint(da, lon=lon, lat=lat, tolerance=1)
@@ -348,8 +350,8 @@ class TestSubsetBbox:
         assert np.all(out.lat <= np.max(self.lat))
         np.testing.assert_array_equal(out.tasmin.shape, out.tasmax.shape)
 
-    def test_simple(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_tasmax_file).tasmax
+    def test_simple(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_tasmax_file)).tasmax
 
         out = subset.subset_bbox(da, lon_bnds=self.lon, lat_bnds=self.lat)
         assert out.lon.values.size != 0
@@ -359,7 +361,7 @@ class TestSubsetBbox:
         assert np.all(out.lat.values >= np.min(self.lat))
         assert np.all(out.lat <= np.max(self.lat))
 
-        da = open_xclim_dataset(self.nc_poslons).tas
+        da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         da = da.assign_coords(lon=(da.lon - 360))
         yr_st = 2050
         yr_ed = 2059
@@ -406,8 +408,8 @@ class TestSubsetBbox:
         np.testing.assert_array_equal(out.time.dt.year.max(), yr_ed)
         np.testing.assert_array_equal(out.time.dt.year.min(), da.time.dt.year.min())
 
-    def test_irregular(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_2dlonlat).tasmax
+    def test_irregular(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat)).tasmax
 
         out = subset.subset_bbox(da, lon_bnds=self.lon, lat_bnds=self.lat)
 
@@ -422,8 +424,8 @@ class TestSubsetBbox:
         assert np.all(out.lat.values[mask1.values] >= np.min(self.lat))
         assert np.all(out.lat.values[mask1.values] <= np.max(self.lat))
 
-    def test_irregular_dataset(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_2dlonlat)
+    def test_irregular_dataset(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat))
         out = subset.subset_bbox(da, lon_bnds=[-150, 100], lat_bnds=[10, 60])
         variables = list(da.data_vars)
         variables.pop(variables.index("tasmax"))
@@ -442,8 +444,8 @@ class TestSubsetBbox:
         # We don't test for equality with previous datasets.
         # Without coords, sel defaults to isel which doesn't include the last element.
 
-    def test_irregular_inverted_dataset(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_2dlonlat)
+    def test_irregular_inverted_dataset(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat))
         da_rev = da.sortby("rlat", ascending=False).sortby("rlon", ascending=False)
         out = subset.subset_bbox(da, lon_bnds=[-150, -100], lat_bnds=[10, 60])
         out_rev = subset.subset_bbox(da_rev, lon_bnds=[-150, -100], lat_bnds=[10, 60])
@@ -487,8 +489,8 @@ class TestSubsetBbox:
         assert np.all(out.lat >= np.min(self.lat))
         assert np.all(out.lat <= np.max(self.lat))
 
-    def test_badly_named_latlons(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_tasmax_file)
+    def test_badly_named_latlons(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_tasmax_file))
         extended_latlons = {"lat": "latitude", "lon": "longitude"}
         da_extended_names = da.rename(extended_latlons)
         out = subset.subset_bbox(
@@ -506,8 +508,8 @@ class TestSubsetBbox:
         out = subset.subset_bbox(da_lonslats, lon_bnds=self.lon, lat_bnds=self.lat)
         assert {"lons", "lats"}.issubset(out.dims)
 
-    def test_single_bounds_rectilinear(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_tasmax_file).tasmax
+    def test_single_bounds_rectilinear(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_tasmax_file)).tasmax
 
         out = subset.subset_bbox(da, lon_bnds=self.lon)
         assert out.lon.values.size != 0
@@ -523,8 +525,8 @@ class TestSubsetBbox:
         assert np.all(out.lat <= np.max(self.lat))
         assert np.all(out.lat.values >= np.min(self.lat))
 
-    def test_single_bounds_curvilinear(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_2dlonlat).tasmax
+    def test_single_bounds_curvilinear(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat)).tasmax
 
         out = subset.subset_bbox(da, lon_bnds=self.lon)
         assert out.lon.values.size != 0
@@ -540,8 +542,8 @@ class TestSubsetBbox:
         assert np.all(out.lat.values[mask1.values] <= np.max(self.lat))
         assert np.all(out.lat.values[mask1.values] >= np.min(self.lat))
 
-    def test_positive_lons(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_poslons).tas
+    def test_positive_lons(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
 
         out = subset.subset_bbox(da, lon_bnds=self.lonGCM, lat_bnds=self.latGCM)
         assert out.lon.values.size != 0
@@ -556,8 +558,8 @@ class TestSubsetBbox:
         )
         assert np.all(out.lon >= np.min(np.asarray(self.lonGCM) + 360))
 
-    def test_time(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_poslons).tas
+    def test_time(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         da = da.assign_coords(lon=(da.lon - 360))
 
         out = subset.subset_bbox(
@@ -600,9 +602,9 @@ class TestSubsetBbox:
         np.testing.assert_array_equal(out.time.max().dt.month, 7)
         np.testing.assert_array_equal(out.time.max().dt.day, 15)
 
-    def test_raise(self, open_xclim_dataset):
+    def test_raise(self, nimbus):
         # 1st case
-        da = open_xclim_dataset(self.nc_poslons).tas
+        da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         with pytest.raises(ValueError):
             subset.subset_bbox(
                 da,
@@ -613,7 +615,9 @@ class TestSubsetBbox:
             )
 
         # 2nd case
-        da = open_xclim_dataset(self.nc_2dlonlat).tasmax.drop_vars(names=["lon", "lat"])
+        da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat)).tasmax.drop_vars(
+            names=["lon", "lat"]
+        )
         with pytest.raises(Exception):
             subset.subset_bbox(da, lon_bnds=self.lon, lat_bnds=self.lat)
 
@@ -630,8 +634,8 @@ class TestSubsetBbox:
         with pytest.raises(ValueError):
             subset.subset_bbox(ds, lon_bnds=(-0.1, 1.0))
 
-    def test_warnings(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_poslons).tas
+    def test_warnings(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         da = da.assign_coords(lon=(da.lon - 360))
 
         with pytest.raises(TypeError):
@@ -696,8 +700,8 @@ class TestSubsetShape:
                     sub[vari].sel(lon=lon1, lat=lat1), ds[vari].sel(lon=lon1, lat=lat1)
                 )
 
-    def test_wraps(self, tmp_netcdf_filename, open_xclim_dataset, clisops_test_data):
-        ds = open_xclim_dataset(self.nc_file)
+    def test_wraps(self, tmp_netcdf_filename, nimbus, clisops_test_data):
+        ds = xr.open_dataset(nimbus.fetch(self.nc_file))
 
         # Polygon crosses meridian, a warning should be raised
         with pytest.warns(UserWarning):
@@ -728,8 +732,8 @@ class TestSubsetShape:
             assert {"tas", "crs"}.issubset(set(f.data_vars))
             subset.subset_shape(ds, clisops_test_data["meridian_multi_geojson"])
 
-    def test_no_wraps(self, tmp_netcdf_filename, open_xclim_dataset, clisops_test_data):
-        ds = open_xclim_dataset(self.nc_file)
+    def test_no_wraps(self, tmp_netcdf_filename, nimbus, clisops_test_data):
+        ds = xr.open_dataset(nimbus.fetch(self.nc_file))
 
         with warnings.catch_warnings(record=True) as record:
             sub = subset.subset_shape(ds, clisops_test_data["poslons_geojson"])
@@ -759,8 +763,8 @@ class TestSubsetShape:
             assert {"tas", "crs"}.issubset(set(f.data_vars))
             subset.subset_shape(ds, clisops_test_data["poslons_geojson"])
 
-    def test_all_neglons(self, open_xclim_dataset, clisops_test_data):
-        ds = open_xclim_dataset(self.nc_file_neglons)
+    def test_all_neglons(self, nimbus, clisops_test_data):
+        ds = xr.open_dataset(nimbus.fetch(self.nc_file_neglons))
 
         with warnings.catch_warnings(record=True) as record:
             sub = subset.subset_shape(ds, clisops_test_data["southern_qc_geojson"])
@@ -778,8 +782,8 @@ class TestSubsetShape:
             not in [q.message for q in record]
         )
 
-    def test_rotated_pole_with_time(self, open_xclim_dataset, clisops_test_data):
-        ds = open_xclim_dataset(self.lons_2d_nc_file)
+    def test_rotated_pole_with_time(self, nimbus, clisops_test_data):
+        ds = xr.open_dataset(nimbus.fetch(self.lons_2d_nc_file))
 
         with warnings.catch_warnings(record=True) as record:
             sub = subset.subset_shape(
@@ -804,10 +808,8 @@ class TestSubsetShape:
             not in [str(q.message) for q in record]
         )
 
-    def test_small_poly_buffer(
-        self, tmp_netcdf_filename, open_xclim_dataset, clisops_test_data
-    ):
-        ds = open_xclim_dataset(self.nc_file)
+    def test_small_poly_buffer(self, tmp_netcdf_filename, nimbus, clisops_test_data):
+        ds = xr.open_dataset(nimbus.fetch(self.nc_file))
 
         with pytest.raises(ValueError):
             subset.subset_shape(ds, clisops_test_data["small_geojson"])
@@ -828,8 +830,8 @@ class TestSubsetShape:
         with xr.open_dataset(filename_or_obj=tmp_netcdf_filename) as f:
             assert {"tas", "crs"}.issubset(set(f.data_vars))
 
-    def test_mask_multiregions(self, open_xclim_dataset, clisops_test_data):
-        ds = open_xclim_dataset(self.nc_file)
+    def test_mask_multiregions(self, nimbus, clisops_test_data):
+        ds = xr.open_dataset(nimbus.fetch(self.nc_file))
         regions = gpd.read_file(clisops_test_data["multi_regions_geojson"])
         regions.set_index("id")
         mask = subset.create_mask(
@@ -842,9 +844,9 @@ class TestSubsetShape:
     @pytest.mark.skipif(
         xesmf is None, reason="xESMF >= 0.6.2 is needed for average_shape."
     )
-    def test_weight_masks_multiregions(self, open_xclim_dataset, clisops_test_data):
+    def test_weight_masks_multiregions(self, nimbus, clisops_test_data):
         # rename is due to a small limitation of xESMF 0.5.2
-        ds = open_xclim_dataset(self.nc_file).rename(bnds="bounds")
+        ds = xr.open_dataset(nimbus.fetch(self.nc_file).rename(bnds="bounds"))
         regions = gpd.read_file(clisops_test_data["multi_regions_geojson"]).set_index(
             "id"
         )
@@ -854,8 +856,8 @@ class TestSubsetShape:
         np.testing.assert_array_equal(masks.geom.values, regions.index)
         np.testing.assert_allclose(masks.max("geom").sum(), 2.900, 3)
 
-    def test_subset_multiregions(self, open_xclim_dataset, clisops_test_data):
-        ds = open_xclim_dataset(self.nc_file)
+    def test_subset_multiregions(self, nimbus, clisops_test_data):
+        ds = xr.open_dataset(nimbus.fetch(self.nc_file))
         regions = gpd.read_file(clisops_test_data["multi_regions_geojson"])
         regions.set_index("id")
         ds_sub = subset.subset_shape(ds, shape=regions)
@@ -891,8 +893,8 @@ class TestSubsetShape:
         exp = da.isel(site=[1, 3, 4, 5, 7])
         xr.testing.assert_identical(sub, exp)
 
-    def test_shapefile_wrapped_wgs84(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_file)
+    def test_shapefile_wrapped_wgs84(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_file))
         poly_wgs84 = Polygon([[-90, 40], [-70, 20], [-50, 40], [-70, 60]])
         poly_wrapped = Polygon(
             [[-90 + 360, 40], [-70 + 360, 20], [-50 + 360, 40], [-70 + 360, 60]]
@@ -903,8 +905,8 @@ class TestSubsetShape:
             subset.subset_shape(da, shape_wrapped)
         )
 
-    def test_shapefile_utm(self, open_xclim_dataset, clisops_test_data):
-        da = open_xclim_dataset(self.nc_file)
+    def test_shapefile_utm(self, nimbus, clisops_test_data):
+        da = xr.open_dataset(nimbus.fetch(self.nc_file))
         regions = gpd.read_file(clisops_test_data["multi_regions_geojson"]).set_index(
             "id"
         )
@@ -978,8 +980,8 @@ class TestSubsetLevel:
         100,
     ]
 
-    def test_simple(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_plev).o3
+    def test_simple(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_plev)).o3
         lev_st = 100000.0
         lev_ed = 100.0
 
@@ -989,9 +991,9 @@ class TestSubsetLevel:
         np.testing.assert_array_equal(out.plev.min(), lev_ed)
         np.testing.assert_array_equal(out.plev.max(), lev_st)
 
-    def test_level_outofbounds(self, caplog, open_xclim_dataset):
+    def test_level_outofbounds(self, caplog, nimbus):
         caplog.set_level("WARNING", logger="clisops")
-        da = open_xclim_dataset(self.nc_plev).o3
+        da = xr.open_dataset(nimbus.fetch(self.nc_plev)).o3
         lev_st = 10000000
         lev_ed = 10
 
@@ -1010,10 +1012,10 @@ class TestSubsetLevel:
             in caplog.text
         )
 
-    def test_warnings(self, caplog, open_xclim_dataset):
+    def test_warnings(self, caplog, nimbus):
         caplog.set_level("WARNING", logger="clisops")
 
-        da = open_xclim_dataset(self.nc_plev).o3
+        da = xr.open_dataset(nimbus.fetch(self.nc_plev)).o3
 
         with pytest.raises(TypeError):
             subset.subset_level(da, first_level=da, last_level=da)
@@ -1033,8 +1035,8 @@ class TestSubsetLevel:
             }
             assert [m in caplog.text for m in msgs]
 
-    def test_level_first_only(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_plev).o3
+    def test_level_first_only(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_plev)).o3
         lev_st = 100000
 
         # first level only
@@ -1045,8 +1047,8 @@ class TestSubsetLevel:
         np.testing.assert_array_equal(out.plev.values[0], da.plev.values[0])
         np.testing.assert_array_equal(out.plev.values[-1], da.plev.values[0])
 
-    def test_nudge_levels(self, open_xclim_dataset):
-        da = open_xclim_dataset(self.nc_plev).o3
+    def test_nudge_levels(self, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_plev)).o3
         # good_levels = [40000, 30000]
         # good_indices = [6, 7]
 
@@ -1080,7 +1082,7 @@ class TestGridPolygon:
         assert poly == Polygon([(-200, -60), (-200, 60), (-100, 60), (-100, -60)])
 
     @pytest.mark.parametrize("mode", ["bbox"])
-    def test_curvilinear(self, mode, open_xclim_dataset):
+    def test_curvilinear(self, mode, nimbus):
         """
         Note that there is at least one error in the lat and lon vertices.
         >>> print(ds.vertices_latitude[0, 283].data)
@@ -1090,8 +1092,8 @@ class TestGridPolygon:
         """
         from shapely.geometry import MultiPoint, Point
 
-        ds = open_xclim_dataset(
-            "cmip6/sic_SImon_CCCma-CanESM5_ssp245_r13i1p2f1_2020.nc"
+        ds = xr.open_dataset(
+            nimbus.fetch("cmip6/sic_SImon_CCCma-CanESM5_ssp245_r13i1p2f1_2020.nc")
         )
 
         poly = subset._curvilinear_grid_exterior_polygon(ds, mode=mode)

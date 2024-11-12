@@ -1,7 +1,8 @@
 from collections.abc import Sequence
 
 from clisops.exceptions import InvalidParameterValue, MissingParameterValue
-from clisops.parameter import _BaseParameter, collection, parse_sequence
+from clisops.parameter._utils import collection, parse_sequence
+from clisops.parameter.base_parameter import _BaseParameter
 from clisops.utils.file_utils import FileMapper
 
 
@@ -12,7 +13,7 @@ class CollectionParameter(_BaseParameter):
     | A collection can be input as:
     | A string of comma separated values: "cmip5.output1.INM.inmcm4.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga,cmip5.output1.MPI-M.MPI-ESM-LR.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga"
     | A sequence of strings: e.g. ("cmip5.output1.INM.inmcm4.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga", "cmip5.output1.MPI-M.MPI-ESM-LR.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga")
-    | A sequence of roocs_utils.utils.file_utils.FileMapper objects
+    | A sequence of clisops.utils.file_utils.FileMapper objects
 
     Validates the input and parses the items.
 

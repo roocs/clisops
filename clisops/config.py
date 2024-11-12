@@ -2,10 +2,9 @@ import os
 from configparser import ConfigParser
 from itertools import chain
 from pathlib import Path
-from typing import Optional
 
-# Global CONFIG used by other packages
-_CONFIG: Optional[dict] = None
+# Global _CONFIG used by other packages
+_CONFIG = {}
 
 
 def reload_config(package=None):
@@ -14,8 +13,6 @@ def reload_config(package=None):
     Used for forcibly reloading the configuration from the config file, particularly useful for pytesting mock imports.
     """
     global _CONFIG
-
-    _CONFIG = None
     _load_config(package)
 
     for key, value in _CONFIG["environment"].items():
@@ -33,20 +30,18 @@ def get_config(package=None):
     return _CONFIG
 
 
-def _gather_config_files(package=None):
+def _gather_config_files(package: str | os.PathLike[str] | Path | None = None):
     conf_files = []
-    roocs_utils_config = Path(__file__).parent.joinpath("etc").joinpath("roocs.ini")
+    _config = Path(__file__).parent.joinpath("etc").joinpath("roocs.ini")
 
     # add default config file
     # FIXME: we should be using importlib.resources to get the default config file
-    if not roocs_utils_config.is_file():
-        print(
-            f"[WARN] Cannot load default config file from: {roocs_utils_config.as_posix()}"
-        )
+    if not _config.is_file():
+        print(f"[WARN] Cannot load default config file from: {_config.as_posix()}")
     else:
-        conf_files.append(roocs_utils_config)
+        conf_files.append(_config)
     if package:
-        pkg_config = Path(package.__file__).parent.joinpath("etc").joinpath("roocs.ini")
+        pkg_config = Path(package).parent.joinpath("etc").joinpath("roocs.ini")
         if pkg_config.is_file():
             conf_files.append(pkg_config)
 

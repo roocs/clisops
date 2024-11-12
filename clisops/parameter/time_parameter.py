@@ -1,7 +1,8 @@
 import datetime
 
 from clisops.exceptions import InvalidParameterValue
-from clisops.parameter import _BaseIntervalOrSeriesParameter, parse_datetime
+from clisops.parameter._utils import parse_datetime
+from clisops.parameter.base_parameter import _BaseIntervalOrSeriesParameter
 
 
 class TimeParameter(_BaseIntervalOrSeriesParameter):

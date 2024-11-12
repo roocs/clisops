@@ -1,4 +1,3 @@
-# NOTE: This has been copied over from CLISOPS with the intention to eventually merge roocs-utils and clisops
 import importlib.resources as ilr
 import os
 import warnings
@@ -107,7 +106,9 @@ def write_roocs_cfg(
     cfg_template = template or default_template
     roocs_config = Path(cache_dir, "roocs.ini")
     cfg = Template(cfg_template).render(
-        base_dir=Path(ESGF_TEST_DATA_CACHE_DIR).joinpath(ESGF_TEST_DATA_VERSION)
+        base_dir=Path(ESGF_TEST_DATA_CACHE_DIR)
+        .joinpath(ESGF_TEST_DATA_VERSION)
+        .as_posix()
     )
     with open(roocs_config, "w") as fp:
         fp.write(cfg)
@@ -462,19 +463,19 @@ def load_registry(branch: str, repo: str):
     remote_registry = audit_url(f"{repo}{branch}/data/{project}_registry.txt")
     if branch != default_testdata_version:
         custom_registry_folder = Path(
-            str(ilr.files("roocs_utils").joinpath(f"utils/registries/{branch}"))
+            str(ilr.files("clisops").joinpath(f"utils/registries/{branch}"))
         )
         custom_registry_folder.mkdir(parents=True, exist_ok=True)
         registry_file = custom_registry_folder.joinpath(f"{project}_registry.txt")
         urlretrieve(remote_registry, registry_file)  # noqa: S310
     elif repo != default_testdata_repo_url:
         registry_file = Path(
-            str(ilr.files("roocs_utils").joinpath(f"utils/{project}_registry.txt"))
+            str(ilr.files("clisops").joinpath(f"utils/{project}_registry.txt"))
         )
         urlretrieve(remote_registry, registry_file)  # noqa: S310
 
     registry_file = Path(
-        str(ilr.files("roocs_utils").joinpath(f"utils/{project}_registry.txt"))
+        str(ilr.files("clisops").joinpath(f"utils/{project}_registry.txt"))
     )
     if not registry_file.exists():
         raise FileNotFoundError(f"Registry file not found: {registry_file}")

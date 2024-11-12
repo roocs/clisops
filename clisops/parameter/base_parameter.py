@@ -1,5 +1,5 @@
 from clisops.exceptions import InvalidParameterValue
-from clisops.parameter import interval, series
+from clisops.parameter._utils import interval, series
 
 
 class _BaseParameter:

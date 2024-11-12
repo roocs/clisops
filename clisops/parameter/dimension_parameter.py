@@ -1,9 +1,9 @@
 from collections.abc import Sequence
 
-from roocs_utils.xarray_utils.xarray_utils import known_coord_types
-
 from clisops.exceptions import InvalidParameterValue
-from clisops.parameter import _BaseParameter, dimensions, parse_sequence
+from clisops.parameter._utils import dimensions, parse_sequence
+from clisops.parameter.base_parameter import _BaseParameter
+from clisops.utils.dataset_utils import known_coord_types
 
 
 class DimensionParameter(_BaseParameter):

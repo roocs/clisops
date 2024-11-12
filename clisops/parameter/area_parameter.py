@@ -1,7 +1,8 @@
 from collections.abc import Sequence
 
 from clisops.exceptions import InvalidParameterValue
-from clisops.parameter import _BaseParameter, area, parse_sequence, to_float
+from clisops.parameter._utils import area, parse_sequence, to_float
+from clisops.parameter.base_parameter import _BaseParameter
 
 
 class AreaParameter(_BaseParameter):

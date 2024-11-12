@@ -2,7 +2,8 @@ import os
 
 import pytest
 import xarray as xr
-from roocs_utils import config, project_utils
+
+from clisops import config, project_utils
 
 
 @pytest.fixture(scope="module")
@@ -86,10 +87,12 @@ class TestProjectUtils:
 
     def test_get_project_base_dir(self):
         cmip5_base_dir = project_utils.get_project_base_dir("cmip5")
-        assert cmip5_base_dir == "/badc/cmip5/data/cmip5"
+        assert cmip5_base_dir == "/mnt/lustre/work/kd0956/CMIP5/data/cmip5"
 
         c3s_cordex_base_dir = project_utils.get_project_base_dir("c3s-cordex")
-        assert c3s_cordex_base_dir == "/gws/nopw/j04/cp4cds1_vol1/data/c3s-cordex"
+        assert (
+            c3s_cordex_base_dir == "/mnt/lustre/work/ik1017/C3SCORDEX/data/c3s-cordex"
+        )
 
         with pytest.raises(Exception) as exc:
             project_utils.get_project_base_dir("test")
@@ -109,7 +112,7 @@ class TestDatasetMapper:
     def test_data_path(self):
         assert (
             project_utils.DatasetMapper(self.dset).data_path
-            == "/badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/SImon/siconc/gn/latest"
+            == "/mnt/lustre/work/ik1017/CMIP6/data/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/SImon/siconc/gn/latest"
         )
 
     def test_ds_id(self):
@@ -120,7 +123,8 @@ class TestDatasetMapper:
 
     def test_base_dir(self):
         assert (
-            project_utils.DatasetMapper(self.dset).base_dir == "/badc/cmip6/data/CMIP6"
+            project_utils.DatasetMapper(self.dset).base_dir
+            == "/mnt/lustre/work/ik1017/CMIP6/data/CMIP6"
         )
 
     @pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")

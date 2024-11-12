@@ -1,5 +1,6 @@
 from clisops.exceptions import InvalidParameterValue
-from clisops.parameter import _BaseIntervalOrSeriesParameter, to_float
+from clisops.parameter._utils import to_float
+from clisops.parameter.base_parameter import _BaseIntervalOrSeriesParameter
 
 
 class LevelParameter(_BaseIntervalOrSeriesParameter):
