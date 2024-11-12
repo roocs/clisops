@@ -156,7 +156,7 @@ ignore_notebooks = true
 pep621_dev_dependency_groups = ["dev", "docs", "extras"]
 
 [tool.deptry.per_rule_ignores]
-DEP002 = ["bottleneck", "cartopy", "netcdf4", "zarr"]
+DEP002 = ["aiohttp", "bottleneck", "cartopy", "netcdf4", "requests", "zarr"]
 DEP003 = ["clisops"] # should be removed when restructuring to src layout
 DEP004 = ["xesmf"]
 
