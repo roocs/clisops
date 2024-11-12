@@ -74,7 +74,7 @@ XCLIM_TEST_DATA_CACHE_DIR = os.getenv(
 def write_roocs_cfg(
     template: Optional[str] = None,
     cache_dir: Union[str, Path] = default_esgf_test_data_cache,
-):
+) -> str:
     default_template = """
     [project:cmip5]
     base_dir = {{ base_dir }}/badc/cmip5/data/cmip5
@@ -112,8 +112,7 @@ def write_roocs_cfg(
     with open(roocs_config, "w") as fp:
         fp.write(cfg)
 
-    # point to roocs cfg in environment
-    os.environ["ROOCS_CONFIG"] = roocs_config.as_posix()
+    return roocs_config.as_posix()
 
 
 def get_esgf_file_paths(esgf_cache_dir: Union[str, os.PathLike[str]]):
@@ -361,9 +360,8 @@ def get_kerchunk_datasets():
         )
     }
     kerchunk["CMIP6_KERCHUNK_HTTPS_OPEN_ZST"] = (
-        kerchunk["CMIP6_KERCHUNK_HTTPS_OPEN_JSON"] + ".zst"
+        f"{kerchunk['CMIP6_KERCHUNK_HTTPS_OPEN_JSON']}.zst"
     )
-
     return kerchunk
 
 

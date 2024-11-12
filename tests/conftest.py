@@ -405,6 +405,15 @@ def mini_esgf_data(stratus):
     )
 
 
+@pytest.fixture(scope="session")
+def esgf_kerchunk_urls():
+    kerchunk = (
+        "https://gws-access.jasmin.ac.uk/public/cmip6_prep/eodh-eocis/kc-indexes-cmip6-http-v1/"
+        "CMIP6.CMIP.MOHC.UKESM1-1-LL.1pctCO2.r1i1p1f2.Amon.tasmax.gn.v20220513.json"
+    )
+    return {"JSON": kerchunk, "ZST": f"{kerchunk}.zst"}
+
+
 @pytest.fixture(scope="session", autouse=True)
 def clisops_test_data():
     test_data = Path(__file__).parent.absolute().joinpath("data")

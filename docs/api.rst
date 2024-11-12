@@ -162,7 +162,6 @@ Parameters
    :undoc-members:
    :show-inheritance:
 
-
 Project Utils
 =============
 
@@ -171,17 +170,6 @@ Project Utils
    :members:
    :undoc-members:
    :show-inheritance:
-
-
-Xarray Utils
-============
-
-.. automodule:: roocs_utils.xarray_utils.xarray_utils
-   :noindex:
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 
 Other utilities
 ===============

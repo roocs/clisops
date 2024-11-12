@@ -19,6 +19,7 @@
 # relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
 #
+import datetime
 import os
 import sys
 
@@ -74,8 +75,10 @@ master_doc = "index"
 
 # General information about the project.
 project = "clisops"
-copyright = "2020, Elle Smith"
-author = "Elle Smith"
+copyright = (
+    f"2020-{datetime.datetime.now().year}, United Kingdom Research and Innovation"
+)
+author = "Eleanor Smith"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout
@@ -151,7 +154,7 @@ latex_elements = {
 # (source start file, target name, title, author, documentclass
 # [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, "clisops.tex", "clisops Documentation", "Elle Smith", "manual"),
+    (master_doc, "clisops.tex", "clisops Documentation", author, "manual"),
 ]
 
 

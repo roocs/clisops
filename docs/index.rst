@@ -2,17 +2,24 @@ Welcome to clisops's documentation!
 ===================================
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Contents:
+    :maxdepth: 2
+    :caption: Contents:
 
-   readme
-   installation
-   usage
-   api
-   notebooks/index
-   contributing
-   authors
-   history
+    readme
+    installation
+    usage
+    api
+    configuration
+    notebooks/index
+    contributing
+    authors
+    history
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Package Structure
+
+   apidoc/modules
 
 Indices and tables
 ==================
