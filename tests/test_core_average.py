@@ -3,11 +3,11 @@ import numpy as np
 import pytest
 import xarray as xr
 from packaging.version import Version
-from roocs_utils.xarray_utils import xarray_utils as xu
 
 from clisops.core import average
 from clisops.core.regrid import XESMF_MINIMUM_VERSION
 from clisops.exceptions import InvalidParameterValue
+from clisops.utils.dataset_utils import open_xr_dataset as xu
 
 try:
     import xesmf

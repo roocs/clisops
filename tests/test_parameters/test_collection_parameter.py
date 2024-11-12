@@ -1,12 +1,11 @@
 import pytest
-from roocs_utils.parameter.collection_parameter import CollectionParameter, collection
 
 from clisops.exceptions import InvalidParameterValue, MissingParameterValue
+from clisops.parameter import CollectionParameter, collection
 
 type_error = (
     "Input type of <{}> not allowed. Must be one of: "
-    "[<class 'collections.abc.Sequence'>, <class 'str'>, <class "
-    "'roocs_utils.parameter.param_utils.Series'>, <class 'roocs_utils.utils.file_utils.FileMapper'>]"
+    "[<class 'collections.abc.Sequence'>, <class 'str'>, <class 'clisops.parameter.Series'>, <class 'clisops.utils.file_utils.FileMapper'>]"
 )
 
 
@@ -57,7 +56,7 @@ def test_validate_error_id():
         CollectionParameter(coll)
     assert (
         str(exc.value) == "Each id in a collection must be a string or "
-        "an instance of <class 'roocs_utils.utils.file_utils.FileMapper'>"
+        "an instance of <class 'clisops.utils.file_utils.FileMapper'>"
     )
 
 

@@ -1,7 +1,7 @@
 import pytest
-from roocs_utils.parameter.dimension_parameter import DimensionParameter, dimensions
 
 from clisops.exceptions import InvalidParameterValue
+from clisops.parameter import DimensionParameter, dimensions
 
 
 def test__str__():

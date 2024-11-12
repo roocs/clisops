@@ -1,15 +1,13 @@
 import datetime
 
 import pytest
-from roocs_utils.parameter.level_parameter import LevelParameter
-from roocs_utils.parameter.param_utils import level_interval, level_series
 
 from clisops.exceptions import InvalidParameterValue
+from clisops.parameter import LevelParameter, level_interval, level_series
 
 type_err = (
-    "Input type of <{}> not allowed. Must be one of: [<class "
-    "'roocs_utils.parameter.param_utils.Interval'>, "
-    "<class 'roocs_utils.parameter.param_utils.Series'>, <class 'NoneType'>]"
+    "Input type of <{}> not allowed. Must be one of: "
+    "[<class 'clisops.parameter.Interval'>, <class 'clisops.parameter.Series'>, <class 'NoneType'>]"
 )
 
 

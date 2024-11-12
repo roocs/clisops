@@ -26,7 +26,6 @@ Core regrid functionality
    :undoc-members:
    :show-inheritance:
 
-
 Subset operation
 ================
 
@@ -35,7 +34,6 @@ Subset operation
    :members:
    :undoc-members:
    :show-inheritance:
-
 
 Average operations
 ==================
@@ -55,7 +53,6 @@ Regrid operation
    :undoc-members:
    :show-inheritance:
 
-
 Common functions
 ================
 
@@ -64,7 +61,6 @@ Common functions
    :members:
    :undoc-members:
    :show-inheritance:
-
 
 Output Utilities
 ================
@@ -75,7 +71,6 @@ Output Utilities
    :undoc-members:
    :show-inheritance:
 
-
 File Namers
 ===========
 
@@ -85,7 +80,6 @@ File Namers
    :undoc-members:
    :show-inheritance:
 
-
 Dataset Utilities
 =================
 
@@ -94,7 +88,6 @@ Dataset Utilities
    :members:
    :undoc-members:
    :show-inheritance:
-
 
 Time Utilities
 ==============
@@ -108,55 +101,49 @@ Time Utilities
 Parameters
 ==========
 
-.. automodule:: roocs_utils.parameter.base_parameter
+.. automodule:: clisops.parameter.base_parameter
    :noindex:
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: roocs_utils.parameter.area_parameter
+.. automodule:: clisops.parameter.area_parameter
    :noindex:
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: roocs_utils.parameter.collection_parameter
+.. automodule:: clisops.parameter.collection_parameter
    :noindex:
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: roocs_utils.parameter.level_parameter
+.. automodule:: clisops.parameter.level_parameter
    :noindex:
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: roocs_utils.parameter.time_parameter
+.. automodule:: clisops.parameter.time_parameter
    :noindex:
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: roocs_utils.parameter.time_components_parameter
+.. automodule:: clisops.parameter.time_components_parameter
    :noindex:
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: roocs_utils.parameter.dimension_parameter
+.. automodule:: clisops.parameter.dimension_parameter
    :noindex:
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: roocs_utils.parameter.param_utils
-   :noindex:
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-.. automodule:: roocs_utils.parameter.parameterise
+.. automodule:: clisops.parameter.parameterise
    :noindex:
    :members:
    :undoc-members:
@@ -165,7 +152,7 @@ Parameters
 Project Utils
 =============
 
-.. automodule:: roocs_utils.project_utils
+.. automodule:: clisops.project_utils
    :noindex:
    :members:
    :undoc-members:
@@ -174,19 +161,19 @@ Project Utils
 Other utilities
 ===============
 
-.. automodule:: roocs_utils.utils.common
+.. automodule:: clisops.utils.common
    :noindex:
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: roocs_utils.utils.time_utils
+.. automodule:: clisops.utils.time_utils
    :noindex:
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: roocs_utils.utils.file_utils
+.. automodule:: clisops.utils.file_utils
    :noindex:
    :members:
    :undoc-members:

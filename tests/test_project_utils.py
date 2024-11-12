@@ -211,7 +211,7 @@ def test_get_filepaths():
 
 class TestDset:
     def test_derive_dset(self):
-        from roocs_utils.project_utils import derive_dset
+        from clisops.project_utils import derive_dset
 
         # c3s-cmip6
         dset = "c3s-cmip6.CMIP.MIROC.MIROC6.historical.r1i1p1f1.SImon.siconc.gn.latest"
@@ -255,7 +255,7 @@ class TestDset:
         assert ds_id == "/pool/data/c3s-ipcc-ar6-atlas/cd/CMIP6/historical/yr"
 
     def test_switch_dset(self):
-        from roocs_utils.project_utils import switch_dset
+        from clisops.project_utils import switch_dset
 
         dset = "/badc/cmip6/data/CMIP6/CMIP/MIROC/MIROC6/historical/r1i1p1f1/SImon/siconc/gn/latest/*.nc"
         ds_id = switch_dset(dset)
@@ -355,7 +355,7 @@ class TestFileMapper:
 
 
 def test_url_to_file_path(cds_domain):
-    from roocs_utils.project_utils import url_to_file_path
+    from clisops.project_utils import url_to_file_path
 
     url = (
         f"{cds_domain}/thredds/fileServer/esg_c3s-cmip6/CMIP/E3SM-Project/E3SM-1-1"
