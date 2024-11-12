@@ -43,6 +43,7 @@ classifiers = [
 ]
 dynamic = ["description", "version"]
 dependencies = [
+  "aiohttp", # Needed for HTTPFileSystem
   "bottleneck >=1.3.1",
   "cartopy >=0.23",
   # cf-xarray is differently named on conda-forge
@@ -60,6 +61,7 @@ dependencies = [
   "platformdirs >=4.0",
   "pooch >=1.8.0",
   "pyproj >=3.3.0",
+  "requests", # Needed for HTTPFileSystem
   # roocs_grids is differently named on conda-forge
   "roocs_grids >=0.1.2",
   "scipy>=1.9.0",
