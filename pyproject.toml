@@ -62,7 +62,6 @@ dependencies = [
   "pyproj >=3.3.0",
   # roocs_grids is differently named on conda-forge
   "roocs_grids >=0.1.2",
-  "roocs-utils >=0.6.7,<0.7",
   "scipy>=1.9.0",
   "shapely >=1.9",
   "xarray >=2022.9.0",

@@ -24,7 +24,6 @@ dependencies:
  - pooch >=1.8.0
  - pyproj >=3.3.0
  - roocs-grids >=0.1.2
- - roocs-utils >=0.6.7,<0.7
  - scipy >=1.9.0
  - shapely >=1.9
  - xarray >=2022.6.0,<2023.3.0 # See: https://github.com/pydata/xarray/issues/7794
