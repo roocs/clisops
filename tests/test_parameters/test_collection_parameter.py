@@ -5,7 +5,7 @@ from clisops.parameter import CollectionParameter, collection
 
 type_error = (
     "Input type of <{}> not allowed. Must be one of: "
-    "[<class 'collections.abc.Sequence'>, <class 'str'>, <class 'clisops.parameter.Series'>, <class 'clisops.utils.file_utils.FileMapper'>]"
+    "[<class 'collections.abc.Sequence'>, <class 'str'>, <class 'clisops.parameter._utils.Series'>, <class 'clisops.utils.file_utils.FileMapper'>]"
 )
 
 

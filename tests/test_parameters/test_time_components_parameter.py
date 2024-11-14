@@ -5,7 +5,7 @@ from clisops.parameter import TimeComponentsParameter, string_to_dict, time_comp
 
 type_error = (
     "Input type of <{}> not allowed. Must be one of: "
-    "[<class 'dict'>, <class 'str'>, <class 'clisops.parameter.TimeComponents'>, <class 'NoneType'>]"
+    "[<class 'dict'>, <class 'str'>, <class 'clisops.parameter._utils.TimeComponents'>, <class 'NoneType'>]"
 )
 
 
