@@ -846,7 +846,7 @@ class TestSubsetShape:
     )
     def test_weight_masks_multiregions(self, nimbus, clisops_test_data):
         # rename is due to a small limitation of xESMF 0.5.2
-        ds = xr.open_dataset(nimbus.fetch(self.nc_file).rename(bnds="bounds"))
+        ds = xr.open_dataset(nimbus.fetch(self.nc_file)).rename(bnds="bounds")
         regions = gpd.read_file(clisops_test_data["multi_regions_geojson"]).set_index(
             "id"
         )
