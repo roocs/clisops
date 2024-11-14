@@ -57,7 +57,7 @@ lint: ## check style with flake8
 	python -m deptry .
 
 test: ## run tests quickly with the default Python
-	python -m pytest
+	python -m pytest -m "not slow"
 
 test-all: ## run tests on every Python version with tox
 	tox
