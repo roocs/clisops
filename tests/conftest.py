@@ -14,16 +14,11 @@ from clisops.utils.testing import stratus as _stratus
 from clisops.utils.testing import write_roocs_cfg as _write_roocs_cfg
 
 
-# @pytest.fixture
-def write_roocs_cfg(stratus, tmp_path) -> str:
+@pytest.fixture(autouse=True)
+def roocs_cfg(tmp_path):
     cfg_path = _write_roocs_cfg(None, tmp_path)
-    # cfg_path = _write_roocs_cfg(stratus.path, tmp_path)
     # point to roocs cfg in environment
     os.environ["ROOCS_CONFIG"] = cfg_path
-    return cfg_path
-
-
-write_roocs_cfg(None, "/tmp")
 
 
 @pytest.fixture
