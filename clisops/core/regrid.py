@@ -123,7 +123,7 @@ def weights_cache_flush(
     weights_dir_init : str, optional
         Directory name to reinitialize the local weights cache in.
         Will be created if it does not exist.
-        The default is _CONFIG["clisops:grid_weights"]["local_weights_dir"] as defined in roocs.ini
+        The default is CONFIG["clisops:grid_weights"]["local_weights_dir"] as defined in roocs.ini
         (or as redefined by a manual weights_cache_init call).
     dryrun : bool, optional
         If True, it will only print all files that would get deleted. The default is False.
@@ -135,7 +135,7 @@ def weights_cache_flush(
     -------
     None
     """
-    # Read weights_dir from _CONFIG
+    # Read weights_dir from CONFIG
     weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
 
     if dryrun:
@@ -172,7 +172,7 @@ def weights_cache_flush(
 class Grid:
     """Create a Grid object that is suitable to serve as source or target grid of the Weights class.
 
-    Pre-processes coordinate variables of input dataset (eg. create or read dataset from input,
+    Pre-processes coordinate variables of input dataset (e.g. create or read dataset from input,
     reformat, generate bounds, identify duplicated and collapsing cells, determine zonal / east-west extent).
 
     Parameters
@@ -1730,7 +1730,7 @@ class Weights:
 
     def _compute(self):
         """Generate the weights with xESMF or read them from cache."""
-        # Read weights_dir from _CONFIG
+        # Read weights_dir from CONFIG
         weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
 
         # Check if bounds are present in case of conservative remapping
@@ -1846,7 +1846,7 @@ class Weights:
     @check_weights_dir
     def _save_to_cache(self, store_weights: FileLock | None | bool) -> None:
         """Save Weights and source/target grids to cache (netCDF), including metadata (JSON)."""
-        # Read weights_dir from _CONFIG
+        # Read weights_dir from CONFIG
         weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
 
         # Compile metadata
@@ -1925,7 +1925,7 @@ class Weights:
         str or None
             Value for the given key, or None.
         """
-        # Read weights_dir from _CONFIG
+        # Read weights_dir from CONFIG
         weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
 
         # Return requested value if weight and metadata files are present, else return None
