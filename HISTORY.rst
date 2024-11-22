@@ -1,6 +1,21 @@
 Version History
 ===============
 
+v0.15.0 (unreleased)
+--------------------
+
+New Features
+^^^^^^^^^^^^
+* The functionality of the `roocs-utils` library has been folded into `clisops`. `roocs-utils` is no longer a dependency of `clisops` (#368, #370).
+* The `CONFIG` settings have been updated to reflect the changes in `roocs-utils` and those required in `clisops` (#370).
+* Several development tooling libraries have been updated to their latest versions (#368).
+
+Other Changes
+^^^^^^^^^^^^^
+* The `pytest` testing suite has been updated to reflect the changes in the `roocs-utils` library and the new `clisops` configuration settings (#368, #370):
+    * Tests previously found in `roocs-utils` have migrated to `clisops`.
+    * ``xclim.testing.utils.open_dataset()`` has been deprecated in favour of ``xclim.testing.utils.nimbus().fetch()``.
+
 v0.14.1 (2024-11-05)
 --------------------
 
