@@ -1321,14 +1321,10 @@ class Grid:
             Source Grid object to transfer the coords from.
         keep_attrs : bool or str, optional
             Whether to transfer also the global attributes.
-                False: do not transfer the global attributes.
-                "target": preserve the global attributes of the target Grid object.
-                True: transfer the global attributes from source to target Grid object.
-            The default is True.
-
-        Returns
-        -------
-        None
+            - `False`: do not transfer the global attributes.
+            - "target": preserve the global attributes of the target Grid object.
+            - `True`: transfer the global attributes from source to target Grid object.
+            The default is `True`.
         """
         # Skip all coords with horizontal dimensions or
         #  coords with no dimensions that are not listed

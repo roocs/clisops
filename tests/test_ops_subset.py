@@ -384,7 +384,7 @@ def test_time_slices_in_subset_rh(mini_esgf_data):
     temp_max_file_size = "10KB"
     CONFIG["clisops:write"]["file_size_limit"] = temp_max_file_size
 
-    with xr.open_dataset(mini_esgf_data["CMIP5_RH"]) as ds:
+    with xr.open_mfdataset(mini_esgf_data["CMIP5_RH"]) as ds:
         outputs = subset(
             ds=ds,
             time=time_interval(start_time, end_time),

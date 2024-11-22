@@ -4,6 +4,7 @@ import warnings
 
 from loguru import logger
 
+from clisops.__version__ import __version__
 from clisops.config import get_config
 from clisops.utils.common import enable_logging
 

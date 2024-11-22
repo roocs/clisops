@@ -164,7 +164,7 @@ class Operation:
     def _remove_redundant_coordinates_attr(ds):
         """This method removes the coordinates attribute added by xarray.
 
-         Example
+        Example
         -------
         .. code-block:: cpp
 
