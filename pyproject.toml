@@ -177,6 +177,7 @@ include = [
   "docs/make.bat",
   "docs/notebooks/*.ipynb",
   "requirements_upstream.txt",
+  "roocs-utils.HISTORY.txt",
   "setup.cfg",
   "tests/*.py",
   "tests/data/*.json",
