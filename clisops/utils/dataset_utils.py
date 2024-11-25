@@ -8,9 +8,10 @@ import cftime
 import fsspec
 import numpy as np
 import xarray as xr
-from roocs_utils.exceptions import InvalidParameterValue
-from roocs_utils.project_utils import dset_to_filepaths
-from roocs_utils.utils.time_utils import str_to_AnyCalendarDateTime
+
+from clisops.exceptions import InvalidParameterValue
+from clisops.project_utils import dset_to_filepaths
+from clisops.utils.time_utils import str_to_AnyCalendarDateTime
 
 known_coord_types = ["time", "level", "latitude", "longitude", "realization"]
 

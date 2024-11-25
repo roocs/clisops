@@ -1,10 +1,10 @@
 import pytest
 import xarray as xr
-from roocs_utils.exceptions import InvalidProject
-from roocs_utils.parameter.param_utils import time_interval
 
 from clisops import CONFIG
+from clisops.exceptions import InvalidProject
 from clisops.ops.subset import subset
+from clisops.parameter import time_interval
 from clisops.utils.file_namers import get_file_namer
 
 

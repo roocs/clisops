@@ -222,18 +222,18 @@ def test_grid_init_ds_tas_cordex(mini_esgf_data):
 def test_grid_init_ds_cordex_erroneous_bounds(mini_esgf_data):
     with xr.open_dataset(mini_esgf_data["CORDEX_ERRONEOUS_BOUNDS"]) as ds:
         # Warnings will be raised due to erroneous bounds
-        with pytest.warns(UserWarning) as issuedWarnings:
+        with pytest.warns(UserWarning) as issued_warnings:
             grid = Grid(ds=ds)
-            if not issuedWarnings:
+            if not issued_warnings:
                 raise RuntimeError("Expected warnings.")
 
-        issuedWarnings = [
+        issued_warnings = [
             w
-            for w in issuedWarnings
+            for w in issued_warnings
             if "Latitude and longitude bounds definition is invalid. The bounds will be dropped"
             in str(w.message)
         ]
-        assert len(issuedWarnings) == 1
+        assert len(issued_warnings) == 1
 
         assert grid.format == "CF"
         assert grid.source == "Dataset"

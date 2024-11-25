@@ -20,7 +20,6 @@ keywords = ["clisops", "xarray", "climate", "gis", "subsetting", "operations"]
 license = {file = "LICENSE"}
 classifiers = [
   "Development Status :: 5 - Production/Stable",
-  "Intended Audience :: End Users/Desktop",
   "Intended Audience :: Developers",
   "Intended Audience :: System Administrators",
   "Intended Audience :: Science/Research",
@@ -40,11 +39,11 @@ classifiers = [
   "Topic :: Scientific/Engineering :: Information Analysis",
   "Topic :: Software Development :: Libraries :: Python Modules",
   "Topic :: System :: Distributed Computing",
-  "Topic :: System :: Systems Administration :: Authentication/Directory",
   "Typing :: Typed"
 ]
 dynamic = ["description", "version"]
 dependencies = [
+  "aiohttp", # Needed for HTTPFileSystem
   "bottleneck >=1.3.1",
   "cartopy >=0.23",
   # cf-xarray is differently named on conda-forge
@@ -62,12 +61,13 @@ dependencies = [
   "platformdirs >=4.0",
   "pooch >=1.8.0",
   "pyproj >=3.3.0",
+  "requests", # Needed for HTTPFileSystem
   # roocs_grids is differently named on conda-forge
   "roocs_grids >=0.1.2",
-  "roocs-utils >=0.6.7,<0.7",
   "scipy>=1.9.0",
   "shapely >=1.9",
-  "xarray >=2022.6.0"
+  "xarray >=2022.9.0",
+  "zarr"
 ]
 
 [project.optional-dependencies]
@@ -156,7 +156,7 @@ ignore_notebooks = true
 pep621_dev_dependency_groups = ["dev", "docs", "extras"]
 
 [tool.deptry.per_rule_ignores]
-DEP002 = ["bottleneck", "cartopy", "netcdf4"]
+DEP002 = ["aiohttp", "bottleneck", "cartopy", "netcdf4", "requests", "zarr"]
 DEP003 = ["clisops"] # should be removed when restructuring to src layout
 DEP004 = ["xesmf"]
 
@@ -203,13 +203,16 @@ known_first_party = "clisops,_common"
 skip = ["clisops/core/__init__.py"]
 
 [tool.pytest.ini_options]
+minversion = "7.0"
 addopts = [
   "-ra",
   "--verbose",
   "--color=yes",
   "--numprocesses=0",
   "--maxprocesses=8",
-  "--dist=worksteal"
+  "--dist=worksteal",
+  "--strict-config",
+  "--strict-markers"
 ]
 filterwarnings = ["ignore::UserWarning"]
 markers = [

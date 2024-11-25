@@ -5,10 +5,10 @@ from typing import Optional, Union
 
 import xarray as xr
 from loguru import logger
-from roocs_utils.exceptions import InvalidParameterValue
 
 from clisops.core import Grid, Weights
 from clisops.core import regrid as core_regrid
+from clisops.exceptions import InvalidParameterValue
 from clisops.ops.base_operation import Operation
 from clisops.utils.file_namers import get_file_namer
 

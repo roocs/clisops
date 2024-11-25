@@ -38,6 +38,11 @@ clean-build: ## remove build artifacts
 	find . -name '*.egg-info' -exec rm -fr {} +
 	find . -name '*.egg' -exec rm -f {} +
 
+clean-docs: ## remove docs artifacts
+	rm -f docs/apidoc/clisops*.rst
+	rm -f docs/apidoc/modules.rst
+	$(MAKE) -C docs clean
+
 clean-pyc: ## remove Python file artifacts
 	find . -name '*.pyc' -exec rm -f {} +
 	find . -name '*.pyo' -exec rm -f {} +
@@ -57,7 +62,7 @@ lint: ## check style with flake8
 	python -m deptry .
 
 test: ## run tests quickly with the default Python
-	python -m pytest
+	python -m pytest -m "not slow"
 
 test-all: ## run tests on every Python version with tox
 	tox
@@ -68,8 +73,10 @@ coverage: ## check code coverage quickly with the default Python
 	coverage html
 	$(BROWSER) htmlcov/index.html
 
-docs: ## generate Sphinx HTML documentation, including API docs
-	$(MAKE) -C docs clean
+autodoc: clean-docs ## create sphinx-apidoc files:
+	env SPHINX_APIDOC_OPTIONS="members,undoc-members,show-inheritance,no-index" sphinx-apidoc -o docs/apidoc --private --module-first clisops
+
+docs: autodoc ## generate Sphinx HTML documentation, including API docs
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
 

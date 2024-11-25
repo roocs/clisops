@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 import pandas as pd
@@ -11,8 +10,15 @@ from packaging.version import Version
 
 from clisops.core.regrid import XARRAY_INCOMPATIBLE_VERSION
 from clisops.utils import testing
-from clisops.utils.testing import open_dataset as _open_dataset
 from clisops.utils.testing import stratus as _stratus
+from clisops.utils.testing import write_roocs_cfg as _write_roocs_cfg
+
+
+@pytest.fixture(autouse=True)
+def roocs_cfg(tmp_path):
+    cfg_path = _write_roocs_cfg(None, tmp_path)
+    # point to roocs cfg in environment
+    os.environ["ROOCS_CONFIG"] = cfg_path
 
 
 @pytest.fixture
@@ -284,36 +290,6 @@ def nimbus(threadsafe_data_dir, worker_id):
     )
 
 
-@pytest.fixture(scope="session")
-def open_esgf_dataset(stratus):
-    def _open_session_scoped_file(file: Union[str, os.PathLike], **xr_kwargs):
-        xr_kwargs.setdefault("cache", True)
-        return _open_dataset(
-            file,
-            branch=testing.ESGF_TEST_DATA_VERSION,
-            repo=testing.ESGF_TEST_DATA_REPO_URL,
-            cache_dir=stratus.path,
-            **xr_kwargs,
-        )
-
-    return _open_session_scoped_file
-
-
-@pytest.fixture(scope="session")
-def open_xclim_dataset(nimbus):
-    def _open_session_scoped_file(file: Union[str, os.PathLike], **xr_kwargs):
-        xr_kwargs.setdefault("cache", True)
-        return _open_dataset(
-            file,
-            branch=testing.XCLIM_TEST_DATA_VERSION,
-            repo=testing.XCLIM_TEST_DATA_REPO_URL,
-            cache_dir=nimbus.path,
-            **xr_kwargs,
-        )
-
-    return _open_session_scoped_file
-
-
 @pytest.fixture
 def check_output_nc():
     def _check_output_nc(result, fname="output_001.nc", time=None):
@@ -403,6 +379,15 @@ def mini_esgf_data(stratus):
         | testing.get_esgf_glob_paths(stratus.path)
         | testing.get_kerchunk_datasets()
     )
+
+
+@pytest.fixture(scope="session")
+def esgf_kerchunk_urls():
+    kerchunk = (
+        "https://gws-access.jasmin.ac.uk/public/cmip6_prep/eodh-eocis/kc-indexes-cmip6-http-v1/"
+        "CMIP6.CMIP.MOHC.UKESM1-1-LL.1pctCO2.r1i1p1f2.Amon.tasmax.gn.v20220513.json"
+    )
+    return {"JSON": kerchunk, "ZST": f"{kerchunk}.zst"}
 
 
 @pytest.fixture(scope="session", autouse=True)

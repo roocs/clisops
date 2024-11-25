@@ -3,9 +3,9 @@ import os
 import pytest
 import xarray as xr
 from packaging.version import Version
-from roocs_utils.exceptions import InvalidParameterValue
 
 from clisops.core.average import XESMF_MINIMUM_VERSION  # noqa
+from clisops.exceptions import InvalidParameterValue
 from clisops.ops.average import average_over_dims, average_shape, average_time
 
 try:
@@ -27,10 +27,12 @@ def _load_ds(fpath):
     return xr.open_mfdataset(fpath, use_cftime=True)
 
 
-def test_average_basic_data_array(open_xclim_dataset):
-    ds = open_xclim_dataset("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc")
+def test_average_basic_data_array(nimbus):
+    ds = xr.open_dataset(
+        nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc")
+    )
     result = average_over_dims(
-        ds["tas"], dims=["time"], ignore_undetected_dims=False, output_type="xarray"
+        ds.tas, dims=["time"], ignore_undetected_dims=False, output_type="xarray"
     )
     assert "time" not in result[0]
 

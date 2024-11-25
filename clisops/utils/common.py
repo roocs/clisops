@@ -1,13 +1,35 @@
 import functools
 import os
+import re
 import sys
 import warnings
 from pathlib import Path
 from types import FunctionType, ModuleType
 from typing import Optional, Union
 
+from dask.utils import byte_sizes
 from loguru import logger
 from packaging.version import Version
+
+
+def parse_size(size):
+    """
+
+    Parse size string into number of bytes.
+
+    :param size: (str) size to parse in any unit
+    :return: (int) number of bytes
+    """
+    n, suffix = re.match(r"^(\d+\.?\d*)([a-zA-Z]+)$", size).groups()
+
+    try:
+        multiplier = byte_sizes[suffix.lower()]
+
+        size_in_bytes = multiplier * float(n)
+    except KeyError as err:
+        raise ValueError(f"Could not interpret '{suffix}' as a byte unit") from err
+
+    return size_in_bytes
 
 
 def expand_wildcards(paths: Union[str, Path]) -> list:

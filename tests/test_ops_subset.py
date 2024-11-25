@@ -6,18 +6,19 @@ from typing import Union
 import numpy as np
 import pytest
 import xarray as xr
-from roocs_utils.exceptions import InvalidParameterValue
-from roocs_utils.parameter import area_parameter, time_parameter
-from roocs_utils.parameter.param_utils import (
+
+from clisops import CONFIG
+from clisops.exceptions import InvalidParameterValue
+from clisops.ops.subset import Subset, subset
+from clisops.parameter import (
+    area_parameter,
     level_interval,
     level_series,
     time_components,
     time_interval,
+    time_parameter,
     time_series,
 )
-
-from clisops import CONFIG
-from clisops.ops.subset import Subset, subset
 from clisops.utils.dataset_utils import determine_lon_lat_range
 from clisops.utils.output_utils import _format_time  # noqa
 
@@ -382,23 +383,30 @@ def test_time_slices_in_subset_rh(mini_esgf_data):
     config_max_file_size = CONFIG["clisops:write"]["file_size_limit"]
     temp_max_file_size = "10KB"
     CONFIG["clisops:write"]["file_size_limit"] = temp_max_file_size
-    outputs = subset(
-        ds=mini_esgf_data["CMIP5_RH"],
-        time=time_interval(start_time, end_time),
-        area=(0.0, 5.0, 50.0, 90.0),
-        output_type="xarray",
-        file_namer="simple",
-    )
-    CONFIG["clisops:write"]["file_size_limit"] = config_max_file_size
 
-    assert _format_time(outputs[0].time.values.min()) >= start_time
-    assert _format_time(outputs[-1].time.values.max()) <= end_time
+    with xr.open_mfdataset(mini_esgf_data["CMIP5_RH"]) as ds:
+        outputs = subset(
+            ds=ds,
+            time=time_interval(start_time, end_time),
+            area=(0.0, 5.0, 50.0, 90.0),
+            output_type="xarray",
+            file_namer="simple",
+        )
 
-    count = 0
-    for _ in outputs:
-        assert _format_time(outputs[count].time.values.min()) >= time_slices[count][0]
-        assert _format_time(outputs[count].time.values.max()) >= time_slices[count][1]
-        count += 1
+        CONFIG["clisops:write"]["file_size_limit"] = config_max_file_size
+
+        assert _format_time(outputs[0].time.values.min()) >= start_time
+        assert _format_time(outputs[-1].time.values.max()) <= end_time
+
+        count = 0
+        for _ in outputs:
+            assert (
+                _format_time(outputs[count].time.values.min()) >= time_slices[count][0]
+            )
+            assert (
+                _format_time(outputs[count].time.values.max()) >= time_slices[count][1]
+            )
+            count += 1
 
 
 # area can be a few degrees out
