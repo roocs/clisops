@@ -124,7 +124,7 @@ target-version = [
 ]
 
 [tool.bumpversion]
-current_version = "0.14.1"
+current_version = "0.15.0"
 commit = true
 tag = false
 allow_dirty = false
@@ -177,6 +177,7 @@ include = [
   "docs/make.bat",
   "docs/notebooks/*.ipynb",
   "requirements_upstream.txt",
+  "roocs-utils.HISTORY.txt",
   "setup.cfg",
   "tests/*.py",
   "tests/data/*.json",
