@@ -103,7 +103,7 @@ docs = [
 extras = [
   "xesmf >=0.8.2",
   # See: https://github.com/pydata/xarray/issues/7794
-  "xarray >=2022.6.0,<2023.3.0"
+  "xarray >=2022.6.0,<2025.2.0"
 ]
 
 [project.urls]
