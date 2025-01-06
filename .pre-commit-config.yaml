@@ -3,7 +3,7 @@ default_language_version:
 
 repos:
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.19.0
+    rev: v3.19.1
     hooks:
       - id: pyupgrade
         args: [ '--py39-plus' ]
@@ -17,7 +17,7 @@ repos:
       - id: debug-statements
       - id: mixed-line-ending
   - repo: https://github.com/pappasam/toml-sort
-    rev: v0.23.1
+    rev: v0.24.2
     hooks:
       - id: toml-sort-fix
   - repo: https://github.com/psf/black-pre-commit-mirror
@@ -39,7 +39,7 @@ repos:
 #    -   id: pydocstyle
 #        args: ["--convention=numpy"]
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.8.0
+    rev: 0.8.1
     hooks:
       - id: nbstripout
         files: ".ipynb"
@@ -55,7 +55,7 @@ repos:
     - id: codespell
       additional_dependencies: [ 'tomli' ]
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.29.4
+    rev: 0.30.0
     hooks:
       - id: check-github-workflows
       - id: check-readthedocs
