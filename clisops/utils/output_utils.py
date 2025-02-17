@@ -144,18 +144,18 @@ def get_time_slices(
     if slice_length == 0:
         raise Exception("Unable to calculate slice length for splitting output files.")
 
-    indx = 0
-    final_indx = n_times - 1
+    ind_x = 0
+    final_ind_x = n_times - 1
 
-    while indx <= final_indx:
-        start_indx = indx
-        indx += slice_length
-        end_indx = indx - 1
+    while ind_x <= final_ind_x:
+        start_ind_x = ind_x
+        ind_x += slice_length
+        end_ind_x = ind_x - 1
 
-        if end_indx > final_indx:
-            end_indx = final_indx
+        if end_ind_x > final_ind_x:
+            end_ind_x = final_ind_x
         slices.append(
-            (f"{_format_time(times[start_indx])}", f"{_format_time(times[end_indx])}")
+            (f"{_format_time(times[start_ind_x])}", f"{_format_time(times[end_ind_x])}")
         )
 
     return slices
