@@ -1,4 +1,4 @@
-""" Test the different methods of transforming the longitude coordinates after rolling"""
+"""Test the different methods of transforming the longitude coordinates after rolling"""
 
 import numpy as np
 
