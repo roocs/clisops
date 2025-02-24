@@ -65,7 +65,7 @@ def average_shape(
     --------
     .. code-block:: python
 
-        import xarray as xr  # doctest: +SKIP
+        import xarray as xr
         from clisops.core.average import average_shape
 
         pr = xr.open_dataset(path_to_pr_file).pr
@@ -236,6 +236,7 @@ def average_over_dims(
     ds_averaged_over_dims = ds.mean(dim=dims_to_average, skipna=True, keep_attrs=True)
 
     if isinstance(ds, xr.Dataset):
+        return xr.merge((ds_averaged_over_dims, untouched_ds))
         return xr.merge((ds_averaged_over_dims, untouched_ds))
     return ds_averaged_over_dims
 

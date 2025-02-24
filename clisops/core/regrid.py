@@ -188,9 +188,9 @@ class Grid:
         described by 'ds'. The default is None.
     grid_instructor : tuple, float or int, optional
         Create a regional or global regular lat-lon grid using xESMF utility functions.
-        - Global grid: grid_instructor = (lon_step, lat_step) or grid_instructor = step
-        - Regional grid: grid_instructor = (lon_start, lon_end, lon_step, lat_start, lat_end, lat_step)
-        or grid_instructor = (start, end, step). The default is None.
+        For global grid: `grid_instructor = (lon_step, lat_step) or grid_instructor = step`;
+        For regional grid: `grid_instructor = (lon_start, lon_end, lon_step, lat_start, lat_end, lat_step)`
+        or `grid_instructor = (start, end, step)`. The default is None.
     compute_bounds : bool, optional
         Compute latitude and longitude bounds if the dataset has none defined.
         The default is False.
@@ -898,11 +898,6 @@ class Grid:
     def _verify_bounds(self) -> None:
         """Use cf_xarray to obtain the variable name of the requested coordinates bounds.
 
-        Parameters
-        ----------
-        coordinate : str
-            Name of the coordinate variable to determine the bounds from.
-
         Returns
         -------
         str, optional
@@ -1179,7 +1174,7 @@ class Grid:
         -------
         None
         """
-        # TODO: extend for vertical axis for vertical interpolation usecase
+        # TODO: extend for vertical axis for vertical interpolation use case
         # 6 decimals corresponds to hor. precision of ~ 0.1m (deg), 6m (rad)
         coord_dict = {}
         attr_dict = {}
@@ -1615,7 +1610,7 @@ class Grid:
                     # 1 # "When an xarray Dataset contains non-dimensional coordinates that do not
                     #     share dimensions with any of the variables, these coordinate variable
                     #     names are saved under a “global” "coordinates" attribute. This is not
-                    #     CF-compliant but again facilitates roundtripping of xarray datasets."
+                    #     CF-compliant but again facilitates round-tripping of xarray datasets."
                     # 2 # "By default, variables with float types are attributed a _FillValue of NaN
                     #     in the output file, unless explicitly disabled with an encoding
                     #     {'_FillValue': None}."
