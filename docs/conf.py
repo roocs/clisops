@@ -45,6 +45,8 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.autosectionlabel",
     "nbsphinx",
+    # sphinx_autodoc_typehints must always be listed after sphinx.ext.napoleon
+    "sphinx_autodoc_typehints",
     "IPython.sphinxext.ipython_console_highlighting",
 ]
 
