@@ -7,7 +7,7 @@ v0.16.0 (unreleased)
 Other Changes
 ^^^^^^^^^^^^^
 * Added a workflow for uploading preview releases to TestPyPI (#374).
-* Pinned a few dependencies to their latest versions (#374).
+* Pinned a few docs-related dependencies to compatible versions. Added `sphinx-autodoc-typehints`, `sphinx-codeautolink`, and `sphinx-copybutton` to the docs dependencies (#396).
 
 v0.15.0 (2024-11-26)
 --------------------
