@@ -7,6 +7,7 @@ v0.16.0 (unreleased)
 Other Changes
 ^^^^^^^^^^^^^
 * Added a workflow for uploading preview releases to TestPyPI (#374).
+* Pinned a few dependencies to their latest versions (#374).
 
 v0.15.0 (2024-11-26)
 --------------------
