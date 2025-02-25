@@ -38,7 +38,7 @@ jobs:
         run: |
           python -m pip install tox~=4.24.1
       - name: Environment Caching
-        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
+        uses: actions/cache@0c907a75c2c80ebcb7f088228285e798b750cf8f # v4.2.1
         with:
           path: |
             .tox
@@ -73,7 +73,7 @@ jobs:
         run: |
           python -m pip install tox~=4.24.1
       - name: Environment Caching
-        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
+        uses: actions/cache@0c907a75c2c80ebcb7f088228285e798b750cf8f # v4.2.1
         with:
           path: |
             ~/.cache/mini-esgf-data
@@ -126,7 +126,7 @@ jobs:
         run: |
           python -m pip install -r requirements_upstream.txt
       - name: Test Data Caching
-        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
+        uses: actions/cache@0c907a75c2c80ebcb7f088228285e798b750cf8f # v4.2.1
         with:
           path: |
             ~/.cache/mini-esgf-data
