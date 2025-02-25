@@ -880,15 +880,18 @@ def create_weight_masks(
 
     Examples
     --------
-    >>> import geopandas as gpd  # doctest: +SKIP
-    >>> import xarray as xr  # doctest: +SKIP
-    >>> from clisops.core.subset import create_weight_masks  # doctest: +SKIP
-    >>> ds = xr.open_dataset(path_to_tasmin_file)  # doctest: +SKIP
-    >>> polys = gpd.read_file(path_to_multi_shape_file)  # doctest: +SKIP
-    # Get a weight mask for each polygon in the shape file
-    >>> mask = create_weight_masks(
-    ...     x_dim=ds.lon, y_dim=ds.lat, poly=polys
-    ... )  # doctest: +SKIP
+    .. code-block:: python
+
+        import geopandas as gpd
+        import xarray as xr
+
+        from clisops.core.subset import create_weight_masks
+
+        ds = xr.open_dataset(path_to_tasmin_file)
+        polys = gpd.read_file(path_to_multi_shape_file)
+
+        # Get a weight mask for each polygon in the shape file
+        mask = create_weight_masks(x_dim=ds.lon, y_dim=ds.lat, poly=polys)
     """
     try:
         from xesmf import SpatialAverager

@@ -65,7 +65,7 @@ def average_shape(
     --------
     .. code-block:: python
 
-        import xarray as xr  # doctest: +SKIP
+        import xarray as xr
         from clisops.core.average import average_shape
 
         pr = xr.open_dataset(path_to_pr_file).pr
