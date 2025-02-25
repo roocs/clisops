@@ -237,7 +237,6 @@ def average_over_dims(
 
     if isinstance(ds, xr.Dataset):
         return xr.merge((ds_averaged_over_dims, untouched_ds))
-        return xr.merge((ds_averaged_over_dims, untouched_ds))
     return ds_averaged_over_dims
 
 
