@@ -22,7 +22,7 @@ def _check_output_nc(result, fname="output_001.nc"):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_basic(tmpdir, tmp_path, mini_esgf_data):
+def test_regrid_basic(tmpdir, tmp_path, mini_esgf_data, xfail_if_xarray_incompatible):
     """Test a basic regridding operation."""
     fpath = mini_esgf_data["CMIP5_MRSOS_ONE_TIME_STEP"]
     basename = os.path.splitext(os.path.basename(fpath))[0]
@@ -165,7 +165,9 @@ def test_regrid_ATLAS_datasets(tmpdir, dset, mini_esgf_data):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_ATLAS_CORDEX(tmpdir, caplog, mini_esgf_data):  # noqa
+def test_regrid_ATLAS_CORDEX(
+    tmpdir, caplog, mini_esgf_data, xfail_if_xarray_incompatible
+):  # noqa
     """Test regridding for ATLAS CORDEX dataset."""
     import netCDF4
 
@@ -365,7 +367,9 @@ def test_regrid_same_grid_exception(tmpdir, tmp_path):
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_cmip6_nc_consistent_bounds_and_coords(tmpdir, mini_esgf_data):
+def test_regrid_cmip6_nc_consistent_bounds_and_coords(
+    tmpdir, mini_esgf_data, xfail_if_xarray_incompatible
+):
     """Tests clisops regrid function and check metadata added by xarray"""
     result = regrid(
         ds=mini_esgf_data["CMIP6_ATM_VERT_ONE_TIMESTEP"],
