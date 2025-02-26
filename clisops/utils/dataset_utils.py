@@ -5,10 +5,10 @@ from typing import Optional
 
 import cf_xarray as cfxr  # noqa
 import cftime
+import dask.array as da
 import fsspec
 import numpy as np
 import xarray as xr
-import dask.array as da
 
 from clisops.exceptions import InvalidParameterValue
 from clisops.project_utils import dset_to_filepaths
