@@ -8,6 +8,7 @@ import cftime
 import fsspec
 import numpy as np
 import xarray as xr
+import dask.array as da
 
 from clisops.exceptions import InvalidParameterValue
 from clisops.project_utils import dset_to_filepaths
@@ -212,9 +213,6 @@ def _is_time(coord):
     Check if a coordinate uses cftime datetime objects.
     Handles Dask-backed arrays for lazy evaluation.
     """
-    import cftime
-    import dask.array as da
-
     if coord.size == 0:
         return False  # Empty array
 
@@ -225,7 +223,7 @@ def _is_time(coord):
     if isinstance(first_value, da.Array):
         first_value = first_value.compute()
 
-    return isinstance(first_value, cftime.datetime)
+    return isinstance(first_value.item(), cftime.datetime)
 
 
 def is_time(coord):
@@ -235,6 +233,10 @@ def is_time(coord):
     :param coord: coordinate of xarray dataset e.g. coord = ds.coords[coord_id]
     :return: (bool) True if the coordinate is time.
     """
+    if coord.ndim >= 2:
+        # skip variables with more than two dimensions: lat_bnds, lon_bnds, time_bnds, t, ...
+        return False
+
     if "time" in coord.cf.coordinates and coord.name in coord.cf.coordinates["time"]:
         return True
 
