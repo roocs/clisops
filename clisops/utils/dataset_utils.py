@@ -207,6 +207,27 @@ def is_level(coord):
     return False
 
 
+def _is_time(coord):
+    """
+    Check if a coordinate uses cftime datetime objects.
+    Handles Dask-backed arrays for lazy evaluation.
+    """
+    import cftime
+    import dask.array as da
+
+    if coord.size == 0:
+        return False  # Empty array
+
+    # Safely get first element without loading entire array
+    first_value = coord.isel({dim: 0 for dim in coord.dims}).values
+
+    # Compute only if it's a Dask array
+    if isinstance(first_value, da.Array):
+        first_value = first_value.compute()
+
+    return isinstance(first_value, cftime.datetime)
+
+
 def is_time(coord):
     """
     Determines if a coordinate is time.
@@ -226,12 +247,12 @@ def is_time(coord):
     if np.issubdtype(coord.dtype, np.datetime64):
         return True
 
-    if isinstance(np.atleast_1d(coord.values)[0], cftime.datetime):
-        return True
-
     if hasattr(coord, "axis"):
         if coord.axis == "T":
             return True
+        
+    return _is_time(coord):
+        return True
 
     return False
 
