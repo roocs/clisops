@@ -250,7 +250,7 @@ def is_time(coord):
     if hasattr(coord, "axis"):
         if coord.axis == "T":
             return True
-        
+
     return _is_time(coord):
         return True
 
