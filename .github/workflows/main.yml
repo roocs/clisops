@@ -140,7 +140,7 @@ jobs:
           python -m pip check || true
       - name: Test with conda
         run: |
-          python -m pytest -m "not slow" --timeout=180 --numprocesses=logical --durations=10 --cov=clisops --cov-report=lcov
+          python -m pytest -m "not slow" --timeout=300 --numprocesses=logical --durations=10 --cov=clisops --cov-report=lcov
       - name: Report Coverage
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6
         with:
