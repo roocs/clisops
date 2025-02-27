@@ -148,6 +148,7 @@ jobs:
           parallel: true
 
   finish:
+    name: Finish
     needs:
       - test-pypi
       - test-conda

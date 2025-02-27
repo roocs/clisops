@@ -326,7 +326,7 @@ def open_xr_dataset(dset, **kwargs):
 
     :param dset: (str or Path) A dataset identifier, directory path, or file path ending in ``*.nc``.
     :param kwargs: Any additional keyword arguments for opening the dataset.
-                   ``use_cftime=True`` and ``decode_timedelta=False`` are used by default,
+                   ``decode_times=xr.coders.CFDatetimeCoder(use_cftime=True)`` and ``decode_timedelta=False`` are used by default,
                    along with ``combine="by_coords"`` for ``open_mfdataset`` only.
 
     Notes:
@@ -373,7 +373,10 @@ def _get_kwargs_for_opener(otype, **kwargs):
     :param otype: (Str) type of opener (either "single" or "multi")
     :param kwargs: Any further keyword arguments to include when opening the dataset.
     """
-    args = {"use_cftime": True, "decode_timedelta": False}
+    args = {
+        "decode_times": xr.coders.CFDatetimeCoder(use_cftime=True),
+        "decode_timedelta": False,
+    }
 
     if otype.lower().startswith("multi"):
         args["combine"] = "by_coords"

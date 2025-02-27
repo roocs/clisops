@@ -179,7 +179,10 @@ def test_regrid_ATLAS_CORDEX(
         _logger.info("HDF5 lib version:       %s" % netCDF4.__hdf5libversion__)
         _logger.info("netcdf lib version:     %s" % netCDF4.__netcdf4libversion__)
 
-    ds = xr.open_dataset(mini_esgf_data["ATLAS_v0_CORDEX_ANT"], use_cftime=True)
+    ds = xr.open_dataset(
+        mini_esgf_data["ATLAS_v0_CORDEX_ANT"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    )
 
     # Might trigger KeyError in future netcdf-c versions
     # PR: https://github.com/Unidata/netcdf-c/pull/2716

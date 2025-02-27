@@ -25,7 +25,7 @@ class TestProjectUtils:
 
         with xr.open_mfdataset(
             mini_esgf_data["CMIP5_TAS"],
-            use_cftime=True,
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
             combine="by_coords",
         ) as ds:
             project = project_utils.get_project_name(ds)
@@ -38,7 +38,7 @@ class TestProjectUtils:
 
         with xr.open_mfdataset(
             mini_esgf_data["CMIP6_SICONC"],
-            use_cftime=True,
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
             combine="by_coords",
         ) as ds:
             project = project_utils.get_project_name(ds)

@@ -73,7 +73,7 @@ def test_StandardFileNamer_cmip5(mini_esgf_data):
 
     _ds = xr.open_mfdataset(
         mini_esgf_data["CMIP5_TAS"],
-        use_cftime=True,
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
     )
 
@@ -89,7 +89,7 @@ def test_StandardFileNamer_cmip5_use_default_attr_names(mini_esgf_data):
 
     _ds = xr.open_mfdataset(
         mini_esgf_data["CMIP5_TAS"],
-        use_cftime=True,
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
     )
 
@@ -106,7 +106,7 @@ def test_StandardFileNamer_cmip6(mini_esgf_data):
 
     _ds = xr.open_mfdataset(
         mini_esgf_data["CMIP6_SICONC"],
-        use_cftime=True,
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
     )
 
@@ -122,7 +122,7 @@ def test_StandardFileNamer_cmip6_use_default_attr_names(mini_esgf_data):
 
     _ds = xr.open_mfdataset(
         mini_esgf_data["CMIP6_SICONC"],
-        use_cftime=True,
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
     )
 
@@ -146,7 +146,7 @@ def test_StandardFileNamer_c3s_cordex(mini_esgf_data):
 
     _ds = xr.open_mfdataset(
         mini_esgf_data["C3S_CORDEX_NAM_PR"],
-        use_cftime=True,
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
     )
 
@@ -171,7 +171,7 @@ def test_StandardFileNamer_c3s_cordex_use_default_attr_names(mini_esgf_data):
 
     _ds = xr.open_mfdataset(
         mini_esgf_data["C3S_CORDEX_NAM_PR"],
-        use_cftime=True,
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
     )
 
@@ -195,7 +195,7 @@ def test_StandardFileNamer_c3s_atlas_v0(mini_esgf_data):
 
     _ds = xr.open_mfdataset(
         mini_esgf_data["ATLAS_v0_CORDEX_NAM"],
-        use_cftime=True,
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
     )
 
@@ -217,7 +217,7 @@ def test_StandardFileNamer_c3s_atlas_v1(mini_esgf_data):
 
     _ds = xr.open_mfdataset(
         mini_esgf_data["ATLAS_v1_ERA5"],
-        use_cftime=True,
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
     )
 

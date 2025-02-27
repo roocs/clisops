@@ -24,9 +24,15 @@ def _open(coll):
         coll = expand_wildcards(coll)
     if len(coll) > 1:
         # issues with dask and cftime
-        ds = xr.open_mfdataset(coll, use_cftime=True, combine="by_coords").load()
+        ds = xr.open_mfdataset(
+            coll,
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+            combine="by_coords",
+        ).load()
     else:
-        ds = xr.open_dataset(coll[0], use_cftime=True)
+        ds = xr.open_dataset(
+            coll[0], decode_times=xr.coders.CFDatetimeCoder(use_cftime=True)
+        )
     return ds
 
 

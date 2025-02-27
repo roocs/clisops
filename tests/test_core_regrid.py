@@ -46,7 +46,8 @@ XESMF_IMPORT_MSG = (
 
 def test_grid_init_ds_tas_regular(mini_esgf_data):
     with xr.open_dataset(
-        mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True
+        mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
     ) as ds:
         grid = Grid(ds=ds)
 
@@ -69,7 +70,10 @@ def test_grid_init_ds_tas_regular(mini_esgf_data):
 
 
 def test_grid_init_ds_simass_degenerated_cells(mini_esgf_data):
-    with xr.open_dataset(mini_esgf_data["CMIP6_SIMASS_DEGEN"], use_cftime=True) as ds:
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_SIMASS_DEGEN"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    ) as ds:
         grid = Grid(ds=ds)
 
         assert grid.format == "CF"
@@ -93,7 +97,10 @@ def test_grid_init_ds_simass_degenerated_cells(mini_esgf_data):
 
 
 def test_grid_init_ds_tos_degenerated_cells(mini_esgf_data):
-    with xr.open_dataset(mini_esgf_data["CMIP6_TOS_LR_DEGEN"], use_cftime=True) as ds:
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_TOS_LR_DEGEN"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    ) as ds:
         grid = Grid(ds=ds)
 
         assert grid.format == "CF"
@@ -147,7 +154,8 @@ def test_grid_init_ds_tos_degenerated_cells(mini_esgf_data):
 
 def test_grid_init_da_tas_regular(mini_esgf_data):
     with xr.open_dataset(
-        mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True
+        mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
     ) as ds:
         da = ds.tas
         grid = Grid(ds=da)
@@ -169,7 +177,8 @@ def test_grid_init_da_tas_regular(mini_esgf_data):
 
 def test_grid_init_ds_tos_curvilinear(mini_esgf_data):
     with xr.open_dataset(
-        mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True
+        mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
     ) as ds:
         grid = Grid(ds=ds)
 
@@ -193,7 +202,8 @@ def test_grid_init_ds_tos_curvilinear(mini_esgf_data):
 
 def test_grid_init_ds_tas_cordex(mini_esgf_data):
     with xr.open_dataset(
-        mini_esgf_data["CORDEX_TAS_ONE_TIMESTEP"], use_cftime=True
+        mini_esgf_data["CORDEX_TAS_ONE_TIMESTEP"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
     ) as ds:
         grid = Grid(ds=ds)
 
@@ -252,7 +262,8 @@ def test_grid_init_ds_cordex_erroneous_bounds(mini_esgf_data):
 
 def test_grid_init_ds_tas_cordex_ant(mini_esgf_data):
     with xr.open_dataset(
-        mini_esgf_data["CORDEX_TAS_ONE_TIMESTEP_ANT"], use_cftime=True
+        mini_esgf_data["CORDEX_TAS_ONE_TIMESTEP_ANT"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
     ) as ds:
 
         # assert shifted lon frame
@@ -282,7 +293,10 @@ def test_grid_init_ds_tas_cordex_ant(mini_esgf_data):
 
 @pytest.mark.slow
 def test_grid_init_shifted_lon_frame_GFDL(mini_esgf_data):
-    with xr.open_dataset(mini_esgf_data["CMIP6_GFDL_EXTENT"], use_cftime=True) as ds:
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_GFDL_EXTENT"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    ) as ds:
 
         # confirm shifted lon frame
         assert np.isclose(ds["lon"].min(), -300.0, atol=0.5)
@@ -302,7 +316,10 @@ def test_grid_init_shifted_lon_frame_GFDL(mini_esgf_data):
 
 
 def test_grid_init_shifted_lon_frame_IITM(mini_esgf_data):
-    with xr.open_dataset(mini_esgf_data["CMIP6_IITM_EXTENT"], use_cftime=True) as ds:
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_IITM_EXTENT"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    ) as ds:
 
         # confirm shifted lon frame
         assert np.isclose(ds["longitude"].min(), -280.0, atol=1.0)
@@ -344,7 +361,10 @@ def test_grid_init_unmasked_missing_lon_lat(mini_esgf_data):
 
 
 def test_grid_init_ds_tas_unstructured(mini_esgf_data):
-    with xr.open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"], use_cftime=True) as ds:
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_UNSTR_ICON_A"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    ) as ds:
         grid = Grid(ds=ds)
 
         assert grid.format == "CF"
@@ -363,10 +383,17 @@ def test_grid_init_ds_tas_unstructured(mini_esgf_data):
 
 def test_grid_init_ds_zonmean(mini_esgf_data):
     with (
-        xr.open_dataset(mini_esgf_data["CMIP6_ZONMEAN_A"], use_cftime=True) as dsA,
-        xr.open_dataset(mini_esgf_data["CMIP6_ZONMEAN_B"], use_cftime=True) as dsB,
         xr.open_dataset(
-            mini_esgf_data["CMIP6_ATM_VERT_ONE_TIMESTEP_ZONMEAN"], use_cftime=True
+            mini_esgf_data["CMIP6_ZONMEAN_A"],
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        ) as dsA,
+        xr.open_dataset(
+            mini_esgf_data["CMIP6_ZONMEAN_B"],
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        ) as dsB,
+        xr.open_dataset(
+            mini_esgf_data["CMIP6_ATM_VERT_ONE_TIMESTEP_ZONMEAN"],
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         ) as dsC,
     ):
 
@@ -390,7 +417,10 @@ def test_grid_init_ds_zonmean(mini_esgf_data):
 
 
 def test_grid_init_ds_erroneous_cf_units_cmip5(mini_esgf_data):
-    with xr.open_dataset(mini_esgf_data["CMIP5_WRONG_CF_UNITS"], use_cftime=True) as ds:
+    with xr.open_dataset(
+        mini_esgf_data["CMIP5_WRONG_CF_UNITS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    ) as ds:
 
         # Warnings will be raised due to erroneous CF units
         with pytest.warns(UserWarning) as issuedWarnings:
@@ -422,7 +452,10 @@ def test_grid_init_ds_erroneous_cf_units_cmip5(mini_esgf_data):
 
 
 def test_grid_init_ds_erroneous_cf_units_cmip6(mini_esgf_data):
-    with xr.open_dataset(mini_esgf_data["CMIP6_WRONG_CF_UNITS"], use_cftime=True) as ds:
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_WRONG_CF_UNITS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    ) as ds:
         # Warnings will be raised due to erroneous CF units
         with pytest.warns(UserWarning) as issuedWarnings:
             grid = Grid(ds=ds)
@@ -459,7 +492,10 @@ def test_grid_init_ds_erroneous_cf_units_cmip6(mini_esgf_data):
 
 
 def test_grid_init_ds_erroneous_cf_attrs_cmip6(mini_esgf_data):
-    with xr.open_dataset(mini_esgf_data["CMIP6_WRONG_CF_ATTRS"], use_cftime=True) as ds:
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_WRONG_CF_ATTRS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    ) as ds:
         # Warnings will be raised due to erroneous CF units
         with pytest.warns(UserWarning) as issuedWarnings:
             grid = Grid(ds=ds)
@@ -687,13 +723,16 @@ class TestGridFromDS:
         """Test that the extent is evaluated as global for original and derived adaptive grid."""
         with (
             xr.open_dataset(
-                mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True
+                mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"],
+                decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
             ) as dsA,
             xr.open_dataset(
-                mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True
+                mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"],
+                decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
             ) as dsB,
             xr.open_dataset(
-                mini_esgf_data["CMIP6_UNSTR_ICON_A"], use_cftime=True
+                mini_esgf_data["CMIP6_UNSTR_ICON_A"],
+                decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
             ) as dsC,
         ):
 
@@ -714,9 +753,13 @@ class TestGridFromDS:
     def test_grid_from_ds_adaptive_reproducibility(self):
         """Test that the extent is evaluated as global for original and derived adaptive grid."""
         fpathA = get_grid_file("0pt25deg")
-        dsA = xr.open_dataset(fpathA, use_cftime=True)
+        dsA = xr.open_dataset(
+            fpathA, decode_times=xr.coders.CFDatetimeCoder(use_cftime=True)
+        )
         fpathB = get_grid_file("1deg")
-        dsB = xr.open_dataset(fpathB, use_cftime=True)
+        dsB = xr.open_dataset(
+            fpathB, decode_times=xr.coders.CFDatetimeCoder(use_cftime=True)
+        )
 
         gAa = Grid(ds=dsA, grid_id="adaptive")
         gA = Grid(grid_id="0pt25deg")
@@ -743,8 +786,14 @@ def test_compare_grid_same_resolution():
 
 def test_compare_grid_diff_in_precision(mini_esgf_data):
     """Test that the same grid stored with different precision is evaluated as the same grid"""
-    dsA = xr.open_dataset(mini_esgf_data["CMIP6_TAS_PRECISION_A"], use_cftime=True)
-    dsB = xr.open_dataset(mini_esgf_data["CMIP6_TAS_PRECISION_B"], use_cftime=True)
+    dsA = xr.open_dataset(
+        mini_esgf_data["CMIP6_TAS_PRECISION_A"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    )
+    dsB = xr.open_dataset(
+        mini_esgf_data["CMIP6_TAS_PRECISION_B"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    )
 
     gA = Grid(ds=dsA)
     gB = Grid(ds=dsB)
@@ -811,7 +860,10 @@ class TestDetect:
     def test_detect_extent_shifted_lon_frame(self, mini_esgf_data):
         """Test whether the extent can be correctly inferred for a dataset with shifted longitude frame."""
         # Load dataset with longitude ranging from (-300, 60)
-        ds = xr.open_dataset(mini_esgf_data["CMIP6_GFDL_EXTENT"], use_cftime=True)
+        ds = xr.open_dataset(
+            mini_esgf_data["CMIP6_GFDL_EXTENT"],
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        )
 
         # Convert the longitude frame to 0,360 (shall happen implicitly in the future)
         ds, ll, lu = clidu.cf_convert_between_lon_frames(ds, (0, 360))
@@ -824,12 +876,17 @@ class TestDetect:
     def test_detect_collapsed_cells(self, mini_esgf_data, load_test_data):
         """Test that collapsed cells are properly identified."""
 
-        dsA = xr.open_dataset(mini_esgf_data["CMIP6_OCE_HALO_CNRM"], use_cftime=True)
+        dsA = xr.open_dataset(
+            mini_esgf_data["CMIP6_OCE_HALO_CNRM"],
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        )
         dsB = xr.open_dataset(
-            mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True
+            mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"],
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         )
         dsC = xr.open_dataset(
-            mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True
+            mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"],
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         )
 
         gA = Grid(ds=dsA)
@@ -842,12 +899,17 @@ class TestDetect:
 
     def test_detect_duplicated_cells(self, mini_esgf_data):
         """Test that collapsed cells are properly identified"""
-        dsA = xr.open_dataset(mini_esgf_data["CMIP6_OCE_HALO_CNRM"], use_cftime=True)
+        dsA = xr.open_dataset(
+            mini_esgf_data["CMIP6_OCE_HALO_CNRM"],
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        )
         dsB = xr.open_dataset(
-            mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True
+            mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"],
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         )
         dsC = xr.open_dataset(
-            mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True
+            mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"],
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         )
 
         gA = Grid(ds=dsA)
@@ -861,7 +923,8 @@ class TestDetect:
 
 def test_subsetted_grid(mini_esgf_data):
     ds = xr.open_dataset(
-        mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True
+        mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
     ).load()
 
     area = (0.0, 10.0, 175.0, 90.0)
@@ -1070,7 +1133,10 @@ def test_data_vars_coords_reset_and_cfxr(mini_esgf_data):
 class TestWeights:
 
     def test_grids_in_and_out_bilinear(self, tmp_path, mini_esgf_data):
-        ds = xr.open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
+        ds = xr.open_dataset(
+            mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"],
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        )
         grid_in = Grid(ds=ds)
 
         assert grid_in.extent == "global"
@@ -1097,7 +1163,10 @@ class TestWeights:
         assert w.regridder.filename == "bilinear_80x180_120x240_peri.nc"
 
     def test_grids_in_and_out_conservative(self, tmp_path, mini_esgf_data):
-        ds = xr.open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
+        ds = xr.open_dataset(
+            mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"],
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        )
         grid_in = Grid(ds=ds)
 
         assert grid_in.extent == "global"
@@ -1203,7 +1272,10 @@ def test_Weights_compute(tmp_path):
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_Weights_compute_unstructured(tmp_path, mini_esgf_data):
     """Test the generation of Weights for unstructured grids with the _compute method."""
-    ds = xr.open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"], use_cftime=True)
+    ds = xr.open_dataset(
+        mini_esgf_data["CMIP6_UNSTR_ICON_A"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    )
     g = Grid(ds=ds)
     g_out = Grid(grid_id="2deg_lsm", compute_bounds=True)
 
@@ -1243,7 +1315,10 @@ def test_Weights_generate_id(tmp_path):
 def test_Weights_init_with_collapsed_cells(tmp_path, mini_esgf_data):
     "Test the creation of remapping weights for a grid containing collapsed cells"
     # ValueError: ESMC_FieldRegridStore failed with rc = 506. Please check the log files (named "*ESMF_LogFile").
-    ds = xr.open_dataset(mini_esgf_data["CMIP6_OCE_HALO_CNRM"], use_cftime=True)
+    ds = xr.open_dataset(
+        mini_esgf_data["CMIP6_OCE_HALO_CNRM"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    )
 
     g = Grid(ds=ds)
     g_out = Grid(grid_instructor=(10.0,))
@@ -1297,7 +1372,8 @@ def test_cache_init_and_flush(tmp_path):
 def test_cache_lock_mechanism(tmp_path, mini_esgf_data):
     """Test lock mechanism of local regrid weights cache."""
     with xr.open_dataset(
-        mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True
+        mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
     ) as ds:
 
         grid_in = Grid(ds=ds)
@@ -1395,7 +1471,10 @@ class TestRegrid:
         self.setup_done = True
 
     def test_adaptive_masking(self, tmp_path, mini_esgf_data):
-        with xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True) as ds:
+        with xr.open_dataset(
+            mini_esgf_data[self.c6tots],
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        ) as ds:
             self._setup(ds)
 
             weights_cache_init(Path(tmp_path, "weights"))
@@ -1405,7 +1484,10 @@ class TestRegrid:
             regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=0.7)
 
     def test_no_adaptive_masking(self, tmp_path, mini_esgf_data):
-        with xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True) as ds:
+        with xr.open_dataset(
+            mini_esgf_data[self.c6tots],
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        ) as ds:
             self._setup(ds)
 
             weights_cache_init(Path(tmp_path, "weights"))
@@ -1413,7 +1495,10 @@ class TestRegrid:
             regrid(self.grid_in, self.grid_out, w, adaptive_masking_threshold=-1.0)
 
     def test_duplicated_cells_warning_issued(self, tmp_path, mini_esgf_data):
-        with xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True) as ds:
+        with xr.open_dataset(
+            mini_esgf_data[self.c6tots],
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        ) as ds:
             self._setup(ds)
 
             weights_cache_init(Path(tmp_path, "weights"))
@@ -1445,7 +1530,10 @@ class TestRegrid:
                     assert len(issuedWarnings) == 1
 
     def test_regrid_dataarray(self, tmp_path, mini_esgf_data):
-        with xr.open_dataset(mini_esgf_data[self.c6tots], use_cftime=True) as ds:
+        with xr.open_dataset(
+            mini_esgf_data[self.c6tots],
+            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        ) as ds:
             self._setup(ds)
 
             weights_cache_init(Path(tmp_path, "weights"))
@@ -1485,7 +1573,8 @@ class TestRegrid:
 def test_duplicated_cells_renormalization(tmp_path, mini_esgf_data):
     # todo: Should probably be an xesmf test as well, will do PR there in the future
     with xr.open_dataset(
-        mini_esgf_data["CMIP6_STAGGERED_UCOMP"], use_cftime=True
+        mini_esgf_data["CMIP6_STAGGERED_UCOMP"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
     ) as ds:
 
         # some internal xesmf code to create array of ones
