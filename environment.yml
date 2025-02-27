@@ -37,8 +37,9 @@ dependencies:
  - xesmf >=0.8.2
 #  # Dev tools and testing
  - black >=25.1.0
- - bump-my-version >=0.18.3
+ - bump-my-version >=0.32.1
  - coverage >=7.5.0
+ - deptry >=0.23.0
  - flake8 >=7.1.0
  - isort >=6.0.0
  - netCDF4 >=1.4
