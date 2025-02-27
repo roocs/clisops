@@ -10,7 +10,7 @@ New Features
 * Version limitations have been lifted on `xarray` and `numpy` to support newer versions (#398).
 
 Internal Changes
-^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 * Pinned a few docs-related dependencies to compatible versions. Added `sphinx-autodoc-typehints`, `sphinx-codeautolink`, and `sphinx-copybutton` to the docs dependencies (#396).
 * The `LICENSE` file has been adjusted to ensure it is more machine-parsable (#398).
 * Licensing information has been added to the top-level `__init__.py` file of the package (#398).
