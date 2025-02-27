@@ -4,10 +4,25 @@ Version History
 v0.16.0 (unreleased)
 --------------------
 
-Other Changes
-^^^^^^^^^^^^^
-* Added a workflow for uploading preview releases to TestPyPI (#374).
+New Features
+^^^^^^^^^^^^
+* `clisops` now officially supports Python 3.13 (#398).
+* Version limitations have been lifted on `xarray` and `numpy` to support newer versions (#398).
+
+Internal Changes
+^^^^^^^^^^^^^^^
 * Pinned a few docs-related dependencies to compatible versions. Added `sphinx-autodoc-typehints`, `sphinx-codeautolink`, and `sphinx-copybutton` to the docs dependencies (#396).
+* The `LICENSE` file has been adjusted to ensure it is more machine-parsable (#398).
+* Licensing information has been added to the top-level `__init__.py` file of the package (#398).
+* The `README.rst` file has been updated to include a table of relevant badges (#398).
+* All calls using `use_cftime=True` have been updated to `decode_times=xr.coders.CFDatetimeCoder(use_cftime=True)` as suggested by `xarray` (#398).
+
+CI Changes
+^^^^^^^^^^
+* Added a workflow for uploading preview releases to TestPyPI (#374).
+* GitHub Workflows now make more use of `step-security/harden-runner` Action for security hardening (#398).
+* Python libraries used for CI are now listed in `CI/requirements_ci.in` and pinned by their hashes in `CI/requirements_ci.txt` (#398).
+* Coverage reporting now uses the `coverallsapp/github-action` Action. Conda builds now also report coverage to Coveralls (#398).
 
 v0.15.0 (2024-11-26)
 --------------------
