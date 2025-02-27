@@ -67,7 +67,7 @@ dependencies = [
   "roocs_grids >=0.1.2",
   "scipy>=1.9.0",
   "shapely >=1.9",
-  "xarray >=2022.9.0",
+  "xarray >=2022.9.0", # Some issues with CFTime calendars. See: https://github.com/pydata/xarray/issues/7794
   "zarr >=2.13.0"
 ]
 

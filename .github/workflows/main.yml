@@ -57,15 +57,7 @@ jobs:
     timeout-minutes: 20
     strategy:
       matrix:
-        include:
-          - python-version: "3.10"
-            tox-env: py310-coveralls
-          - python-version: "3.11"
-            tox-env: py311-coveralls
-          - python-version: "3.12"
-            tox-env: py312-coveralls
-          - python-version: "3.13"
-            tox-env: py313  # Coveralls does not support Python 3.13
+        python-version: [ "3.10", "3.11", "3.12", "3.13" ]
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@4d991eb9b905ef189e4c376166672c3f2f230481 # v2.11.0
@@ -94,10 +86,10 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-Python${{ matrix.python-version }}-${{ env.ESGF_TEST_DATA_VERSION }}
       - name: Test with tox
         run: |
-          python -m tox -e ${{ matrix.tox-env }}
+          python -m tox
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          COVERALLS_FLAG_NAME: run-${{ matrix.tox-env }}
+          COVERALLS_FLAG_NAME: run-Python${{ matrix.python-version }}
           COVERALLS_PARALLEL: true
           COVERALLS_SERVICE_NAME: github
 
@@ -152,7 +144,7 @@ jobs:
       - name: Report Coverage
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6
         with:
-          flag-name: run-${{ matrix.python-version }}-conda
+          flag-name: run-Python${{ matrix.python-version }}-conda
           parallel: true
 
   finish:
