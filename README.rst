@@ -72,7 +72,7 @@ This package was created with ``Cookiecutter`` and the ``audreyr/cookiecutter-py
         :alt: Black
 
 .. |build| image:: https://github.com/roocs/clisops/workflows/main.yml/badge.svg
-        :target: https://github.com/roocs/clisops/actions/workflows/master.yml
+        :target: https://github.com/roocs/clisops/actions/workflows/main.yml
         :alt: Build Status
 
 .. |conda| image:: https://img.shields.io/conda/vn/conda-forge/clisops.svg
