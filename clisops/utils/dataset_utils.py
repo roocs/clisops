@@ -62,6 +62,13 @@ def get_coord_by_type(
     elif isinstance(ds, xr.Dataset):
         # Not all coordinate variables are always classified as such
         coord_vars = list(ds.coords) + list(ds.data_vars)
+        # make sure we skip the main variable!
+        try:
+            var = get_main_variable(ds)
+        except ValueError:
+            warnings.warn(f"No variable found for dataset '{ds}'.")
+        else:
+            coord_vars.remove(var)
     else:
         raise TypeError("Not an xarray.Dataset or xarray.DataArray.")
     for coord_id in coord_vars:
@@ -96,11 +103,12 @@ def get_coord_by_type(
 
         # Select coordinate with most dims (matching with main variable dims)
         for coord_id in coords:
-            if all([dim in main_var_dims for dim in ds.coords[coord_id].dims]):
-                if return_further_matches:
-                    return coord_id, [x for x in coords if x != coord_id]
-                else:
-                    return coord_id
+            if coord_id in ds.coords:
+                if all([dim in main_var_dims for dim in ds.coords[coord_id].dims]):
+                    if return_further_matches:
+                        return coord_id, [x for x in coords if x != coord_id]
+                    else:
+                        return coord_id
         # If the decision making fails, pass the first match
         if return_further_matches:
             return coords[0], coords[1:]
@@ -216,6 +224,9 @@ def _is_time(coord):
     if coord.size == 0:
         return False  # Empty array
 
+    if isinstance(coord.dtype.type(), cftime.datetime):
+        return True
+
     # Safely get first element without loading entire array
     first_value = coord.isel({dim: 0 for dim in coord.dims}).values
 
@@ -223,7 +234,7 @@ def _is_time(coord):
     if isinstance(first_value, da.Array):
         first_value = first_value.compute()
 
-    return isinstance(first_value.item(), cftime.datetime)
+    return isinstance(first_value.item(0), cftime.datetime)
 
 
 def is_time(coord):
@@ -233,7 +244,7 @@ def is_time(coord):
     :param coord: coordinate of xarray dataset e.g. coord = ds.coords[coord_id]
     :return: (bool) True if the coordinate is time.
     """
-    if coord.ndim >= 2:
+    if False and coord.ndim >= 2:
         # skip variables with more than two dimensions: lat_bnds, lon_bnds, time_bnds, t, ...
         return False
 
