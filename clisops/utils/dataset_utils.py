@@ -61,7 +61,6 @@ def get_coord_by_type(
         main_var = get_main_variable(ds)
     except ValueError:
         warnings.warn(f"No main variable found for dataset '{ds}'.")
-    else:
         main_var = None
 
     # Loop through all (potential) coordinates to find all possible matches
