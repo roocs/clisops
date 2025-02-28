@@ -70,7 +70,8 @@ def get_coord_by_type(
         # Not all coordinate variables are always classified as such
         coord_vars = list(ds.coords) + list(ds.data_vars)
         # make sure we skip the main variable!
-        coord_vars.remove(main_var)
+        if main_var is not None:
+            coord_vars.remove(main_var)
     else:
         raise TypeError("Not an xarray.Dataset or xarray.DataArray.")
     for coord_id in coord_vars:
