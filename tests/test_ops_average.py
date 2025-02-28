@@ -24,7 +24,9 @@ def _check_output_nc(result, fname="output_001.nc"):
 
 
 def _load_ds(fpath):
-    return xr.open_mfdataset(fpath, use_cftime=True)
+    return xr.open_mfdataset(
+        fpath, decode_times=xr.coders.CFDatetimeCoder(use_cftime=True)
+    )
 
 
 def test_average_basic_data_array(nimbus):

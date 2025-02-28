@@ -102,7 +102,7 @@ def test_xarray_da_mean_keep_attrs_true(mini_esgf_data):
     ds = xr.open_mfdataset(
         mini_esgf_data["CMIP5_TAS"],
         combine="by_coords",
-        use_cftime=True,
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         drop_variables=["time_bnds"],
     )
     ds_tas_mean = ds.tas.mean(dim="lat", keep_attrs=True)
@@ -116,7 +116,7 @@ def test_xarray_da_mean_keep_attrs_false(mini_esgf_data):
     ds = xr.open_mfdataset(
         mini_esgf_data["CMIP5_TAS"],
         combine="by_coords",
-        use_cftime=True,
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
     ).load()
     ds_tas_mean = ds.tas.mean(dim="time", keep_attrs=False)
     ds_mean = ds.mean(dim="time", keep_attrs=False)

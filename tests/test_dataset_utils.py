@@ -25,7 +25,10 @@ XESMF_IMPORT_MSG = (
 
 
 def test_add_day(mini_esgf_data):
-    with xr.open_dataset(mini_esgf_data["CMIP6_SICONC"], use_cftime=True) as ds:
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_SICONC"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    ) as ds:
         date = "2012-02-29T00:00:00"
 
         new_date = clidu.adjust_date_to_calendar(ds, date, "forwards")
@@ -34,7 +37,10 @@ def test_add_day(mini_esgf_data):
 
 
 def test_sub_day(mini_esgf_data):
-    with xr.open_dataset(mini_esgf_data["CMIP6_SICONC"], use_cftime=True) as ds:
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_SICONC"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    ) as ds:
         date = "2012-02-30T00:00:00"
 
         new_date = clidu.adjust_date_to_calendar(ds, date, "backwards")
@@ -43,7 +49,10 @@ def test_sub_day(mini_esgf_data):
 
 
 def test_invalid_day(mini_esgf_data):
-    with xr.open_dataset(mini_esgf_data["CMIP6_SICONC"], use_cftime=True) as ds:
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_SICONC"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    ) as ds:
         date = "2012-02-29T00:00:00"
 
         with pytest.raises(Exception) as exc:
@@ -55,7 +64,10 @@ def test_invalid_day(mini_esgf_data):
 
 
 def test_date_out_of_expected_range(mini_esgf_data):
-    da = xr.open_dataset(mini_esgf_data["CMIP6_SICONC"], use_cftime=True)
+    da = xr.open_dataset(
+        mini_esgf_data["CMIP6_SICONC"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    )
     date = "2012-00-01T00:00:00"
 
     with pytest.raises(Exception) as exc:
@@ -185,7 +197,10 @@ def test_detect_shape_regular():
 def test_detect_shape_unstructured(mini_esgf_data):
     """Test detect_shape function for an unstructured grid."""
     # Load dataset
-    with xr.open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"], use_cftime=True) as ds:
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_UNSTR_ICON_A"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    ) as ds:
 
         # Detect shape
         nlat, nlon, ncells = clidu.detect_shape(
@@ -217,10 +232,14 @@ def test_detect_format():
 def test_detect_coordinate_and_bounds(mini_esgf_data):
     """Test detect_bounds and detect_coordinate functions."""
     ds_a = xr.open_mfdataset(
-        mini_esgf_data["C3S_CORDEX_AFR_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["C3S_CORDEX_AFR_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ).load()
     ds_b = xr.open_mfdataset(
-        mini_esgf_data["C3S_CORDEX_ANT_SFC_WIND"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["C3S_CORDEX_ANT_SFC_WIND"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ).load()
     ds_c = xr.open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"]).load()
     ds_d = xr.open_dataset(mini_esgf_data["CMIP6_OCE_HALO_CNRM"]).load()
@@ -274,7 +293,9 @@ def test_detect_coordinate_and_bounds(mini_esgf_data):
 def test_detect_coordinate_robustness(tmpdir, mini_esgf_data):
     """Test coordinate detection for dataset where cf_xarray fails due to erroneous attributes."""
     with xr.open_mfdataset(
-        mini_esgf_data["C3S_CORDEX_AFR_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["C3S_CORDEX_AFR_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ).load() as ds:
         assert clidu.detect_coordinate(ds, "latitude") == "lat"
         assert clidu.detect_coordinate(ds, "longitude") == "lon"
@@ -302,9 +323,18 @@ def test_detect_coordinate_robustness(tmpdir, mini_esgf_data):
 
 def test_detect_gridtype(mini_esgf_data):
     """Test the function detect_gridtype."""
-    ds_a = xr.open_dataset(mini_esgf_data["CMIP6_UNSTR_ICON_A"], use_cftime=True)
-    ds_b = xr.open_dataset(mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"], use_cftime=True)
-    ds_c = xr.open_dataset(mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"], use_cftime=True)
+    ds_a = xr.open_dataset(
+        mini_esgf_data["CMIP6_UNSTR_ICON_A"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    )
+    ds_b = xr.open_dataset(
+        mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    )
+    ds_c = xr.open_dataset(
+        mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    )
     assert (
         clidu.detect_gridtype(
             ds_a,
@@ -587,7 +617,10 @@ def test_convert_lon_frame_force():
 
 
 def test_convert_lon_frame_shifted_bounds(mini_esgf_data):
-    with xr.open_dataset(mini_esgf_data["CMIP6_GFDL_EXTENT"], use_cftime=True) as ds:
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_GFDL_EXTENT"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    ) as ds:
 
         # confirm shifted frame
         assert np.isclose(ds["lon"].min(), -300.0, atol=0.5)
@@ -631,7 +664,10 @@ def test_convert_lon_frame_shifted_bounds(mini_esgf_data):
 
 
 def test_convert_lon_frame_shifted_no_bounds(mini_esgf_data):
-    with xr.open_dataset(mini_esgf_data["CMIP6_IITM_EXTENT"], use_cftime=True) as ds:
+    with xr.open_dataset(
+        mini_esgf_data["CMIP6_IITM_EXTENT"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+    ) as ds:
 
         # confirm shifted frame
         assert np.isclose(ds["longitude"].min(), -280.0, atol=1.0)
@@ -726,7 +762,9 @@ def test_calculate_bounds_rectilinear(mini_esgf_data):
 # Adapted from roocs_utils:tests.test_xarray_utils.test_get_main_var
 def test_get_main_var(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["C3S_CMIP5_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["C3S_CMIP5_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         result = clidu.get_main_variable(ds)
         assert result == "tas"
@@ -734,7 +772,9 @@ def test_get_main_var(mini_esgf_data):
 
 def test_get_main_var_2(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP5_ZOSTOGA"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP5_ZOSTOGA"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         result = clidu.get_main_variable(ds)
         assert result == "zostoga"
@@ -742,7 +782,9 @@ def test_get_main_var_2(mini_esgf_data):
 
 def test_get_main_var_3(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP5_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP5_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         result = clidu.get_main_variable(ds)
         assert result == "tas"
@@ -750,7 +792,9 @@ def test_get_main_var_3(mini_esgf_data):
 
 def test_get_main_var_4(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP5_RH"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP5_RH"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         result = clidu.get_main_variable(ds)
         assert result == "rh"
@@ -758,7 +802,9 @@ def test_get_main_var_4(mini_esgf_data):
 
 def test_get_main_var_test_data(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP6_SIMASS_DEGEN"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP6_SIMASS_DEGEN"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         var_id = clidu.get_main_variable(ds)
         assert var_id == "simass"
@@ -766,7 +812,9 @@ def test_get_main_var_test_data(mini_esgf_data):
 
 def test_get_main_var_include_common_coords(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP5_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP5_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         var_id = clidu.get_main_variable(ds, exclude_common_coords=False)
 
@@ -776,7 +824,9 @@ def test_get_main_var_include_common_coords(mini_esgf_data):
 
 def test_get_standard_names(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP5_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP5_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         assert sorted(ds.cf.standard_names) == sorted(
             [
@@ -792,7 +842,9 @@ def test_get_standard_names(mini_esgf_data):
 # Adapted from roocs_utils:tests.test_xarray_utils.test_cf_xarray
 def test_get_latitude_cf_xarray(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP5_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP5_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         xr.testing.assert_identical(
             ds["lat"].reset_coords("height", drop=True), ds.cf["lat"]
@@ -804,7 +856,9 @@ def test_get_latitude_cf_xarray(mini_esgf_data):
 
 def test_get_latitude_2_cf_xarray(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["C3S_CMIP5_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["C3S_CMIP5_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         xr.testing.assert_identical(ds["lat"], ds.cf["lat"])
         xr.testing.assert_identical(ds["lat"], ds.cf["latitude"])
@@ -814,7 +868,9 @@ def test_get_latitude_2_cf_xarray(mini_esgf_data):
 
 def test_get_lat_lon_names_from_ds_cf_xarray(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP5_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP5_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         assert ds.cf["latitude"].name == "lat"
         assert ds.cf["longitude"].name == "lon"
@@ -823,7 +879,9 @@ def test_get_lat_lon_names_from_ds_cf_xarray(mini_esgf_data):
 
 def test_get_time_cf_xarray(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP5_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP5_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         xr.testing.assert_identical(
             ds["time"].reset_coords(("height"), drop=True), ds.cf["time"]
@@ -834,7 +892,9 @@ def test_get_time_cf_xarray(mini_esgf_data):
 # test dataset with no known problems
 def test_get_time(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP5_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP5_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         da = ds["tas"]
         coord = da.time
@@ -843,7 +903,9 @@ def test_get_time(mini_esgf_data):
 
 def test_get_latitude(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP5_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP5_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         da = ds["tas"]
         coord = da.lat
@@ -852,7 +914,9 @@ def test_get_latitude(mini_esgf_data):
 
 def test_get_longitude(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP5_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP5_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         da = ds["tas"]
         coord = da.lon
@@ -862,7 +926,9 @@ def test_get_longitude(mini_esgf_data):
 # test dataset with no standard name for time
 def test_get_time_2(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["C3S_CMIP5_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["C3S_CMIP5_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         da = ds["tas"]
         coord = da.time
@@ -871,7 +937,9 @@ def test_get_time_2(mini_esgf_data):
 
 def test_get_latitude_2(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["C3S_CMIP5_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["C3S_CMIP5_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         da = ds["tas"]
         coord = da.lat
@@ -880,7 +948,9 @@ def test_get_latitude_2(mini_esgf_data):
 
 def test_get_longitude_2(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["C3S_CMIP5_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["C3S_CMIP5_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         da = ds["tas"]
         coord = da.lon
@@ -890,7 +960,9 @@ def test_get_longitude_2(mini_esgf_data):
 # test dataset with only time and another coordinate that isn't lat or lon
 def test_get_time_3(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP5_ZOSTOGA"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP5_ZOSTOGA"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         da = ds["zostoga"]
         coord = da.time
@@ -899,7 +971,9 @@ def test_get_time_3(mini_esgf_data):
 
 def test_get_level(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP5_ZOSTOGA"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP5_ZOSTOGA"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         da = ds["zostoga"]
         coord = da.lev
@@ -908,7 +982,9 @@ def test_get_level(mini_esgf_data):
 
 def test_get_other(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP6_SICONC"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP6_SICONC"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         da = ds["siconc"]
         coord = da.type
@@ -917,7 +993,9 @@ def test_get_other(mini_esgf_data):
 
 def test_order_of_coords(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP5_ZOSTOGA"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP5_ZOSTOGA"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         da = ds["zostoga"]
 
@@ -948,7 +1026,9 @@ def test_order_of_coords(mini_esgf_data):
 
 def test_text_coord_not_level(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["CMIP6_CHAR_DIM"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["CMIP6_CHAR_DIM"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         coord_type = clidu.get_coord_type(ds.sector)
         assert coord_type is None
@@ -957,7 +1037,9 @@ def test_text_coord_not_level(mini_esgf_data):
 
 def test_get_coords_by_type(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["C3S_CORDEX_AFR_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["C3S_CORDEX_AFR_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
 
         # check lat, lon, time and level are found when they are coordinates
@@ -992,7 +1074,9 @@ def test_get_coords_by_type(mini_esgf_data):
 
 def test_get_coords_by_type_with_no_time(mini_esgf_data):
     with xr.open_mfdataset(
-        mini_esgf_data["C3S_CORDEX_AFR_TAS"], use_cftime=True, combine="by_coords"
+        mini_esgf_data["C3S_CORDEX_AFR_TAS"],
+        decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        combine="by_coords",
     ) as ds:
         # check time
         time = clidu.get_coord_by_type(ds, "time", ignore_aux_coords=False)
@@ -1019,7 +1103,11 @@ def test_open_xr_dataset_retains_time_encoding(mini_esgf_data):
         assert ds.time.encoding.get("units") == "days since 1850-01-01 00:00:00"
 
     # Now test without our clever opener - to prove time encoding is lost
-    kwargs = {"use_cftime": True, "decode_timedelta": False, "combine": "by_coords"}
+    kwargs = {
+        "decoe_times": xr.coders.CFDatetimeCoder(use_cftime=True),
+        "decode_timedelta": False,
+        "combine": "by_coords",
+    }
     with xr.open_mfdataset(glob.glob(mini_esgf_data["C3S_CMIP5_TAS"]), **kwargs) as ds:
         assert ds.time.encoding == {}
 

@@ -295,7 +295,11 @@ def check_output_nc():
     def _check_output_nc(result, fname="output_001.nc", time=None):
         assert fname in [Path(_).name for _ in result]
         if time:
-            ds = xr.open_mfdataset(result, use_cftime=True, decode_timedelta=False)
+            ds = xr.open_mfdataset(
+                result,
+                decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+                decode_timedelta=False,
+            )
             time_ = (
                 f"{ds.time.values.min().isoformat()}/{ds.time.values.max().isoformat()}"
             )

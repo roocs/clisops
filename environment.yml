@@ -2,7 +2,7 @@ name: clisops
 channels:
  - conda-forge
 dependencies:
- - python >=3.9,<3.13
+ - python >=3.9,<3.14
  - flit >=3.10.1,<4.0
  - pip >=25.0
  - aiohttp # Needed for HTTPFileSystem
@@ -18,7 +18,7 @@ dependencies:
  - geopandas >=1.0
  - jinja2 >=2.11
  - loguru >=0.5.3
- - numpy >=1.23.0,<2.1
+ - numpy >=1.24.0
  - packaging >=23.2
  - pandas >=1.5.3
  - platformdirs >=4.0
@@ -26,20 +26,22 @@ dependencies:
  - pyproj >=3.3.0
  - requests # Needed for HTTPFileSystem
  - roocs-grids >=0.1.2
- - scipy >=1.9.0
- - shapely >=1.9
- - xarray >=2022.6.0,<2023.3.0 # See: https://github.com/pydata/xarray/issues/7794
+ - scipy >=1.10.0
+ - shapely >=2.0
+ - xarray >=2022.6.0 # Some issues with CFTime calendars. See: https://github.com/pydata/xarray/issues/7794
  - zarr >=2.13.0
+  # Compression
  - zstandard
   # Extras
  - netcdf4 >=1.4
  - xesmf >=0.8.2
-  # Dev tools and testing
+#  # Dev tools and testing
  - black >=25.1.0
- - bump-my-version >=0.18.3
+ - bump-my-version >=0.32.1
  - coverage >=7.5.0
- - flake8 >=7.0.0
- - isort >=5.13.2
+ - deptry >=0.23.0
+ - flake8 >=7.1.0
+ - isort >=6.0.0
  - netCDF4 >=1.4
  - pre-commit >=3.5.0
  - pytest >=8.0.0
@@ -48,7 +50,7 @@ dependencies:
  - pytest-xdist >=3.2
  - tox >=4.24.1
  - watchdog >=4.0.0
- # Documentation
+# # Documentation
  - ipykernel
  - ipython >=8.5.0
  - ipython_genutils
@@ -56,9 +58,9 @@ dependencies:
  - matplotlib-base >=3.6.0
  - nbconvert >=7.14.0
  - nbsphinx >=0.9.5
- - psy-maps >=1.5.0
+ # - psy-maps >=1.5.0  # FIXME: This library is unmaintained and not available on conda-forge for Python 3.13
  - sphinx >=7.1.0,<8.2.0 # pinned until nbsphinx supports sphinx 8.2
  - sphinx-autodoc-typehints
- # - sphinx-codeautolink >=0.16.2
+ - sphinx-codeautolink
  - sphinx-copybutton
  - sphinx-rtd-theme >=1.0
