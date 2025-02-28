@@ -56,6 +56,14 @@ def get_coord_by_type(
     if coord_type not in known_coord_types:
         raise ValueError(f"Coordinate type not known: {coord_type}")
 
+    # Get main variable ... if possible
+    try:
+        main_var = get_main_variable(ds)
+    except ValueError:
+        warnings.warn(f"No main variable found for dataset '{ds}'.")
+    else:
+        main_var = None
+
     # Loop through all (potential) coordinates to find all possible matches
     if isinstance(ds, xr.DataArray):
         coord_vars = list(ds.coords)
@@ -63,12 +71,7 @@ def get_coord_by_type(
         # Not all coordinate variables are always classified as such
         coord_vars = list(ds.coords) + list(ds.data_vars)
         # make sure we skip the main variable!
-        try:
-            var = get_main_variable(ds)
-        except ValueError:
-            warnings.warn(f"No variable found for dataset '{ds}'.")
-        else:
-            coord_vars.remove(var)
+        coord_vars.remove(main_var)
     else:
         raise TypeError("Not an xarray.Dataset or xarray.DataArray.")
     for coord_id in coord_vars:
@@ -98,17 +101,18 @@ def get_coord_by_type(
         # Sort in terms of number of dimensions
         coords = sorted(coords, key=lambda x: len(ds[x].dims), reverse=True)
 
-        # Get dimensions and singleton coords of main variable
-        main_var_dims = list(ds[get_main_variable(ds)].dims)
+        if main_var is not None:
+            # Get dimensions and singleton coords of main variable
+            main_var_dims = list(ds[main_var].dims)
 
-        # Select coordinate with most dims (matching with main variable dims)
-        for coord_id in coords:
-            if coord_id in ds.coords:
-                if all([dim in main_var_dims for dim in ds.coords[coord_id].dims]):
-                    if return_further_matches:
-                        return coord_id, [x for x in coords if x != coord_id]
-                    else:
-                        return coord_id
+            # Select coordinate with most dims (matching with main variable dims)
+            for coord_id in coords:
+                if coord_id in ds.coords:
+                    if all([dim in main_var_dims for dim in ds.coords[coord_id].dims]):
+                        if return_further_matches:
+                            return coord_id, [x for x in coords if x != coord_id]
+                        else:
+                            return coord_id
         # If the decision making fails, pass the first match
         if return_further_matches:
             return coords[0], coords[1:]
