@@ -99,7 +99,7 @@ docs = [
   "nbconvert >=7.14.0",
   "nbsphinx >=0.9.5",
   "psy-maps >=1.5.0", # FIXME: This library is unmaintained and not available on conda-forge for Python 3.13
-  "sphinx >=7.1.0,<8.2", # pinned until nbsphinx supports sphinx 8.2
+  "sphinx >=7.1.0,<8.3", # pinned until nbsphinx supports sphinx 8.2
   "sphinx-autodoc-typehints",
   "sphinx-codeautolink",
   "sphinx-copybutton",
