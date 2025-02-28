@@ -33,6 +33,7 @@ classifiers = [
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12", # Compatibility issues will persist until https://github.com/pydata/xarray/issues/7794 is resolved
+  "Programming Language :: Python :: 3.13", # Compatibility issues will persist until https://github.com/pydata/xarray/issues/7794 is resolved
   "Topic :: Scientific/Engineering",
   "Topic :: Scientific/Engineering :: Atmospheric Science",
   "Topic :: Scientific/Engineering :: GIS",
@@ -55,7 +56,7 @@ dependencies = [
   "geopandas >=1.0",
   "jinja2 >=2.11",
   "loguru >=0.5.3",
-  "numpy >=1.23.0",
+  "numpy >=1.24.0",
   "packaging >=23.2",
   "pandas >=1.5.0",
   "platformdirs >=4.0",
@@ -66,7 +67,7 @@ dependencies = [
   "roocs_grids >=0.1.2",
   "scipy>=1.9.0",
   "shapely >=1.9",
-  "xarray >=2022.9.0",
+  "xarray >=2022.9.0", # Some issues with CFTime calendars. See: https://github.com/pydata/xarray/issues/7794
   "zarr >=2.13.0"
 ]
 
@@ -74,9 +75,9 @@ dependencies = [
 dev = [
   # Dev tools and testing
   "black >=25.1.0",
-  "bump-my-version >=0.18.3",
+  "bump-my-version >=0.32.1",
   "coverage[toml] >=7.5.0",
-  "deptry >=0.20.0",
+  "deptry >=0.23.0",
   "flake8 >=7.1.0",
   "isort >=6.0.0",
   "netCDF4 >=1.4",
@@ -97,10 +98,10 @@ docs = [
   "matplotlib >=3.6.0",
   "nbconvert >=7.14.0",
   "nbsphinx >=0.9.5",
-  "psy-maps >=1.5.0",
+  "psy-maps >=1.5.0", # FIXME: This library is unmaintained and not available on conda-forge for Python 3.13
   "sphinx >=7.1.0,<8.2", # pinned until nbsphinx supports sphinx 8.2
   "sphinx-autodoc-typehints",
-  # "sphinx-codeautolink >=0.16.2",
+  "sphinx-codeautolink",
   "sphinx-copybutton",
   "sphinx-rtd-theme >=1.0"
 ]
@@ -124,7 +125,8 @@ target-version = [
   "py39",
   "py310",
   "py311",
-  "py312"
+  "py312",
+  "py313"
 ]
 
 [tool.bumpversion]

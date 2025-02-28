@@ -9,10 +9,18 @@ updates:
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+      time: '12:00'
+    groups:
+      actions:
+        patterns:
+          - "*"
 
   - package-ecosystem: pip
     directory: /
     schedule:
       interval: weekly
-    open-pull-requests-limit: 5
+      time: '12:00'
+    groups:
+      python:
+        patterns:
+          - "*"

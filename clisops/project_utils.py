@@ -67,7 +67,9 @@ class DatasetMapper:
 
             # this will not return c3s project names
             elif dset.endswith(".nc") or os.path.isfile(dset):
-                dset = xr.open_dataset(dset, use_cftime=True)
+                dset = xr.open_dataset(
+                    dset, decode_times=xr.coders.CFDatetimeCoder(use_cftime=True)
+                )
                 return get_project_from_ds(dset)
 
         else:
