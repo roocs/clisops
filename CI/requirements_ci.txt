@@ -16,9 +16,9 @@ bracex==2.5.post1 \
     --hash=sha256:12c50952415bfa773d2d9ccb8e79651b8cdb1f31a42f6091b804f6ba2b4a66b6 \
     --hash=sha256:13e5732fec27828d6af308628285ad358047cec36801598368cb28bc631dbaf6
     # via wcmatch
-bump-my-version==0.32.2 \
-    --hash=sha256:fb93c5a70a2368354bcac4457d22f282dc66a7bd241241f5a4e3d49002dece36 \
-    --hash=sha256:fc1c686af66c39c44d2f19c4d29597fcc2f938bc19046b8df26bfa44c93f11c0
+bump-my-version==1.0.0 \
+    --hash=sha256:cbedf33d2e18d18ee3ad99f73309a75d85707b7a3d42ca96160b5b5b0a2f6104 \
+    --hash=sha256:f90324a8cde98c5ff09632eada4ba847096817463a37b6fa9b8899ec4192b45d
     # via -r CI/requirements_ci.in
 cachetools==5.5.2 \
     --hash=sha256:1a661caa9175d26759571b2e19580f9d6393969e5dfca11fdb1f947a23e640d4 \
@@ -150,7 +150,7 @@ docutils==0.21.2 \
 exceptiongroup==1.2.2 \
     --hash=sha256:3111b9d131c238bec2f8f516e123e14ba243563fb135d3fe885990585aa7795b \
     --hash=sha256:47c2edf7c6738fafb49fd34290706d1a1a2f4d1c6df275526b62cbb4aa5393cc
-    # via anyio
+    # via -r CI/requirements_ci.in
 filelock==3.17.0 \
     --hash=sha256:533dc2f7ba78dc2f0f531fc6c4940addf7b70a481e269a5a3b93be94ffbe8338 \
     --hash=sha256:ee4e77401ef576ebb38cd7f13b9b28893194acc20a8e68e18730ba9c0e54660e
@@ -391,9 +391,7 @@ tomli==2.2.1 \
     --hash=sha256:e85e99945e688e32d5a35c1ff38ed0b3f41f43fad8df0bdf79f72b2ba7bc5272 \
     --hash=sha256:ece47d672db52ac607a3d9599a9d48dcb2f2f735c6c2d1f34130085bb12b112a \
     --hash=sha256:f4039b9cbc3048b2416cc57ab3bda989a6fcf9b36cf8937f01a6e731b64f80d7
-    # via
-    #   pyproject-api
-    #   tox
+    # via -r CI/requirements_ci.in
 tomli-w==1.2.0 \
     --hash=sha256:188306098d013b691fcadc011abd66727d3c414c571bb01b1a174ba8c983cf90 \
     --hash=sha256:2dd14fac5a47c27be9cd4c976af5a12d87fb1f0b4512f81d69cce3b35ae25021
@@ -416,12 +414,9 @@ typing-extensions==4.12.2 \
     --hash=sha256:04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d \
     --hash=sha256:1a7ead55c7e559dd4dee8856e3a88b41225abfe1ce8df57b7c13915fe121ffb8
     # via
-    #   anyio
     #   pydantic
     #   pydantic-core
-    #   rich
     #   rich-click
-    #   tox
 urllib3==2.3.0 \
     --hash=sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df \
     --hash=sha256:f8c5449b3cf0861679ce7e0503c7b44b5ec981bec0d1d3795a07f1ba96f0204d
