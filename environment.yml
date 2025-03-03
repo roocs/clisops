@@ -28,11 +28,11 @@ dependencies:
  - roocs-grids >=0.1.2
  - scipy >=1.10.0
  - shapely >=2.0
- - xarray >=2022.6.0 # Some issues with CFTime calendars. See: https://github.com/pydata/xarray/issues/7794
+ - xarray >=2025.1.1 # use decode_times=CFDatetimeCoder(use_cftime=True)
  - zarr >=2.13.0
-  # Compression
+ # Compression
  - zstandard
-  # Extras
+ # Extras
  - netcdf4 >=1.4
  - xesmf >=0.8.2
 #  # Dev tools and testing
