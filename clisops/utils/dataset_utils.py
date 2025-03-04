@@ -322,8 +322,12 @@ def get_main_variable(ds, exclude_common_coords=True):
                                 Default is True.
     :return: (str) The main variable of the dataset e.g. 'tas'
     """
-
-    data_dims = [data.dims for var_id, data in ds.variables.items()]
+    if isinstance(ds, xr.Dataset):
+        variables = list(ds.variables.items())
+        data_dims = [data.dims for var_id, data in variables]
+    else:
+        variables = []
+        data_dims = []
     flat_dims = [dim for sublist in data_dims for dim in sublist]
 
     results = {}
@@ -338,7 +342,7 @@ def get_main_variable(ds, exclude_common_coords=True):
         "realization",
     ]
 
-    for var_id, data in ds.variables.items():
+    for var_id, data in variables:
         if var_id in flat_dims:
             continue
         if exclude_common_coords is True and any(
