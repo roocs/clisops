@@ -122,6 +122,7 @@ jobs:
           disable-sudo: true
           egress-policy: block
           allowed-endpoints: >
+            cdn.fwupd.org:443
             conda.anaconda.org:443
             coveralls.io:443
             files.pythonhosted.org:443
