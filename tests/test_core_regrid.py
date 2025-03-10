@@ -152,6 +152,9 @@ def test_grid_init_ds_tos_degenerated_cells(mini_esgf_data):
         ]
 
 
+@pytest.mark.xfail(
+    reason="Needs xarray fix https://github.com/pydata/xarray/issues/7794"
+)
 def test_grid_init_da_tas_regular(mini_esgf_data):
     with xr.open_dataset(
         mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"],
@@ -1529,6 +1532,9 @@ class TestRegrid:
                 else:
                     assert len(issuedWarnings) == 1
 
+    @pytest.mark.xfail(
+        reason="Needs xarray fix https://github.com/pydata/xarray/issues/7794"
+    )
     def test_regrid_dataarray(self, tmp_path, mini_esgf_data):
         with xr.open_dataset(
             mini_esgf_data[self.c6tots],
