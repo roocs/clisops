@@ -10,10 +10,7 @@ sphinx:
   configuration: docs/conf.py
   fail_on_warning: true
 
-# Optionally build your docs in additional formats such as PDF and ePub
-formats:
-    - pdf
-
+# Build configuration
 build:
   os: ubuntu-24.04
   tools:
@@ -24,6 +21,7 @@ build:
     pre_build:
       - env SPHINX_APIDOC_OPTIONS="members,undoc-members,show-inheritance,no-index" sphinx-apidoc -o docs/apidoc/ --private --module-first clisops
 
+# Conda configuration
 conda:
   environment: environment.yml
 
