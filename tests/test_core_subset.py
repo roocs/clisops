@@ -338,6 +338,10 @@ class TestSubsetBbox:
     lonGCM = [-70.0, -60.0]
     latGCM = [43.0, 59.0]
 
+    @pytest.mark.xfail(
+        reason="NetCDF4 has thread safety issues. Consider using h5netcdf in the future",
+        strict=False,
+    )
     def test_dataset(self, nimbus):
         da = xr.open_mfdataset(
             [nimbus.fetch(self.nc_tasmax_file), nimbus.fetch(self.nc_tasmin_file)],
