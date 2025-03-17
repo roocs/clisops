@@ -409,14 +409,3 @@ def clisops_test_data():
         "small_geojson": test_data.joinpath("small_geojson.json").as_posix(),
         "multi_regions_geojson": test_data.joinpath("multi_regions.json").as_posix(),
     }
-
-
-# Temporarily required until https://github.com/pydata/xarray/issues/7794 is addressed
-@pytest.fixture(scope="session")
-def xfail_if_xarray_incompatible():
-    if Version(xr.__version__) >= Version(XARRAY_INCOMPATIBLE_VERSION):
-        pytest.xfail(
-            f"xarray version >= {XARRAY_INCOMPATIBLE_VERSION} "
-            f"is not supported for several operations with cf-time indexed arrays. "
-            "For more information, see: https://github.com/pydata/xarray/issues/7794."
-        )
