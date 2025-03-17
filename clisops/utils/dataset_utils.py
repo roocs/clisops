@@ -223,6 +223,7 @@ def is_level(coord):
 def _is_time(coord):
     """
     Check if a coordinate uses cftime datetime objects.
+    
     Handles Dask-backed arrays for lazy evaluation.
     """
     if coord.size == 0:
