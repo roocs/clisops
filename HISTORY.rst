@@ -1,13 +1,19 @@
 Version History
 ===============
 
-v0.16.0 (unreleased)
+v0.16.0 (2025-03-18)
 --------------------
 
 New Features
 ^^^^^^^^^^^^
 * `clisops` now officially supports Python 3.13 (#398).
 * Version limitations have been lifted on `xarray` and `numpy` to support newer versions (#398).
+  * Mark regrid tests as `xfail` which do not pass due to latest xarray version (#397).
+
+Bug Fixes
+^^^^^^^^^
+* `clisops.utils.dataset_utils`
+  * Fixed `is_time` to avoid memory overload (#397).
 
 Internal Changes
 ^^^^^^^^^^^^^^^^

@@ -5,6 +5,7 @@ from typing import Optional
 
 import cf_xarray as cfxr  # noqa
 import cftime
+import dask.array as da
 import fsspec
 import numpy as np
 import xarray as xr
@@ -55,12 +56,22 @@ def get_coord_by_type(
     if coord_type not in known_coord_types:
         raise ValueError(f"Coordinate type not known: {coord_type}")
 
+    # Get main variable ... if possible
+    try:
+        main_var = get_main_variable(ds)
+    except ValueError:
+        warnings.warn(f"No main variable found for dataset '{ds}'.")
+        main_var = None
+
     # Loop through all (potential) coordinates to find all possible matches
     if isinstance(ds, xr.DataArray):
         coord_vars = list(ds.coords)
     elif isinstance(ds, xr.Dataset):
         # Not all coordinate variables are always classified as such
         coord_vars = list(ds.coords) + list(ds.data_vars)
+        # make sure we skip the main variable!
+        if main_var is not None:
+            coord_vars.remove(main_var)
     else:
         raise TypeError("Not an xarray.Dataset or xarray.DataArray.")
     for coord_id in coord_vars:
@@ -90,16 +101,18 @@ def get_coord_by_type(
         # Sort in terms of number of dimensions
         coords = sorted(coords, key=lambda x: len(ds[x].dims), reverse=True)
 
-        # Get dimensions and singleton coords of main variable
-        main_var_dims = list(ds[get_main_variable(ds)].dims)
+        if main_var is not None:
+            # Get dimensions and singleton coords of main variable
+            main_var_dims = list(ds[main_var].dims)
 
-        # Select coordinate with most dims (matching with main variable dims)
-        for coord_id in coords:
-            if all([dim in main_var_dims for dim in ds.coords[coord_id].dims]):
-                if return_further_matches:
-                    return coord_id, [x for x in coords if x != coord_id]
-                else:
-                    return coord_id
+            # Select coordinate with most dims (matching with main variable dims)
+            for coord_id in coords:
+                if coord_id in ds.coords:
+                    if all([dim in main_var_dims for dim in ds.coords[coord_id].dims]):
+                        if return_further_matches:
+                            return coord_id, [x for x in coords if x != coord_id]
+                        else:
+                            return coord_id
         # If the decision making fails, pass the first match
         if return_further_matches:
             return coords[0], coords[1:]
@@ -207,6 +220,28 @@ def is_level(coord):
     return False
 
 
+def _is_time(coord):
+    """
+    Check if a coordinate uses cftime datetime objects.
+
+    Handles Dask-backed arrays for lazy evaluation.
+    """
+    if coord.size == 0:
+        return False  # Empty array
+
+    if isinstance(coord.dtype.type(), cftime.datetime):
+        return True
+
+    # Safely get first element without loading entire array
+    first_value = coord.isel({dim: 0 for dim in coord.dims}).values
+
+    # Compute only if it's a Dask array
+    if isinstance(first_value, da.Array):
+        first_value = first_value.compute()
+
+    return isinstance(first_value.item(0), cftime.datetime)
+
+
 def is_time(coord):
     """
     Determines if a coordinate is time.
@@ -214,6 +249,10 @@ def is_time(coord):
     :param coord: coordinate of xarray dataset e.g. coord = ds.coords[coord_id]
     :return: (bool) True if the coordinate is time.
     """
+    if False and coord.ndim >= 2:
+        # skip variables with more than two dimensions: lat_bnds, lon_bnds, time_bnds, t, ...
+        return False
+
     if "time" in coord.cf.coordinates and coord.name in coord.cf.coordinates["time"]:
         return True
 
@@ -226,14 +265,11 @@ def is_time(coord):
     if np.issubdtype(coord.dtype, np.datetime64):
         return True
 
-    if isinstance(np.atleast_1d(coord.values)[0], cftime.datetime):
-        return True
-
     if hasattr(coord, "axis"):
         if coord.axis == "T":
             return True
 
-    return False
+    return _is_time(coord)
 
 
 def is_realization(coord):
@@ -287,8 +323,12 @@ def get_main_variable(ds, exclude_common_coords=True):
                                 Default is True.
     :return: (str) The main variable of the dataset e.g. 'tas'
     """
-
-    data_dims = [data.dims for var_id, data in ds.variables.items()]
+    if isinstance(ds, xr.Dataset):
+        variables = list(ds.variables.items())
+        data_dims = [data.dims for var_id, data in variables]
+    else:
+        variables = []
+        data_dims = []
     flat_dims = [dim for sublist in data_dims for dim in sublist]
 
     results = {}
@@ -303,7 +343,7 @@ def get_main_variable(ds, exclude_common_coords=True):
         "realization",
     ]
 
-    for var_id, data in ds.variables.items():
+    for var_id, data in variables:
         if var_id in flat_dims:
             continue
         if exclude_common_coords is True and any(
