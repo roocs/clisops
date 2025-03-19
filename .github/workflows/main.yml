@@ -96,7 +96,7 @@ jobs:
           key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-Python${{ matrix.python-version }}-${{ env.ESGF_TEST_DATA_VERSION }}
       - name: Test with tox
         run: |
-          python -m tox -e py${{ matrix.python-version }}${{ (matrix.python-version == '3.13') && '' || '-coveralls' }}
+          python -m tox
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_FLAG_NAME: run-Python${{ matrix.python-version }}
