@@ -1,6 +1,19 @@
 Version History
 ===============
 
+v0.16.1 (2025-03-19)
+--------------------
+
+This is a patch fix release to explicitly drop Python 3.9 support in the metadata due to incompatibility with `xarray`. For release notes on this minor version, see v0.16.0.
+
+Bug Fixes
+^^^^^^^^^
+* Dropped Python3.9 support in metadata due to incompatibility with `xarray` (#408).
+
+Internal Changes
+^^^^^^^^^^^^^^^^
+* Fixed an issue with the `tox` configuration that was causing the `py3.10` environment to use the wrong Python version (#408).
+
 v0.16.0 (2025-03-18)
 --------------------
 
