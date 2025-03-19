@@ -2,8 +2,7 @@
 Contributing
 ============
 
-Contributions are welcome, and they are greatly appreciated! Every little bit
-helps, and credit will always be given.
+Contributions are welcome, and they are greatly appreciated! Every little bit helps, and credit will always be given.
 
 You can contribute in many ways:
 
@@ -24,21 +23,17 @@ If you are reporting a bug, please include:
 Fix Bugs
 ~~~~~~~~
 
-Look through the GitHub issues for bugs. Anything tagged with "bug" and "help
-wanted" is open to whoever wants to implement it.
+Look through the GitHub issues for bugs. Anything tagged with "bug" and "help wanted" is open to whoever wants to implement it.
 
 Implement Features
 ~~~~~~~~~~~~~~~~~~
 
-Look through the GitHub issues for features. Anything tagged with "enhancement"
-and "help wanted" is open to whoever wants to implement it.
+Look through the GitHub issues for features. Anything tagged with "enhancement" and "help wanted" is open to whoever wants to implement it.
 
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
 
-clisops could always use more documentation, whether as part of the
-official clisops docs, in docstrings, or even on the web in blog posts,
-articles, and such.
+clisops could always use more documentation, whether as part of the official clisops docs, in docstrings, or even on the web in blog posts, articles, and such.
 
 Submit Feedback
 ~~~~~~~~~~~~~~~
@@ -76,7 +71,7 @@ Ready to contribute? Here's how to set up `clisops` for local development.
         $ mkvirtualenv clisops
 
         # For Anaconda/Miniconda environments:
-        $ conda create -n clisops python=(3.9, 3.10, 3.11, etc.)
+        $ conda create -n clisops python=(3.10, 3.11, 3.12, etc.)
 
         $ cd clisops/
         $ pip install -e .
@@ -204,7 +199,7 @@ Before you submit a pull request, please follow these guidelines:
     Remember to add the feature or bug fixes explanation to the appropriate section in the HISTORY.rst.
 
 #.
-    The pull request should work for Python 3.9+ as well as raise test coverage.
+    The pull request should work for all supported Python versions as well as raise test coverage.
     Pull requests are also checked for documentation build status and for `PEP8`_ compliance.
 
     The build statuses and build errors for pull requests can be found at:
