@@ -16,9 +16,9 @@ bracex==2.5.post1 \
     --hash=sha256:12c50952415bfa773d2d9ccb8e79651b8cdb1f31a42f6091b804f6ba2b4a66b6 \
     --hash=sha256:13e5732fec27828d6af308628285ad358047cec36801598368cb28bc631dbaf6
     # via wcmatch
-bump-my-version==1.0.2 \
-    --hash=sha256:2f156877d2cdcda69afcb257ae4564c26e70f2fd5e5b15f2c7f26ab9e91502da \
-    --hash=sha256:61d350b8c71968dd4520fc6b9df8b982c7df254cd30858b8645eff0f4eaf380b
+bump-my-version==1.1.1 \
+    --hash=sha256:2f590e0eabe894196289c296c52170559c09876454514ae8fce5db75bd47289e \
+    --hash=sha256:6bd78e20421f6335c1a49d7e85a2f16ae8966897d0a2dd130a0e8b6b55954686
     # via -r CI/requirements_ci.in
 cachetools==5.5.2 \
     --hash=sha256:1a661caa9175d26759571b2e19580f9d6393969e5dfca11fdb1f947a23e640d4 \
@@ -150,7 +150,9 @@ docutils==0.21.2 \
 exceptiongroup==1.2.2 \
     --hash=sha256:3111b9d131c238bec2f8f516e123e14ba243563fb135d3fe885990585aa7795b \
     --hash=sha256:47c2edf7c6738fafb49fd34290706d1a1a2f4d1c6df275526b62cbb4aa5393cc
-    # via -r CI/requirements_ci.in
+    # via
+    #   -r CI/requirements_ci.in
+    #   anyio
 filelock==3.18.0 \
     --hash=sha256:adbc88eabb99d2fec8c9c1b229b171f18afa655400173ddc653d5d01501fb9f2 \
     --hash=sha256:c401f4f8377c4464e6db25fff06205fd89bdd83b65eb0488ed1b160f780e21de
@@ -198,9 +200,9 @@ packaging==24.2 \
     # via
     #   pyproject-api
     #   tox
-platformdirs==4.3.6 \
-    --hash=sha256:357fb2acbc885b0419afd3ce3ed34564c13c9b95c89360cd9563f73aa5e2b907 \
-    --hash=sha256:73e575e1408ab8103900836b97580d5307456908a03e92031bab39e4554cc3fb
+platformdirs==4.3.7 \
+    --hash=sha256:a03875334331946f13c549dbd8f4bac7a13a50a895a0eb1e8c6a8ace80d40a94 \
+    --hash=sha256:eb437d586b6a0986388f0d6f74aa0cde27b48d0e3d66843640bfb6bdcdb6e351
     # via
     #   tox
     #   virtualenv
@@ -391,7 +393,10 @@ tomli==2.2.1 \
     --hash=sha256:e85e99945e688e32d5a35c1ff38ed0b3f41f43fad8df0bdf79f72b2ba7bc5272 \
     --hash=sha256:ece47d672db52ac607a3d9599a9d48dcb2f2f735c6c2d1f34130085bb12b112a \
     --hash=sha256:f4039b9cbc3048b2416cc57ab3bda989a6fcf9b36cf8937f01a6e731b64f80d7
-    # via -r CI/requirements_ci.in
+    # via
+    #   -r CI/requirements_ci.in
+    #   pyproject-api
+    #   tox
 tomli-w==1.2.0 \
     --hash=sha256:188306098d013b691fcadc011abd66727d3c414c571bb01b1a174ba8c983cf90 \
     --hash=sha256:2dd14fac5a47c27be9cd4c976af5a12d87fb1f0b4512f81d69cce3b35ae25021
@@ -414,9 +419,12 @@ typing-extensions==4.12.2 \
     --hash=sha256:04e5ca0351e0f3f85c6853954072df659d0d13fac324d0072316b67d7794700d \
     --hash=sha256:1a7ead55c7e559dd4dee8856e3a88b41225abfe1ce8df57b7c13915fe121ffb8
     # via
+    #   anyio
     #   pydantic
     #   pydantic-core
+    #   rich
     #   rich-click
+    #   tox
 urllib3==2.3.0 \
     --hash=sha256:1cee9ad369867bfdbbb48b7dd50374c0967a0bb7710050facf0dd6911440e3df \
     --hash=sha256:f8c5449b3cf0861679ce7e0503c7b44b5ec981bec0d1d3795a07f1ba96f0204d
