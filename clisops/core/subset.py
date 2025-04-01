@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from functools import wraps
 from pathlib import Path
 from typing import Callable, Optional, Union
+import warnings
 
 import cf_xarray  # noqa
 import geopandas as gpd
@@ -1043,16 +1044,7 @@ def subset_shape(
         try:
             shape_crs = CRS(poly.crs)
         except CRSError:
-            minbnd, _, maxbnd, _ = poly.total_bounds
-            # This is guessing that lons are wrapped around at 180+ but without much information, this might not be true
-            if minbnd >= -180 and maxbnd <= 180:
-                shape_crs = wgs84
-            elif minbnd >= 0 and minbnd <= 360:
-                shape_crs = wgs84_wrapped
-            else:
-                raise CRSError(
-                    "Shapefile CRS could not be determined and does not resemble WGS84."
-                )
+            shape_crs=False
             poly.crs = shape_crs
     if not shape_crs.equals(wgs84):
         logger.warning(
@@ -1075,18 +1067,11 @@ def subset_shape(
             # Extract CF-compliant CRS_WKT from crs variable.
             raster_crs = CRS.from_cf(ds_copy.crs.attrs)
         except AttributeError as e:
-            # This is guessing that lons are wrapped around at 180+ but without much information, this might not be true
-            if np.min(lon) >= -180 and np.max(lon) <= 180:
-                raster_crs = wgs84
-            elif np.min(lon) >= 0 and np.max(lon) <= 360:
-                wrap_lons = True
-                raster_crs = wgs84_wrapped
-            else:
-                raise CRSError(
-                    "Raster CRS is not known and does not resemble WGS84."
-                ) from e
-
-    _check_crs_compatibility(shape_crs=shape_crs, raster_crs=raster_crs)
+            raster_crs = False
+    if (raster_crs is False) or (shape_crs is False):
+        warnings.warn('`raster_crs` and/or `shape_crs` were not given directly or through `ds` and `shape`, no check of compatibility will be perform.')
+    else:
+        _check_crs_compatibility(shape_crs=shape_crs, raster_crs=raster_crs)
 
     # Get the shape's bounding box.
     minx, miny, maxx, maxy = poly.total_bounds
@@ -1170,15 +1155,6 @@ def subset_shape(
             ds_copy = ds_copy.sel({dim: mask_2d[dim]})
     else:
         ds_copy = ds_copy.where(inner_mask, drop=True)
-
-    # Add a CRS definition using CF conventions and as a global attribute in CRS_WKT for reference purposes
-    ds_copy.attrs["crs"] = raster_crs.to_string()
-    ds_copy["crs"] = 1
-    ds_copy["crs"].attrs.update(raster_crs.to_cf())
-
-    for v in ds_copy.variables:
-        if {lat.name, lon.name}.issubset(set(ds_copy[v].dims)):
-            ds_copy[v].attrs["grid_mapping"] = "crs"
 
     if isinstance(ds, xarray.DataArray):
         ds_copy = list(ds_copy.data_vars.values())[0]
