@@ -2,7 +2,6 @@
 
 import numbers
 import re
-import warnings
 from collections.abc import Sequence
 from functools import wraps
 from pathlib import Path
@@ -1016,6 +1015,10 @@ def subset_shape(
         dsSub = subset_shape(ds, shape=path_to_shape_file)
     """
     wgs84 = CRS(4326)
+    # PROJ4 definition for WGS84 with longitudes ranged between -180/+180.
+    wgs84_wrapped = CRS.from_string(
+        "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs lon_wrap=180"
+    )
 
     if isinstance(ds, xarray.DataArray):
         ds_copy = ds.to_dataset(name=ds.name or "subsetted")
@@ -1040,9 +1043,18 @@ def subset_shape(
         try:
             shape_crs = CRS(poly.crs)
         except CRSError:
-            shape_crs = False
+            minbnd, _, maxbnd, _ = poly.total_bounds
+            # This is guessing that lons are wrapped around at 180+ but without much information, this might not be true
+            if minbnd >= -180 and maxbnd <= 180:
+                shape_crs = wgs84
+            elif minbnd >= 0 and minbnd <= 360:
+                shape_crs = wgs84_wrapped
+            else:
+                raise CRSError(
+                    "Shapefile CRS could not be determined and does not resemble WGS84."
+                )
             poly.crs = shape_crs
-    if shape_crs is not False and not shape_crs.equals(wgs84):
+    if not shape_crs.equals(wgs84):
         logger.warning(
             "Shapefile CRS is not WGS84 and will be reprojected to WGS84. This may lead to inaccuracies.",
             UserWarning,
@@ -1062,11 +1074,16 @@ def subset_shape(
         try:
             # Extract CF-compliant CRS_WKT from crs variable.
             raster_crs = CRS.from_cf(ds_copy.crs.attrs)
+
         except AttributeError:
             raster_crs = False
-    if (raster_crs is False) or (shape_crs is False):
-        warnings.warn(
-            "`raster_crs` and/or `shape_crs` were not given directly or through `ds` and `shape`, no check of compatibility will be perform."
+            if (np.min(lon) >= 0 and np.max(lon) <= 360) and not (
+                np.min(lon) >= -180 and np.max(lon) <= 180
+            ):
+                wrap_lons = True
+    if raster_crs is False:
+        logger.warning(
+            "`raster_crs` was not given directly or through `ds`, no check of compatibility with `shape_crs` will be perform."
         )
     else:
         _check_crs_compatibility(shape_crs=shape_crs, raster_crs=raster_crs)
