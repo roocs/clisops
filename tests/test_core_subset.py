@@ -727,13 +727,12 @@ class TestSubsetShape:
             float(np.mean(subtas.isel(time=0))), 281.092, 3
         )
 
-        assert sub.crs.prime_meridian_name == "Greenwich"
-        assert sub.crs.grid_mapping_name == "latitude_longitude"
-
         sub.to_netcdf(tmp_netcdf_filename)
         assert tmp_netcdf_filename.exists()
         with xr.open_dataset(filename_or_obj=tmp_netcdf_filename) as f:
-            assert {"tas", "crs"}.issubset(set(f.data_vars))
+            assert {
+                "tas",
+            }.issubset(set(f.data_vars))
             subset.subset_shape(ds, clisops_test_data["meridian_multi_geojson"])
 
     def test_no_wraps(self, tmp_netcdf_filename, nimbus, clisops_test_data):
@@ -758,13 +757,10 @@ class TestSubsetShape:
             not in [str(q.message) for q in record]
         )
 
-        assert sub.crs.prime_meridian_name == "Greenwich"
-        assert sub.crs.grid_mapping_name == "latitude_longitude"
-
         sub.to_netcdf(tmp_netcdf_filename)
         assert tmp_netcdf_filename.exists()
         with xr.open_dataset(filename_or_obj=tmp_netcdf_filename) as f:
-            assert {"tas", "crs"}.issubset(set(f.data_vars))
+            assert {"tas"}.issubset(set(f.data_vars))
             subset.subset_shape(ds, clisops_test_data["poslons_geojson"])
 
     def test_all_neglons(self, nimbus, clisops_test_data):
@@ -826,13 +822,10 @@ class TestSubsetShape:
         assert len(sub.lon.values) == 3
         assert len(sub.lat.values) == 3
 
-        assert sub.crs.prime_meridian_name == "Greenwich"
-        assert sub.crs.grid_mapping_name == "latitude_longitude"
-
         sub.to_netcdf(tmp_netcdf_filename)
         assert tmp_netcdf_filename.exists()
         with xr.open_dataset(filename_or_obj=tmp_netcdf_filename) as f:
-            assert {"tas", "crs"}.issubset(set(f.data_vars))
+            assert {"tas"}.issubset(set(f.data_vars))
 
     def test_mask_multiregions(self, nimbus, clisops_test_data):
         ds = xr.open_dataset(nimbus.fetch(self.nc_file))

@@ -24,3 +24,4 @@ Contributors
 * Gabriel Rondeau-Genesse <rondeau-genesse.gabriel@ouranos.ca> `@RondeauG <https://github.com/RondeauG>`_
 * Marco Braun <Braun.Marco@ouranos.ca> `@vindelico <https://github.com/vindelico>`_
 * Travis Logan <logan.travis@ouranos.ca> `@tlogan2000 <https://github.com/tlogan2000>`_
+* Juliette Lavoie <lavoie.juliette@ouranos.ca> `@juliettelavoie <https://github.com/juliettelavoie>`_
