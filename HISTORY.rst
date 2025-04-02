@@ -9,7 +9,7 @@ This is a patch fix release to explicitly drop Python 3.9 support in the metadat
 Bug Fixes
 ^^^^^^^^^
 * Dropped Python3.9 support in metadata due to incompatibility with `xarray` (#408).
-* The guessing of raster_crs in `_subset_shape` was removed from the function. (#413)
+* Remove raster_crs in `_subset_shape`. (#413)
 
 Internal Changes
 ^^^^^^^^^^^^^^^^

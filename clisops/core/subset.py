@@ -937,7 +937,6 @@ def create_weight_masks(
 def subset_shape(
     ds: Union[xarray.DataArray, xarray.Dataset],
     shape: Union[str, Path, gpd.GeoDataFrame],
-    raster_crs: Optional[Union[str, int]] = None,
     shape_crs: Optional[Union[str, int]] = None,
     buffer: Optional[Union[int, float]] = None,
     start_date: Optional[str] = None,
@@ -958,8 +957,6 @@ def subset_shape(
         Input values.
     shape : Union[str, Path, gpd.GeoDataFrame]
         Path to a shape file, or GeoDataFrame directly. Supports GeoPandas-compatible formats.
-    raster_crs : Optional[Union[str, int]]
-        EPSG number or PROJ4 string.
     shape_crs : Optional[Union[str, int]]
         EPSG number or PROJ4 string.
     buffer : Optional[Union[int, float]]
@@ -1061,32 +1058,13 @@ def subset_shape(
             stacklevel=2,
         )
         poly = poly.to_crs(wgs84)
-        shape_crs = wgs84
 
     lon = get_lon(ds_copy)
     wrap_lons = False
-    if raster_crs is not None:
-        try:
-            raster_crs = CRS.from_user_input(raster_crs)
-        except ValueError:
-            raise
-    else:
-        try:
-            # Extract CF-compliant CRS_WKT from crs variable.
-            raster_crs = CRS.from_cf(ds_copy.crs.attrs)
-
-        except AttributeError:
-            raster_crs = False
-            if (np.min(lon) >= 0 and np.max(lon) <= 360) and not (
-                np.min(lon) >= -180 and np.max(lon) <= 180
-            ):
-                wrap_lons = True
-    if raster_crs is False:
-        logger.warning(
-            "`raster_crs` was not given directly or through `ds`, no check of compatibility with `shape_crs` will be perform."
-        )
-    else:
-        _check_crs_compatibility(shape_crs=shape_crs, raster_crs=raster_crs)
+    if (np.min(lon) >= 0 and np.max(lon) <= 360) and not (
+        np.min(lon) >= -180 and np.max(lon) <= 180
+    ):
+        wrap_lons = True
 
     # Get the shape's bounding box.
     minx, miny, maxx, maxy = poly.total_bounds
