@@ -14,7 +14,7 @@ def reload_config(package=None):
 
     Used for forcibly reloading the configuration from the config file, particularly useful for pytesting mock imports.
     """
-    global _CONFIG
+    global _CONFIG  # noqa
     _load_config(package)
 
     for key, value in _CONFIG["environment"].items():
@@ -24,7 +24,7 @@ def reload_config(package=None):
 
 
 def get_config(package=None):
-    global _CONFIG
+    global _CONFIG  # noqa
 
     if not _CONFIG:
         _load_config(package)
