@@ -129,7 +129,7 @@ target-version = [
 ]
 
 [tool.bumpversion]
-current_version = "0.16.1"
+current_version = "0.16.2"
 commit = true
 tag = false
 allow_dirty = false
