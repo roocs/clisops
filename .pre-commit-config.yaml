@@ -25,12 +25,12 @@ repos:
     hooks:
       - id: black
   - repo: https://github.com/pycqa/flake8
-    rev: 7.1.2
+    rev: 7.2.0
     hooks:
       - id: flake8
         args: [ '--config=.flake8' ]
   - repo: https://github.com/PyCQA/isort
-    rev: 6.0.0
+    rev: 6.0.1
     hooks:
       - id: isort
 #-   repo: https://github.com/pycqa/pydocstyle
@@ -56,7 +56,7 @@ repos:
       - id: codespell
         additional_dependencies: [ 'tomli' ]
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.31.1
+    rev: 0.32.1
     hooks:
       - id: check-github-workflows
       - id: check-readthedocs
