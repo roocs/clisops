@@ -57,15 +57,15 @@ dependencies = [
   "loguru >=0.5.3",
   "numpy >=1.24.0",
   "packaging >=23.2",
-  "pandas >=1.5.0",
+  "pandas >=1.5.3",
   "platformdirs >=4.0",
   "pooch >=1.8.0",
   "pyproj >=3.3.0",
   "requests", # Needed for HTTPFileSystem
   # roocs_grids is differently named on conda-forge
   "roocs_grids >=0.1.2",
-  "scipy>=1.9.0",
-  "shapely >=1.9",
+  "scipy>=1.11.0",
+  "shapely >=2.0",
   "xarray >=2025.1.1", # Use decode_times=CFDatetimeCoder(use_cftime=True)
   "zarr >=2.13.0"
 ]
@@ -74,11 +74,11 @@ dependencies = [
 dev = [
   # Dev tools and testing
   "black >=25.1.0",
-  "bump-my-version >=0.32.1",
+  "bump-my-version >=1.0.0",
   "coverage[toml] >=7.5.0",
   "deptry >=0.23.0",
-  "flake8 >=7.1.0",
-  "isort >=6.0.0",
+  "flake8 >=7.2.0",
+  "isort >=6.0.1",
   "netCDF4 >=1.4",
   "pip >=25.0",
   "pre-commit >=3.5.0",
@@ -121,7 +121,6 @@ extras = [
 
 [tool.black]
 target-version = [
-  "py39",
   "py310",
   "py311",
   "py312",
