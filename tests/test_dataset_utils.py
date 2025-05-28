@@ -1124,18 +1124,21 @@ def _common_test_open_xr_dataset_kerchunk(uri):
     return ds
 
 
+@pytest.mark.xfail(reason="Remote access fails on GitHub")
 def test_open_xr_dataset_kerchunk_json(mini_esgf_data):
     _common_test_open_xr_dataset_kerchunk(
         mini_esgf_data["CMIP6_KERCHUNK_HTTPS_OPEN_JSON"]
     )
 
 
+@pytest.mark.xfail(reason="Remote access fails on GitHub")
 def test_open_xr_dataset_kerchunk_zst(mini_esgf_data):
     _common_test_open_xr_dataset_kerchunk(
         mini_esgf_data["CMIP6_KERCHUNK_HTTPS_OPEN_ZST"]
     )
 
 
+@pytest.mark.xfail(reason="Remote access fails on GitHub")
 def test_open_xr_dataset_kerchunk_compare_json_vs_zst(mini_esgf_data):
     ds1 = _common_test_open_xr_dataset_kerchunk(
         mini_esgf_data["CMIP6_KERCHUNK_HTTPS_OPEN_JSON"]
