@@ -415,12 +415,13 @@ def _get_kwargs_for_opener(otype, **kwargs):
     :param kwargs: Any further keyword arguments to include when opening the dataset.
     """
     allowed_args = inspect.getfullargspec(xr.open_dataset).kwonlyargs
-    zarr_args = [
+    allowed_zarr_args = [
         "remote_protocol",
         "target_protocol",
         "remote_options",
         "target_options",
     ]
+    allowed_multi_args = ["combine"]
 
     args = {
         "decode_times": xr.coders.CFDatetimeCoder(use_cftime=True),
@@ -433,15 +434,14 @@ def _get_kwargs_for_opener(otype, **kwargs):
 
     if otype.lower().startswith("multi"):
         args["combine"] = "by_coords"
-    elif otype.lower().startswith("zarr"):
-        allowed_args.extend(zarr_args)
+        allowed_args.extend(allowed_multi_args)
+    elif otype.lower() == "zarr":
+        allowed_args.extend(allowed_zarr_args)
 
     args.update(kwargs)
 
-    # If single file opener, then remove any multifile args that would raise an
-    # exception when called
-    if otype.lower() == "single":
-        [args.pop(arg) for arg in list(args) if arg not in allowed_args]
+    # remove any args that would raise an exception when called
+    [args.pop(arg) for arg in list(args) if arg not in allowed_args]
 
     return args
 
