@@ -29,8 +29,8 @@ dependencies:
  - shapely >=2.0
  - xarray >=2025.1.1 # use decode_times=CFDatetimeCoder(use_cftime=True)
  - zarr >=2.13.0,<3.0
- - s3fs
- - fastparquet
+ - s3fs >=2025.5.1
+ - fastparquet >=2024.11.0
  # Compression
  - zstandard
  # Extras
