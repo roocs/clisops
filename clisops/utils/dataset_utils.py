@@ -16,7 +16,7 @@ from clisops.utils.time_utils import str_to_AnyCalendarDateTime
 
 known_coord_types = ["time", "level", "latitude", "longitude", "realization"]
 
-KERCHUNK_EXTS = [".json", ".zst", ".zstd"]
+KERCHUNK_EXTS = [".json", ".zst", ".zstd", ".parquet"]
 
 
 def get_coord_by_type(
@@ -413,9 +413,21 @@ def _get_kwargs_for_opener(otype, **kwargs):
     :param otype: (Str) type of opener (either "single" or "multi")
     :param kwargs: Any further keyword arguments to include when opening the dataset.
     """
+    allowed_args = [
+        "remote_protocol",
+        "target_protocol",
+        "remote_options",
+        "target_options",
+    ]
+    allowed_args.extend(inspect.getfullargspec(xr.open_dataset).kwonlyargs)
+
     args = {
         "decode_times": xr.coders.CFDatetimeCoder(use_cftime=True),
         "decode_timedelta": False,
+        "remote_protocol": None,
+        "target_protocol": None,
+        "remote_options": {},
+        "target_options": {},
     }
 
     if otype.lower().startswith("multi"):
@@ -426,11 +438,7 @@ def _get_kwargs_for_opener(otype, **kwargs):
     # If single file opener, then remove any multifile args that would raise an
     # exception when called
     if otype.lower() == "single":
-        [
-            args.pop(arg)
-            for arg in list(args)
-            if arg not in inspect.getfullargspec(xr.open_dataset).kwonlyargs
-        ]
+        [args.pop(arg) for arg in list(args) if arg not in allowed_args]
 
     return args
 
@@ -454,20 +462,32 @@ def _open_as_kerchunk(dset, **kwargs):
         if dset.split(".")[-1].startswith("zst")
         else kwargs.get("compression", None)
     )
+    target_options = kwargs.get("target_options", {})
     remote_options = kwargs.get("remote_options", {})
     remote_protocol = kwargs.get("remote_protocol", None)
+    target_protocol = kwargs.get("target_protocol", None)
+
+    if compression:
+        target_options["compression"] = compression
 
     mapper = fsspec.get_mapper(
         "reference://",
         fo=dset,
-        target_options={"compression": compression},
+        target_options=target_options,
         remote_options=remote_options,
         remote_protocol=remote_protocol,
+        target_protocol=target_protocol,
     )
 
     # Create a copy of kwargs and remove mapper-specific values
     kw = kwargs.copy()
-    for key in ("compression", "remote_options", "remote_protocol"):
+    for key in (
+        "compression",
+        "target_options",
+        "remote_options",
+        "remote_protocol",
+        "target_protocol",
+    ):
         if key in kw:
             del kw[key]
 
