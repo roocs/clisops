@@ -373,6 +373,7 @@ def open_xr_dataset(dset, **kwargs):
         - Any list will be interpreted as a list of files.
     """
     # Set up dictionaries of arguments to send to all `xr.open_*dataset()` calls
+    zarr_file_kwargs = _get_kwargs_for_opener("zarr", **kwargs)
     single_file_kwargs = _get_kwargs_for_opener("single", **kwargs)
     multi_file_kwargs = _get_kwargs_for_opener("multi", **kwargs)
 
@@ -380,7 +381,7 @@ def open_xr_dataset(dset, **kwargs):
     if type(dset) not in (list, tuple):
         # Assume that a JSON or ZST/ZSTD file is kerchunk
         if is_kerchunk_file(dset):
-            return _open_as_kerchunk(dset, **single_file_kwargs)
+            return _open_as_kerchunk(dset, **zarr_file_kwargs)
 
         else:
             # Force the value of dset to be a list if not a list or tuple
@@ -413,13 +414,13 @@ def _get_kwargs_for_opener(otype, **kwargs):
     :param otype: (Str) type of opener (either "single" or "multi")
     :param kwargs: Any further keyword arguments to include when opening the dataset.
     """
-    allowed_args = [
+    allowed_args = inspect.getfullargspec(xr.open_dataset).kwonlyargs
+    zarr_args = [
         "remote_protocol",
         "target_protocol",
         "remote_options",
         "target_options",
     ]
-    allowed_args.extend(inspect.getfullargspec(xr.open_dataset).kwonlyargs)
 
     args = {
         "decode_times": xr.coders.CFDatetimeCoder(use_cftime=True),
@@ -432,6 +433,8 @@ def _get_kwargs_for_opener(otype, **kwargs):
 
     if otype.lower().startswith("multi"):
         args["combine"] = "by_coords"
+    elif otype.lower().startswith("zarr"):
+        allowed_args.extend(zarr_args)
 
     args.update(kwargs)
 
