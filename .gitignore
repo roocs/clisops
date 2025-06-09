@@ -67,6 +67,8 @@ instance/
 docs/_build/
 docs/apidoc/modules.rst
 docs/apidoc/clisops*.rst
+docs/notebooks/*.nc
+
 
 # PyBuilder
 target/
