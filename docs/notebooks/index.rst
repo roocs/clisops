@@ -9,3 +9,4 @@ Examples
     core_subset
     average_over_dims
     regrid
+    subset_kerchunk
