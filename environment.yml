@@ -17,7 +17,7 @@ dependencies:
  - geopandas >=1.0
  - jinja2 >=2.11
  - loguru >=0.5.3
- - numpy >=1.24.0
+ - numpy >=1.25.0,<=2.3.0
  - packaging >=23.2
  - pandas >=1.5.3
  - platformdirs >=4.0
