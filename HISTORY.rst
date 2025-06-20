@@ -1,6 +1,14 @@
 Version History
 ===============
 
+next release
+--------------------
+
+Bug Fixes
+^^^^^^^^^
+
+* Fixed support for kerchunk with s3. Pinned `zarr >=2.13.0,<3.0` (#429).
+
 v0.16.2 (2025-04-14)
 --------------------
 
