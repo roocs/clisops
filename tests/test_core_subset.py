@@ -838,11 +838,8 @@ class TestSubsetShape:
         np.testing.assert_array_equal(vals, [0, 1, 2])
         np.testing.assert_array_equal(counts, [58, 250, 22])
 
-    @pytest.mark.skipif(
-        xesmf is None, reason="xESMF >= 0.6.2 is needed for average_shape."
-    )
+    @pytest.mark.skipif(xesmf is None, reason="xESMF needed for average_shape.")
     def test_weight_masks_multiregions(self, nimbus, clisops_test_data):
-        # rename is due to a small limitation of xESMF 0.5.2
         ds = xr.open_dataset(nimbus.fetch(self.nc_file)).rename(bnds="bounds")
         regions = gpd.read_file(clisops_test_data["multi_regions_geojson"]).set_index(
             "id"
@@ -1064,8 +1061,9 @@ class TestSubsetLevel:
 
 
 class TestGridPolygon:
+
+    @pytest.mark.skipif(xesmf is None, reason="xESMF needed for average_shape.")
     def test_rectilinear(self):
-        pytest.importorskip("xesmf", "0.6.2")
         # CF-Compliant with bounds
         ds = xesmf.util.cf_grid_2d(-200, -100, 20, -60, 60, 10)
         poly = subset._rectilinear_grid_exterior_polygon(ds)
@@ -1101,9 +1099,10 @@ class TestGridPolygon:
 
 
 class TestShapeBboxIndexer:
+
+    @pytest.mark.skipif(xesmf is None, reason="xESMF required.")
     def test_rectilinear(self):
         # Create small polygon fitting in one cell.
-        pytest.importorskip("xesmf", "0.6.2")
         x, y = -150, 35
         p = Point(x, y)
         ds = xesmf.util.cf_grid_2d(-200, 0, 20, -60, 60, 10)
@@ -1114,9 +1113,9 @@ class TestShapeBboxIndexer:
             inds = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=[pb]))
             assert pb.within(subset.grid_exterior_polygon(ds.isel(inds)))
 
+    @pytest.mark.skipif(xesmf is None, reason="xESMF required.")
     def test_complex_geometries(self):
         # Test with geometries that cannot be simplified to a single polygon using `unary_union`.
-        pytest.importorskip("xesmf", "0.6.2")
         import shapely.wkt
 
         p1 = shapely.wkt.loads(
@@ -1149,9 +1148,9 @@ class TestShapeBboxIndexer:
         inds = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=[p1, p2]))
         assert inds == {}
 
+    @pytest.mark.skipif(xesmf is None, reason="xESMF required.")
     def test_curvilinear(self):
         # Check that grid along lon/lat and a rotated grid are indexed identically for geometry and rotated geometry.
-        pytest.importorskip("xesmf", "0.6.2")
         from shapely.affinity import rotate
 
         ds = xesmf.util.grid_2d(0, 100, 10, 0, 60, 6)
@@ -1165,9 +1164,9 @@ class TestShapeBboxIndexer:
         ri = subset.shape_bbox_indexer(rds, gpd.GeoSeries([rgeom]))
         assert ri == i
 
+    @pytest.mark.skipif(xesmf is None, reason="xESMF required.")
     def test_multipoints(self):
         # Test with a MultiPoint geometry.
-        pytest.importorskip("xesmf", "0.6.2")
         from shapely.geometry import MultiPoint, Point
 
         ds = xesmf.util.cf_grid_2d(-200, 0, 20, -60, 60, 10)
@@ -1189,6 +1188,7 @@ class TestShapeBboxIndexer:
             assert geom.within(subset.grid_exterior_polygon(ds.isel(inds)))
 
 
+@pytest.mark.skipif(xesmf is None, reason="xESMF required.")
 def rotated_grid_2d(lon0_b, lon1_b, d_lon, lat0_b, lat1_b, d_lat, angle):
     # Rotate lat lon by degree.
     ds = xesmf.util.grid_2d(lon0_b, lon1_b, d_lon, lat0_b, lat1_b, d_lat)
