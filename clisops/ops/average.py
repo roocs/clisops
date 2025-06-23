@@ -136,7 +136,6 @@ def average_shape(
     shape : Union[str, Path, gpd.GeoDataFrame]
         Path to shape file, or directly a GeoDataFrame. Supports formats compatible with geopandas.
         Will be converted to EPSG:4326 if needed.
-
     variable : Optional[Union[str, Sequence[str], None]]
         Variables to average. If None, average over all data variables.
     output_dir : Optional[Union[str, Path]]
@@ -210,7 +209,7 @@ def average_time(
     ds : Union[xr.Dataset, str]
         Xarray dataset.
     freq : str
-        The frequency to average over. One of "month", "year".
+        The frequency to average over, either "month" or "year".
     output_dir : Optional[Union[str, Path]]
     output_type : {"netcdf", "nc", "zarr", "xarray"}
     split_method : {"time:auto"}

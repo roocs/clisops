@@ -18,9 +18,9 @@ from clisops.utils.common import parse_size
 from clisops.utils.dataset_utils import get_main_variable
 
 SUPPORTED_FORMATS = {
-    "netcdf": {"method": "to_netcdf", "extension": "nc"},
-    "nc": {"method": "to_netcdf", "extension": "nc"},
-    "zarr": {"method": "to_zarr", "extension": "zarr"},
+    "netcdf": {"method": "to_netcdf", "extension": "nc", "engine": "h5netcdf"},
+    "nc": {"method": "to_netcdf", "extension": "nc", "engine": "h5netcdf"},
+    "zarr": {"method": "to_zarr", "extension": "zarr", "engine": "zarr"},
     "xarray": {"method": None, "extension": None},
 }
 
@@ -28,7 +28,7 @@ SUPPORTED_SPLIT_METHODS = ["time:auto"]
 
 
 def check_format(fmt):
-    """Checks requested format exists."""
+    """Check that the requested format exists."""
     if fmt not in SUPPORTED_FORMATS:
         raise KeyError(
             f'Format not recognised: "{fmt}". Must be one of: {SUPPORTED_FORMATS}.'
@@ -45,6 +45,12 @@ def get_format_extension(fmt):
     """Finds the extension for the requested output format."""
     check_format(fmt)
     return SUPPORTED_FORMATS[fmt]["extension"]
+
+
+def get_format_engine(fmt):
+    """Finds the engine for the requested output format."""
+    check_format(fmt)
+    return SUPPORTED_FORMATS[fmt]["engine"]
 
 
 def _format_time(tm: Union[str, dt], fmt="%Y-%m-%d"):
@@ -74,7 +80,7 @@ def filter_times_within(times, start=None, end=None):
 
 
 def get_da(ds):
-    """Returns xr.DataArray when format of ds may be either xr.Dataset or xr.DataArray."""
+    """Returns xr.DataArray when the format of ds may be either xr.Dataset or xr.DataArray."""
     if isinstance(ds, xr.DataArray):
         da = ds
     else:
@@ -119,7 +125,7 @@ def get_time_slices(
             f"The split method {split_method} is not implemented."
         )
 
-    # Use default file size limit if not provided
+    # Use the default file size limit if not provided
     if not file_size_limit:
         file_size_limit = parse_size(CONFIG["clisops:write"]["file_size_limit"])
 
@@ -164,7 +170,7 @@ def get_time_slices(
 def get_chunk_length(da):
     """Calculate the chunk length to use when chunking xarray datasets.
 
-    Based on memory limit provided in config and the size of the dataset.
+    Based on the memory limit provided in config and the size of the dataset.
     """
     size = da.nbytes
     n_times = len(da.time.values)
@@ -209,7 +215,7 @@ def get_output(ds, output_type, output_dir, namer):
     except AttributeError:
         chunked_ds = ds
 
-    # If `output_dir` is not set, use current directory
+    # If `output_dir` is not set, use the current directory
     if not output_dir:
         output_dir = Path().cwd().expanduser()
     else:
@@ -235,7 +241,8 @@ def get_output(ds, output_type, output_dir, namer):
     #  - https://docs.dask.org/en/latest/scheduling.html
     with dask.config.set(scheduler="synchronous"):
         writer = getattr(chunked_ds, format_writer)
-        delayed_obj = writer(target_path, compute=False)
+        engine = get_format_engine(output_type)
+        delayed_obj = writer(target_path, engine=engine, compute=False)
         delayed_obj.compute()
 
     # If "output_staging_dir" is set, then pause, move the output file,

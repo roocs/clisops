@@ -338,10 +338,6 @@ class TestSubsetBbox:
     lonGCM = [-70.0, -60.0]
     latGCM = [43.0, 59.0]
 
-    @pytest.mark.xfail(
-        reason="NetCDF4 has thread safety issues. Consider using h5netcdf in the future",
-        strict=False,
-    )
     def test_dataset(self, nimbus):
         da = xr.open_mfdataset(
             [nimbus.fetch(self.nc_tasmax_file), nimbus.fetch(self.nc_tasmin_file)],
@@ -838,7 +834,7 @@ class TestSubsetShape:
         np.testing.assert_array_equal(vals, [0, 1, 2])
         np.testing.assert_array_equal(counts, [58, 250, 22])
 
-    @pytest.mark.skipif(xesmf is None, reason="xESMF needed for average_shape.")
+    @pytest.mark.skipif(xesmf is None, reason="xESMF required.")
     def test_weight_masks_multiregions(self, nimbus, clisops_test_data):
         ds = xr.open_dataset(nimbus.fetch(self.nc_file)).rename(bnds="bounds")
         regions = gpd.read_file(clisops_test_data["multi_regions_geojson"]).set_index(
@@ -1062,7 +1058,7 @@ class TestSubsetLevel:
 
 class TestGridPolygon:
 
-    @pytest.mark.skipif(xesmf is None, reason="xESMF needed for average_shape.")
+    @pytest.mark.skipif(xesmf is None, reason="xESMF required.")
     def test_rectilinear(self):
         # CF-Compliant with bounds
         ds = xesmf.util.cf_grid_2d(-200, -100, 20, -60, 60, 10)
