@@ -72,9 +72,6 @@ def test_regrid_grid_as_none(tmpdir, tmp_path, mini_esgf_data):
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(
-    reason="Needs xarray fix https://github.com/pydata/xarray/issues/7794"
-)
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 @pytest.mark.parametrize("grid_id", sorted(grid_dict))
 def test_regrid_regular_grid_to_all_roocs_grids(
@@ -153,9 +150,6 @@ def test_subset_and_regrid_erroneous_cf_units_cmip5(tmpdir, mini_esgf_data, tmp_
 
 
 @pytest.mark.slow
-@pytest.mark.xfail(
-    reason="Needs xarray fix https://github.com/pydata/xarray/issues/7794"
-)
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 @pytest.mark.parametrize(
     "dset", ["ATLAS_v1_CORDEX", "ATLAS_v1_EOBS_GRID", "ATLAS_v0_CORDEX_ANT"]
@@ -176,9 +170,6 @@ def test_regrid_ATLAS_datasets(tmpdir, dset, mini_esgf_data):
     )
 
 
-@pytest.mark.xfail(
-    reason="Needs xarray fix https://github.com/pydata/xarray/issues/7794"
-)
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_ATLAS_CORDEX(tmpdir, caplog, mini_esgf_data):  # noqa
     """Test regridding for ATLAS CORDEX dataset."""
@@ -382,9 +373,6 @@ def test_regrid_same_grid_exception(tmpdir, tmp_path):
     xr.testing.assert_identical(ds, ds_regrid)
 
 
-@pytest.mark.xfail(
-    reason="Needs xarray fix https://github.com/pydata/xarray/issues/7794"
-)
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_cmip6_nc_consistent_bounds_and_coords(tmpdir, mini_esgf_data):
     """Tests clisops regrid function and check metadata added by xarray"""
