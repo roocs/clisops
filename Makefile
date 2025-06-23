@@ -81,7 +81,9 @@ autodoc: clean-docs ## create sphinx-apidoc files:
 
 docs: autodoc ## generate Sphinx HTML documentation, including API docs
 	$(MAKE) -C docs html
+ifndef READTHEDOCS
 	$(BROWSER) docs/_build/html/index.html
+endif
 
 servedocs: docs ## compile the docs watching for changes
 	watchmedo shell-command -p '*.md' -c '$(MAKE) -C docs html' -R -D .
