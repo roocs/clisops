@@ -11,6 +11,7 @@ dependencies:
  - cf_xarray >=0.8.6
  - cftime >=1.4.1
  - dask >=2023.6.0
+ - fastparquet >=2024.11.0
  - filelock >=3.15.4
  - fsspec >=2023.9.0
  - gdal >=3.0
@@ -25,10 +26,11 @@ dependencies:
  - pyproj >=3.3.0
  - requests # Needed for HTTPFileSystem
  - roocs-grids >=0.1.2
+ - s3fs >=2025.5.1
  - scipy >=1.11.0
  - shapely >=2.0
  - xarray >=2025.1.1 # use decode_times=CFDatetimeCoder(use_cftime=True)
- - zarr >=2.13.0
+ - zarr >=2.13.0,<3.0
  # Compression
  - zstandard
  # Extras

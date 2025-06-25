@@ -1,0 +1,7 @@
+# conda env update -f environment.yml
+name: clisops
+channels:
+  - conda-forge
+dependencies:
+  - pip
+  - jupyterlab
