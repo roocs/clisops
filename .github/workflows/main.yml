@@ -55,13 +55,19 @@ jobs:
           python -m tox -e lint
 
   test-pypi:
-    name: Python${{ matrix.python-version }} (PyPI + Tox)
+    name: Python${{ matrix.python-version }} (PyPI + Tox, ${{ matrix.os }})
     needs: lint
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
       matrix:
         python-version: [ "3.10", "3.11", "3.12", "3.13" ]
+        os: [ "ubuntu-latest" ]
+        include:
+          - python-version: "3.10"
+            os: "macos-latest"
+          - python-version: "3.11"
+            os: "windows-latest"
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
@@ -88,6 +94,7 @@ jobs:
           python -m pip install --require-hashes -r CI/requirements_ci.txt
       - name: Environment Caching
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        if: matrix.os == 'ubuntu-latest'
         with:
           path: |
             ~/.cache/mini-esgf-data
@@ -104,7 +111,7 @@ jobs:
           COVERALLS_SERVICE_NAME: github
 
   test-conda:
-    name: Python${{ matrix.python-version }} (Anaconda)
+    name: Python${{ matrix.python-version }} (Anaconda, ${{ matrix.os}})
     needs: lint
     runs-on: ubuntu-latest
     timeout-minutes: 20
@@ -112,12 +119,19 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [ "3.10", "3.11", "3.12", "3.13" ]
+        os: [ "ubuntu-latest" ]
+        include:
+          - python-version: "3.10"
+            os: "macos-latest"
+          - python-version: "3.11"
+            os: "windows-latest"
     defaults:
       run:
         shell: bash -l {0}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
+        if: matrix.os == 'ubuntu-latest'
         with:
           disable-sudo: true
           egress-policy: block
