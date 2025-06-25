@@ -1,13 +1,17 @@
 Version History
 ===============
 
-next release
+v0.17.0 (unreleased)
 --------------------
 
 Bug Fixes
 ^^^^^^^^^
+* Fixed support for `kerchunk` with `s3`. Pinned `zarr >=2.13.0,<3.0` (#429).
+* Lift pin on `xarray` that was previously due to incompatibilities with `xesmf`. `xarray>=2025.1.1` now required for general usage and `xarray>=2025.6.0` for `regrid` operations (#437).
 
-* Fixed support for kerchunk with s3. Pinned `zarr >=2.13.0,<3.0` (#429).
+Internal Changes
+^^^^^^^^^^^^^^^^
+* `tox` and Makefile configuration for testing docs has been adjusted to ensure that builds do not rely on opening a browser window (#437).
 
 Internal Changes
 ^^^^^^^^^^^^^^^^

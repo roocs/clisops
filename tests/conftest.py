@@ -6,9 +6,7 @@ import pandas as pd
 import pytest
 import xarray as xr
 from _pytest.logging import caplog as _caplog  # noqa
-from packaging.version import Version
 
-from clisops.core.regrid import XARRAY_INCOMPATIBLE_VERSION
 from clisops.utils import testing
 from clisops.utils.testing import stratus as _stratus
 from clisops.utils.testing import write_roocs_cfg as _write_roocs_cfg

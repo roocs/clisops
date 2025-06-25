@@ -31,8 +31,8 @@ classifiers = [
   "Programming Language :: Python :: 3 :: Only",
   "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12", # Compatibility issues will persist until https://github.com/pydata/xarray/issues/7794 is resolved
-  "Programming Language :: Python :: 3.13", # Compatibility issues will persist until https://github.com/pydata/xarray/issues/7794 is resolved
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Scientific/Engineering",
   "Topic :: Scientific/Engineering :: Atmospheric Science",
   "Topic :: Scientific/Engineering :: GIS",
@@ -58,7 +58,7 @@ dependencies = [
   "loguru >=0.5.3",
   "numpy >=1.25.0,<2.3.0",
   "packaging >=23.2",
-  "pandas >=1.5.3",
+  "pandas >=2.2.0",
   "platformdirs >=4.0",
   "pooch >=1.8.0",
   "pyproj >=3.3.0",
@@ -80,8 +80,8 @@ dev = [
   "coverage[toml] >=7.5.0",
   "deptry >=0.23.0",
   "flake8 >=7.2.0",
+  "h5netcdf >=1.4.0",
   "isort >=6.0.1",
-  "netCDF4 >=1.4",
   "pip >=25.0",
   "pre-commit >=3.5.0",
   "pytest >=8.0.0",
@@ -107,9 +107,9 @@ docs = [
   "sphinx-rtd-theme >=1.0"
 ]
 extras = [
-  "xesmf >=0.8.2",
+  "xesmf >=0.8.10",
   # See: https://github.com/pydata/xarray/issues/7794
-  "xarray >=2022.6.0,<2023.3.0"
+  "xarray >=2025.6.0"
 ]
 
 [project.urls]

@@ -28,7 +28,7 @@ from clisops.utils.output_utils import FileLock, create_lock
 
 # Try importing xesmf and set to None if not found at correct version
 # If set to None, the `require_module` decorator will throw an exception
-XESMF_MINIMUM_VERSION = "0.8.2"
+XESMF_MINIMUM_VERSION = "0.8.10"
 try:
     import xesmf as xe
 
@@ -41,10 +41,11 @@ except (ModuleNotFoundError, ValueError):
 
 # FIXME: Remove this when xarray addresses https://github.com/pydata/xarray/issues/7794
 XARRAY_INCOMPATIBLE_VERSION = "2023.3.0"
+XARRAY_COMPATIBLE_VERSION = "2025.6.0"
 XARRAY_WARNING_MESSAGE = (
-    f"xarray version >= {XARRAY_INCOMPATIBLE_VERSION} "
-    f"is not supported for regridding operations with cf-time indexed arrays. "
-    f"Please use xarray version < {XARRAY_INCOMPATIBLE_VERSION}. "
+    f"xarray versions between {XARRAY_INCOMPATIBLE_VERSION} and {XARRAY_COMPATIBLE_VERSION} "
+    f"are not supported for regridding operations with cf-time indexed arrays. "
+    f"Please use xarray version >= {XARRAY_COMPATIBLE_VERSION}. "
     "For more information, see: https://github.com/pydata/xarray/issues/7794."
 )
 
@@ -76,8 +77,8 @@ def weights_cache_init(
     Parameters
     ----------
     weights_dir : str or Path
-        Directory name to initialize the local weights cache in.
-        Will be created if it does not exist.
+        Directory name to initialise the local weights cache in.
+        It will be created if it does not exist.
         Per default, this function is called upon import with weights_dir as defined in roocs.ini.
     config : dict
         Configuration dictionary as read from top-level.
@@ -122,7 +123,7 @@ def weights_cache_flush(
     ----------
     weights_dir_init : str, optional
         Directory name to reinitialize the local weights cache in.
-        Will be created if it does not exist.
+        It will be created if it does not exist.
         The default is CONFIG["clisops:grid_weights"]["local_weights_dir"] as defined in roocs.ini
         (or as redefined by a manual weights_cache_init call).
     dryrun : bool, optional
@@ -1554,7 +1555,7 @@ class Grid:
     ):
         """Store a copy of the horizontal Grid as netCDF file on disk.
 
-        Define output folder, filename and output format (currently only 'CF' is supported).
+        Define output folder, file name and output format (currently only 'CF' is supported).
         Does not overwrite an existing file.
 
         Parameters
@@ -1635,7 +1636,7 @@ class Grid:
 class Weights:
     """Creates remapping weights out of two Grid objects serving as source and target grid.
 
-    Reads weights from cache if possible. Reads weights from disk if specified (not yet implemented).
+    Reads weights from cache if possible or from disk if specified (not yet implemented).
     In the latter case, the weight file format has to be supported, to reformat it to xESMF format.
 
     Parameters
