@@ -4,6 +4,6 @@
 
 __author__ = """Eleanor Smith"""
 __contact__ = "eleanor.smith@stfc.ac.uk"
-__copyright__ = "Copyright 2018-2024. United Kingdom Research and Innovation"
+__copyright__ = "Copyright 2018-2025. United Kingdom Research and Innovation"
 __license__ = "BSD-3-Clause"
 __version__ = "0.16.2"
