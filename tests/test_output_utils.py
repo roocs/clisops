@@ -139,45 +139,53 @@ def test_tmp_dir_not_created_with_no_staging_dir():
     assert target_path == "./output_001.nc"
 
 
-def test_no_staging_dir(caplog, mini_esgf_data):
+def test_no_staging_dir(caplog, mini_esgf_data, tmp_path):
     with ContextLogger(caplog) as _logger:
         _logger.add(sys.stdout, level="INFO")
         caplog.set_level("INFO", logger="clisops")
+
+        # use a temporary directory for output
+        out_dir = tmp_path / "output"
+        out_dir.mkdir()
 
         CONFIG["clisops:write"]["output_staging_dir"] = ""
         ds = _open(mini_esgf_data["CMIP5_TAS"])
         output_path = get_output(
-            ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")()
+            ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")()
         )
 
         assert "Writing to temporary path: " not in caplog.text
-        assert output_path == "output_001.nc"
-
-        os.remove("output_001.nc")
+        assert output_path == (out_dir / "output_001.nc").as_posix()
 
 
-def test_invalid_staging_dir(caplog, mini_esgf_data):
+def test_invalid_staging_dir(caplog, mini_esgf_data, tmp_path):
     with ContextLogger(caplog) as _logger:
         _logger.add(sys.stdout, level="INFO")
         caplog.set_level("INFO", logger="clisops")
+
+        # use a temporary directory for output
+        out_dir = tmp_path / "output"
+        out_dir.mkdir()
 
         # check staging dir not used with invalid directory
         CONFIG["clisops:write"]["output_staging_dir"] = "test/not/real/dir/"
 
         ds = _open(mini_esgf_data["CMIP5_TAS"])
         output_path = get_output(
-            ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")()
+            ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")()
         )
         assert "Writing to temporary path: " not in caplog.text
-        assert output_path == "output_001.nc"
-
-        os.remove("output_001.nc")
+        assert output_path == (out_dir / "output_001.nc").as_posix()
 
 
-def test_staging_dir_used(caplog, tmpdir, mini_esgf_data):
+def test_staging_dir_used(caplog, mini_esgf_data, tmpdir, tmp_path):
     with ContextLogger(caplog) as _logger:
         _logger.add(sys.stdout, level="INFO")
         caplog.set_level("INFO", logger="clisops")
+
+        # use a temporary directory for output
+        out_dir = tmp_path / "output"
+        out_dir.mkdir()
 
         # check staging dir used when valid directory
         staging = Path(tmpdir).joinpath("tests")
@@ -186,52 +194,61 @@ def test_staging_dir_used(caplog, tmpdir, mini_esgf_data):
         ds = _open(mini_esgf_data["CMIP5_TAS"])
 
         output_path = get_output(
-            ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")()
+            ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")()
         )
 
         assert f"Writing to temporary path: {staging}" in caplog.text
-        assert output_path == "output_001.nc"
-
-        Path("output_001.nc").unlink()
+        assert output_path == (out_dir / "output_001.nc").as_posix()
 
 
-def test_final_output_path_staging_dir(mini_esgf_data):
+def test_final_output_path_staging_dir(mini_esgf_data, tmp_path):
     # check final output file in correct location with a staging directory used
     CONFIG["clisops:write"]["output_staging_dir"] = "tests/"
 
+    # use a temporary directory for output
+    out_dir = tmp_path / "output"
+    out_dir.mkdir()
+
     ds = _open(mini_esgf_data["CMIP5_TAS"])
-    get_output(ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")())
+    get_output(
+        ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")()
+    )
 
-    assert os.path.isfile("./output_001.nc")
-
-    os.remove("output_001.nc")
+    assert Path(out_dir / "output_001.nc").is_file()
 
 
-def test_final_output_path_no_staging_dir(mini_esgf_data):
+def test_final_output_path_no_staging_dir(mini_esgf_data, tmp_path):
     # check final output file in correct location with a staging directory is not used
+
+    # use a temporary directory for output
+    out_dir = tmp_path / "output"
+    out_dir.mkdir()
+
     ds = _open(mini_esgf_data["CMIP5_TAS"])
-    get_output(ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")())
+    get_output(
+        ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")()
+    )
 
-    assert os.path.isfile("./output_001.nc")
-
-    os.remove("output_001.nc")
+    assert Path(out_dir / "output_001.nc").is_file()
 
 
-def test_tmp_dir_deleted(tmpdir, mini_esgf_data):
-    # check temporary directory under staging dir gets deleted after data has bee staged
+def test_tmp_dir_deleted(tmpdir, mini_esgf_data, tmp_path):
+    # check temporary directory under staging dir gets deleted after data has been staged
     staging = Path(tmpdir).joinpath("tests")
     staging.mkdir(exist_ok=True)
     CONFIG["clisops:write"]["output_staging_dir"] = staging
 
-    # CONFIG["clisops:write"]["output_staging_dir"] = "tests/"
+    # use a temporary directory for output
+    out_dir = tmp_path / "output"
+    out_dir.mkdir()
 
     ds = _open(mini_esgf_data["CMIP5_TAS"])
-    get_output(ds, output_type="nc", output_dir=".", namer=get_file_namer("simple")())
+    get_output(
+        ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")()
+    )
 
     # check that no tmpdir directories exist
     assert len([f for f in staging.glob("tmp*")]) == 0
-
-    os.remove("output_001.nc")
 
 
 def test_unify_chunks_cmip5(mini_esgf_data):
@@ -291,14 +308,14 @@ def test_filelock_simple(tmp_path):
     lock.acquire()
     try:
         time.sleep(1)
-        assert os.path.isfile(LOCK_FILE)
+        assert Path(LOCK_FILE).is_file()
         assert lock.state == "LOCKED"
         open(DATA_FILE, "a").write("1")
     finally:
         lock.release()
 
     time.sleep(1)
-    assert not os.path.isfile(LOCK_FILE)
+    assert not Path(LOCK_FILE).is_file()
 
 
 def test_filelock_already_locked(tmp_path):
