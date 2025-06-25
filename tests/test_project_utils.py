@@ -19,7 +19,7 @@ class TestProjectUtils:
         project = project_utils.get_project_name(dset)
         assert project == "cmip5"
 
-        dset = "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc"
+        # dset = "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc"
         # project = project_utils.get_project_name(dset)
         # assert project == "cmip5"
 
@@ -45,7 +45,7 @@ class TestProjectUtils:
             assert project == "cmip6"
 
         # tests default for cmip6 path is c3s-cmip6
-        dset = "/badc/cmip6/data/CMIP6/CMIP/MIROC/MIROC6/historical/r1i1p1f1/SImon/siconc/gn/latest/*.nc"
+        # dset = "/badc/cmip6/data/CMIP6/CMIP/MIROC/MIROC6/historical/r1i1p1f1/SImon/siconc/gn/latest/*.nc"
         # project = project_utils.get_project_name(dset)
         # assert project == "c3s-cmip6"
 
@@ -66,7 +66,7 @@ class TestProjectUtils:
         assert project == "c3s-cica-atlas"
 
         # c3s-cica-atlas 2
-        dset = "/pool/data/c3s-cica-atlas/ERA5/psl_ERA5_mon_194001-202212.nc"
+        # dset = "/pool/data/c3s-cica-atlas/ERA5/psl_ERA5_mon_194001-202212.nc"
         # project = project_utils.get_project_name(dset)
         # assert project == "c3s-cica-atlas"
 
