@@ -63,6 +63,11 @@ jobs:
       matrix:
         python-version: [ "3.10", "3.13" ]
         os: [ "macos-latest", "ubuntu-latest" ]
+        positional_args: [ "" ]
+        include:
+          - python-version: "3.11"
+            os: "windows-latest"
+            positional_args: "--numprocesses=0"
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
@@ -109,7 +114,7 @@ jobs:
 
       - name: Test with tox
         run: |
-          python -m tox
+          python -m tox -- ${{ matrix.positional_args }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_FLAG_NAME: run-Python${{ matrix.python-version }}
