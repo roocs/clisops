@@ -67,13 +67,7 @@ jobs:
         uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
         with:
           disable-sudo: true
-          egress-policy: block
-          allowed-endpoints: >
-            coveralls.io:443
-            files.pythonhosted.org:443
-            github.com:443
-            pypi.org:443
-            raw.githubusercontent.com:443
+          egress-policy: audit
       - name: Checkout Repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -120,16 +114,7 @@ jobs:
         uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
         with:
           disable-sudo: true
-          egress-policy: block
-          allowed-endpoints: >
-            cdn.fwupd.org:443
-            conda.anaconda.org:443
-            coveralls.io:443
-            files.pythonhosted.org:443
-            github.com:443
-            objects.githubusercontent.com:443
-            pypi.org:443
-            raw.githubusercontent.com:443
+          egress-policy: audit
       - name: Checkout Repository
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
@@ -177,11 +162,7 @@ jobs:
         uses: step-security/harden-runner@002fdce3c6a235733a90a27c80493a3241e56863 # v2.12.1
         with:
           disable-sudo: true
-          egress-policy: block
-          allowed-endpoints: >
-            coveralls.io:443
-            github.com:443
-            objects.githubusercontent.com:443
+          egress-policy: audit
       - name: Coveralls Finished
         uses: coverallsapp/github-action@648a8eb78e6d50909eff900e4ec85cab4524a45b # v2.3.6
         with:
