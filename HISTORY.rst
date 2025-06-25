@@ -12,9 +12,6 @@ Bug Fixes
 Internal Changes
 ^^^^^^^^^^^^^^^^
 * `tox` and Makefile configuration for testing docs has been adjusted to ensure that builds do not rely on opening a browser window (#437).
-
-Internal Changes
-^^^^^^^^^^^^^^^^
 * `step-security/harden-runner` Action is now configured to audit connections to the GitHub API and other services (#434).
 * Output utilities tests have been modified to no longer create files in the current working directory, but rather in a temporary directory. (#434).
 
