@@ -1,10 +1,8 @@
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Union
 
 import geopandas as gpd
 import xarray as xr
-
 from clisops.core import average
 from clisops.exceptions import InvalidParameterValue
 from clisops.ops.base_operation import Operation
@@ -12,7 +10,7 @@ from clisops.parameter import DimensionParameter
 from clisops.utils.dataset_utils import convert_coord_to_axis
 from clisops.utils.file_namers import get_file_namer
 
-__all__ = ["average_over_dims", "average_time", "average_shape"]
+__all__ = ["average_over_dims", "average_shape", "average_time"]
 
 
 class Average(Operation):
@@ -44,15 +42,16 @@ class Average(Operation):
 
 
 def average_over_dims(
-    ds: Union[xr.Dataset, str],
-    dims: Optional[Union[Sequence[str], DimensionParameter]] = None,
+    ds: xr.Dataset | str,
+    dims: Sequence[str] | DimensionParameter | None = None,
     ignore_undetected_dims: bool = False,
-    output_dir: Optional[Union[str, Path]] = None,
+    output_dir: str | Path | None = None,
     output_type: str = "netcdf",
     split_method: str = "time:auto",
     file_namer: str = "standard",
-) -> list[Union[xr.Dataset, str]]:
-    """Calculate an average over given dimensions.
+) -> list[xr.Dataset | str]:
+    """
+    Calculate an average over given dimensions.
 
     Parameters
     ----------
@@ -98,9 +97,7 @@ class AverageShape(Operation):
         self.params = {"shape": shape, "variable": variable}
 
         if not shape:
-            raise InvalidParameterValue(
-                "At least one area for averaging must be provided"
-            )
+            raise InvalidParameterValue("At least one area for averaging must be provided")
 
     def _get_file_namer(self):
         extra = "_avg-shape"
@@ -119,15 +116,16 @@ class AverageShape(Operation):
 
 
 def average_shape(
-    ds: Union[xr.Dataset, Path, str],
-    shape: Union[str, Path, gpd.GeoDataFrame],
-    variable: Optional[Union[str, Sequence[str]]] = None,
-    output_dir: Optional[Union[str, Path]] = None,
+    ds: xr.Dataset | Path | str,
+    shape: str | Path | gpd.GeoDataFrame,
+    variable: str | Sequence[str] | None = None,
+    output_dir: str | Path | None = None,
     output_type: str = "netcdf",
     split_method: str = "time:auto",
     file_namer: str = "standard",
-) -> list[Union[xr.Dataset, str]]:
-    """Calculate a spatial average over a given shape.
+) -> list[xr.Dataset | str]:
+    """
+    Calculate a spatial average over a given shape.
 
     Parameters
     ----------
@@ -158,6 +156,7 @@ def average_shape(
     | output_type: "netcdf"
     | split_method: "time:auto"
     | file_namer: "standard"
+
     """
     op = AverageShape(**locals())
     return op.process()
@@ -168,14 +167,10 @@ class AverageTime(Operation):
         freq = params.get("freq", None)
 
         if not freq:
-            raise InvalidParameterValue(
-                "At least one frequency for averaging must be provided"
-            )
+            raise InvalidParameterValue("At least one frequency for averaging must be provided")
 
         if freq not in list(average.freqs.keys()):
-            raise InvalidParameterValue(
-                f"Time frequency for averaging must be one of {list(average.freqs.keys())}."
-            )
+            raise InvalidParameterValue(f"Time frequency for averaging must be one of {list(average.freqs.keys())}.")
 
         self.params = {"freq": freq}
 
@@ -195,13 +190,13 @@ class AverageTime(Operation):
 
 
 def average_time(
-    ds: Union[xr.Dataset, str],
+    ds: xr.Dataset | str,
     freq: str,
-    output_dir: Optional[Union[str, Path]] = None,
+    output_dir: str | Path | None = None,
     output_type: str = "netcdf",
     split_method: str = "time:auto",
     file_namer: str = "standard",
-) -> list[Union[xr.Dataset, str]]:
+) -> list[xr.Dataset | str]:
     """
 
     Parameters

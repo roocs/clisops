@@ -1,7 +1,4 @@
-from typing import Optional, Union
-
 import xarray as xr
-
 from clisops import CONFIG
 from clisops.project_utils import get_project_name
 from clisops.utils.dataset_utils import get_main_variable
@@ -31,7 +28,8 @@ class _BaseFileNamer:
 
 
 class SimpleFileNamer(_BaseFileNamer):
-    """Simple file namer class.
+    """
+    Simple file namer class.
 
     Generates numbered file names.
     """
@@ -40,7 +38,8 @@ class SimpleFileNamer(_BaseFileNamer):
 
 
 class StandardFileNamer(SimpleFileNamer):
-    """Standard file namer class.
+    """
+    Standard file namer class.
 
     Generates file names based on input dataset.
     """
@@ -48,7 +47,6 @@ class StandardFileNamer(SimpleFileNamer):
     @staticmethod
     def _get_project(ds):
         """Gets the project name from the input dataset"""
-
         return get_project_name(ds)
 
     def get_file_name(self, ds, fmt="nc"):
@@ -79,10 +77,10 @@ class StandardFileNamer(SimpleFileNamer):
 
     def _resolve_derived_attrs(
         self,
-        ds: Union[xr.DataArray, xr.Dataset],
+        ds: xr.DataArray | xr.Dataset,
         attrs: dict,
         template: dict,
-        fmt: Optional[str] = None,
+        fmt: str | None = None,
     ) -> None:
         """Finds var_id, time_range and format_extension of dataset and output to generate output file name."""
         if "__derive__var_id" in template:
@@ -102,7 +100,7 @@ class StandardFileNamer(SimpleFileNamer):
                 attrs[key] = value
 
     @staticmethod
-    def _get_time_range(da: Union[xr.DataArray, xr.Dataset]) -> str:
+    def _get_time_range(da: xr.DataArray | xr.Dataset) -> str:
         """Finds the time range of the data in the output."""
         try:
             times = da.time.values

@@ -55,10 +55,6 @@ class LevelParameter(_BaseIntervalOrSeriesParameter):
     def __str__(self):
         if self.type in ("interval", "none"):
             value = self._value_as_tuple()
-            return (
-                f"Level range to subset over"
-                f"\n first_level: {value[0]}"
-                f"\n last_level: {value[1]}"
-            )
+            return f"Level range to subset over\n first_level: {value[0]}\n last_level: {value[1]}"
         else:
             return f"Level values to select: {self.value}"

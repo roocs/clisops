@@ -10,11 +10,12 @@ _CONFIG = {}
 
 
 def reload_config(package=None):
-    """Reloads the configuration from the config file.
+    """
+    Reloads the configuration from the config file.
 
     Used for forcibly reloading the configuration from the config file, particularly useful for pytesting mock imports.
     """
-    global _CONFIG  # noqa
+    global _CONFIG
     _load_config(package)
 
     for key, value in _CONFIG["environment"].items():
@@ -24,7 +25,7 @@ def reload_config(package=None):
 
 
 def get_config(package=None):
-    global _CONFIG  # noqa
+    global _CONFIG
 
     if not _CONFIG:
         _load_config(package)
@@ -84,18 +85,12 @@ def _to_boolean(i):
     elif i == "False":
         return False
     else:
-        raise ValueError(
-            f"{i} is not valid for a boolean field - use 'True' or 'False'"
-        )
+        raise ValueError(f"{i} is not valid for a boolean field - use 'True' or 'False'")
 
 
 def _chain_config_types(conf, keys):
     return chain(
-        *[
-            conf.get("config_data_types", key).split()
-            for key in keys
-            if conf.has_option("config_data_types", key)
-        ]
+        *[conf.get("config_data_types", key).split() for key in keys if conf.has_option("config_data_types", key)]
     )
 
 

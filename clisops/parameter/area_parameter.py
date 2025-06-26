@@ -39,8 +39,7 @@ class AreaParameter(_BaseParameter):
 
         if value is not None and len(value) != 4:
             raise InvalidParameterValue(
-                f"{self.__class__.__name__} should be of length 4 but is of length "
-                f"{len(value)}"
+                f"{self.__class__.__name__} should be of length 4 but is of length {len(value)}"
             )
 
         return tuple([to_float(i, allow_none=False) for i in value])
@@ -54,4 +53,4 @@ class AreaParameter(_BaseParameter):
             }
 
     def __str__(self):
-        return f"Area to subset over:" f"\n {self.value}"
+        return f"Area to subset over:\n {self.value}"

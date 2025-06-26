@@ -33,9 +33,7 @@ class CollectionParameter(_BaseParameter):
 
         for item in value:
             if not isinstance(item, (str, FileMapper)):
-                raise InvalidParameterValue(
-                    f"Each id in a collection must be a string or an instance of {FileMapper}"
-                )
+                raise InvalidParameterValue(f"Each id in a collection must be a string or an instance of {FileMapper}")
 
         return tuple(value)
 

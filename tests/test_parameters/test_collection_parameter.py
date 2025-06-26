@@ -1,5 +1,4 @@
 import pytest
-
 from clisops.exceptions import InvalidParameterValue, MissingParameterValue
 from clisops.parameter import CollectionParameter, collection
 
@@ -76,9 +75,7 @@ def test_string():
 def test_one_id():
     coll = "cmip5.output1.INM.inmcm4.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga"
     parameter = CollectionParameter(coll)
-    assert parameter.value == (
-        "cmip5.output1.INM.inmcm4.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga",
-    )
+    assert parameter.value == ("cmip5.output1.INM.inmcm4.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga",)
 
 
 def test_whitespace():

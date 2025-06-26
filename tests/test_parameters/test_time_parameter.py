@@ -1,7 +1,6 @@
 import datetime
 
 import pytest
-
 from clisops.exceptions import InvalidParameterValue
 from clisops.parameter import time_interval, time_series
 from clisops.parameter.time_parameter import TimeParameter
@@ -49,9 +48,7 @@ def test_series_string_input():
     assert parameter.value == ["2085-01-01T12:00:00", "2120-12-30T12:00:00"]
     assert parameter.get_bounds() == ("2085-01-01T12:00:00", "2120-12-30T12:00:00")
     # more then two values ...
-    parameter = TimeParameter(
-        "2085-01-01T12:00:00Z, 2090-01-01T12:00:00Z, 2120-12-30T12:00:00Z"
-    )
+    parameter = TimeParameter("2085-01-01T12:00:00Z, 2090-01-01T12:00:00Z, 2120-12-30T12:00:00Z")
     assert parameter.value == [
         "2085-01-01T12:00:00",
         "2090-01-01T12:00:00",
@@ -180,9 +177,7 @@ def test_360_day_calendar():
     parameter = TimeParameter(time)
     assert parameter.value == ("2007-02-29T12:00:00", "2010-02-30T12:00:00")
 
-    time = time_series(
-        "2007-02-29T12:00:00Z", "2009-02-30T12:00:00Z", "2010-02-30T12:00:00Z"
-    )
+    time = time_series("2007-02-29T12:00:00Z", "2009-02-30T12:00:00Z", "2010-02-30T12:00:00Z")
     parameter = TimeParameter(time)
     assert parameter.value == [
         "2007-02-29T12:00:00",
@@ -203,9 +198,7 @@ def test_time_series_input():
         assert parameter.value == expected_value
         assert parameter.asdict() == {"time_values": expected_value}
 
-    times = time_series(
-        "2085-01-01T12:00:00Z", "2095-03-03T03:03:03", "2120-12-30T12:00:00Z"
-    )
+    times = time_series("2085-01-01T12:00:00Z", "2095-03-03T03:03:03", "2120-12-30T12:00:00Z")
     parameter = TimeParameter(times)
     assert parameter.type == "series"
     assert parameter.value == expected_value
@@ -213,8 +206,7 @@ def test_time_series_input():
 
 
 def test_time_parameter_get_bounds():
-    # Tests that the get_bounds() method of TimeParameter is working for
-    # types "series", "interval" and "none"
+    # Tests that the get_bounds() method of TimeParameter is working for "series", "interval" and "none"
     t_values = "2085-01-01T12:00:00", "2095-03-03T03:03:03", "2120-12-30T12:00:00"
     t_bounds = t_values[0], t_values[-1]
 

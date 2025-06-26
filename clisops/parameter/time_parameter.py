@@ -28,13 +28,9 @@ class TimeParameter(_BaseIntervalOrSeriesParameter):
 
         try:
             if start is not None:
-                start = parse_datetime(
-                    start, defaults=[datetime.MINYEAR, 1, 1, 0, 0, 0]
-                )
+                start = parse_datetime(start, defaults=[datetime.MINYEAR, 1, 1, 0, 0, 0])
             if end is not None:
-                end = parse_datetime(
-                    end, defaults=[datetime.MAXYEAR, 12, 31, 23, 59, 59]
-                )
+                end = parse_datetime(end, defaults=[datetime.MAXYEAR, 12, 31, 23, 59, 59])
 
         except Exception:
             raise InvalidParameterValue("Unable to parse the time values entered")
@@ -64,8 +60,10 @@ class TimeParameter(_BaseIntervalOrSeriesParameter):
             return {"time_values": self.value}
 
     def get_bounds(self):
-        """Returns a tuple of the (start, end) times, calculated from
-        the value of the parameter. Either will default to None."""
+        """
+        Returns a tuple of the (start, end) times, calculated from
+        the value of the parameter. Either will default to None.
+        """
         if self.type in ("interval", "none"):
             return self._value_as_tuple()
 
@@ -75,10 +73,6 @@ class TimeParameter(_BaseIntervalOrSeriesParameter):
     def __str__(self):
         if self.type in ("interval", "none"):
             value = self._value_as_tuple()
-            return (
-                f"Time period to subset over"
-                f"\n start time: {value[0]}"
-                f"\n end time: {value[1]}"
-            )
+            return f"Time period to subset over\n start time: {value[0]}\n end time: {value[1]}"
         else:
             return f"Time values to select: {self.value}"

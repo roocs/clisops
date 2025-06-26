@@ -4,7 +4,6 @@ from clisops.parameter import time_interval
 
 def test_subset_cordex_afr(tmpdir, check_output_nc, mini_esgf_data):
     """Test subset on cordex data AFR domain"""
-
     result = subset(
         ds=mini_esgf_data["C3S_CORDEX_AFR_TAS"],
         time=time_interval("2000-01-01", "2001-12-31"),
@@ -22,7 +21,6 @@ def test_subset_cordex_afr(tmpdir, check_output_nc, mini_esgf_data):
 
 def test_subset_cordex_nam(tmpdir, check_output_nc, mini_esgf_data):
     """Test subset on cordex data NAM domain"""
-
     result = subset(
         ds=mini_esgf_data["C3S_CORDEX_NAM_PR"],
         time=time_interval("2051-01-01", "2052-12-31"),
@@ -40,7 +38,6 @@ def test_subset_cordex_nam(tmpdir, check_output_nc, mini_esgf_data):
 
 def test_subset_cordex_eur(tmpdir, check_output_nc, mini_esgf_data):
     """Test subset on cordex data EUR domain"""
-
     result = subset(
         ds=mini_esgf_data["C3S_CORDEX_EUR_ZG500"],
         time=time_interval("2075-01-01", "2076-12-31"),
@@ -58,7 +55,6 @@ def test_subset_cordex_eur(tmpdir, check_output_nc, mini_esgf_data):
 
 def test_subset_cordex_ant(tmpdir, check_output_nc, mini_esgf_data):
     """Test subset on cordex data ANT domain"""
-
     result = subset(
         ds=mini_esgf_data["C3S_CORDEX_ANT_SFC_WIND"],
         time=time_interval("1985-01-01", "1986-12-31"),

@@ -5,8 +5,6 @@ import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
-from _pytest.logging import caplog as _caplog  # noqa
-
 from clisops.utils import testing
 from clisops.utils.testing import stratus as _stratus
 from clisops.utils.testing import write_roocs_cfg as _write_roocs_cfg
@@ -147,9 +145,7 @@ def ndq_series():
     cy = xr.IndexVariable("y", y)
     dates = pd.date_range("1900-01-01", periods=nt, freq=pd.DateOffset(days=1))
 
-    time = xr.IndexVariable(
-        "time", dates, attrs={"units": "days since 1900-01-01", "calendar": "standard"}
-    )
+    time = xr.IndexVariable("time", dates, attrs={"units": "days since 1900-01-01", "calendar": "standard"})
     rs = np.random.RandomState()
 
     return xr.DataArray(
@@ -170,13 +166,7 @@ def areacella():
     dlat = np.diff(lat_bnds)
     lon = np.convolve(lon_bnds, [0.5, 0.5], "valid")
     lat = np.convolve(lat_bnds, [0.5, 0.5], "valid")
-    area = (
-        r
-        * np.radians(dlat)[:, np.newaxis]
-        * r
-        * np.cos(np.radians(lat)[:, np.newaxis])
-        * np.radians(dlon)
-    )
+    area = r * np.radians(dlat)[:, np.newaxis] * r * np.cos(np.radians(lat)[:, np.newaxis]) * np.radians(dlon)
     return xr.DataArray(
         data=area,
         dims=("lat", "lon"),
@@ -267,11 +257,7 @@ def stratus(threadsafe_data_dir, worker_id):
     return _stratus(
         repo=testing.ESGF_TEST_DATA_REPO_URL,
         branch=testing.ESGF_TEST_DATA_VERSION,
-        cache_dir=(
-            testing.ESGF_TEST_DATA_CACHE_DIR
-            if worker_id == "master"
-            else threadsafe_data_dir
-        ),
+        cache_dir=(testing.ESGF_TEST_DATA_CACHE_DIR if worker_id == "master" else threadsafe_data_dir),
     )
 
 
@@ -280,11 +266,7 @@ def nimbus(threadsafe_data_dir, worker_id):
     return _stratus(
         repo=testing.XCLIM_TEST_DATA_REPO_URL,
         branch=testing.XCLIM_TEST_DATA_VERSION,
-        cache_dir=(
-            testing.XCLIM_TEST_DATA_CACHE_DIR
-            if worker_id == "master"
-            else threadsafe_data_dir
-        ),
+        cache_dir=(testing.XCLIM_TEST_DATA_CACHE_DIR if worker_id == "master" else threadsafe_data_dir),
     )
 
 
@@ -298,9 +280,7 @@ def check_output_nc():
                 decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
                 decode_timedelta=False,
             )
-            time_ = (
-                f"{ds.time.values.min().isoformat()}/{ds.time.values.max().isoformat()}"
-            )
+            time_ = f"{ds.time.values.min().isoformat()}/{ds.time.values.max().isoformat()}"
             assert time == time_
 
     return _check_output_nc
@@ -354,24 +334,14 @@ def c3s_cmip5_tos():
 def cmip5_archive_base():
     if "CMIP5_ARCHIVE_BASE" in os.environ:
         return os.environ["CMIP5_ARCHIVE_BASE"]
-    return (
-        Path(__file__)
-        .parent.absolute()
-        .joinpath("mini-esgf-data/test_data/badc/cmip5/data")
-        .as_posix()
-    )
+    return Path(__file__).parent.absolute().joinpath("mini-esgf-data/test_data/badc/cmip5/data").as_posix()
 
 
 @pytest.fixture
 def cmip6_archive_base():
     if "CMIP6_ARCHIVE_BASE" in os.environ:
         return os.environ["CMIP6_ARCHIVE_BASE"]
-    return (
-        Path(__file__)
-        .parent.absolute()
-        .joinpath("mini-esgf-data/test_data/badc/cmip6/data")
-        .as_posix()
-    )
+    return Path(__file__).parent.absolute().joinpath("mini-esgf-data/test_data/badc/cmip6/data").as_posix()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -401,9 +371,7 @@ def clisops_test_data():
         "meridian_multi_geojson": test_data.joinpath("meridian_multi.json").as_posix(),
         "poslons_geojson": test_data.joinpath("poslons.json").as_posix(),
         "eastern_canada_geojson": test_data.joinpath("eastern_canada.json").as_posix(),
-        "southern_qc_geojson": test_data.joinpath(
-            "southern_qc_geojson.json"
-        ).as_posix(),
+        "southern_qc_geojson": test_data.joinpath("southern_qc_geojson.json").as_posix(),
         "small_geojson": test_data.joinpath("small_geojson.json").as_posix(),
         "multi_regions_geojson": test_data.joinpath("multi_regions.json").as_posix(),
     }

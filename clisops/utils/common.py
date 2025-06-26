@@ -5,11 +5,18 @@ import sys
 import warnings
 from pathlib import Path
 from types import FunctionType, ModuleType
-from typing import Optional, Union
 
 from dask.utils import byte_sizes
 from loguru import logger
 from packaging.version import Version
+
+__all__ = [
+    "check_dir",
+    "enable_logging",
+    "expand_wildcards",
+    "parse_size",
+    "require_module",
+]
 
 
 def parse_size(size):
@@ -32,7 +39,7 @@ def parse_size(size):
     return size_in_bytes
 
 
-def expand_wildcards(paths: Union[str, Path]) -> list:
+def expand_wildcards(paths: str | Path) -> list:
     """Expand the wildcards that may be present in Paths."""
     path = Path(paths).expanduser()
     parts = path.parts[1:] if path.is_absolute() else path.parts
@@ -43,17 +50,15 @@ def require_module(
     func: FunctionType,
     module: ModuleType,
     module_name: str,
-    min_version: Optional[str] = "0.0.0",
-    max_supported_version: Optional[str] = None,
-    max_supported_warning: Optional[str] = None,
+    min_version: str | None = "0.0.0",
+    max_supported_version: str | None = None,
+    max_supported_warning: str | None = None,
 ):
     """Ensure that module is installed before function/method is called, decorator."""
 
     @functools.wraps(func)
     def wrapper_func(*args, **kwargs):
-        exception_msg = (
-            f"Package {module_name} >= {min_version} is required to use {func}."
-        )
+        exception_msg = f"Package {module_name} >= {min_version} is required to use {func}."
         if module is None:
             raise ModuleNotFoundError(exception_msg)
         if Version(module.__version__) < Version(min_version):
@@ -73,7 +78,7 @@ def require_module(
     return wrapper_func
 
 
-def check_dir(func: FunctionType, dr: Union[str, Path]):
+def check_dir(func: FunctionType, dr: str | Path):
     """Ensure that directory dr exists before function/method is called, decorator."""
     if not os.path.isdir(dr):
         os.makedirs(dr)
@@ -119,7 +124,8 @@ def enable_logging() -> list[int]:
 
 
 def _list_ten(list1d):
-    """Convert list to string of 10 list elements equally distributed to beginning and end of the list.
+    """
+    Convert list to string of 10 list elements equally distributed to beginning and end of the list.
 
     Parameters
     ----------
@@ -131,12 +137,9 @@ def _list_ten(list1d):
     str
         String containing the comma separated 5 first and last elements of the list, with "..." in between.
         For example "1, 2, 3, 4, 5 ... , 20, 21, 22, 23, 24, 25".
+
     """
     if len(list1d) < 11:
         return ", ".join(str(i) for i in list1d)
     else:
-        return (
-            ", ".join(str(i) for i in list1d[0:5])
-            + " ... "
-            + ", ".join(str(i) for i in list1d[-5:])
-        )
+        return ", ".join(str(i) for i in list1d[0:5]) + " ... " + ", ".join(str(i) for i in list1d[-5:])

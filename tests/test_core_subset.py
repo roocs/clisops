@@ -4,12 +4,11 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import xarray as xr
+from clisops.core import subset
+from clisops.utils.testing import ContextLogger
 from pyproj.crs import CRS
 from pyproj.exceptions import CRSError
 from shapely.geometry import Point, Polygon
-
-from clisops.core import subset
-from clisops.utils.testing import ContextLogger
 
 try:
     import xesmf
@@ -27,9 +26,7 @@ class TestSubsetTime:
 
         out = subset.subset_time(da, start_date=yr_st, end_date=yr_ed)
         out1 = subset.subset_time(da, start_date=f"{yr_st}-01", end_date=f"{yr_ed}-12")
-        out2 = subset.subset_time(
-            da, start_date=f"{yr_st}-01-01", end_date=f"{yr_ed}-12-31"
-        )
+        out2 = subset.subset_time(da, start_date=f"{yr_st}-01-01", end_date=f"{yr_ed}-12-31")
         np.testing.assert_array_equal(out, out1)
         np.testing.assert_array_equal(out, out2)
         np.testing.assert_array_equal(len(np.unique(out.time.dt.year)), 10)
@@ -44,9 +41,7 @@ class TestSubsetTime:
         yr_ed = "2077"
 
         with ContextLogger(caplog):
-            out = subset.subset_time(
-                da, start_date=f"{yr_st}-01", end_date=f"{yr_ed}-01"
-            )
+            out = subset.subset_time(da, start_date=f"{yr_st}-01", end_date=f"{yr_ed}-01")
         np.testing.assert_array_equal(out.time.dt.year.min(), da.time.dt.year.min())
         np.testing.assert_array_equal(out.time.dt.year.max(), da.time.dt.year.max())
 
@@ -73,27 +68,19 @@ class TestSubsetTime:
         with ContextLogger(caplog):
             subset.subset_time(
                 da,
-                start_date=2050,  # noqa
-                end_date=2055,  # noqa
+                start_date=2050,
+                end_date=2055,
             )
             assert (
                 'start_date and end_date require dates in (type: str) using formats of "%Y", "%Y-%m" or "%Y-%m-%d".'
                 in caplog.text
             )
 
-            subset.subset_time(
-                da, start_date="2064-01-01T00:00:00", end_date="2065-02-01T03:12:01"
-            )
+            subset.subset_time(da, start_date="2064-01-01T00:00:00", end_date="2065-02-01T03:12:01")
 
-            assert (
-                '"start_date" has been nudged to nearest valid time step in xarray object.'
-                in caplog.text
-            )
+            assert '"start_date" has been nudged to nearest valid time step in xarray object.' in caplog.text
 
-            assert (
-                '"end_date" has been nudged to nearest valid time step in xarray object.'
-                in caplog.text
-            )
+            assert '"end_date" has been nudged to nearest valid time step in xarray object.' in caplog.text
 
     def test_time_start_only(self, nimbus):
         da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
@@ -153,9 +140,7 @@ class TestSubsetTime:
         yr_st = "2050"
         yr_ed = "2059"
 
-        out = subset.subset_time(
-            da, start_date=f"{yr_st}-07-01", end_date=f"{yr_ed}-06-30"
-        )
+        out = subset.subset_time(da, start_date=f"{yr_st}-07-01", end_date=f"{yr_ed}-06-30")
         out1 = subset.subset_time(da, start_date=f"{yr_st}-07", end_date=f"{yr_ed}-06")
         np.testing.assert_array_equal(out, out1)
         np.testing.assert_array_equal(out.time.dt.year.min(), int(yr_st))
@@ -180,9 +165,7 @@ class TestSubsetGridPoint:
         yr_st = "2050"
         yr_ed = "2059"
 
-        out = subset.subset_gridpoint(
-            da, lon=lon, lat=lat, start_date=yr_st, end_date=yr_ed
-        )
+        out = subset.subset_gridpoint(da, lon=lon, lat=lat, start_date=yr_st, end_date=yr_ed)
         np.testing.assert_almost_equal(out.lon, lon, 1)
         np.testing.assert_almost_equal(out.lat, lat, 1)
         np.testing.assert_array_equal(len(np.unique(out.time.dt.year)), 10)
@@ -201,9 +184,7 @@ class TestSubsetGridPoint:
         np.testing.assert_almost_equal(out.lat, lat, 1)
         np.testing.assert_array_equal(out.tasmin.shape, out.tasmax.shape)
 
-    @pytest.mark.parametrize(
-        "lon,lat", [([-72.4], [46.1]), ([-67.4, -67.3], [43.1, 46.1])]
-    )
+    @pytest.mark.parametrize("lon,lat", [([-72.4], [46.1]), ([-67.4, -67.3], [43.1, 46.1])])
     @pytest.mark.parametrize("add_distance", [True, False])
     def test_simple(self, lat, lon, add_distance, nimbus):
         da = xr.open_dataset(nimbus.fetch(self.nc_tasmax_file)).tasmax
@@ -305,15 +286,9 @@ class TestSubsetGridPoint:
     def test_raise(self, nimbus):
         da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         with pytest.raises(ValueError):
-            subset.subset_gridpoint(
-                da, lon=-72.4, lat=46.1, start_date="2055-03-15", end_date="2055-03-14"
-            )
-            subset.subset_gridpoint(
-                da, lon=-72.4, lat=46.1, start_date="2055", end_date="2052"
-            )
-        da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat)).tasmax.drop_vars(
-            names=["lon", "lat"]
-        )
+            subset.subset_gridpoint(da, lon=-72.4, lat=46.1, start_date="2055-03-15", end_date="2055-03-14")
+            subset.subset_gridpoint(da, lon=-72.4, lat=46.1, start_date="2055", end_date="2052")
+        da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat)).tasmax.drop_vars(names=["lon", "lat"])
         with pytest.raises(Exception):
             subset.subset_gridpoint(da, lon=-72.4, lat=46.1)
 
@@ -382,9 +357,7 @@ class TestSubsetBbox:
         np.testing.assert_array_equal(out.time.dt.year.max(), yr_ed)
         np.testing.assert_array_equal(out.time.dt.year.min(), yr_st)
 
-        out = subset.subset_bbox(
-            da, lon_bnds=self.lon, lat_bnds=self.lat, start_date=str(yr_st)
-        )
+        out = subset.subset_bbox(da, lon_bnds=self.lon, lat_bnds=self.lat, start_date=str(yr_st))
 
         assert out.lon.values.size != 0
         assert out.lat.values.size != 0
@@ -395,9 +368,7 @@ class TestSubsetBbox:
         np.testing.assert_array_equal(out.time.dt.year.max(), da.time.dt.year.max())
         np.testing.assert_array_equal(out.time.dt.year.min(), yr_st)
 
-        out = subset.subset_bbox(
-            da, lon_bnds=self.lon, lat_bnds=self.lat, end_date=str(yr_ed)
-        )
+        out = subset.subset_bbox(da, lon_bnds=self.lon, lat_bnds=self.lat, end_date=str(yr_ed))
 
         assert out.lon.values.size != 0
         assert out.lat.values.size != 0
@@ -458,9 +429,7 @@ class TestSubsetBbox:
 
         # ensure results are equal to previous test on DataArray only
         out1 = subset.subset_bbox(da.tasmax, lon_bnds=[-150, -100], lat_bnds=[10, 60])
-        out1_rev = subset.subset_bbox(
-            da_rev.tasmax, lon_bnds=[-150, -100], lat_bnds=[10, 60]
-        )
+        out1_rev = subset.subset_bbox(da_rev.tasmax, lon_bnds=[-150, -100], lat_bnds=[10, 60])
         diff = (out1 - out1_rev).values
         np.testing.assert_array_equal(np.unique(diff[~np.isnan(diff)]), 0)
 
@@ -474,12 +443,8 @@ class TestSubsetBbox:
     def test_inverted_coords(self):
         lon = np.linspace(-90, -60, 200)
         lat = np.linspace(40, 80, 100)
-        da = xr.Dataset(
-            data_vars=None, coords={"lon": np.flip(lon), "lat": np.flip(lat)}
-        )
-        da["data"] = xr.DataArray(
-            np.random.rand(lon.size, lat.size), dims=["lon", "lat"]
-        )
+        da = xr.Dataset(data_vars=None, coords={"lon": np.flip(lon), "lat": np.flip(lat)})
+        da["data"] = xr.DataArray(np.random.rand(lon.size, lat.size), dims=["lon", "lat"])
 
         out = subset.subset_bbox(da, lon_bnds=self.lon, lat_bnds=self.lat)
         assert out.lon.values.size != 0
@@ -493,9 +458,7 @@ class TestSubsetBbox:
         da = xr.open_dataset(nimbus.fetch(self.nc_tasmax_file))
         extended_latlons = {"lat": "latitude", "lon": "longitude"}
         da_extended_names = da.rename(extended_latlons)
-        out = subset.subset_bbox(
-            da_extended_names, lon_bnds=self.lon, lat_bnds=self.lat
-        )
+        out = subset.subset_bbox(da_extended_names, lon_bnds=self.lon, lat_bnds=self.lat)
         assert {"latitude", "longitude"}.issubset(out.dims)
 
         long_for_some_reason = {"lon": "long"}
@@ -553,9 +516,7 @@ class TestSubsetBbox:
         assert np.all(out.lat >= np.min(self.latGCM))
         assert np.all(out.lat <= np.max(self.latGCM))
 
-        out = subset.subset_bbox(
-            da, lon_bnds=np.array(self.lonGCM) + 360, lat_bnds=self.latGCM
-        )
+        out = subset.subset_bbox(da, lon_bnds=np.array(self.lonGCM) + 360, lat_bnds=self.latGCM)
         assert np.all(out.lon >= np.min(np.asarray(self.lonGCM) + 360))
 
     def test_time(self, nimbus):
@@ -615,9 +576,7 @@ class TestSubsetBbox:
             )
 
         # 2nd case
-        da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat)).tasmax.drop_vars(
-            names=["lon", "lat"]
-        )
+        da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat)).tasmax.drop_vars(names=["lon", "lat"])
         with pytest.raises(Exception):
             subset.subset_bbox(da, lon_bnds=self.lon, lat_bnds=self.lat)
 
@@ -639,9 +598,7 @@ class TestSubsetBbox:
         da = da.assign_coords(lon=(da.lon - 360))
 
         with pytest.raises(TypeError):
-            subset.subset_bbox(
-                da, lon_bnds=self.lon, lat_bnds=self.lat, start_yr=2050, end_yr=2059
-            )
+            subset.subset_bbox(da, lon_bnds=self.lon, lat_bnds=self.lat, start_yr=2050, end_yr=2059)
         with warnings.catch_warnings(record=True) as record:
             subset.subset_bbox(
                 da,
@@ -684,7 +641,7 @@ class TestSubsetShape:
             ii = rs.randint(0, len(imask[0]), 70)
         else:
             ii = np.arange(0, len(imask[0]))
-        for i in zip(imask[0][ii], imask[1][ii]):
+        for i in zip(imask[0][ii], imask[1][ii], strict=False):
             if flag_2d:
                 lat1 = sub.lat[i[0], i[1]]
                 lon1 = sub.lon[i[0], i[1]]
@@ -696,9 +653,7 @@ class TestSubsetShape:
                 lat1 = sub.lat.isel(lat=i[0])
                 lon1 = sub.lon.isel(lon=i[1])
                 # print(lon1.values, lat1.values)
-                np.testing.assert_array_equal(
-                    sub[vari].sel(lon=lon1, lat=lat1), ds[vari].sel(lon=lon1, lat=lat1)
-                )
+                np.testing.assert_array_equal(sub[vari].sel(lon=lon1, lat=lat1), ds[vari].sel(lon=lon1, lat=lat1))
 
     def test_wraps(self, tmp_netcdf_filename, nimbus, clisops_test_data):
         ds = xr.open_dataset(nimbus.fetch(self.nc_file))
@@ -711,17 +666,13 @@ class TestSubsetShape:
         assert len(sub.tas) == 12
 
         # Average temperature at surface for region in January (time=0)
-        np.testing.assert_array_almost_equal(
-            float(np.mean(sub.tas.isel(time=0))), 285.064, 3
-        )
+        np.testing.assert_array_almost_equal(float(np.mean(sub.tas.isel(time=0))), 285.064, 3)
         self.compare_vals(ds, sub, "tas")
 
         poly = gpd.read_file(clisops_test_data["meridian_multi_geojson"])
 
         subtas = subset.subset_shape(ds.tas, poly)
-        np.testing.assert_array_almost_equal(
-            float(np.mean(subtas.isel(time=0))), 281.092, 3
-        )
+        np.testing.assert_array_almost_equal(float(np.mean(subtas.isel(time=0))), 281.092, 3)
 
         sub.to_netcdf(tmp_netcdf_filename)
         assert tmp_netcdf_filename.exists()
@@ -743,14 +694,11 @@ class TestSubsetShape:
         assert len(sub.tas) == 12
 
         # Average temperature at surface for region in January (time=0)
-        np.testing.assert_array_almost_equal(
-            float(np.mean(sub.tas.isel(time=0))), 276.732, 3
-        )
+        np.testing.assert_array_almost_equal(float(np.mean(sub.tas.isel(time=0))), 276.732, 3)
         # Check that no warnings are raised for meridian crossing
         assert (
             '"Geometry crosses the Greenwich Meridian. Proceeding to split polygon at Greenwich."'
-            '" This feature is experimental. Output might not be accurate."'
-            not in [str(q.message) for q in record]
+            '" This feature is experimental. Output might not be accurate."' not in [str(q.message) for q in record]
         )
 
         sub.to_netcdf(tmp_netcdf_filename)
@@ -768,14 +716,11 @@ class TestSubsetShape:
         self.compare_vals(ds, sub, "tasmax")
 
         # Average temperature at surface for region in January (time=0)
-        np.testing.assert_array_almost_equal(
-            float(np.mean(sub.tasmax.isel(time=0))), 269.254, 3
-        )
+        np.testing.assert_array_almost_equal(float(np.mean(sub.tasmax.isel(time=0))), 269.254, 3)
         # Check that no warnings are raised for meridian crossing
         assert (
             '"Geometry crosses the Greenwich Meridian. Proceeding to split polygon at Greenwich."'
-            '" This feature is experimental. Output might not be accurate."'
-            not in [q.message for q in record]
+            '" This feature is experimental. Output might not be accurate."' not in [q.message for q in record]
         )
 
     def test_rotated_pole_with_time(self, nimbus, clisops_test_data):
@@ -789,9 +734,7 @@ class TestSubsetShape:
                 end_date="1984-06-15",
             )
 
-        self.compare_vals(
-            ds.sel(time=slice("1984-06-01", "1984-06-15")), sub, "tasmax", flag_2d=True
-        )
+        self.compare_vals(ds.sel(time=slice("1984-06-01", "1984-06-15")), sub, "tasmax", flag_2d=True)
 
         # Should only have 15 days of data.
         assert len(sub.tasmax) == 15
@@ -800,8 +743,7 @@ class TestSubsetShape:
         # Check that no warnings are raised for meridian crossing
         assert (
             '"Geometry crosses the Greenwich Meridian. Proceeding to split polygon at Greenwich."'
-            '" This feature is experimental. Output might not be accurate."'
-            not in [str(q.message) for q in record]
+            '" This feature is experimental. Output might not be accurate."' not in [str(q.message) for q in record]
         )
 
     def test_small_poly_buffer(self, tmp_netcdf_filename, nimbus, clisops_test_data):
@@ -827,9 +769,7 @@ class TestSubsetShape:
         ds = xr.open_dataset(nimbus.fetch(self.nc_file))
         regions = gpd.read_file(clisops_test_data["multi_regions_geojson"])
         regions.set_index("id")
-        mask = subset.create_mask(
-            x_dim=ds.lon, y_dim=ds.lat, poly=regions, wrap_lons=True
-        )
+        mask = subset.create_mask(x_dim=ds.lon, y_dim=ds.lat, poly=regions, wrap_lons=True)
         vals, counts = np.unique(mask.values[mask.notnull()], return_counts=True)
         np.testing.assert_array_equal(vals, [0, 1, 2])
         np.testing.assert_array_equal(counts, [58, 250, 22])
@@ -837,9 +777,7 @@ class TestSubsetShape:
     @pytest.mark.skipif(xesmf is None, reason="xESMF required.")
     def test_weight_masks_multiregions(self, nimbus, clisops_test_data):
         ds = xr.open_dataset(nimbus.fetch(self.nc_file)).rename(bnds="bounds")
-        regions = gpd.read_file(clisops_test_data["multi_regions_geojson"]).set_index(
-            "id"
-        )
+        regions = gpd.read_file(clisops_test_data["multi_regions_geojson"]).set_index("id")
         masks = subset.create_weight_masks(ds, poly=regions)
 
         np.testing.assert_allclose(masks.sum(["lat", "lon"]), [1, 1, 1])
@@ -886,24 +824,16 @@ class TestSubsetShape:
     def test_shapefile_wrapped_wgs84(self, nimbus):
         da = xr.open_dataset(nimbus.fetch(self.nc_file))
         poly_wgs84 = Polygon([[-90, 40], [-70, 20], [-50, 40], [-70, 60]])
-        poly_wrapped = Polygon(
-            [[-90 + 360, 40], [-70 + 360, 20], [-50 + 360, 40], [-70 + 360, 60]]
-        )
+        poly_wrapped = Polygon([[-90 + 360, 40], [-70 + 360, 20], [-50 + 360, 40], [-70 + 360, 60]])
         shape = gpd.GeoDataFrame(geometry=[poly_wgs84])
         shape_wrapped = gpd.GeoDataFrame(geometry=[poly_wrapped])
-        assert subset.subset_shape(da, shape).equals(
-            subset.subset_shape(da, shape_wrapped)
-        )
+        assert subset.subset_shape(da, shape).equals(subset.subset_shape(da, shape_wrapped))
 
     def test_shapefile_utm(self, nimbus, clisops_test_data):
         da = xr.open_dataset(nimbus.fetch(self.nc_file))
-        regions = gpd.read_file(clisops_test_data["multi_regions_geojson"]).set_index(
-            "id"
-        )
+        regions = gpd.read_file(clisops_test_data["multi_regions_geojson"]).set_index("id")
         regions_utm = regions.to_crs("EPSG:32618")
-        assert subset.subset_shape(da, regions).equals(
-            subset.subset_shape(da, regions_utm)
-        )
+        assert subset.subset_shape(da, regions).equals(subset.subset_shape(da, regions_utm))
 
     def test_compare_crs(self):
         raster_crs = CRS.from_string("EPSG:4326")
@@ -920,9 +850,7 @@ class TestDistance:
         portland_lat = 45.0 + (31.0 / 60.0)
         portland_lon = -123.0 - (41.0 / 60.0)
 
-        da = xr.DataArray(
-            0, coords={"lon": [boston_lon], "lat": [boston_lat]}, dims=["lon", "lat"]
-        )
+        da = xr.DataArray(0, coords={"lon": [boston_lon], "lat": [boston_lat]}, dims=["lon", "lat"])
         d = subset.distance(da, lon=portland_lon, lat=portland_lat)
         np.testing.assert_almost_equal(d, 4164074.239, decimal=3)
 
@@ -931,9 +859,7 @@ class TestDistance:
         lon = np.linspace(-180, 180, 20)
         lat = np.linspace(-90, 90, 30)
         da = xr.Dataset(data_vars=None, coords={"lon": lon, "lat": lat})
-        da["data"] = xr.DataArray(
-            np.random.rand(lon.size, lat.size), dims=["lon", "lat"]
-        )
+        da["data"] = xr.DataArray(np.random.rand(lon.size, lat.size), dims=["lon", "lat"])
 
         d = subset.distance(da, lon=-34, lat=56).squeeze("site")
         assert d.dims == da.data.dims
@@ -993,14 +919,8 @@ class TestSubsetLevel:
         np.testing.assert_array_equal(out.plev.min(), da.plev.min())
         np.testing.assert_array_equal(out.plev.max(), da.plev.max())
 
-        assert (
-            '"first_level" has been nudged to nearest valid level in xarray object.'
-            in caplog.text
-        )
-        assert (
-            '"last_level" has been nudged to nearest valid level in xarray object.'
-            in caplog.text
-        )
+        assert '"first_level" has been nudged to nearest valid level in xarray object.' in caplog.text
+        assert '"last_level" has been nudged to nearest valid level in xarray object.' in caplog.text
 
     def test_warnings(self, caplog, nimbus):
         caplog.set_level("WARNING", logger="clisops")
@@ -1012,10 +932,7 @@ class TestSubsetLevel:
 
         with ContextLogger(caplog):
             subset.subset_level(da, first_level="1000", last_level="1000")
-            assert (
-                '"first_level" should be a number, it has been converted to a float.'
-                in caplog.text
-            )
+            assert '"first_level" should be a number, it has been converted to a float.' in caplog.text
 
             subset.subset_level(da, first_level=81200, last_level=54100.6)
 
@@ -1057,7 +974,6 @@ class TestSubsetLevel:
 
 
 class TestGridPolygon:
-
     @pytest.mark.skipif(xesmf is None, reason="xESMF required.")
     def test_rectilinear(self):
         # CF-Compliant with bounds
@@ -1083,19 +999,16 @@ class TestGridPolygon:
         """
         from shapely.geometry import MultiPoint, Point
 
-        ds = xr.open_dataset(
-            nimbus.fetch("cmip6/sic_SImon_CCCma-CanESM5_ssp245_r13i1p2f1_2020.nc")
-        )
+        ds = xr.open_dataset(nimbus.fetch("cmip6/sic_SImon_CCCma-CanESM5_ssp245_r13i1p2f1_2020.nc"))
 
         poly = subset._curvilinear_grid_exterior_polygon(ds, mode=mode)
 
         # Check that all grid centroids are within the polygon
-        pts = list(map(Point, zip(ds.longitude.data.flat, ds.latitude.data.flat)))
+        pts = list(map(Point, zip(ds.longitude.data.flat, ds.latitude.data.flat, strict=False)))
         assert MultiPoint(pts).within(poly)
 
 
 class TestShapeBboxIndexer:
-
     @pytest.mark.skipif(xesmf is None, reason="xESMF required.")
     def test_rectilinear(self):
         # Create small polygon fitting in one cell.
@@ -1115,8 +1028,7 @@ class TestShapeBboxIndexer:
         import shapely.wkt
 
         p1 = shapely.wkt.loads(
-            "POLYGON((-65.5563 49.257, -64.2166 48.5017, -70.8387 45.2339, -74.6375 44.9993, "
-            "-65.5563 49.257))"
+            "POLYGON((-65.5563 49.257, -64.2166 48.5017, -70.8387 45.2339, -74.6375 44.9993, -65.5563 49.257))"
         )
         p2 = shapely.wkt.loads(
             "POLYGON ((-58.64 51.2, -78.7115 46.326, -78.1958 62.2551, -64.5341 60.309, -58.64 51.2), "
@@ -1138,9 +1050,7 @@ class TestShapeBboxIndexer:
         assert p2.within(env)
 
         # inds should be empty is region is not contained in grid exterior geometry
-        ds = xesmf.util.cf_grid_2d(
-            -200, 0, 20, 0, 61, 10
-        )  # polygon goes up to 62, grid stops at 60
+        ds = xesmf.util.cf_grid_2d(-200, 0, 20, 0, 61, 10)  # polygon goes up to 62, grid stops at 60
         inds = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=[p1, p2]))
         assert inds == {}
 
@@ -1174,7 +1084,7 @@ class TestShapeBboxIndexer:
             inds = subset.shape_bbox_indexer(ds, gpd.GeoDataFrame(geometry=geom))
             inds2 = subset.shape_bbox_indexer(ds, geom)
             assert inds2 == inds
-            inds3 = subset.shape_bbox_indexer(ds, gpd.points_from_xy(*zip(*coords[:n])))
+            inds3 = subset.shape_bbox_indexer(ds, gpd.points_from_xy(*zip(*coords[:n], strict=False)))
             assert inds3 == inds3
             assert MultiPoint(geom).within(subset.grid_exterior_polygon(ds.isel(inds)))
 
@@ -1196,8 +1106,6 @@ def rotated_grid_2d(lon0_b, lon1_b, d_lon, lat0_b, lat1_b, d_lat, angle):
 
     fds = ds.stack(z=("x", "y"), z_b=("x_b", "y_b"))
     fds.lon[:], fds.lat[:] = np.matmul(r, xr.concat([fds.lon, fds.lat], dim="c").data)
-    fds.lon_b[:], fds.lat_b[:] = np.matmul(
-        r, xr.concat([fds.lon_b, fds.lat_b], dim="c").data
-    )
+    fds.lon_b[:], fds.lat_b[:] = np.matmul(r, xr.concat([fds.lon_b, fds.lat_b], dim="c").data)
 
     return fds.unstack(("z", "z_b"))

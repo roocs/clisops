@@ -2,11 +2,10 @@ import glob
 import os
 
 import xarray as xr
-from loguru import logger
-
 from clisops import CONFIG
 from clisops.exceptions import InvalidProject
 from clisops.utils.file_utils import FileMapper
+from loguru import logger
 
 
 class DatasetMapper:
@@ -40,9 +39,7 @@ class DatasetMapper:
     @staticmethod
     def _get_base_dirs_dict():
         projects = get_projects()
-        base_dirs = {
-            project: CONFIG[f"project:{project}"]["base_dir"] for project in projects
-        }
+        base_dirs = {project: CONFIG[f"project:{project}"]["base_dir"] for project in projects}
         return base_dirs
 
     @staticmethod
@@ -55,11 +52,7 @@ class DatasetMapper:
                 # by default this returns c3s-cmip6 not cmip6 (as they have the same base_dir)
                 base_dirs_dict = self._get_base_dirs_dict()
                 for project, base_dir in base_dirs_dict.items():
-                    if (
-                        dset.startswith(base_dir)
-                        and CONFIG[f"project:{project}"].get("is_default_for_path")
-                        is True
-                    ):
+                    if dset.startswith(base_dir) and CONFIG[f"project:{project}"].get("is_default_for_path") is True:
                         return project
 
             elif self._is_ds_id(dset):
@@ -67,15 +60,11 @@ class DatasetMapper:
 
             # this will not return c3s project names
             elif dset.endswith(".nc") or os.path.isfile(dset):
-                dset = xr.open_dataset(
-                    dset, decode_times=xr.coders.CFDatetimeCoder(use_cftime=True)
-                )
+                dset = xr.open_dataset(dset, decode_times=xr.coders.CFDatetimeCoder(use_cftime=True))
                 return get_project_from_ds(dset)
 
         else:
-            raise InvalidProject(
-                f"The format of {dset} is not known and the project name could not be found."
-            )
+            raise InvalidProject(f"The format of {dset} is not known and the project name could not be found.")
 
     def _parse(self, force):
         # if instance of FileMapper
@@ -92,9 +81,7 @@ class DatasetMapper:
             except InvalidProject:
                 logger.info("The project could not be identified")
                 if not force:
-                    raise InvalidProject(
-                        "The project could not be identified and force was set to false"
-                    )
+                    raise InvalidProject("The project could not be identified and force was set to false")
 
         # get base_dir in the case where project has been supplied
         if not self._base_dir and self._project:
@@ -118,19 +105,13 @@ class DatasetMapper:
 
             # if base_dir identified, insert into data_path
             if self._base_dir:
-                self._ds_id = ".".join(
-                    self._data_path.replace(self._base_dir, self._project)
-                    .strip("/")
-                    .split("/")
-                )
+                self._ds_id = ".".join(self._data_path.replace(self._base_dir, self._project).strip("/").split("/"))
 
         # test if dataset id
         elif self._is_ds_id(dset):
             self._ds_id = dset
 
-            mappings = CONFIG.get(f"project:{self.project}", {}).get(
-                "fixed_path_mappings", {}
-            )
+            mappings = CONFIG.get(f"project:{self.project}", {}).get("fixed_path_mappings", {})
 
             # If the dataset uses a fixed path mapping (from the config file) then use it
             if self._ds_id in mappings:
@@ -142,9 +123,7 @@ class DatasetMapper:
 
             # Default mapping is done by converting '.' characters to '/' separators in path
             else:
-                self._data_path = os.path.join(
-                    self._base_dir, "/".join(dset.split(".")[1:])
-                )
+                self._data_path = os.path.join(self._base_dir, "/".join(dset.split(".")[1:]))
 
         # use to data_path to find files if not set already
         if len(self._files) < 1:
@@ -322,8 +301,7 @@ def get_project_from_data_node_root(url):
 
     if not project:
         raise InvalidProject(
-            f"The project could not be identified from the URL "
-            f"{url} so it could not be mapped to a file path."
+            f"The project could not be identified from the URL {url} so it could not be mapped to a file path."
         )
     return project
 

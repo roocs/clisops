@@ -50,18 +50,14 @@ def parse_range(x, caller):
 
     elif isinstance(x, str):
         if "/" not in x:
-            raise InvalidParameterValue(
-                f"{caller} should be passed in as a range separated by /"
-            )
+            raise InvalidParameterValue(f"{caller} should be passed in as a range separated by /")
 
         # empty string either side of '/' is converted to None
         start, end = (i.strip() or None for i in x.split("/"))
 
     elif isinstance(x, Sequence):
         if len(x) != 2:
-            raise InvalidParameterValue(
-                f"{caller} should be a range. Expected 2 values, " f"received {len(x)}"
-            )
+            raise InvalidParameterValue(f"{caller} should be a range. Expected 2 values, received {len(x)}")
 
         start, end = x
 
@@ -91,8 +87,10 @@ def parse_sequence(x, caller):
 
 
 def parse_datetime(dt, defaults=None):
-    """Parses string to datetime and returns isoformat string for it.
-    If `defaults` is set, use that in case `dt` is None."""
+    """
+    Parses string to datetime and returns isoformat string for it.
+    If `defaults` is set, use that in case `dt` is None.
+    """
     return str(str_to_AnyCalendarDateTime(dt, defaults=defaults))
 
 
@@ -132,9 +130,7 @@ class TimeComponents:
     Note that you can provide month strings as strings or numbers, e.g.: "feb", "Feb", "February", 2.
     """
 
-    def __init__(
-        self, year=None, month=None, day=None, hour=None, minute=None, second=None
-    ):
+    def __init__(self, year=None, month=None, day=None, hour=None, minute=None, second=None):
         comps = ("year", "month", "day", "hour", "minute", "second")
 
         self.value = {}
@@ -171,17 +167,16 @@ class TimeComponents:
         if limits:
             mn, mx = min(value), max(value)
             if mn < limits[0] or mx > limits[1]:
-                raise ValueError(
-                    f"Some time components are out of range for {time_comp}: "
-                    f"({mn}, {mx})"
-                )
+                raise ValueError(f"Some time components are out of range for {time_comp}: ({mn}, {mx})")
 
         return value
 
 
 def string_to_dict(s, splitters=("|", ":", ",")):
-    """Convert a string to a dictionary of dictionaries, based on
-    splitting rules: splitters."""
+    """
+    Convert a string to a dictionary of dictionaries, based on
+    splitting rules: splitters.
+    """
     dct = {}
 
     for tdict in s.strip().split(splitters[0]):

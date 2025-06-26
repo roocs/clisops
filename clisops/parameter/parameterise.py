@@ -1,5 +1,4 @@
 import xarray as xr
-
 from clisops.parameter import (
     area_parameter,
     collection_parameter,
@@ -9,9 +8,7 @@ from clisops.parameter import (
 )
 
 
-def parameterise(
-    collection=None, area=None, level=None, time=None, time_components=None
-):
+def parameterise(collection=None, area=None, level=None, time=None, time_components=None):
     """
     Parameterises inputs to instances of parameter classes which allows
     them to be used throughout roocs.
@@ -24,7 +21,6 @@ def parameterise(
     :param time_components: Time Components input in any supported format.
     :return: Parameters as instances of their respective classes.
     """
-
     # if collection is a dataset/dataarray it doesn't need to be parameterised
     if type(collection) not in (xr.core.dataarray.DataArray, xr.core.dataset.Dataset):
         collection = collection_parameter.CollectionParameter(collection)

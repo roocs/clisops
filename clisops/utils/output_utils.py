@@ -6,16 +6,14 @@ import time
 from datetime import datetime as dt
 from datetime import timedelta as td
 from pathlib import Path
-from typing import Union
 
 import dask
 import pandas as pd
 import xarray as xr
-from loguru import logger
-
 from clisops import CONFIG, chunk_memory_limit
 from clisops.utils.common import parse_size
 from clisops.utils.dataset_utils import get_main_variable
+from loguru import logger
 
 SUPPORTED_FORMATS = {
     "netcdf": {"method": "to_netcdf", "extension": "nc", "engine": "h5netcdf"},
@@ -30,9 +28,7 @@ SUPPORTED_SPLIT_METHODS = ["time:auto"]
 def check_format(fmt):
     """Check that the requested format exists."""
     if fmt not in SUPPORTED_FORMATS:
-        raise KeyError(
-            f'Format not recognised: "{fmt}". Must be one of: {SUPPORTED_FORMATS}.'
-        )
+        raise KeyError(f'Format not recognised: "{fmt}". Must be one of: {SUPPORTED_FORMATS}.')
 
 
 def get_format_writer(fmt):
@@ -53,7 +49,7 @@ def get_format_engine(fmt):
     return SUPPORTED_FORMATS[fmt]["engine"]
 
 
-def _format_time(tm: Union[str, dt], fmt="%Y-%m-%d"):
+def _format_time(tm: str | dt, fmt="%Y-%m-%d"):
     """Convert to datetime if time is a numpy datetime."""
     if not hasattr(tm, "strftime"):
         tm = pd.to_datetime(str(tm))
@@ -91,7 +87,7 @@ def get_da(ds):
 
 
 def get_time_slices(
-    ds: Union[xr.Dataset, xr.DataArray],
+    ds: xr.Dataset | xr.DataArray,
     split_method,
     start=None,
     end=None,
@@ -118,12 +114,10 @@ def get_time_slices(
     Returns
     -------
     List[Tuple[str, str]]
-    """
 
+    """
     if split_method not in SUPPORTED_SPLIT_METHODS:
-        raise NotImplementedError(
-            f"The split method {split_method} is not implemented."
-        )
+        raise NotImplementedError(f"The split method {split_method} is not implemented.")
 
     # Use the default file size limit if not provided
     if not file_size_limit:
@@ -160,15 +154,14 @@ def get_time_slices(
 
         if end_ind_x > final_ind_x:
             end_ind_x = final_ind_x
-        slices.append(
-            (f"{_format_time(times[start_ind_x])}", f"{_format_time(times[end_ind_x])}")
-        )
+        slices.append((f"{_format_time(times[start_ind_x])}", f"{_format_time(times[end_ind_x])}"))
 
     return slices
 
 
 def get_chunk_length(da):
-    """Calculate the chunk length to use when chunking xarray datasets.
+    """
+    Calculate the chunk length to use when chunking xarray datasets.
 
     Based on the memory limit provided in config and the size of the dataset.
     """
@@ -258,7 +251,8 @@ def get_output(ds, output_type, output_dir, namer):
 
 
 class FileLock:
-    """Create and release a lockfile.
+    """
+    Create and release a lockfile.
 
     Adapted from https://github.com/cedadev/cmip6-object-store/cmip6_zarr/file_lock.py
     """
@@ -299,8 +293,9 @@ class FileLock:
         self.state = "UNLOCKED"
 
 
-def create_lock(fname: Union[str, Path]):
-    """Check whether lockfile already exists and else creates lockfile.
+def create_lock(fname: str | Path):
+    """
+    Check whether lockfile already exists and else creates lockfile.
 
     Parameters
     ----------
@@ -310,6 +305,7 @@ def create_lock(fname: Union[str, Path]):
     Returns
     -------
     FileLock object or None.
+
     """
     lock_obj = FileLock(fname)
     try:

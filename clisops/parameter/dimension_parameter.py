@@ -38,9 +38,7 @@ class DimensionParameter(_BaseParameter):
                 raise InvalidParameterValue("Each dimension must be a string.")
 
             if item not in known_coord_types:
-                raise InvalidParameterValue(
-                    f"Dimensions for averaging must be one of {known_coord_types}"
-                )
+                raise InvalidParameterValue(f"Dimensions for averaging must be one of {known_coord_types}")
 
         return tuple(value)
 
@@ -50,4 +48,4 @@ class DimensionParameter(_BaseParameter):
             return {"dims": self.value}
 
     def __str__(self):
-        return f"Dimensions to average over:" f"\n {self.value}"
+        return f"Dimensions to average over:\n {self.value}"

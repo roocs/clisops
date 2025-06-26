@@ -1,14 +1,12 @@
 from collections import ChainMap
 from pathlib import Path
-from typing import Optional, Union
 
 import xarray as xr
-from loguru import logger
-
 from clisops.utils.common import expand_wildcards
 from clisops.utils.dataset_utils import open_xr_dataset
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import get_output, get_time_slices
+from loguru import logger
 
 
 class Operation:
@@ -19,11 +17,12 @@ class Operation:
         ds,
         file_namer: str = "standard",
         split_method: str = "time:auto",
-        output_dir: Optional[Union[str, Path]] = None,
+        output_dir: str | Path | None = None,
         output_type: str = "netcdf",
         **params,
     ):
-        """Constructor for each operation.
+        """
+        Constructor for each operation.
 
         Sets common input parameters as attributes.
         Parameters that are specific to each operation are handled in `self._resolve_params()`
@@ -118,22 +117,22 @@ class Operation:
 
     @staticmethod
     def _remove_redundant_fill_values(ds):
-        """Get coordinate and data variables and remove fill values added by xarray.
+        """
+        Get coordinate and data variables and remove fill values added by xarray.
 
         CF-conventions say that coordinate variables cannot have missing values.
 
         See Also
         --------
         https://github.com/roocs/clisops/issues/224
+
         """
         if isinstance(ds, xr.Dataset):
             var_list = list(ds.coords) + list(ds.data_vars)
         elif isinstance(ds, xr.DataArray):
             var_list = list(ds.coords)
         else:
-            raise ValueError(
-                f"Expected xarray.Dataset or xarray.DataArray, got {type(ds)}"
-            )
+            raise ValueError(f"Expected xarray.Dataset or xarray.DataArray, got {type(ds)}")
 
         for var in var_list:
             fval = ChainMap(ds[var].attrs, ds[var].encoding).get("_FillValue", None)
@@ -162,9 +161,10 @@ class Operation:
 
     @staticmethod
     def _remove_redundant_coordinates_attr(ds):
-        """This method removes the coordinates attribute added by xarray.
+        """
+        This method removes the coordinates attribute added by xarray.
 
-        Example
+        Example:
         -------
         .. code-block:: cpp
 
@@ -177,18 +177,17 @@ class Operation:
 
             Warning (cdf_set_var): Inconsistent variable definition for time_bnds!
 
-        See Also
+        See Also:
         --------
         https://github.com/roocs/clisops/issues/224
+
         """
         if isinstance(ds, xr.Dataset):
             var_list = list(ds.coords) + list(ds.data_vars)
         elif isinstance(ds, xr.DataArray):
             var_list = list(ds.coords)
         else:
-            raise ValueError(
-                f"Expected xarray.Dataset or xarray.DataArray, got {type(ds)}"
-            )
+            raise ValueError(f"Expected xarray.Dataset or xarray.DataArray, got {type(ds)}")
 
         for var in var_list:
             c_attr = ChainMap(ds[var].attrs, ds[var].encoding).get("coordinates", None)
@@ -199,13 +198,15 @@ class Operation:
                 ds[var].attrs.pop("coordinates", None)
         return ds
 
-    def process(self) -> list[Union[xr.Dataset, Path]]:
-        """Main processing method used by all subclasses.
+    def process(self) -> list[xr.Dataset | Path]:
+        """
+        Main processing method used by all subclasses.
 
         Returns
         -------
         List[Union[xarray.Dataset, os.PathLike]]
             A list of outputs, which might be NetCDF file paths, Zarr file paths, or xarray.Dataset
+
         """
         # Create an empty list for outputs
         outputs = list()

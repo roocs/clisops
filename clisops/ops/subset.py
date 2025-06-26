@@ -1,9 +1,6 @@
 from pathlib import Path
-from typing import List, Optional, Union
 
 import xarray as xr
-from loguru import logger
-
 from clisops.core import (
     subset_bbox,
     subset_level,
@@ -12,7 +9,7 @@ from clisops.core import (
     subset_time_by_components,
     subset_time_by_values,
 )
-from clisops.core.subset import assign_bounds, get_lat, get_lon  # noqa
+from clisops.core.subset import assign_bounds, get_lat, get_lon
 from clisops.ops.base_operation import Operation
 from clisops.parameter import (
     Interval,
@@ -25,6 +22,7 @@ from clisops.parameter import (
 )
 from clisops.parameter.area_parameter import AreaParameter
 from clisops.utils.dataset_utils import cf_convert_between_lon_frames
+from loguru import logger
 
 __all__ = ["Subset", "subset"]
 
@@ -37,10 +35,7 @@ class Subset(Operation):
         level = params.get("level", None)
         time_comps = params.get("time_components", None)
 
-        logger.debug(
-            f"Mapping parameters: time: {time}, area: {area}, "
-            f"level: {level}, time_components: {time_comps}."
-        )
+        logger.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}, time_components: {time_comps}.")
 
         # Set up args dictionary to be used by `self._calculate()`
         args = dict()
@@ -85,9 +80,7 @@ class Subset(Operation):
             # subset with space and optionally time and level
             logger.debug(f"subset_bbox with parameters: {self.params}")
             # bounds are always ascending, so if lon is descending rolling will not work.
-            ds, lb, ub = cf_convert_between_lon_frames(
-                self.ds, self.params.get("lon_bnds")
-            )
+            ds, lb, ub = cf_convert_between_lon_frames(self.ds, self.params.get("lon_bnds"))
             self.params["lon_bnds"] = (lb, ub)
             try:
                 kwargs = {}
@@ -124,9 +117,7 @@ class Subset(Operation):
                 result = subset_time(self.ds, **kwargs)
             # Subset a series of time values if requested
             elif self.params.get("time_values"):
-                result = subset_time_by_values(
-                    self.ds, time_values=self.params["time_values"]
-                )
+                result = subset_time_by_values(self.ds, time_values=self.params["time_values"])
             else:
                 result = self.ds
 
@@ -141,9 +132,7 @@ class Subset(Operation):
             if any(kwargs.values()):
                 # ensure bounds are ascending
                 if self.params.get("first_level") > self.params.get("last_level"):
-                    first, last = self.params.get("first_level"), self.params.get(
-                        "last_level"
-                    )
+                    first, last = self.params.get("first_level"), self.params.get("last_level")
                     self.params["first_level"], self.params["last_level"] = last, first
 
                 logger.debug(f"subset_level with parameters: {kwargs}")
@@ -164,38 +153,29 @@ class Subset(Operation):
 
 
 def subset(
-    ds: Union[xr.Dataset, str, Path],
+    ds: xr.Dataset | str | Path,
     *,
-    time: Optional[Union[str, tuple[str, str], TimeParameter, Series, Interval]] = None,
-    area: Optional[
-        Union[
-            str,
-            tuple[
-                Union[int, float, str],
-                Union[int, float, str],
-                Union[int, float, str],
-                Union[int, float, str],
-            ],
-            AreaParameter,
+    time: str | tuple[str, str] | TimeParameter | Series | Interval | None = None,
+    area: None
+    | (
+        str
+        | tuple[
+            int | float | str,
+            int | float | str,
+            int | float | str,
+            int | float | str,
         ]
-    ] = None,
-    level: Optional[
-        Union[
-            str,
-            tuple[Union[int, float, str], Union[int, float, str]],
-            LevelParameter,
-            Interval,
-        ]
-    ] = None,
-    time_components: Optional[
-        Union[str, dict, TimeComponents, TimeComponentsParameter]
-    ] = None,
-    output_dir: Optional[Union[str, Path]] = None,
+        | AreaParameter
+    ) = None,
+    level: None | (str | tuple[int | float | str, int | float | str] | LevelParameter | Interval) = None,
+    time_components: None | (str | dict | TimeComponents | TimeComponentsParameter) = None,
+    output_dir: str | Path | None = None,
     output_type="netcdf",
     split_method="time:auto",
     file_namer="standard",
-) -> list[Union[xr.Dataset, str]]:
-    """Subset operation.
+) -> list[xr.Dataset | str]:
+    """
+    Subset operation.
 
     Parameters
     ----------
@@ -232,6 +212,7 @@ def subset(
     If you request a selection range (such as level, latitude or longitude) that specifies the lower
     and upper bounds in the opposite direction to the actual coordinate values then clisops.ops.subset
     will detect this issue and reverse your selection before returning the data subset.
+
     """
     op = Subset(**locals())
     return op.process()

@@ -50,19 +50,14 @@ class AnyCalendarDateTime:
 
     def validate_input(self, input, name, range):
         if input not in range:
-            raise ValueError(
-                f"Invalid input {input} for {name}. Expected value between {range[0]} and {range[-1]}."
-            )
+            raise ValueError(f"Invalid input {input} for {name}. Expected value between {range[0]} and {range[-1]}.")
 
     def __repr__(self):
         return self.value
 
     @property
     def value(self):
-        return (
-            f"{self.year}-{self.month:02d}-{self.day:02d}"
-            f"T{self.hour:02d}:{self.minute:02d}:{self.second:02d}"
-        )
+        return f"{self.year}-{self.month:02d}-{self.day:02d}T{self.hour:02d}:{self.minute:02d}:{self.second:02d}"
 
     def add_day(self):
         """
@@ -104,9 +99,7 @@ def str_to_AnyCalendarDateTime(dt, defaults=None):
     :return: AnyCalendarDateTime object
     """
     if not dt and not defaults:
-        raise Exception(
-            "Must provide at least the year as argument, or all defaults, to create date time."
-        )
+        raise Exception("Must provide at least the year as argument, or all defaults, to create date time.")
 
     # Start with most common pattern
     regex = re.compile(r"^(\d+)-(\d+)-(\d+)[T ](\d+):(\d+):(\d+)$")
@@ -120,9 +113,7 @@ def str_to_AnyCalendarDateTime(dt, defaults=None):
             defaults = [-1, 1, 1, 0, 0, 0]
         else:
             if len(defaults) < 6:
-                raise Exception(
-                    "A default value must be provided for year, month, day, hour, minute and second."
-                )
+                raise Exception("A default value must be provided for year, month, day, hour, minute and second.")
         components = re.split("[- T:]", dt.strip("Z"))
 
         # Build a list of time components
@@ -132,7 +123,8 @@ def str_to_AnyCalendarDateTime(dt, defaults=None):
 
 
 def create_time_bounds(ds, freq):
-    """Generate time bounds for datasets that have been temporally averaged.
+    """
+    Generate time bounds for datasets that have been temporally averaged.
 
     Averaging frequencies supported are yearly, monthly and daily.
     """
@@ -152,10 +144,7 @@ def create_time_bounds(ds, freq):
         # get number of days in december for calendar
         dec_days = dt_cls(2000, 12, 1).daysinmonth
         # generate time bounds
-        time_bounds = [
-            [dt_cls(tm.year, 1, 1), dt_cls(tm.year, 12, dec_days)]
-            for tm in ds.time.values
-        ]
+        time_bounds = [[dt_cls(tm.year, 1, 1), dt_cls(tm.year, 12, dec_days)] for tm in ds.time.values]
 
     elif freq == "day":
         time_bounds = [

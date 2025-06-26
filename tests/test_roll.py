@@ -1,15 +1,12 @@
-import os
 from math import isclose
 
 import numpy as np
 import pytest
 import xarray as xr
-
 from clisops.utils.dataset_utils import get_coord_by_type
 
 
 class TestRoll:
-
     @staticmethod
     def calculate_offset(x, lon):
         # get resolution of data

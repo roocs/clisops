@@ -2,19 +2,16 @@ import os
 import sys
 from pathlib import Path
 
-import cf_xarray  # noqa
+import cf_xarray  # noqa: F401
 import pytest
 import xarray as xr
-from roocs_grids import get_grid_file, grid_dict
-
 from clisops.core.regrid import XESMF_MINIMUM_VERSION, weights_cache_init, xe
 from clisops.ops.regrid import regrid
 from clisops.ops.subset import subset
 from clisops.utils.testing import ContextLogger
+from roocs_grids import get_grid_file, grid_dict
 
-XESMF_IMPORT_MSG = (
-    f"xESMF >= {XESMF_MINIMUM_VERSION} is needed for regridding functionalities."
-)
+XESMF_IMPORT_MSG = f"xESMF >= {XESMF_MINIMUM_VERSION} is needed for regridding functionalities."
 
 
 def _check_output_nc(result, fname="output_001.nc"):
@@ -40,14 +37,13 @@ def test_regrid_basic(tmpdir, tmp_path, mini_esgf_data):
         file_namer="standard",
     )
 
-    _check_output_nc(
-        result, fname=f"{basename}-20051201_regrid-{method}-180x360_cells_grid.nc"
-    )
+    _check_output_nc(result, fname=f"{basename}-20051201_regrid-{method}-180x360_cells_grid.nc")
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_grid_as_none(tmpdir, tmp_path, mini_esgf_data):
-    """Test behaviour when none passed as method and grid.
+    """
+    Test behaviour when none passed as method and grid.
 
     Should use the default regridding.
     """
@@ -71,9 +67,7 @@ def test_regrid_grid_as_none(tmpdir, tmp_path, mini_esgf_data):
 @pytest.mark.slow
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 @pytest.mark.parametrize("grid_id", sorted(grid_dict))
-def test_regrid_regular_grid_to_all_roocs_grids(
-    tmpdir, tmp_path, grid_id, mini_esgf_data
-):
+def test_regrid_regular_grid_to_all_roocs_grids(tmpdir, tmp_path, grid_id, mini_esgf_data):
     """Test for regridding a regular lat/lon field to all roocs grid types."""
     fpath = mini_esgf_data["CMIP5_MRSOS_ONE_TIME_STEP"]
     basename = os.path.splitext(os.path.basename(fpath))[0]
@@ -145,9 +139,7 @@ def test_subset_and_regrid_erroneous_cf_units_cmip5(tmpdir, mini_esgf_data, tmp_
 
 @pytest.mark.slow
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-@pytest.mark.parametrize(
-    "dset", ["ATLAS_v1_CORDEX", "ATLAS_v1_EOBS_GRID", "ATLAS_v0_CORDEX_ANT"]
-)
+@pytest.mark.parametrize("dset", ["ATLAS_v1_CORDEX", "ATLAS_v1_EOBS_GRID", "ATLAS_v0_CORDEX_ANT"])
 def test_regrid_ATLAS_datasets(tmpdir, dset, mini_esgf_data):
     """Test regridding for several ATLAS datasets."""
     result = regrid(
@@ -159,13 +151,11 @@ def test_regrid_ATLAS_datasets(tmpdir, dset, mini_esgf_data):
         output_type="netcdf",
         file_namer="standard",
     )
-    assert os.path.basename(result[0]).endswith(
-        "_regrid-bilinear-360x720_cells_grid.nc"
-    )
+    assert os.path.basename(result[0]).endswith("_regrid-bilinear-360x720_cells_grid.nc")
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
-def test_regrid_ATLAS_CORDEX(tmpdir, caplog, mini_esgf_data):  # noqa
+def test_regrid_ATLAS_CORDEX(tmpdir, caplog, mini_esgf_data):
     """Test regridding for ATLAS CORDEX dataset."""
     import netCDF4
 
@@ -255,36 +245,22 @@ def test_regrid_keep_attrs(tmp_path, mini_esgf_data):
 
     assert "tos" in ds_remap and "tos" in ds_remap_na and "tos" in ds_remap_ta
     assert all([key in ds_remap.tos.attrs.keys() for key in ds.tos.attrs.keys()])
-    assert all(
-        [
-            key in ds_remap.attrs.keys()
-            for key in ds.attrs.keys()
-            if key not in ["nominal_resolution"]
-        ]
-    )
+    assert all([key in ds_remap.attrs.keys() for key in ds.attrs.keys() if key not in ["nominal_resolution"]])
     # todo: remove the restriction when nominal_resolution of the target grid is calculated in core/regrid.py
     assert all([key not in ds_remap_na.tos.attrs.keys() for key in ds.tos.attrs.keys()])
-    assert all(
-        [
-            key not in ds_remap_na.attrs.keys()
-            for key in ds.attrs.keys()
-            if key not in ["grid", "grid_label"]
-        ]
-    )
+    assert all([key not in ds_remap_na.attrs.keys() for key in ds.attrs.keys() if key not in ["grid", "grid_label"]])
     assert all([key in ds_remap_ta.tos.attrs.keys() for key in ds.tos.attrs.keys()])
     assert all(
         [
             key not in ds_remap_ta.attrs.keys()
             for key in ds.attrs.keys()
-            if key
-            not in ["source", "Conventions", "history", "NCO", "grid", "grid_label"]
+            if key not in ["source", "Conventions", "history", "NCO", "grid", "grid_label"]
         ]
     )
 
 
 @pytest.mark.slow
 class TestRegridHalo:
-
     @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
     def test_regrid_halo_simple(self, tmp_path, mini_esgf_data):
         """Test regridding with a simple halo."""

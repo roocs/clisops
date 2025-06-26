@@ -2,18 +2,19 @@
 
 import numbers
 import re
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from functools import wraps
 from pathlib import Path
-from typing import Callable, Optional, Union
 
-import cf_xarray  # noqa
+import cf_xarray  # noqa: F401
 import geopandas as gpd
 import numpy as np
 import xarray
+from clisops.utils.dataset_utils import adjust_date_to_calendar, get_coord_by_type
+from clisops.utils.time_utils import to_isoformat
 from packaging import version
 from pandas import DataFrame
-from pandas.api.types import is_integer_dtype  # noqa
+from pandas.api.types import is_integer_dtype
 from pyproj import Geod
 from pyproj.crs import CRS
 from pyproj.exceptions import CRSError
@@ -23,37 +24,37 @@ from shapely.ops import split, unary_union
 from xarray.core import indexing
 from xarray.core.utils import get_temp_dimname
 
-from clisops.utils.dataset_utils import adjust_date_to_calendar, get_coord_by_type
-from clisops.utils.time_utils import to_isoformat
-
 from .regrid import XESMF_MINIMUM_VERSION
 
 __all__ = [
+    "assign_bounds",
     "create_mask",
     "create_weight_masks",
     "distance",
-    "subset_bbox",
+    "get_lat",
+    "get_lon",
     "shape_bbox_indexer",
+    "subset_bbox",
     "subset_gridpoint",
-    "subset_shape",
-    "subset_time",
-    "subset_time_by_values",
-    "subset_time_by_components",
     "subset_level",
     "subset_level_by_values",
+    "subset_shape",
+    "subset_time",
+    "subset_time_by_components",
+    "subset_time_by_values",
 ]
 
 from loguru import logger
 
 
-def get_lat(ds: Union[xarray.Dataset, xarray.DataArray]) -> xarray.DataArray:
+def get_lat(ds: xarray.Dataset | xarray.DataArray) -> xarray.DataArray:
     try:
         return ds.cf["latitude"]
     except KeyError:
         return ds.lat
 
 
-def get_lon(ds: Union[xarray.Dataset, xarray.DataArray]) -> xarray.DataArray:
+def get_lon(ds: xarray.Dataset | xarray.DataArray) -> xarray.DataArray:
     try:
         return ds.cf["longitude"]
     except KeyError:
@@ -74,8 +75,7 @@ def check_start_end_dates(func: Callable) -> Callable:
 
         if isinstance(kwargs["start_date"], int) or isinstance(kwargs["end_date"], int):
             logger.warning(
-                "start_date and end_date require dates in (type: str) "
-                'using formats of "%Y", "%Y-%m" or "%Y-%m-%d".',
+                'start_date and end_date require dates in (type: str) using formats of "%Y", "%Y-%m" or "%Y-%m-%d".',
                 UserWarning,
                 stacklevel=2,
             )
@@ -100,9 +100,7 @@ def check_start_end_dates(func: Callable) -> Callable:
                 UserWarning,
                 stacklevel=2,
             )
-            kwargs["start_date"] = adjust_date_to_calendar(
-                da, kwargs["start_date"], "forwards"
-            )
+            kwargs["start_date"] = adjust_date_to_calendar(da, kwargs["start_date"], "forwards")
             nudged = da.time.sel(time=slice(kwargs["start_date"], None)).values[0]
             kwargs["start_date"] = to_isoformat(nudged)
 
@@ -112,8 +110,7 @@ def check_start_end_dates(func: Callable) -> Callable:
                 raise ValueError()
         except KeyError:
             logger.warning(
-                '"end_date" not found within input date time range. Defaulting to maximum time step in '
-                "xarray object.",
+                '"end_date" not found within input date time range. Defaulting to maximum time step in xarray object.',
                 UserWarning,
                 stacklevel=2,
             )
@@ -124,19 +121,12 @@ def check_start_end_dates(func: Callable) -> Callable:
                 UserWarning,
                 stacklevel=2,
             )
-            kwargs["end_date"] = adjust_date_to_calendar(
-                da, kwargs["end_date"], "backwards"
-            )
+            kwargs["end_date"] = adjust_date_to_calendar(da, kwargs["end_date"], "backwards")
             nudged = da.time.sel(time=slice(None, kwargs["end_date"])).values[-1]
             kwargs["end_date"] = to_isoformat(nudged)
 
-        if (
-            da.time.sel(time=kwargs["start_date"]).min()
-            > da.time.sel(time=kwargs["end_date"]).max()
-        ):
-            raise ValueError(
-                f'Start date ("{kwargs["start_date"]}") is after end date ("{kwargs["end_date"]}").'
-            )
+        if da.time.sel(time=kwargs["start_date"]).min() > da.time.sel(time=kwargs["end_date"]).max():
+            raise ValueError(f'Start date ("{kwargs["start_date"]}") is after end date ("{kwargs["end_date"]}").')
 
         return func(*args, **kwargs)
 
@@ -152,10 +142,7 @@ def check_start_end_levels(func: Callable) -> Callable:
         try:
             level = da[get_coord_by_type(da, "level", ignore_aux_coords=True)]
         except ValueError:
-            raise Exception(
-                f"{subset_level.__name__} requires input data that has a "
-                'recognisable "level" coordinate.'
-            )
+            raise Exception(f'{subset_level.__name__} requires input data that has a recognisable "level" coordinate.')
 
         if "first_level" not in kwargs or kwargs["first_level"] is None:
             # use string for first level only - .sel() will include all levels
@@ -175,18 +162,14 @@ def check_start_end_levels(func: Callable) -> Callable:
                         stacklevel=2,
                     )
                 except Exception:
-                    raise TypeError(
-                        f'"{key}" could not parsed. It must be provided as a number'
-                    )
+                    raise TypeError(f'"{key}" could not parsed. It must be provided as a number')
 
         try:
             if float(kwargs["first_level"]) not in [float(lev) for lev in level.values]:
                 raise ValueError()
         except ValueError:
             try:
-                kwargs["first_level"] = level.sel(
-                    **{level.name: slice(kwargs["first_level"], None)}
-                ).values[0]
+                kwargs["first_level"] = level.sel(**{level.name: slice(kwargs["first_level"], None)}).values[0]
                 logger.warning(
                     '"first_level" has been nudged to nearest valid level in xarray object.',
                     UserWarning,
@@ -194,8 +177,7 @@ def check_start_end_levels(func: Callable) -> Callable:
                 )
             except IndexError:
                 logger.warning(
-                    '"first_level" not found within input level range. Defaulting to first level '
-                    "in xarray object.",
+                    '"first_level" not found within input level range. Defaulting to first level in xarray object.',
                     UserWarning,
                     stacklevel=2,
                 )
@@ -206,9 +188,7 @@ def check_start_end_levels(func: Callable) -> Callable:
                 raise ValueError()
         except ValueError:
             try:
-                kwargs["last_level"] = level.sel(
-                    **{level.name: slice(None, kwargs["last_level"])}
-                ).values[-1]
+                kwargs["last_level"] = level.sel(**{level.name: slice(None, kwargs["last_level"])}).values[-1]
                 logger.warning(
                     '"last_level" has been nudged to nearest valid level in xarray object.',
                     UserWarning,
@@ -216,8 +196,7 @@ def check_start_end_levels(func: Callable) -> Callable:
                 )
             except IndexError:
                 logger.warning(
-                    '"last_level" not found within input level range. Defaulting to last level '
-                    "in xarray object.",
+                    '"last_level" not found within input level range. Defaulting to last level in xarray object.',
                     UserWarning,
                     stacklevel=2,
                 )
@@ -231,7 +210,8 @@ def check_start_end_levels(func: Callable) -> Callable:
 def check_lons(func: Callable) -> Callable:
     @wraps(func)
     def func_checker(*args, **kwargs):
-        """Reformat user-specified "lon" or "lon_bnds" values based on the lon dimensions of a supplied Dataset or DataArray.
+        """
+        Reformat user-specified "lon" or "lon_bnds" values based on the lon dimensions of a supplied Dataset or DataArray.
 
         Examines an xarray object longitude dimensions and depending on extent (either -180 to +180 or 0 to +360),
         will reformat user-specified lon values to be synonymous with xarray object boundaries.
@@ -275,7 +255,8 @@ def check_lons(func: Callable) -> Callable:
 def check_levels_exist(func: Callable) -> Callable:
     @wraps(func)
     def func_checker(*args, **kwargs):
-        """Check the requested levels exist in the input Dataset/DataArray and, if not, raise an Exception.
+        """
+        Check the requested levels exist in the input Dataset/DataArray and, if not, raise an Exception.
 
         if the requested levels are not sorted in the order of the actual array then
         re-sort them to match the array in the input data.
@@ -291,10 +272,7 @@ def check_levels_exist(func: Callable) -> Callable:
 
         if not req_levels.issubset(levels):
             mismatch_levels = req_levels.difference(levels)
-            raise ValueError(
-                f"Requested levels include some not found in "
-                f"the dataset: {mismatch_levels}"
-            )
+            raise ValueError(f"Requested levels include some not found in the dataset: {mismatch_levels}")
 
         # Now re-order the requested levels in case they do not match the data order
         req_levels = sorted(req_levels)
@@ -312,7 +290,8 @@ def check_levels_exist(func: Callable) -> Callable:
 def check_datetimes_exist(func: Callable) -> Callable:
     @wraps(func)
     def func_checker(*args, **kwargs):
-        """Check the requested datetimes exist in the input Dataset/DataArray and, if not, raise an Exception.
+        """
+        Check the requested datetimes exist in the input Dataset/DataArray and, if not, raise an Exception.
 
         If the requested datetimes are not sorted in the order of the actual array then
         re-sort them to match the array in the input data.
@@ -326,17 +305,11 @@ def check_datetimes_exist(func: Callable) -> Callable:
         times = {tm for tm in da_times.values}
 
         # Convert time values to required format/type
-        req_times = {
-            tm_class(*[int(i) for i in re.split("[-:T ]", tm)])
-            for tm in kwargs.get("time_values", [])
-        }
+        req_times = {tm_class(*[int(i) for i in re.split("[-:T ]", tm)]) for tm in kwargs.get("time_values", [])}
 
         if not req_times.issubset(times):
             mismatch_times = req_times.difference(times)
-            raise ValueError(
-                f"Requested datetimes include some not found in "
-                f"the dataset: {mismatch_times}"
-            )
+            raise ValueError(f"Requested datetimes include some not found in the dataset: {mismatch_times}")
 
         # Now re-order the requested times in case they do not match the data order
         req_times = sorted(req_times)
@@ -353,7 +326,8 @@ def check_datetimes_exist(func: Callable) -> Callable:
 def convert_lat_lon_to_da(func: Callable) -> Callable:
     @wraps(func)
     def func_checker(*args, **kwargs):
-        """Transform input lat, lon to DataArrays.
+        """
+        Transform input lat, lon to DataArrays.
 
         Input can be int, float or any iterable.
         Expects a DataArray as first argument and checks is dim "site" already exists,
@@ -364,9 +338,7 @@ def convert_lat_lon_to_da(func: Callable) -> Callable:
         """
         lat = kwargs.pop("lat", None)
         lon = kwargs.pop("lon", None)
-        if not isinstance(lat, (type(None), xarray.DataArray)) or not isinstance(
-            lon, (type(None), xarray.DataArray)
-        ):
+        if not isinstance(lat, (type(None), xarray.DataArray)) or not isinstance(lon, (type(None), xarray.DataArray)):
             try:
                 if len(lat) != len(lon):
                     raise ValueError("'lat' and 'lon' must have the same length")
@@ -390,7 +362,8 @@ def convert_lat_lon_to_da(func: Callable) -> Callable:
 def wrap_lons_and_split_at_greenwich(func: Callable) -> Callable:
     @wraps(func)
     def func_checker(*args, **kwargs):
-        """Split and reproject polygon vectors in a GeoDataFrame whose values cross the Greenwich Meridian.
+        """
+        Split and reproject polygon vectors in a GeoDataFrame whose values cross the Greenwich Meridian.
 
         Begins by examining whether the geometry bounds the supplied cross longitude = 0 and if so, proceeds to split
         the polygons at the meridian into new polygons and erase a small buffer to prevent invalid geometries when
@@ -406,9 +379,7 @@ def wrap_lons_and_split_at_greenwich(func: Callable) -> Callable:
             return func(*args, **kwargs)
 
         if wrap_lons:
-            if (np.min(x_dim) < 0 and np.max(x_dim) >= 360) or (
-                np.min(x_dim) < -180 and np.max(x_dim) >= 180
-            ):
+            if (np.min(x_dim) < 0 and np.max(x_dim) >= 360) or (np.min(x_dim) < -180 and np.max(x_dim) >= 180):
                 # TODO: This should raise an exception, right?
                 logger.warning(
                     "DataArray doesn't seem to be using lons between 0 and 360 degrees or between -180 and 180 degrees."
@@ -420,9 +391,7 @@ def wrap_lons_and_split_at_greenwich(func: Callable) -> Callable:
             split_features = dict()
             split_flag = False
             for index, feature in poly.iterrows():
-                if (feature.geometry.bounds[0] < 0) and (
-                    feature.geometry.bounds[2] > 0
-                ):
+                if (feature.geometry.bounds[0] < 0) and (feature.geometry.bounds[2] > 0):
                     split_flag = True
                     logger.warning(
                         "Geometry crosses the Greenwich Meridian. Proceeding to split polygon at Greenwich."
@@ -439,9 +408,7 @@ def wrap_lons_and_split_at_greenwich(func: Callable) -> Callable:
                     meridian = LineString([Point(0, 90), Point(0, -90)])
                     buffered = meridian.buffer(0.000000001)
                     split_polygons = split(union, meridian)
-                    buffered_split_polygons = [
-                        feat.difference(buffered) for feat in split_polygons.geoms
-                    ]
+                    buffered_split_polygons = [feat.difference(buffered) for feat in split_polygons.geoms]
 
                     split_features[index] = [unary_union(buffered_split_polygons)]
 
@@ -458,9 +425,7 @@ def wrap_lons_and_split_at_greenwich(func: Callable) -> Callable:
             poly = poly.set_crs(CRS(4326))
 
             # Reproject features in WGS84 CSR to use 0 to 360 as longitudinal values
-            wrapped_lons = CRS.from_string(
-                "+proj=longlat +ellps=WGS84 +lon_wrap=180 +datum=WGS84 +no_defs"
-            )
+            wrapped_lons = CRS.from_string("+proj=longlat +ellps=WGS84 +lon_wrap=180 +datum=WGS84 +no_defs")
 
             poly = poly.to_crs(crs=wrapped_lons)
             if split_flag:
@@ -488,7 +453,8 @@ def create_mask(
     wrap_lons: bool = False,
     check_overlap: bool = False,
 ) -> xarray.DataArray:
-    """Create a mask with values corresponding to the features in a GeoDataFrame using vectorize methods.
+    """
+    Create a mask with values corresponding to the features in a GeoDataFrame using vectorize methods.
 
     The returned mask's points have the value of the first geometry of `poly` they fall in.
 
@@ -530,6 +496,7 @@ def create_mask(
         # Extra step to retrieve the names of those polygons stored in another column (here "id")
         region_names = xr.DataArray(polys.id, dims=("regions",))
         ds = ds.assign_coords(regions_names=region_names)
+
     """
     if check_overlap:
         _check_has_overlaps(polygons=poly)
@@ -538,9 +505,7 @@ def create_mask(
 
     if len(x_dim.shape) == 1 and len(y_dim.shape) == 1 and x_dim.dims != y_dim.dims:
         # create a 2d grid of lon, lat values
-        lon1, lat1 = np.meshgrid(
-            np.asarray(x_dim.values), np.asarray(y_dim.values), indexing="ij"
-        )
+        lon1, lat1 = np.meshgrid(np.asarray(x_dim.values), np.asarray(y_dim.values), indexing="ij")
         dims_out = x_dim.dims + y_dim.dims
         coords_out = dict()
         coords_out[dims_out[0]] = x_dim.values
@@ -556,13 +521,9 @@ def create_mask(
 
     geoms = poly.geometry.values
     mask = np.full(lat1.shape, np.nan)
-    for val, geom in zip(poly.index[::-1], geoms[::-1]):
-        contained = vectorized.contains(geom, lon1.flatten(), lat1.flatten()).reshape(
-            lat1.shape
-        )
-        touched = vectorized.touches(geom, lon1.flatten(), lat1.flatten()).reshape(
-            lat1.shape
-        )
+    for val, geom in zip(poly.index[::-1], geoms[::-1], strict=False):
+        contained = vectorized.contains(geom, lon1.flatten(), lat1.flatten()).reshape(lat1.shape)
+        touched = vectorized.touches(geom, lon1.flatten(), lat1.flatten()).reshape(lat1.shape)
         intersection = np.logical_or(contained, touched)
         mask[intersection] = val
 
@@ -572,7 +533,8 @@ def create_mask(
 
 
 def _rectilinear_grid_exterior_polygon(ds: xarray.Dataset) -> Polygon:
-    """Return a polygon tracing a rectilinear grid's exterior.
+    """
+    Return a polygon tracing a rectilinear grid's exterior.
 
     Parameters
     ----------
@@ -583,8 +545,8 @@ def _rectilinear_grid_exterior_polygon(ds: xarray.Dataset) -> Polygon:
     -------
     shapely.geometry.Polygon
         Grid cell boundary.
-    """
 
+    """
     # Add bounds if not present
     # Note: with cf-xarray <= 0.6.2, the fact that `longitude` is in bounds does not mean it really is...
     # See https://github.com/xarray-contrib/cf-xarray/issues/254
@@ -617,10 +579,9 @@ def _rectilinear_grid_exterior_polygon(ds: xarray.Dataset) -> Polygon:
     return Polygon(pts)
 
 
-def _curvilinear_grid_exterior_polygon(
-    ds: xarray.Dataset, mode: str = "bbox"
-) -> Polygon:
-    """Return a polygon tracing a curvilinear grid's exterior.
+def _curvilinear_grid_exterior_polygon(ds: xarray.Dataset, mode: str = "bbox") -> Polygon:
+    """
+    Return a polygon tracing a curvilinear grid's exterior.
 
     Parameters
     ----------
@@ -635,6 +596,7 @@ def _curvilinear_grid_exterior_polygon(
     -------
     shapely.geometry.Polygon
         Grid cell boundary.
+
     """
     import math
 
@@ -690,13 +652,13 @@ def _curvilinear_grid_exterior_polygon(
         y = sds.cf.get_bounds("latitude")  # lat_bnds
 
         # Grid cell polygons
-        polys = [Polygon(zip(lx, ly)) for lx, ly in zip(x.data.T, y.data.T)]
+        polys = [Polygon(zip(lx, ly, strict=False)) for lx, ly in zip(x.data.T, y.data.T, strict=False)]
 
         # Exterior of all these polygons
         pts = unary_union(polys).simplify(0.1).buffer(0.1).exterior
         x, y = np.around(pts.xy, 1)
         y = np.clip(y, -90, 90)
-        pts = zip(x, y)
+        pts = zip(x, y, strict=False)
     else:
         raise NotImplementedError(f"mode: {mode}")
 
@@ -704,7 +666,8 @@ def _curvilinear_grid_exterior_polygon(
 
 
 def grid_exterior_polygon(ds: xarray.Dataset) -> Polygon:
-    """Return a polygon tracing the grid's exterior.
+    """
+    Return a polygon tracing the grid's exterior.
 
     This function is only accurate for a geographic lat/lon projection. For projected grids, it's a rough approximation.
 
@@ -722,16 +685,15 @@ def grid_exterior_polygon(ds: xarray.Dataset) -> Polygon:
     -----
     For curvilinear grids, the boundary is the centroid's boundary, not the real cell boundary. Please submit a PR if
     you need this.
-    """
-    from shapely.geometry import Polygon
 
+    """
     if is_rectilinear(ds):
         return _rectilinear_grid_exterior_polygon(ds)
 
     return _curvilinear_grid_exterior_polygon(ds, mode="bbox")
 
 
-def is_rectilinear(ds: Union[xarray.Dataset, xarray.DataArray]) -> bool:
+def is_rectilinear(ds: xarray.Dataset | xarray.DataArray) -> bool:
     """Return whether the grid is rectilinear or not."""
     sdims = {ds.cf["longitude"].name, ds.cf["latitude"].name}
     return sdims.issubset(ds.dims)
@@ -739,9 +701,10 @@ def is_rectilinear(ds: Union[xarray.Dataset, xarray.DataArray]) -> bool:
 
 def shape_bbox_indexer(
     ds: xarray.Dataset,
-    poly: Union[gpd.GeoDataFrame, gpd.GeoSeries, gpd.array.GeometryArray],
+    poly: gpd.GeoDataFrame | gpd.GeoSeries | gpd.array.GeometryArray,
 ):
-    """Return a spatial indexer that selects the indices of the grid cells covering the given geometries.
+    """
+    Return a spatial indexer that selects the indices of the grid cells covering the given geometries.
 
     Parameters
     ----------
@@ -763,6 +726,7 @@ def shape_bbox_indexer(
     Notes
     -----
     This is used in particular to restrict the domain of a dataset before computing the weights for a spatial average.
+
     """
     # Cling wrap around shapes: GeoSeries -> Polygon
     # The first `convex_hull` is necessary to remove any holes in the polygon.
@@ -778,9 +742,7 @@ def shape_bbox_indexer(
         hpoly = [p.convex_hull for p in poly]
         hull = unary_union(hpoly).convex_hull
     else:
-        raise ValueError(
-            "poly must be a GeoDataFrame, GeoSeries, GeometryArray, or list of shapely geometries."
-        )
+        raise ValueError("poly must be a GeoDataFrame, GeoSeries, GeometryArray, or list of shapely geometries.")
 
     # If polygon straddles the grid boundary, we need to roll the grid's coordinates and this is not supported.
     if not grid_exterior_polygon(ds).contains(hull):
@@ -808,7 +770,7 @@ def shape_bbox_indexer(
         coords = hull.boundary.coords[:-1]
 
     # Create envelope coordinates
-    elon, elat = map(np.array, zip(*coords))
+    elon, elat = map(np.array, zip(*coords, strict=False))
     ind = {ds.cf["longitude"].name: elon, ds.cf["latitude"].name: elat}
 
     # Find indices nearest the rectangle' corners
@@ -820,13 +782,9 @@ def shape_bbox_indexer(
                 "Please update your environment dependencies.",
                 DeprecationWarning,
             )
-            native_ind, _ = xarray.core.coordinates.remap_label_indexers(
-                ds, ind, method="nearest"
-            )
+            native_ind, _ = xarray.core.coordinates.remap_label_indexers(ds, ind, method="nearest")
         else:
-            native_ind = indexing.map_index_queries(
-                ds, ind, method="nearest"
-            ).dim_indexers
+            native_ind = indexing.map_index_queries(ds, ind, method="nearest").dim_indexers
     else:
         # For curvilinear grids, finding the closest points require a bit more work.
         from scipy.spatial import cKDTree
@@ -840,7 +798,7 @@ def shape_bbox_indexer(
         # Find indices on 2D coordinates
         inds = np.unravel_index(flat_ind, lon.shape)
         # Create index dictionary on native dimensions, e.g. rlon, rlat
-        native_ind = dict(zip(lon.dims, inds))
+        native_ind = dict(zip(lon.dims, inds, strict=False))
 
     # Create slices, adding a halo around selection to account for `nearest` grid cell center approximation.
     out = {}
@@ -853,10 +811,11 @@ def shape_bbox_indexer(
 
 
 def create_weight_masks(
-    ds_in: Union[xarray.DataArray, xarray.Dataset],
+    ds_in: xarray.DataArray | xarray.Dataset,
     poly: gpd.GeoDataFrame,
 ) -> xarray.DataArray:
-    """Create weight masks corresponding to the features in a GeoDataFrame using xESMF.
+    """
+    Create weight masks corresponding to the features in a GeoDataFrame using xESMF.
 
     The returned masks values are the fraction of the corresponding polygon's area
     that is covered by the grid cell. Summing along the spatial dimension will give 1
@@ -892,13 +851,12 @@ def create_weight_masks(
 
         # Get a weight mask for each polygon in the shape file
         mask = create_weight_masks(x_dim=ds.lon, y_dim=ds.lat, poly=polys)
+
     """
     try:
         from xesmf import SpatialAverager
     except ImportError:
-        raise ValueError(
-            f"Package xesmf >= {XESMF_MINIMUM_VERSION} is required to use create_weight_masks."
-        )
+        raise ValueError(f"Package xesmf >= {XESMF_MINIMUM_VERSION} is required to use create_weight_masks.")
 
     if poly.crs is not None:
         poly = poly.to_crs(4326)
@@ -911,11 +869,7 @@ def create_weight_masks(
     # Unpack weights to full size array, this increases memory use a lot.
     # polygons are along the "geom" dim
     # assign all other columns of poly as auxiliary coords.
-    weights = (
-        savg.weights.data.todense()
-        if isinstance(savg.weights, xarray.DataArray)
-        else savg.weights.toarray()
-    )
+    weights = savg.weights.data.todense() if isinstance(savg.weights, xarray.DataArray) else savg.weights.toarray()
     masks = xarray.DataArray(
         weights.reshape(poly.geometry.size, *savg.shape_in),
         dims=("geom", *savg.in_horiz_dims),
@@ -924,27 +878,22 @@ def create_weight_masks(
 
     # Assign coords from ds_in, but only those with no unknown dims.
     # Otherwise, xarray rises an error.
-    masks = masks.assign_coords(
-        **{
-            k: crd
-            for k, crd in ds_in.coords.items()
-            if not (set(crd.dims) - set(masks.dims))
-        }
-    )
+    masks = masks.assign_coords(**{k: crd for k, crd in ds_in.coords.items() if not (set(crd.dims) - set(masks.dims))})
     return masks
 
 
 def subset_shape(
-    ds: Union[xarray.DataArray, xarray.Dataset],
-    shape: Union[str, Path, gpd.GeoDataFrame],
-    shape_crs: Optional[Union[str, int]] = None,
-    buffer: Optional[Union[int, float]] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    first_level: Optional[Union[float, int]] = None,
-    last_level: Optional[Union[float, int]] = None,
-) -> Union[xarray.DataArray, xarray.Dataset]:
-    """Subset a DataArray or Dataset spatially (and temporally) using a vector shape and date selection.
+    ds: xarray.DataArray | xarray.Dataset,
+    shape: str | Path | gpd.GeoDataFrame,
+    shape_crs: str | int | None = None,
+    buffer: int | float | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    first_level: float | int | None = None,
+    last_level: float | int | None = None,
+) -> xarray.DataArray | xarray.Dataset:
+    """
+    Subset a DataArray or Dataset spatially (and temporally) using a vector shape and date selection.
 
     Return a subset of a DataArray or Dataset for grid points falling within the area of a Polygon and/or
     MultiPolygon shape, or grid points along the path of a LineString and/or MultiLineString. If the shape
@@ -1003,19 +952,16 @@ def subset_shape(
         prSub = subset_shape(pr, shape=path_to_shape_file)
 
         # Subset data array by shape and single year
-        prSub = subset_shape(
-            pr, shape=path_to_shape_file, start_date="1990-01-01", end_date="1990-12-31"
-        )
+        prSub = subset_shape(pr, shape=path_to_shape_file, start_date="1990-01-01", end_date="1990-12-31")
 
         # Subset multiple variables in a single dataset
         ds = xr.open_mfdataset([path_to_tasmin_file, path_to_tasmax_file])
         dsSub = subset_shape(ds, shape=path_to_shape_file)
+
     """
     wgs84 = CRS(4326)
     # PROJ4 definition for WGS84 with longitudes ranged between -180/+180.
-    wgs84_wrapped = CRS.from_string(
-        "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs lon_wrap=180"
-    )
+    wgs84_wrapped = CRS.from_string("+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs lon_wrap=180")
 
     if isinstance(ds, xarray.DataArray):
         ds_copy = ds.to_dataset(name=ds.name or "subsetted")
@@ -1047,9 +993,7 @@ def subset_shape(
             elif minbnd >= 0 and minbnd <= 360:
                 shape_crs = wgs84_wrapped
             else:
-                raise CRSError(
-                    "Shapefile CRS could not be determined and does not resemble WGS84."
-                )
+                raise CRSError("Shapefile CRS could not be determined and does not resemble WGS84.")
             poly.crs = shape_crs
     if not shape_crs.equals(wgs84):
         logger.warning(
@@ -1061,9 +1005,7 @@ def subset_shape(
 
     lon = get_lon(ds_copy)
     wrap_lons = False
-    if (np.min(lon) >= 0 and np.max(lon) <= 360) and not (
-        np.min(lon) >= -180 and np.max(lon) <= 180
-    ):
+    if (np.min(lon) >= 0 and np.max(lon) <= 360) and not (np.min(lon) >= -180 and np.max(lon) <= 180):
         wrap_lons = True
 
     # Get the shape's bounding box.
@@ -1098,9 +1040,7 @@ def subset_shape(
     lon = get_lon(ds_copy)
     lat = get_lat(ds_copy)
 
-    mask_2d = create_mask(x_dim=lon, y_dim=lat, poly=poly, wrap_lons=wrap_lons).clip(
-        1, 1
-    )
+    mask_2d = create_mask(x_dim=lon, y_dim=lat, poly=poly, wrap_lons=wrap_lons).clip(1, 1)
     # 1 on the shapes, NaN elsewhere.
     # We simply want to remove the 0s from the zeroth shape, for our outer mask trick below.
 
@@ -1157,17 +1097,18 @@ def subset_shape(
 
 @check_lons
 def subset_bbox(
-    da: Union[xarray.DataArray, xarray.Dataset],
-    lon_bnds: Union[np.array, tuple[Optional[float], Optional[float]]] = None,
-    lat_bnds: Union[np.array, tuple[Optional[float], Optional[float]]] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    first_level: Optional[Union[float, int]] = None,
-    last_level: Optional[Union[float, int]] = None,
-    time_values: Optional[Sequence[str]] = None,
-    level_values: Optional[Union[Sequence[float], Sequence[int]]] = None,
-) -> Union[xarray.DataArray, xarray.Dataset]:
-    """Subset a DataArray or Dataset spatially (and temporally) using a lat lon bounding box and date selection.
+    da: xarray.DataArray | xarray.Dataset,
+    lon_bnds: np.array | tuple[float | None, float | None] = None,
+    lat_bnds: np.array | tuple[float | None, float | None] = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    first_level: float | int | None = None,
+    last_level: float | int | None = None,
+    time_values: Sequence[str] | None = None,
+    level_values: Sequence[float] | Sequence[int] | None = None,
+) -> xarray.DataArray | xarray.Dataset:
+    """
+    Subset a DataArray or Dataset spatially (and temporally) using a lat lon bounding box and date selection.
 
     Return a subset of a DataArray or Dataset for grid points falling within a spatial bounding box
     defined by longitude and latitudinal bounds and for dates falling within provided bounds.
@@ -1226,6 +1167,7 @@ def subset_bbox(
 
         # Subset lat lon
         prSub = subset_bbox(ds.pr, lon_bnds=[-75, -70], lat_bnds=[40, 45])
+
     """
     lat = get_lat(da).name
     lon = get_lon(da).name
@@ -1250,9 +1192,7 @@ def subset_bbox(
         da = da.sel({da[lat].dims[0]: mask})
 
     # Curvilinear case (lat and lon are coordinates, not dimensions)
-    elif ((lat in da.coords) and (lon in da.coords)) or (
-        (lat in da.data_vars) and (lon in da.data_vars)
-    ):
+    elif ((lat in da.coords) and (lon in da.coords)) or ((lat in da.data_vars) and (lon in da.data_vars)):
         # Define a bounding box along the dimensions
         # This is an optimization, a simple `where` would work but take longer for large hi-res grids.
         if lat_bnds is not None:
@@ -1343,9 +1283,10 @@ def subset_bbox(
 
 
 def assign_bounds(
-    bounds: tuple[Optional[float], Optional[float]], coord: xarray.DataArray
-) -> tuple[Optional[float], Optional[float]]:
-    """Replace unset boundaries by the minimum and maximum coordinates.
+    bounds: tuple[float | None, float | None], coord: xarray.DataArray
+) -> tuple[float | None, float | None]:
+    """
+    Replace unset boundaries by the minimum and maximum coordinates.
 
     Parameters
     ----------
@@ -1369,7 +1310,8 @@ def assign_bounds(
 
 
 def in_bounds(bounds: tuple[float, float], coord: xarray.DataArray) -> xarray.DataArray:
-    """Check which coordinates are within the boundaries.
+    """
+    Check which coordinates are within the boundaries.
 
     Parameters
     ----------
@@ -1389,7 +1331,7 @@ def in_bounds(bounds: tuple[float, float], coord: xarray.DataArray) -> xarray.Da
 
 def _check_desc_coords(
     coord: xarray.Dataset,
-    bounds: Union[tuple[float, float], list[np.ndarray]],
+    bounds: tuple[float, float] | list[np.ndarray],
     dim: str,
 ) -> tuple[float, float]:
     """If Dataset coordinates are descending, and bounds are ascending, reverse bounds."""
@@ -1432,10 +1374,7 @@ def _check_crs_compatibility(shape_crs: CRS, raster_crs: CRS) -> None:
             raise CRSError(
                 "CRS definitions are not compatible. Please ensure both are using the same coordinate system and units."
             )
-        elif (
-            "lon_wrap" in raster_crs.to_string()
-            and "lon_wrap" not in shape_crs.to_string()
-        ):
+        elif "lon_wrap" in raster_crs.to_string() and "lon_wrap" not in shape_crs.to_string():
             logger.warning(
                 "CRS definitions are similar but raster lon values must be wrapped.",
                 UserWarning,
@@ -1452,17 +1391,18 @@ def _check_crs_compatibility(shape_crs: CRS, raster_crs: CRS) -> None:
 @check_lons
 @convert_lat_lon_to_da
 def subset_gridpoint(
-    da: Union[xarray.DataArray, xarray.Dataset],
-    lon: Optional[Union[float, Sequence[float], xarray.DataArray]] = None,
-    lat: Optional[Union[float, Sequence[float], xarray.DataArray]] = None,
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-    first_level: Optional[Union[float, int]] = None,
-    last_level: Optional[Union[float, int]] = None,
-    tolerance: Optional[float] = None,
+    da: xarray.DataArray | xarray.Dataset,
+    lon: float | Sequence[float] | xarray.DataArray | None = None,
+    lat: float | Sequence[float] | xarray.DataArray | None = None,
+    start_date: str | None = None,
+    end_date: str | None = None,
+    first_level: float | int | None = None,
+    last_level: float | int | None = None,
+    tolerance: float | None = None,
     add_distance: bool = False,
-) -> Union[xarray.DataArray, xarray.Dataset]:
-    """Extract one or more of the nearest gridpoint(s) from datarray based on lat lon coordinate(s).
+) -> xarray.DataArray | xarray.Dataset:
+    """
+    Extract one or more of the nearest gridpoint(s) from datarray based on lat lon coordinate(s).
 
     Return a subsetted data array (or Dataset) for the grid point(s) falling nearest the input longitude and latitude
     coordinates. Optionally subset the data array for years falling within provided date bounds.
@@ -1517,6 +1457,7 @@ def subset_gridpoint(
         # Subset multiple variables in a single dataset
         ds = xr.open_mfdataset([path_to_tasmax_file, path_to_tasmin_file])
         dsSub = subset_gridpoint(ds, lon=-75, lat=45)
+
     """
     if lat is None or lon is None:
         raise ValueError("Insufficient coordinates provided to locate grid point(s).")
@@ -1547,12 +1488,10 @@ def subset_gridpoint(
             dists = []
             for site in dist[ptdim]:
                 # Find the indices for the closest point
-                inds = np.unravel_index(
-                    dist.sel({ptdim: site}).argmin(), dist.sel({ptdim: site}).shape
-                )
+                inds = np.unravel_index(dist.sel({ptdim: site}).argmin(), dist.sel({ptdim: site}).shape)
 
                 # Select data from closest point
-                args = {xydim: ind for xydim, ind in zip(dist.dims, inds)}
+                args = {xydim: ind for xydim, ind in zip(dist.dims, inds, strict=False)}
                 pts.append(da.isel(**args))
                 dists.append(dist.isel(**args))
             da = xarray.concat(pts, dim=ptdim)
@@ -1584,11 +1523,12 @@ def subset_gridpoint(
 
 @check_start_end_dates
 def subset_time(
-    da: Union[xarray.DataArray, xarray.Dataset],
-    start_date: Optional[str] = None,
-    end_date: Optional[str] = None,
-) -> Union[xarray.DataArray, xarray.Dataset]:
-    """Subset input DataArray or Dataset based on start and end years.
+    da: xarray.DataArray | xarray.Dataset,
+    start_date: str | None = None,
+    end_date: str | None = None,
+) -> xarray.DataArray | xarray.Dataset:
+    """
+    Subset input DataArray or Dataset based on start and end years.
 
     Return a subset of a DataArray or Dataset for dates falling within the provided bounds.
 
@@ -1638,16 +1578,18 @@ def subset_time(
     Notes
     -----
     TODO add notes about different calendar types. Avoid "%Y-%m-31". If you want complete month use only "%Y-%m".
+
     """
     return da.sel(time=slice(start_date, end_date))
 
 
 @check_datetimes_exist
 def subset_time_by_values(
-    da: Union[xarray.DataArray, xarray.Dataset],
-    time_values: Optional[Sequence[str]] = None,
-) -> Union[xarray.DataArray, xarray.Dataset]:
-    """Subset input DataArray or Dataset based on a sequence of datetime strings.
+    da: xarray.DataArray | xarray.Dataset,
+    time_values: Sequence[str] | None = None,
+) -> xarray.DataArray | xarray.Dataset:
+    """
+    Subset input DataArray or Dataset based on a sequence of datetime strings.
 
     Return a subset of a DataArray or Dataset for datetimes matching those requested.
 
@@ -1681,16 +1623,18 @@ def subset_time_by_values(
     If any datetimes are not found, a ValueError will be raised.
     The requested datetimes will automatically be re-ordered to match the order in the
     input dataset.
+
     """
     return da.sel(time=time_values)
 
 
 def subset_time_by_components(
-    da: Union[xarray.DataArray, xarray.Dataset],
+    da: xarray.DataArray | xarray.Dataset,
     *,
-    time_components: Union[dict, None] = None,
+    time_components: dict | None = None,
 ) -> xarray.DataArray:
-    """Subsets by one or more time components (year, month, day etc).
+    """
+    Subsets by one or more time components (year, month, day etc).
 
     Parameters
     ----------
@@ -1713,6 +1657,7 @@ def subset_time_by_components(
         da = xr.open_dataset(path_to_file).pr
         winter_dict = {"month": [12, 1, 2]}
         res = subset_time_by_components(da, time_components=winter_dict)
+
     """
     # Create a set of indices that match the requested time components
     req_indices = set(range(len(da.time.values)))
@@ -1725,9 +1670,7 @@ def subset_time_by_components(
             continue
 
         t_comp_indices = da.groupby(f"time.{t_comp}").groups
-        req_indices = req_indices.intersection(
-            {idx for tc in req_t_comp for idx in t_comp_indices.get(tc, [])}
-        )
+        req_indices = req_indices.intersection({idx for tc in req_t_comp for idx in t_comp_indices.get(tc, [])})
     if not req_indices:
         raise KeyError("No timesteps are matching the selection criteria.")
 
@@ -1736,11 +1679,12 @@ def subset_time_by_components(
 
 @check_start_end_levels
 def subset_level(
-    da: Union[xarray.DataArray, xarray.Dataset],
-    first_level: Optional[Union[int, float, str]] = None,
-    last_level: Optional[Union[int, float, str]] = None,
-) -> Union[xarray.DataArray, xarray.Dataset]:
-    """Subset input DataArray or Dataset based on first and last levels.
+    da: xarray.DataArray | xarray.Dataset,
+    first_level: int | float | str | None = None,
+    last_level: int | float | str | None = None,
+) -> xarray.DataArray | xarray.Dataset:
+    """
+    Subset input DataArray or Dataset based on first and last levels.
 
     Return a subset of a DataArray or Dataset for levels falling within the provided bounds.
 
@@ -1784,12 +1728,11 @@ def subset_level(
     Notes
     -----
     TBA
+
     """
     level = da[get_coord_by_type(da, "level")]
 
-    first_level, last_level = _check_desc_coords(
-        level, (first_level, last_level), level.name
-    )
+    first_level, last_level = _check_desc_coords(level, (first_level, last_level), level.name)
 
     da = da.sel(**{level.name: slice(first_level, last_level)})
 
@@ -1798,10 +1741,11 @@ def subset_level(
 
 @check_levels_exist
 def subset_level_by_values(
-    da: Union[xarray.DataArray, xarray.Dataset],
-    level_values: Optional[Union[Sequence[float], Sequence[int]]] = None,
-) -> Union[xarray.DataArray, xarray.Dataset]:
-    """Subset input DataArray or Dataset based on a sequence of vertical level values.
+    da: xarray.DataArray | xarray.Dataset,
+    level_values: Sequence[float] | Sequence[int] | None = None,
+) -> xarray.DataArray | xarray.Dataset:
+    """
+    Subset input DataArray or Dataset based on a sequence of vertical level values.
 
     Return a subset of a DataArray or Dataset for levels matching those requested.
 
@@ -1835,6 +1779,7 @@ def subset_level_by_values(
     If any levels are not found, a ValueError will be raised.
     The requested levels will automatically be re-ordered to match the order in the
     input dataset.
+
     """
     level = da[get_coord_by_type(da, "level")]
     return da.sel(**{level.name: level_values}, method="nearest")
@@ -1842,12 +1787,13 @@ def subset_level_by_values(
 
 @convert_lat_lon_to_da
 def distance(
-    da: Union[xarray.DataArray, xarray.Dataset],
+    da: xarray.DataArray | xarray.Dataset,
     *,
-    lon: Union[float, Sequence[float], xarray.DataArray],
-    lat: Union[float, Sequence[float], xarray.DataArray],
-) -> Union[xarray.DataArray, xarray.Dataset]:
-    """Return distance to a point in meters.
+    lon: float | Sequence[float] | xarray.DataArray,
+    lat: float | Sequence[float] | xarray.DataArray,
+) -> xarray.DataArray | xarray.Dataset:
+    """
+    Return distance to a point in meters.
 
     Parameters
     ----------
@@ -1875,6 +1821,7 @@ def distance(
         d = distance(da, lon=-75, lat=45)
         k = d.argmin()
         i, j, _ = np.unravel_index(k, d.shape)
+
     """
     ptdim = lat.dims[0]
 
