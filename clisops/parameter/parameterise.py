@@ -12,18 +12,29 @@ from clisops.parameter import (
 
 def parameterise(collection=None, area=None, level=None, time=None, time_components=None):
     """
-    Parameterises inputs to instances of parameter classes which allows
-    them to be used throughout roocs.
-    For supported formats for each input please see their individual classes.
+    Parameterise inputs to instances of parameter classes, allowing them to be used throughout roocs.
 
-    :param collection: Collection input in any supported format.
-    :param area: Area input in any supported format.
-    :param level: Level input in any supported format.
-    :param time: Time input in any supported format.
-    :param time_components: Time Components input in any supported format.
-    :return: Parameters as instances of their respective classes.
+    For supported formats for each input, please see their individual classes.
+
+    Parameters
+    ----------
+    collection : str, Path, xr.DataArray, xr.Dataset, or any other supported format
+        Input collection to be parameterised.
+    area : str, Path, dict, or any other supported format
+        Input area to be parameterised.
+    level : str, Path, dict, or any other supported format
+        Input level to be parameterised.
+    time : str, Path, dict, or any other supported format
+        Input time to be parameterised.
+    time_components : str, Path, dict, or any other supported format
+        Input time components to be parameterised.
+
+    Returns
+    -------
+    dict
+        A dictionary containing the parameterised inputs as instances of their respective classes.
     """
-    # if collection is a dataset/dataarray it doesn't need to be parameterised
+    # if a collection is a Dataset/DataArray, it doesn't need to be parameterised
     if type(collection) not in (xr.core.dataarray.DataArray, xr.core.dataset.Dataset):
         collection = collection_parameter.CollectionParameter(collection)
 

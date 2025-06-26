@@ -18,7 +18,6 @@ def to_isoformat(tm):
     -------
     str
         An ISO 8601 formatted string representing the time.
-
     """
     if isinstance(tm, np.datetime64):
         return str(tm).split(".")[0]
@@ -124,7 +123,7 @@ class AnyCalendarDateTime:
             self.year += 1
             self.month = self.MONTH_RANGE[0]
 
-    def sub_day(self, n=1):
+    def sub_day(self):
         """Subtract a day to the input datetime."""
         self.day -= 1
 
@@ -161,7 +160,7 @@ def str_to_AnyCalendarDateTime(dt, defaults=None):
     if not dt and not defaults:
         raise Exception("Must provide at least the year as argument, or all defaults, to create date time.")
 
-    # Start with most common pattern
+    # Start with the most common pattern
     regex = re.compile(r"^(\d+)-(\d+)-(\d+)[T ](\d+):(\d+):(\d+)$")
     match = regex.match(dt)
 
@@ -197,7 +196,7 @@ def create_time_bounds(ds, freq) -> list[list[AnyCalendarDateTime]]:
 
     Returns
     -------
-    list of list of AnyCalendarDateTime
+    list of AnyCalendarDateTime
         A list of lists containing the start and end datetime objects for each time point in the dataset.
     """
     # get datetime class

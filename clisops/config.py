@@ -10,11 +10,23 @@ from typing import Any
 _CONFIG = {}
 
 
-def reload_config(package=None):
+def reload_config(package: str | Path | None = None) -> dict[str, Any]:
     """
     Reloads the configuration from the config file.
 
     Used for forcibly reloading the configuration from the config file, particularly useful for pytesting mock imports.
+
+    Parameters
+    ----------
+    package : str or os.PathLike[str] or Path or None, optional
+        The package from which to load the configuration file.
+        If None, use the default configuration file.
+
+    Returns
+    -------
+    dict
+        The configuration dictionary containing all the settings from the config file.
+        Environment variables are also set based on the configuration.
     """
     global _CONFIG
     _load_config(package)
@@ -34,7 +46,8 @@ def get_config(package=None) -> dict[str, Any]:
     Parameters
     ----------
     package : str or os.PathLike[str] or Path or None, optional
-        The package from which to load the configuration file. If None, uses the default configuration file.
+        The package from which to load the configuration file.
+        If None, use the default configuration file.
 
     Returns
     -------

@@ -1,3 +1,5 @@
+"""Utility functions and classes for handling parameters in CLISOPS."""
+
 import calendar
 from collections.abc import Sequence
 

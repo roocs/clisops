@@ -76,7 +76,6 @@ def write_roocs_cfg(
     -------
     str
         The path to the written ROOCS configuration file.
-
     """
     default_template = """
     [project:cmip5]
@@ -454,7 +453,7 @@ class ContextLogger:
     where pytest's caplog fixture is used, allowing for log capturing without
     interfering with the logger's configuration.
 
-    Attributes
+    Parameters
     ----------
     caplog : CaplogFixture, optional
         The pytest caplog fixture, if provided, to capture logs during tests.

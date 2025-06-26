@@ -456,16 +456,16 @@ def create_mask(
     check_overlap: bool = False,
 ) -> xarray.DataArray:
     """
-    Create a mask with values corresponding to the features in a GeoDataFrame using vectorize methods.
+    Create a mask with values corresponding to the features in a GeoDataFrame using vectorise methods.
 
-    The returned mask's points have the value of the first geometry of `poly` they fall in.
+    The returned mask's points have the value of `poly`'s first geometry that they fall in.
 
     Parameters
     ----------
     x_dim : xarray.DataArray
-        X or longitudinal dimension of xarray object. Can also be given through `ds_in`.
+        X or longitudinal dimension of the xarray object. Can also be given through `ds_in`.
     y_dim : xarray.DataArray
-        Y or latitudinal dimension of xarray object. Can also be given through `ds_in`.
+        Y or latitudinal dimension of the xarray object. Can also be given through `ds_in`.
     poly : gpd.GeoDataFrame
         A GeoDataFrame used to create the xarray.DataArray mask. If its index doesn't have an
         integer dtype, it will be reset to integers, which will be used in the mask.
@@ -547,7 +547,6 @@ def _rectilinear_grid_exterior_polygon(ds: xarray.Dataset) -> Polygon:
     -------
     shapely.geometry.Polygon
         Grid cell boundary.
-
     """
     # Add bounds if not present
     # Note: with cf-xarray <= 0.6.2, the fact that `longitude` is in bounds does not mean it really is...
@@ -589,7 +588,7 @@ def _curvilinear_grid_exterior_polygon(ds: xarray.Dataset, mode: str = "bbox") -
     ----------
     ds : xarray.Dataset
         CF-compliant input dataset.
-    mode : {bbox, cell_union}
+    mode : {'bbox', 'cell_union'}
         Calculation mode. `bbox` takes the min and max longitude and latitude bounds and rounds them to 0.1 degree.
         `cell_union` merges all grid cell polygons and finds the exterior. Also rounds and simplifies the coordinates
         to smooth projection errors.
@@ -598,7 +597,6 @@ def _curvilinear_grid_exterior_polygon(ds: xarray.Dataset, mode: str = "bbox") -
     -------
     shapely.geometry.Polygon
         Grid cell boundary.
-
     """
     import math
 
@@ -636,7 +634,7 @@ def _curvilinear_grid_exterior_polygon(ds: xarray.Dataset, mode: str = "bbox") -
 
     elif mode == "cell_union":
         # x and y should be vertices.
-        # There is no guarantee that the sides of the array storing the curvilinear grids corresponds to the exterior of
+        # There is no guarantee that the sides of the array storing the curvilinear grids correspond to the exterior of
         # the lon/lat grid.
         # For example, in a polar stereographic projection, the pole would be at the center of the native grid.
         # So we need to create individual polygons for each grid cell, take the union and get the exterior. Even then,
@@ -724,7 +722,7 @@ def shape_bbox_indexer(
     ds : xr.Dataset
         Input dataset.
     poly : gpd.GeoDataFrame, gpd.GeoSeries, pd.array.GeometryArray, or list of shapely geometries
-        Shapes to cover. Can be of type Polygon, MultiPolygon, Point, or MultiPoint.
+        Shapes to cover. It can be of type Polygon, MultiPolygon, Point, or MultiPoint.
 
     Returns
     -------
@@ -777,7 +775,7 @@ def shape_bbox_indexer(
             # Extract the lon, lat coordinates from the points themselves
             coords = [geom.xy for geom in hull.boundary.geoms]
 
-    # Handle typical polygon case
+    # Handle a typical polygon case
     else:
         # Extract the edge vertices (last item is just a copy of the first to close the polygon)
         coords = hull.boundary.coords[:-1]
@@ -836,9 +834,9 @@ def create_weight_masks(
 
     Parameters
     ----------
-    ds_in : Union[xarray.DataArray, xarray.Dataset]
+    ds_in : xarray.DataArray or xarray.Dataset
         xarray object containing the grid information, as understood by xESMF.
-        For 2D lat/lon coordinates, the bounds arrays are required,
+        For 2D lat/lon coordinates, the bounded arrays are required,
     poly : gpd.GeoDataFrame
         GeoDataFrame used to create the xarray.DataArray mask.
         One mask will be created for each row in the dataframe.
@@ -847,8 +845,8 @@ def create_weight_masks(
     Returns
     -------
     xarray.DataArray
-      Has a new `geom` dimension corresponding to the index of the input GeoDataframe.
-      Non-geometry columns of `poly` are copied as auxiliary coordinates.
+        Has a new `geom` dimension corresponding to the index of the input GeoDataframe.
+        Non-geometry columns of `poly` are copied as auxiliary coordinates.
 
     Examples
     --------
@@ -889,8 +887,8 @@ def create_weight_masks(
         coords=dict(**poly_coords, **poly_coords.coords),
     )
 
-    # Assign coords from ds_in, but only those with no unknown dims.
-    # Otherwise, xarray rises an error.
+    # Assign coords from ds_in, but only those with no unknown dimensions.
+    # Otherwise, xarray raises an error.
     masks = masks.assign_coords(**{k: crd for k, crd in ds_in.coords.items() if not (set(crd.dims) - set(masks.dims))})
     return masks
 
@@ -915,42 +913,42 @@ def subset_shape(
 
     Parameters
     ----------
-    ds : Union[xarray.DataArray, xarray.Dataset]
+    ds : xarray.DataArray or xarray.Dataset
         Input values.
-    shape : Union[str, Path, gpd.GeoDataFrame]
+    shape : str or path or gpd.GeoDataFrame
         Path to a shape file, or GeoDataFrame directly. Supports GeoPandas-compatible formats.
-    shape_crs : Optional[Union[str, int]]
+    shape_crs : str or int, optional
         EPSG number or PROJ4 string.
-    buffer : Optional[Union[int, float]]
+    buffer : int or float, optional
         Buffer the shape in order to select a larger region stemming from it.
         Units are based on the shape degrees/metres.
-    start_date : Optional[str]
+    start_date : str, optional
         Start date of the subset.
         Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
         Defaults to first day of input data-array.
-    end_date : Optional[str]
+    end_date : str, optional
         End date of the subset.
         Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
         Defaults to last day of input data-array.
-    first_level : Optional[Union[int, float]]
+    first_level : int or float, optional
         First level of the subset.
         Can be either an integer or float.
         Defaults to first level of input data-array.
-    last_level : Optional[Union[int, float]]
+    last_level : int or float, optional
         Last level of the subset.
         Can be either an integer or float.
         Defaults to last level of input data-array.
 
     Returns
     -------
-    Union[xarray.DataArray, xarray.Dataset]
-        A subset of `ds`
+    xarray.DataArray or xarray.Dataset
+        A subset of `ds`.
 
     Notes
     -----
     If no CRS is found in the shape provided (e.g. RFC-7946 GeoJSON, https://en.wikipedia.org/wiki/GeoJSON),
     assumes a decimal degree datum (CRS84). Be advised that EPSG:4326 and OGC:CRS84 are not identical as axis order of
-    lat and long differs between the two (for more information, see: https://github.com/OSGeo/gdal/issues/2035).
+    lat and long differ between the two (for more information, see: https://github.com/OSGeo/gdal/issues/2035).
 
     Examples
     --------
@@ -970,7 +968,6 @@ def subset_shape(
         # Subset multiple variables in a single dataset
         ds = xr.open_mfdataset([path_to_tasmin_file, path_to_tasmax_file])
         dsSub = subset_shape(ds, shape=path_to_shape_file)
-
     """
     wgs84 = CRS(4326)
     # PROJ4 definition for WGS84 with longitudes ranged between -180/+180.
@@ -1071,7 +1068,7 @@ def subset_shape(
         # we don't want to drop the inner NaN regions, it may cause problems downstream.
         inner_mask = xarray.full_like(mask_2d, True, dtype=bool)
         for dim in sp_dims:
-            # For each dimension, propagate shape indexes in either directions
+            # For each dimension, propagate shape indexes in either direction
             # Then sum on the other dimension. You get a step function going from 0 to X.
             # The non-zero part that left and right have in common is the "inner" zone.
             left = mask_2d.bfill(dim).sum(sp_dims - {dim})
@@ -1082,7 +1079,7 @@ def subset_shape(
         # inner_mask including the shapes
         inner_mask = mask_2d.notnull() | inner_mask
     else:
-        # in the locstream case inner_mask remains all True, but all non-polygon values can be dropped,
+        # in the locstream case, inner_mask remains all True, but all non-polygon values can be dropped,
         # so here "outside inner_mask" is everything outside the polygon.
         inner_mask = mask_2d.notnull()
 
@@ -1112,8 +1109,8 @@ def subset_shape(
 @check_lons
 def subset_bbox(
     da: xarray.DataArray | xarray.Dataset,
-    lon_bnds: np.array | tuple[float | None, float | None] = None,
-    lat_bnds: np.array | tuple[float | None, float | None] = None,
+    lon_bnds: np.array | tuple[float | None, float | None],
+    lat_bnds: np.array | tuple[float | None, float | None],
     start_date: str | None = None,
     end_date: str | None = None,
     first_level: float | int | None = None,
@@ -1138,25 +1135,25 @@ def subset_bbox(
         List of minimum and maximum longitudinal bounds. Optional. Defaults to all longitudes in original data-array.
     lat_bnds : Union[np.array, Tuple[Optional[float], Optional[float]]]
         List of minimum and maximum latitudinal bounds. Optional. Defaults to all latitudes in original data-array.
-    start_date : Optional[str]
+    start_date : str, optional
         Start date of the subset.
         Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
         Defaults to first day of input data-array.
-    end_date : Optional[str]
+    end_date : str, optional
         End date of the subset.
         Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
         Defaults to last day of input data-array.
-    first_level : Optional[Union[int, float]]
+    first_level : int or float, optional
         First level of the subset.
         Can be either an integer or float.
         Defaults to first level of input data-array.
-    last_level : Optional[Union[int, float]]
+    last_level : int or float, optional
         Last level of the subset.
         Can be either an integer or float.
         Defaults to last level of input data-array.
-    time_values: Optional[Sequence[str]]
+    time_values: sequence of str, optional
         A list of datetime strings to subset.
-    level_values: Optional[Union[Sequence[float], Sequence[int]]]
+    level_values: sequence of int or float, optional
         A list of level values to select.
 
     Returns
@@ -1181,7 +1178,6 @@ def subset_bbox(
 
         # Subset lat lon
         prSub = subset_bbox(ds.pr, lon_bnds=[-75, -70], lat_bnds=[40, 45])
-
     """
     lat = get_lat(da).name
     lon = get_lon(da).name
@@ -1338,7 +1334,7 @@ def in_bounds(bounds: tuple[float, float], coord: xarray.DataArray) -> xarray.Da
     Returns
     -------
     xarray.DataArray
-
+        Returns a boolean array indicating whether the coordinates are within the bounds.
     """
     bn, bx = bounds
     return (coord >= bn) & (coord <= bx)
@@ -1420,41 +1416,42 @@ def subset_gridpoint(
     Extract one or more of the nearest gridpoint(s) from datarray based on lat lon coordinate(s).
 
     Return a subsetted data array (or Dataset) for the grid point(s) falling nearest the input longitude and latitude
-    coordinates. Optionally subset the data array for years falling within provided date bounds.
+    coordinates. Optionally, subset the data array for years falling within provided date bounds.
     Time series can optionally be subsetted by dates.
     If 1D sequences of coordinates are given, the gridpoints will be concatenated along the new dimension "site".
 
     Parameters
     ----------
-    da : Union[xarray.DataArray, xarray.Dataset]
+    da : xarray.DataArray or xarray.Dataset
         Input data.
-    lon : Optional[Union[float, Sequence[float], xarray.DataArray]]
+    lon : float, Sequence[float], xarray.DataArray, optional
         Longitude coordinate(s). Must be of the same length as lat.
-    lat : Optional[Union[float, Sequence[float], xarray.DataArray]]
+    lat : float, Sequence[float], xarray.DataArray, optional
         Latitude coordinate(s). Must be of the same length as lon.
-    start_date : Optional[str]
+    start_date : str, optional
         Start date of the subset.
         Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
         Defaults to first day of input data-array.
-    end_date : Optional[str]
+    end_date : str, optional
         End date of the subset.
         Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
         Defaults to last day of input data-array.
-    first_level : Optional[Union[int, float]]
+    first_level : int or float, optional
         First level of the subset.
         Can be either an integer or float.
         Defaults to first level of input data-array.
-    last_level : Optional[Union[int, float]]
+    last_level : int or float, optional
         Last level of the subset.
         Can be either an integer or float.
         Defaults to last level of input data-array.
-    tolerance : Optional[float]
+    tolerance : int or float, optional
         Masks values if the distance to the nearest gridpoint is larger than tolerance in meters.
-    add_distance: bool
+    add_distance : bool
+        Whether to add a new coordinate "distance" to the output DataArray or Dataset.
 
     Returns
     -------
-    Union[xarray.DataArray, xarray.Dataset]
+    xarray.DataArray or xarray.Dataset
          Subsetted xarray.DataArray or xarray.Dataset
 
     Examples
@@ -1472,7 +1469,6 @@ def subset_gridpoint(
         # Subset multiple variables in a single dataset
         ds = xr.open_mfdataset([path_to_tasmax_file, path_to_tasmin_file])
         dsSub = subset_gridpoint(ds, lon=-75, lat=45)
-
     """
     if lat is None or lon is None:
         raise ValueError("Insufficient coordinates provided to locate grid point(s).")
@@ -1551,11 +1547,11 @@ def subset_time(
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
         Input data.
-    start_date : Optional[str]
+    start_date : str, optional
         Start date of the subset.
         Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
         Defaults to first day of input data-array.
-    end_date : Optional[str]
+    end_date : str, optional
         End date of the subset.
         Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
         Defaults to last day of input data-array.
@@ -1606,18 +1602,18 @@ def subset_time_by_values(
     """
     Subset input DataArray or Dataset based on a sequence of datetime strings.
 
-    Return a subset of a DataArray or Dataset for datetimes matching those requested.
+    Return a subset of a DataArray or Dataset for datetime objects matching those requested.
 
     Parameters
     ----------
-    da : Union[xarray.DataArray, xarray.Dataset]
+    da : xarray.DataArray or xarray.Dataset
         Input data.
-    time_values: Optional[Sequence[str]]
+    time_values : sequence[str], optional
         Values for time. Default: ``None``
 
     Returns
     -------
-    Union[xarray.DataArray, xarray.Dataset]
+    xarray.DataArray or xarray.Dataset
         Subsetted xarray.DataArray or xarray.Dataset
 
     Examples
@@ -1638,7 +1634,6 @@ def subset_time_by_values(
     If any datetimes are not found, a ValueError will be raised.
     The requested datetimes will automatically be re-ordered to match the order in the
     input dataset.
-
     """
     return da.sel(time=time_values)
 
@@ -1653,13 +1648,15 @@ def subset_time_by_components(
 
     Parameters
     ----------
-    da : Union[xarray.DataArray, xarray.Dataset]
-      Input data.
-    time_components: Union[Dict, None] = None
+    da : xarray.DataArray or xarray.Dataset
+        Input data.
+    time_components : dict, optional
+        Components of time to subset by.
 
     Returns
     -------
     xarray.DataArray
+        Subsetted xarray.DataArray or xarray.Dataset.
 
     Examples
     --------
@@ -1672,7 +1669,6 @@ def subset_time_by_components(
         da = xr.open_dataset(path_to_file).pr
         winter_dict = {"month": [12, 1, 2]}
         res = subset_time_by_components(da, time_components=winter_dict)
-
     """
     # Create a set of indices that match the requested time components
     req_indices = set(range(len(da.time.values)))
@@ -1705,20 +1701,20 @@ def subset_level(
 
     Parameters
     ----------
-    da : Union[xarray.DataArray, xarray.Dataset]
+    da : xarray.DataArray or xarray.Dataset
         Input data.
-    first_level : Optional[Union[int, float, str]]
+    first_level : int or float or str, optional
         First level of the subset (specified as the value, not the index).
         Can be either an integer or float.
         Defaults to first level of input data-array.
-    last_level : Optional[Union[int, float, str]]
+    last_level : int or float or str, optional
         Last level of the subset (specified as the value, not the index).
         Can be either an integer or float.
         Defaults to last level of input data-array.
 
     Returns
     -------
-    Union[xarray.DataArray, xarray.Dataset]
+    xarray.DataArray or xarray.Dataset
         Subsetted xarray.DataArray or xarray.Dataset.
 
     Examples
@@ -1739,11 +1735,6 @@ def subset_level(
         # Subset multiple variables in a single dataset
         ds = xr.open_mfdataset([path_to_tasmax_file, path_to_tasmin_file])
         dsSub = subset_time(ds, first_level=1000.0, last_level=850.0)
-
-    Notes
-    -----
-    TBA
-
     """
     level = da[get_coord_by_type(da, "level")]
 
@@ -1766,14 +1757,14 @@ def subset_level_by_values(
 
     Parameters
     ----------
-    da : Union[xarray.DataArray, xarray.Dataset]
+    da : xarray.DataArray or xarray.Dataset
         Input data.
-    level_values : Optional[Union[Sequence[float], Sequence[int]]]
+    level_values : Sequence[float] or Sequence[int], optional
         A list of level values to select.
 
     Returns
     -------
-    Union[xarray.DataArray, xarray.Dataset]
+    xarray.DataArray or xarray.Dataset
         Subsetted xarray.DataArray or xarray.Dataset.
 
     Notes
@@ -1840,11 +1831,11 @@ def distance(
 
     g = Geod(ellps="WGS84")  # WGS84 ellipsoid - decent globally
 
-    def func(lons, lats, lon, lat):
+    def _func(lons, lats, lon, lat):
         return g.inv(lons, lats, lon, lat)[2]
 
     out = xarray.apply_ufunc(
-        func,
+        _func,
         *xarray.broadcast(da.lon.load(), da.lat.load(), lon, lat),
         input_core_dims=[[ptdim]] * 4,
         output_core_dims=[[ptdim]],

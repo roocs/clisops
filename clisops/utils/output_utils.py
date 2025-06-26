@@ -1,15 +1,16 @@
 """Utility functions for handling output formats and file writing in CLISOPS."""
 
-import math
 import os
 import shutil
 import tempfile
 import time
 from datetime import datetime as dt
 from datetime import timedelta as td
+from math import ceil
 from pathlib import Path
 
 import dask
+import numpy as np
 import pandas as pd
 import xarray as xr
 from clisops import CONFIG, chunk_memory_limit
@@ -27,8 +28,20 @@ SUPPORTED_FORMATS = {
 SUPPORTED_SPLIT_METHODS = ["time:auto"]
 
 
-def check_format(fmt):
-    """Check that the requested format exists."""
+def check_format(fmt: str) -> None:
+    """
+    Check that the requested format exists.
+
+    Parameters
+    ----------
+    fmt : str
+        The format to check against the supported formats.
+
+    Raises
+    ------
+    KeyError
+        If the format is not recognized.
+    """
     if fmt not in SUPPORTED_FORMATS:
         raise KeyError(f'Format not recognised: "{fmt}". Must be one of: {SUPPORTED_FORMATS}.')
 
@@ -59,10 +72,23 @@ def _format_time(tm: str | dt, fmt="%Y-%m-%d"):
     return tm.strftime(fmt)
 
 
-def filter_times_within(times, start=None, end=None):
+def filter_times_within(times: np.array, start: str | None = None, end: str | None = None):
     """
-    Takes an array of datetimes, returning a reduced array if start or end times
-    are defined and are within the main array.
+    Return a reduced array if start or end times are defined and are within the main array.
+
+    Parameters
+    ----------
+    times : array-like
+        An array of datetime objects or strings representing times.
+    start : str, optional
+        A string representing the start date in "YYYY-MM-DD" format. If None, no start filter is applied.
+    end : str, optional
+        A string representing the end date in "YYYY-MM-DD" format. If None, no end filter is applied.
+
+    Returns
+    -------
+    list
+        A list of datetime objects that fall within the specified start and end times.
     """
     filtered = []
     for tm in times:
@@ -90,10 +116,10 @@ def get_da(ds):
 
 def get_time_slices(
     ds: xr.Dataset | xr.DataArray,
-    split_method,
-    start=None,
-    end=None,
-    file_size_limit: str = None,
+    split_method: str,
+    start: str | None = None,
+    end: str | None = None,
+    file_size_limit: str | None = None,
 ) -> list[tuple[str, str]]:
     """
     Get time slices for a dataset or data array.
@@ -123,7 +149,6 @@ def get_time_slices(
     -------
     list of tuples
         A list of tuples, each containing two strings representing the start and end dates of each slice.
-
     """
     if split_method not in SUPPORTED_SPLIT_METHODS:
         raise NotImplementedError(f"The split method {split_method} is not implemented.")
@@ -190,11 +215,11 @@ def get_chunk_length(da: xr.DataArray) -> int:
     mem_limit = parse_size(chunk_memory_limit)
 
     if size > 0:
-        n_chunks = math.ceil(size / mem_limit)
+        n_chunks = ceil(size / mem_limit)
     else:
         n_chunks = 1
 
-    chunk_length = math.ceil(n_times / n_chunks)
+    chunk_length = ceil(n_times / n_chunks)
 
     return chunk_length
 
@@ -345,7 +370,7 @@ class FileLock:
         self.state = "UNLOCKED"
 
 
-def create_lock(fname: str | Path):
+def create_lock(fname: str | Path) -> FileLock | None:
     """
     Check whether lockfile already exists and else creates lockfile.
 
@@ -356,8 +381,9 @@ def create_lock(fname: str | Path):
 
     Returns
     -------
-    FileLock object or None.
-
+    FileLock or None
+        Returns a FileLock object if the lockfile is created successfully,
+        or None if the lockfile already exists.
     """
     lock_obj = FileLock(fname)
     try:

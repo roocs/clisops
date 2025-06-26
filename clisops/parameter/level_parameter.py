@@ -9,18 +9,17 @@ class LevelParameter(_BaseIntervalOrSeriesParameter):
     """
     Class for level parameter used in subsetting operation.
 
-    | Level can be input as:
-    | A string of slash separated values: "1000/2000"
-    | A sequence of strings: e.g. ("1000.50", "2000.60")
-    | A sequence of numbers: e.g. (1000.50, 2000.60)
+    Level can be input as:
+      - A string of slash separated values: "1000/2000"
+      - A sequence of strings: e.g. ("1000.50", "2000.60")
+      - A sequence of numbers: e.g. (1000.50, 2000.60)
 
-    A level input must be 2 values.
+    A level input must be two (2) values.
 
     If using a string input, a trailing slash indicates you want to use the lowest/highest
     level of the dataset. E.g. "/2000" will subset from the lowest level in the dataset to 2000.
 
     Validates the level input and parses the values into numbers.
-
     """
 
     def _parse_as_interval(self):
@@ -46,7 +45,15 @@ class LevelParameter(_BaseIntervalOrSeriesParameter):
         return value
 
     def asdict(self):
-        """Returns a dictionary of the level values."""
+        """
+        Return a dictionary of the level values.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the level values, either as a range (first and last level)
+            or as a series of level values.
+        """
         if self.type in ("interval", "none"):
             value = self._value_as_tuple()
             return {"first_level": value[0], "last_level": value[1]}
@@ -54,7 +61,7 @@ class LevelParameter(_BaseIntervalOrSeriesParameter):
             return {"level_values": self.value}
 
     def __str__(self):
-        """Returns a string representation of the level values."""
+        """Return a string representation of the level values."""
         if self.type in ("interval", "none"):
             value = self._value_as_tuple()
             return f"Level range to subset over\n first_level: {value[0]}\n last_level: {value[1]}"

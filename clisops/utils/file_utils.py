@@ -45,7 +45,7 @@ class FileMapper:
             raise FileNotFoundError("Some files could not be found.")
 
 
-def is_file_list(coll):
+def is_file_list(coll: list[str]) -> bool:
     """
     Check whether a collection is a list of files.
 
@@ -58,9 +58,8 @@ def is_file_list(coll):
     -------
     bool
         True if the collection is a list of files, else returns False.
-
     """
-    # check if collection is a list of files
+    # check if a collection is a list of files
     if not isinstance(coll, list):
         raise Exception(f"Expected collection as a list, have received {type(coll)}")
 
