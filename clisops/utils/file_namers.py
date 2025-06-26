@@ -1,3 +1,5 @@
+"""File namers for CLISOPS."""
+
 import xarray as xr
 from clisops import CONFIG
 from clisops.project_utils import get_project_name
@@ -21,7 +23,7 @@ class _BaseFileNamer:
         self._extra = extra
 
     def get_file_name(self, ds, fmt="nc"):
-        """Generate numbered file names"""
+        """Generate numbered file names."""
         self._count += 1
         extension = get_format_extension(fmt)
         return f"output_{self._count:03d}.{extension}"
@@ -46,11 +48,25 @@ class StandardFileNamer(SimpleFileNamer):
 
     @staticmethod
     def _get_project(ds):
-        """Gets the project name from the input dataset"""
+        """Gets the project name from the input dataset."""
         return get_project_name(ds)
 
-    def get_file_name(self, ds, fmt="nc"):
-        """Constructs file name."""
+    def get_file_name(self, ds, fmt="nc") -> str:
+        """
+        Constructs file name.
+
+        Parameters
+        ----------
+        ds : xr.DataArray | xr.Dataset
+            The dataset for which to generate the file name.
+        fmt : str
+            The format of the output file, by default "nc".
+
+        Returns
+        -------
+        str
+            The generated file name based on the dataset attributes and project configuration.
+        """
         template = self._get_template(ds)
 
         if not template:

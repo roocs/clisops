@@ -50,7 +50,7 @@ def test_get_time_slices_single_slice(mini_esgf_data):
     for (
         ds,
         limit,
-        n_times,
+        _,
         slices,
     ) in test_data:
         resp = get_time_slices(ds, split_method, file_size_limit=limit)
@@ -80,7 +80,7 @@ def test_get_time_slices_multiple_slices(mini_esgf_data):
     ]
 
     split_method = "time:auto"
-    for ds, limit, n_times, first, second, last in test_data:
+    for ds, limit, _, first, second, last in test_data:
         resp = get_time_slices(ds, split_method, file_size_limit=limit)
         assert resp[0] == first
         assert resp[-1] == last

@@ -1,3 +1,5 @@
+"""Subset operations for xarray datasets."""
+
 from pathlib import Path
 
 import xarray as xr
@@ -28,6 +30,42 @@ __all__ = ["Subset", "subset"]
 
 
 class Subset(Operation):
+    """
+    Subset operation for xarray datasets.
+
+    This operation allows subsetting of datasets based on time, area, and level parameters.
+
+    Attributes
+    ----------
+    ds : xr.Dataset or str or Path
+        The dataset to be subsetted, can be a path to a file or an xarray Dataset.
+    time : str or tuple or TimeParameter or Series or Interval, optional
+        Time parameter for subsetting, can be a string, tuple, or TimeParameter instance.
+    area : str or tuple or AreaParameter, optional
+        Area parameter for subsetting, can be a string, tuple, or AreaParameter instance.
+    level : str or tuple or LevelParameter or Interval, optional
+        Level parameter for subsetting, can be a string, tuple, or LevelParameter instance.
+    time_components : str or dict or TimeComponents or TimeComponentsParameter, optional
+        Time components for subsetting, can be a string, dictionary, or TimeComponentsParameter instance.
+    output_dir : str or Path, optional
+        Directory where the output will be saved. If None, the output will not be saved to a file.
+    output_type : str, default "netcdf"
+        The format of the output, can be "netcdf", "nc", "zarr", or "xarray".
+    split_method : str, default "time:auto"
+        Method for splitting the output, currently only supports "time:auto".
+    file_namer : str, default "standard"
+        The file naming strategy to use for the output files, can be "standard" or "simple".
+
+    Methods
+    -------
+    _resolve_params(**params)
+        Generates a dictionary of subset parameters based on the provided arguments.
+    _calculate()
+        Processes the subsetting request and returns the subsetted dataset.
+    process()
+        Executes the subsetting operation and returns the result.
+    """
+
     def _resolve_params(self, **params):
         """Generates a dictionary of subset parameters."""
         time = params.get("time", None)
@@ -152,7 +190,7 @@ class Subset(Operation):
         return result
 
 
-def subset(
+def subset(  # noqa: E501
     ds: xr.Dataset | str | Path,
     *,
     time: str | tuple[str, str] | TimeParameter | Series | Interval | None = None,
@@ -207,12 +245,11 @@ def subset(
     | split_method: "time:auto"
     | file_namer: "standard"
 
-    Note
-    ----
+    Notes
+    -----
     If you request a selection range (such as level, latitude or longitude) that specifies the lower
     and upper bounds in the opposite direction to the actual coordinate values then clisops.ops.subset
     will detect this issue and reverse your selection before returning the data subset.
-
     """
     op = Subset(**locals())
     return op.process()

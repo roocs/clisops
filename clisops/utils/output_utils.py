@@ -1,3 +1,5 @@
+"""Utility functions for handling output formats and file writing in CLISOPS."""
+
 import math
 import os
 import shutil
@@ -94,6 +96,8 @@ def get_time_slices(
     file_size_limit: str = None,
 ) -> list[tuple[str, str]]:
     """
+    Get time slices for a dataset or data array.
+
     Take an xarray Dataset or DataArray, assume it can be split on the time axis
     into a sequence of slices. Optionally, take a start and end date to specify
     a sub-slice of the main time axis.
@@ -104,16 +108,21 @@ def get_time_slices(
 
     Parameters
     ----------
-    ds : Union[xr.Dataset, xr.DataArray]
-    split_method
-    start
-    end
+    ds : xr.Dataset or xr.DataArray
+        A dataset or data array that contains a time dimension.
+    split_method : str
+        The method to use for splitting the dataset.
+    start : str, optional
+        A string specifying the start date in "YYYY-MM-DD" format.
+    end : str, optional
+        A string specifying the end date in "YYYY-MM-DD" format.
     file_size_limit : str
         a string specifying "<number><units>".
 
     Returns
     -------
-    List[Tuple[str, str]]
+    list of tuples
+        A list of tuples, each containing two strings representing the start and end dates of each slice.
 
     """
     if split_method not in SUPPORTED_SPLIT_METHODS:
@@ -159,11 +168,22 @@ def get_time_slices(
     return slices
 
 
-def get_chunk_length(da):
+def get_chunk_length(da: xr.DataArray) -> int:
     """
     Calculate the chunk length to use when chunking xarray datasets.
 
     Based on the memory limit provided in config and the size of the dataset.
+
+    Parameters
+    ----------
+    da : xr.DataArray
+        The data array to be chunked.
+
+    Returns
+    -------
+    int
+        The length of the chunk to be used for the time dimension.
+
     """
     size = da.nbytes
     n_times = len(da.time.values)
@@ -187,8 +207,26 @@ def _get_chunked_dataset(ds):
     return chunked_ds
 
 
-def get_output(ds, output_type, output_dir, namer):
-    """Return output after applying chunking and determining the output format and chunking."""
+def get_output(ds: xr.Dataset, output_type: str, output_dir: str | Path, namer: object):
+    """
+    Return output after applying chunking and determining the output format and chunking.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The dataset to be processed.
+    output_type : str
+        The type of output format to be used (e.g., "netcdf", "zarr").
+    output_dir : str or Path
+        The directory where the output file will be saved. If None, the current directory is used.
+    namer : object
+        An object responsible for generating the file name based on the dataset attributes and output type.
+
+    Returns
+    -------
+    str or xarray.Dataset
+        The path to the output file if written, or the original dataset if no writing is performed.
+    """
     format_writer = get_format_writer(output_type)
     logger.info(f"format_writer={format_writer}, output_type={output_type}")
 
@@ -266,8 +304,21 @@ class FileLock:
 
         self.state = "UNLOCKED"
 
-    def acquire(self, timeout=10):
-        """Create actual lockfile, raise error if already exists beyond 'timeout'."""
+    def acquire(self, timeout: int = 10):
+        """
+        Create actual lockfile, raise error if already exists beyond 'timeout'.
+
+        Parameters
+        ----------
+        timeout : int
+            Maximum time in seconds to wait for the lockfile to be created.
+            Default is 10 seconds.
+
+        Raises
+        ------
+        Exception
+            If the lockfile cannot be created within the specified timeout.
+        """
         start = dt.now()
         deadline = start + td(seconds=timeout)
 
@@ -288,6 +339,7 @@ class FileLock:
             try:
                 os.remove(self._fpath)
             except FileNotFoundError:
+                logger.info("Lock file already removed.")
                 pass
 
         self.state = "UNLOCKED"

@@ -1,3 +1,5 @@
+"""Project utilities for CLISOPS."""
+
 import glob
 import os
 
@@ -8,19 +10,21 @@ from clisops.utils.file_utils import FileMapper
 from loguru import logger
 
 
-class DatasetMapper:
+class DatasetMapper:  # noqa: E501
     r"""
     Class to map to data path, dataset ID and files from any dataset input.
 
     Dset must be a string and can be input as:
-        - A dataset ID: e.g. "cmip5.output1.INM.inmcm4.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga".
-        - A file path: e.g. "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc".
-        - A path to a group of files: e.g. "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/\*.nc".
-        - A directory e.g. "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas".
-        - An instance of the FileMapper class (that represents a set of files within a single directory).
+      - A dataset ID: e.g. "cmip5.output1.INM.inmcm4.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga".
+      - A file path:
+        e.g. "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc".
+      - A path to a group of files:
+        e.g. "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/\*.nc".
+      - A directory e.g. "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas".
+      - An instance of the FileMapper class (that represents a set of files within a single directory).
 
-    When force=True, if the project can not be identified, any attempt to use the base_dir of a project
-    to resolve the data path will be ignored. Any of data_path, ds_id and files that can be set, will be set.
+    When force=True, if the project cannot be identified, any attempt to use the base_dir of a project
+    to resolve the data path will be ignored. Any of data_path, ds_id, and files that can be set will be set.
     """
 
     SUPPORTED_EXTENSIONS = (".nc", ".gz")
@@ -206,9 +210,26 @@ def dset_to_filepaths(dset, force=False):
     """
     Gets filepaths deduced from input dset.
 
-    :param dset: dset input of type described by DatasetMapper.
-    :param force: When True and if the project of the input dset cannot be identified, DatasetMapper will attempt to find the files anyway. Default is False.
-    :return: File paths deduced from input dataset.
+    Parameters
+    ----------
+    dset : xarray.Dataset or xarray.DataArray or str or FileMapper
+        The dataset input, which can be a Dataset/DataArray, a string representing a dataset ID or file path,
+        or an instance of FileMapper.
+    force : bool, optional
+        If True, the function will attempt to find files even if the project of the input dset cannot be identified.
+        Default is False.
+
+    Raises
+    ------
+    InvalidProject
+        If the project cannot be identified and force is set to False.
+    InconsistencyError
+        If there is an inconsistency that prevents files from being scanned.
+
+    Returns
+    -------
+    list
+        A list of file paths deduced from the input dataset.
     """
     mapper = DatasetMapper(dset, force=force)
     return mapper.files
@@ -267,7 +288,7 @@ def map_facet(facet, project):
 
 
 def get_facet(facet_name, facets, project):
-    """Get facet from project config"""
+    """Get facet from project config."""
     return facets[map_facet(facet_name, project)]
 
 
@@ -307,7 +328,7 @@ def get_project_from_data_node_root(url):
 
 
 def url_to_file_path(url):
-    """Convert input url of an original file to a file path"""
+    """Convert the input url of an original file to a file path."""
     project = get_project_from_data_node_root(url)
 
     data_node_root = CONFIG.get(f"project:{project}", {}).get("data_node_root")

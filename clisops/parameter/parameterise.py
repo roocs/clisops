@@ -1,3 +1,5 @@
+"""Parameterise inputs to roocs parameter classes."""
+
 import xarray as xr
 from clisops.parameter import (
     area_parameter,

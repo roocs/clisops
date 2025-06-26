@@ -66,9 +66,9 @@ require_older_xarray = functools.partial(
 )
 
 
-def weights_cache_init(weights_dir: str | Path | None = None, config: dict = CONFIG) -> None:
+def weights_cache_init(weights_dir: str | Path | None = None, config: dict = CONFIG):
     """
-    Initialize global variable `weights_dir` as used by the Weights class.
+    Initialise global variable `weights_dir` as used by the Weights class.
 
     Parameters
     ----------
@@ -78,11 +78,6 @@ def weights_cache_init(weights_dir: str | Path | None = None, config: dict = CON
         Per default, this function is called upon import with weights_dir as defined in roocs.ini.
     config : dict
         Configuration dictionary as read from top-level.
-
-    Returns
-    -------
-    None
-
     """
     if weights_dir is not None:
         # Overwrite CONFIG entry with new value
@@ -483,7 +478,6 @@ class Grid:
         -------
         ds_ref : xarray.Dataset
             Reformatted dataset.
-
         """
         # TODO: Extend for formats CF, xESMF, ESMF, UGRID, SCRIP
         #      If CF and self.type=="regular_lat_lon":
@@ -506,8 +500,8 @@ class Grid:
         """
         Interpolate to cell center from cell edges, rotate vector variables in lat/lon direction.
 
-        Warning:
-        -------
+        Warnings
+        --------
         This method is not yet implemented.
 
         """
@@ -611,13 +605,14 @@ class Grid:
 
     def detect_format(self) -> str:
         """
-        Detect format of a dataset. Yet supported are 'CF', 'SCRIP', 'xESMF'.
+        Detect format of a dataset.
+
+        Supported formats are 'CF', 'SCRIP', 'xESMF'.
 
         Returns
         -------
         str
             The format, if supported. Else raises an Exception.
-
         """
         return clidu.detect_format(ds=self.ds)
 
@@ -736,7 +731,7 @@ class Grid:
         """
         Detect mask helper function.
 
-        Warning:
+        Warning
         -------
         Not yet implemented, if at all necessary (e.g. for reformatting to SCRIP etc.).
 
@@ -784,16 +779,15 @@ class Grid:
         coord_type : str
             Coordinate type, e.g. 'latitude', 'longitude', 'level', 'time'.
 
-        Raises
-        ------
-        KeyError
-            Raised if the requested coordinate cannot be identified.
-
         Returns
         -------
         str
             Coordinate variable name.
 
+        Raises
+        ------
+        KeyError
+            Raised if the requested coordinate cannot be identified.
         """
         coord, further_matches = clidu.get_coord_by_type(
             self.ds, coord_type, ignore_aux_coords=False, return_further_matches=True
@@ -813,11 +807,11 @@ class Grid:
         if coord:
             return coord
         else:
-            raise KeyError("A %s coordinate cannot be identified in the dataset." % coord_type)
+            raise KeyError(f"A {coord_type} coordinate cannot be identified in the dataset.")
 
     def detect_bounds(self, coordinate: str) -> str | None:
         """
-        Use cf_xarray to obtain the variable name of the requested coordinates bounds.
+        Use cf_xarray to get the variable name of the requested coordinates bounds.
 
         Parameters
         ----------
@@ -865,7 +859,8 @@ class Grid:
                 # If indeed the bounds were the issue, raise a warning and drop them
                 if gtype:
                     warnings.warn(
-                        "Latitude and longitude bounds definition is invalid. The bounds will be dropped and potentially recomputed."
+                        "Latitude and longitude bounds definition is invalid. "
+                        "The bounds will be dropped and potentially recomputed."
                     )
                     self.ds = self.ds.drop_vars([lat_bnds, lon_bnds])
                     if "bounds" in self.ds[self.lat].attrs:
@@ -925,7 +920,11 @@ class Grid:
         self.contains_collapsed_cells = bool(np.any(self.coll_mask == 0))
 
     def _grid_detect_smashed_cells(self):
-        """Detect smashed grid cells (i.e. cells with nearly identical vertices). Requires defined bounds."""
+        """
+        Detect smashed grid cells (i.e. cells with nearly identical vertices).
+
+        Requires defined bounds.
+        """
         # For regular lat-lon grids, create 2D coordinate arrays
         if self.type == "regular_lat_lon":
             # Create meshgrid for latitude and longitude bounds
@@ -977,17 +976,20 @@ class Grid:
         return np.abs(p1[0] - p2[0]) < tol and np.abs(p1[1] - p2[1]) < tol
 
     @staticmethod
-    def is_smashed_quad2D(coords):
+    def is_smashed_quad2D(coords):  # noqa: N802
         """
         Determine if a quadrilateral (quad) is smashed or degenerate.
 
-        Args:
-            coords (numpy.ndarray): Array of shape (4, 2) representing the
-                                    coordinates of the four corners of the quad.
+        Parameters
+        ----------
+        coords : numpy.ndarray
+            Array of shape (4, 2) representing the coordinates of the four quad corners.
+            Each row corresponds to a corner, and each column corresponds to a coordinate (latitude, longitude).
 
-        Returns:
-            bool: True if the quad is smashed, otherwise False.
-
+        Returns
+        -------
+        bool
+            True if the quad is smashed, otherwise False.
         """
         # Ensure the input is for a quad
         if coords.shape[0] != 4:
@@ -1007,16 +1009,21 @@ class Grid:
     @staticmethod
     def _create_smashed_mask(ds, lat_bnds, lon_bnds):
         """
-        Create a boolean mask indicating which cells are smashed (i.e. cells with nearly identical opposite vertices)
+        Create a boolean mask indicating which cells are smashed (i.e. cells with nearly identical opposite vertices).
 
-        Args:
-            ds (xarray.Dataset): A dataset containing latitude and longitude bounds.
-            lat_bnds (str): The name of the latitude bounds variable in the dataset.
-            lon_bnds (str): The name of the longitude bounds variable in the dataset.
+        Parameters
+        ----------
+        ds : xarray.Dataset
+            A dataset containing latitude and longitude bounds.
+        lat_bnds : str
+            The name of the latitude bounds variable in the dataset.
+        lon_bnds : str
+            The name of the longitude bounds variable in the dataset.
 
-        Returns:
-            xarray.DataArray: An integer mask indicating which cells are smashed (1: ok, 0: smashed).
-
+        Returns
+        -------
+        xarray.DataArray
+            An integer mask indicating which cells are smashed (1: ok, 0: smashed).
         """
         # Combine latitude_bnds and longitude_bnds into a single DataArray
         if len(ds[lat_bnds].dims) == 3:
@@ -1032,7 +1039,8 @@ class Grid:
             )
         else:
             raise ValueError(
-                "Vertices should have two dimensions (unstructured: [ncells x ncorners]) or three dimensions (else: [nlat x nlon x ncorners])"
+                "Vertices should have two dimensions (unstructured: [ncells x ncorners]) "
+                "or three dimensions (else: [nlat x nlon x ncorners])"
             )
 
         # Apply the function across the nlat and nlon dimensions
@@ -1052,14 +1060,19 @@ class Grid:
         """
         Create a boolean mask indicating which grid cells collapse to lines or points.
 
-        Args:
-            ds (xarray.Dataset): A dataset containing latitude and longitude bounds.
-            lat_bnds (str): The name of the latitude bounds variable in the dataset.
-            lon_bnds (str): The name of the longitude bounds variable in the dataset.
+        Parameters
+        ----------
+        ds : xarray.Dataset
+            A dataset containing latitude and longitude bounds.
+        lat_bnds : str
+            The name of the latitude bounds variable in the dataset.
+        lon_bnds : str
+            The name of the longitude bounds variable in the dataset.
 
-        Returns:
-            xarray.DataArray: An integer mask indicating which grid cells collapse to lines or points (1: ok, 0: collapsed).
-
+        Returns
+        -------
+        xarray.DataArray
+            An integer mask indicating which grid cells collapse to lines or points (1: ok, 0: collapsed).
         """
 
         # Define a function to count unique (lat, lon) tuples for each cell
@@ -1082,7 +1095,8 @@ class Grid:
             )
         else:
             raise ValueError(
-                "Vertices should have two dimensions (unstructured: [ncells x ncorners]) or three dimensions (else: [nlat x nlon x ncorners])"
+                "Vertices should have two dimensions (unstructured: [ncells x ncorners]) "
+                "or three dimensions (else: [nlat x nlon x ncorners])"
             )
 
         # Apply the function across the nlat and nlon dimensions
@@ -1146,7 +1160,7 @@ class Grid:
 
     def _compute_hash(self) -> str:
         """
-        Compute md5 checksum of each component of the horizontal grid, including a potentially defined mask.
+        Compute md5 checksum for each component of the horizontal grid, including a potentially defined mask.
 
         Stores the individual checksum of each component (lat, lon, lat_bnds, lon_bnds, mask) in a dictionary and
         returns an overall checksum.
@@ -1157,7 +1171,7 @@ class Grid:
             md5 checksum of the checksums of all 5 grid components.
 
         """
-        # Create dictionary including the hashes for each grid component and store it as attribute
+        # Create a dictionary including the hashes for each grid component and store it as attribute
         self.hash_dict = OrderedDict()
         for coord, coord_var in OrderedDict(
             [
@@ -1176,7 +1190,7 @@ class Grid:
             else:
                 self.hash_dict[coord] = md5(b"undefined").hexdigest()
 
-        # Return overall checksum for all 5 components
+        # Return overall checksum for all 5 parts
         return md5("".join(self.hash_dict.values()).encode("utf-8")).hexdigest()
 
     def compare_grid(self, ds_or_Grid: xr.Dataset | Grid, verbose: bool = False) -> bool:
@@ -1197,16 +1211,16 @@ class Grid:
         -------
         bool
             Returns True if the two Grids are considered identical within the defined precision, else returns False.
-
         """
-        # Create temporary Grid object if ds_or_Grid is an xarray object
+        # Create a temporary Grid object if ds_or_Grid is an xarray object
         if isinstance(ds_or_Grid, xr.Dataset) or isinstance(ds_or_Grid, xr.DataArray):
             grid_tmp = Grid(ds=ds_or_Grid)
         elif isinstance(ds_or_Grid, Grid):
             grid_tmp = ds_or_Grid
         else:
             raise InvalidParameterValue(
-                "The provided input has to be of one of the types [xarray.DataArray, xarray.Dataset, clisops.core.Grid]."
+                "The provided input has to be of one of the types "
+                "[xarray.DataArray, xarray.Dataset, clisops.core.Grid]."
             )
 
         # Compare each of the five components and print result if verbose is active
@@ -1310,7 +1324,7 @@ class Grid:
 
         # Also add cell_measure variables
         cell_measures = list()
-        for cmtype, cm in self.ds.cf.cell_measures.items():
+        for _cmtype, cm in self.ds.cf.cell_measures.items():
             cell_measures += cm
 
         # Set as coord for auxiliary coord. variables not supposed to be remapped
@@ -1842,7 +1856,7 @@ class Weights:
         """
         Write weights to disk in a certain format.
 
-        Warning:
+        Warning
         -------
         This method is not yet implemented.
 
@@ -1854,7 +1868,7 @@ class Weights:
         """
         Read and process weights from disk.
 
-        Warning:
+        Warning
         -------
         This method is not yet implemented.
 
@@ -1870,7 +1884,7 @@ class Weights:
         """
         Reformat remapping weights.
 
-        Warning:
+        Warning
         -------
         This method is not yet implemented.
 
@@ -1881,7 +1895,7 @@ class Weights:
         """
         Detect format of remapping weights (read from disk).
 
-        Warning:
+        Warning
         -------
         This method is not yet implemented.
 

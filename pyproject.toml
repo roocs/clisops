@@ -87,7 +87,7 @@ dev = [
   "pytest-cov >=5.0.0",
   "pytest-loguru >=0.3.0",
   "pytest-xdist[psutil] >=3.2",
-  "ruff >=0.11.12",
+  "ruff >=0.12.0",
   "tox >=4.24.1",
   "watchdog >=4.0.0"
 ]
@@ -304,10 +304,17 @@ known-first-party = ["xclim"]
 no-lines-before = ["future"]
 
 [tool.ruff.lint.mccabe]
-max-complexity = 20
+max-complexity = 30
 
 [tool.ruff.lint.per-file-ignores]
 "docs/*.py" = ["D100", "D101", "D102", "D103"]
 "docs/notebooks/*.ipynb" = ["E225", "E226", "E231", "E501"]
 "clisops/__init__.py" = ["E402", "E501"]
-"tests/**/*test*.py" = ["D100", "D101", "D102", "D103", "E501", "N802", "S101", "S108"]
+"clisops/core/regrid.py" = ["S324"]
+"clisops/ops/subset.py" = ["E501"]
+"clisops/project_utils.py" = ["E501"]
+"clisops/utils/*_utils.py" = ["N802"]
+"tests/**/*test*.py" = ["D100", "D101", "D102", "D103", "E501", "N802", "S101", "S108", "UP031"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"

@@ -48,6 +48,7 @@ from loguru import logger
 
 
 def get_lat(ds: xarray.Dataset | xarray.DataArray) -> xarray.DataArray:
+    """Get latitude coordinate from a Dataset or DataArray."""
     try:
         return ds.cf["latitude"]
     except KeyError:
@@ -55,6 +56,7 @@ def get_lat(ds: xarray.Dataset | xarray.DataArray) -> xarray.DataArray:
 
 
 def get_lon(ds: xarray.Dataset | xarray.DataArray) -> xarray.DataArray:
+    """Get longitude coordinate from a Dataset or DataArray."""
     try:
         return ds.cf["longitude"]
     except KeyError:
@@ -211,9 +213,9 @@ def check_lons(func: Callable) -> Callable:
     @wraps(func)
     def func_checker(*args, **kwargs):
         """
-        Reformat user-specified "lon" or "lon_bnds" values based on the lon dimensions of a supplied Dataset or DataArray.
+        Reformat user-specified "lon" or "lon_bnds" values based on the lon dimensions of a supplied xarray object.
 
-        Examines an xarray object longitude dimensions and depending on extent (either -180 to +180 or 0 to +360),
+        Examines an xarray object longitude dimensions and depending on the extent (either -180 to +180 or 0 to +360),
         will reformat user-specified lon values to be synonymous with xarray object boundaries.
         Returns a numpy array of reformatted `lon` or `lon_bnds` in kwargs with min() and max() values.
         """
@@ -685,7 +687,6 @@ def grid_exterior_polygon(ds: xarray.Dataset) -> Polygon:
     -----
     For curvilinear grids, the boundary is the centroid's boundary, not the real cell boundary. Please submit a PR if
     you need this.
-
     """
     if is_rectilinear(ds):
         return _rectilinear_grid_exterior_polygon(ds)
@@ -694,7 +695,19 @@ def grid_exterior_polygon(ds: xarray.Dataset) -> Polygon:
 
 
 def is_rectilinear(ds: xarray.Dataset | xarray.DataArray) -> bool:
-    """Return whether the grid is rectilinear or not."""
+    """
+    Return whether the grid is rectilinear or not.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset or xarray.DataArray
+        Input dataset.
+
+    Returns
+    -------
+    bool
+        True if the grid is rectilinear, False otherwise.
+    """
     sdims = {ds.cf["longitude"].name, ds.cf["latitude"].name}
     return sdims.issubset(ds.dims)
 
@@ -710,7 +723,7 @@ def shape_bbox_indexer(
     ----------
     ds : xr.Dataset
         Input dataset.
-    poly : gpd.GeoDataFrame, gpd.GeoSeries, pd.array.GeometryArray, or list of shapely geometries.
+    poly : gpd.GeoDataFrame, gpd.GeoSeries, pd.array.GeometryArray, or list of shapely geometries
         Shapes to cover. Can be of type Polygon, MultiPolygon, Point, or MultiPoint.
 
     Returns
@@ -1019,7 +1032,7 @@ def subset_shape(
         raise ValueError("Longitudes exceed domain of WGS84 coordinate system.")
 
     # If polygon doesn't cross prime meridian, subset bbox first to reduce processing time.
-    # Only case not implemented is when lon_bnds cross the 0 deg meridian but dataset grid has all positive lons.
+    # The only case not implemented is when lon_bnds crosses the 0 deg meridian but dataset grid has all positive lons.
     try:
         ds_copy = subset_bbox(ds_copy, lon_bnds=lon_bnds, lat_bnds=lat_bnds)
     except ValueError as e:
@@ -1028,6 +1041,7 @@ def subset_shape(
             'Try using the "buffer" option to create an expanded area.'
         ) from e
     except NotImplementedError:
+        logger.info("The bounding box crosses the prime meridian, skipping bbox subset.")
         pass
 
     if start_date or end_date:
@@ -1257,7 +1271,8 @@ def subset_bbox(
     else:
         raise (
             Exception(
-                f'{subset_bbox.__name__} requires input data with "lon" and "lat" dimensions, coordinates, or variables.'
+                f"{subset_bbox.__name__} requires input data with "
+                f'"lon" and "lat" dimensions, coordinates, or variables.'
             )
         )
 
@@ -1704,7 +1719,7 @@ def subset_level(
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
-        Subsetted xarray.DataArray or xarray.Dataset
+        Subsetted xarray.DataArray or xarray.Dataset.
 
     Examples
     --------
@@ -1759,7 +1774,13 @@ def subset_level_by_values(
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
-        Subsetted xarray.DataArray or xarray.Dataset
+        Subsetted xarray.DataArray or xarray.Dataset.
+
+    Notes
+    -----
+    If any levels are not found, a ValueError will be raised.
+    The requested levels will automatically be re-ordered to match the order in the
+    input dataset.
 
     Examples
     --------
@@ -1773,13 +1794,6 @@ def subset_level_by_values(
         # Subset a selection of levels
         levels = [1000.0, 850.0, 250.0, 100.0]
         prSub = subset_level_by_values(ds.pr, level_values=levels)
-
-    Notes
-    -----
-    If any levels are not found, a ValueError will be raised.
-    The requested levels will automatically be re-ordered to match the order in the
-    input dataset.
-
     """
     level = da[get_coord_by_type(da, "level")]
     return da.sel(**{level.name: level_values}, method="nearest")
@@ -1797,11 +1811,11 @@ def distance(
 
     Parameters
     ----------
-    da : Union[xarray.DataArray, xarray.Dataset]
+    da : xarray.DataArray or xarray.Dataset
         Input data.
-    lon : Union[float, Sequence[float], xarray.DataArray]
+    lon : float, sequence of floats, or xarray.DataArray
         Longitude coordinate.
-    lat : Union[float, Sequence[float], xarray.DataArray]
+    lat : float, sequence of floats, or xarray.DataArray
         Latitude coordinate.
 
     Returns
@@ -1821,7 +1835,6 @@ def distance(
         d = distance(da, lon=-75, lat=45)
         k = d.argmin()
         i, j, _ = np.unravel_index(k, d.shape)
-
     """
     ptdim = lat.dims[0]
 

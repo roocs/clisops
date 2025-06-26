@@ -289,6 +289,8 @@ def check_output_nc():
 @pytest.fixture(scope="session", autouse=True)
 def load_test_data(worker_id, stratus, nimbus):
     """
+    Load the test data repository.
+
     This fixture ensures that the required test data repository
     has been cloned to the cache directory within the home directory.
     """
@@ -307,7 +309,7 @@ def load_test_data(worker_id, stratus, nimbus):
         },
     }
 
-    for name, repo in repositories.items():
+    for repo in repositories.values():
         testing.gather_testing_data(worker_id=worker_id, **repo)
 
 

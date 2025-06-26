@@ -1,3 +1,5 @@
+"""Area parameter for subsetting operations."""
+
 from collections.abc import Sequence
 
 from clisops.exceptions import InvalidParameterValue
@@ -45,7 +47,7 @@ class AreaParameter(_BaseParameter):
         return tuple([to_float(i, allow_none=False) for i in value])
 
     def asdict(self):
-        """Returns a dictionary of the area values"""
+        """Returns a dictionary of the area values."""
         if self.value is not None:
             return {
                 "lon_bnds": (self.value[0], self.value[2]),
@@ -53,4 +55,5 @@ class AreaParameter(_BaseParameter):
             }
 
     def __str__(self):
+        """String representation of the area values."""
         return f"Area to subset over:\n {self.value}"

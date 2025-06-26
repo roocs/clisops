@@ -1,3 +1,5 @@
+"""Test utilities for clisops."""
+
 import importlib.resources as ilr
 import os
 import warnings
@@ -38,7 +40,7 @@ __all__ = [
 try:
     default_esgf_test_data_cache = pooch.os_cache("mini-esgf-data")
     default_xclim_test_data_cache = pooch.os_cache("xclim-testdata")
-except AttributeError:
+except (AttributeError, TypeError):
     default_esgf_test_data_cache = None
     default_xclim_test_data_cache = None
 
@@ -129,7 +131,6 @@ def get_esgf_file_paths(esgf_cache_dir: str | os.PathLike[str]) -> dict[str, str
     -------
     dict[str, str]
         A dictionary where keys are descriptive names of datasets and values are their corresponding file paths.
-
     """
     return {
         "CMIP5_ZOSTOGA": Path(
@@ -367,6 +368,14 @@ def get_esgf_file_paths(esgf_cache_dir: str | os.PathLike[str]) -> dict[str, str
 
 
 def get_kerchunk_datasets():
+    """
+    Return a dictionary of Kerchunk datasets for testing purposes.
+
+    Returns
+    -------
+    dict[str, str]
+        A dictionary where keys are dataset identifiers and values are URLs to the Kerchunk JSON files.
+    """
     kerchunk = {
         # Kerchunk datasets
         "CMIP6_KERCHUNK_HTTPS_OPEN_JSON": (
@@ -391,7 +400,6 @@ def get_esgf_glob_paths(esgf_cache_dir: str | os.PathLike[str]) -> dict[str, str
     -------
     dict
         A dictionary where keys are dataset identifiers and values are glob paths to the datasets.
-
     """
     return {
         "CMIP5_TAS": Path(
@@ -438,9 +446,22 @@ def get_esgf_glob_paths(esgf_cache_dir: str | os.PathLike[str]) -> dict[str, str
 
 
 class ContextLogger:
-    """Helper function for safe logging management in pytests"""
+    """
+    Helper function for safe logging management in pytests.
+
+    This class manages the loguru logger context, enabling and disabling logging
+    for a specific package during the test execution. It also handles the case
+    where pytest's caplog fixture is used, allowing for log capturing without
+    interfering with the logger's configuration.
+
+    Attributes
+    ----------
+    caplog : CaplogFixture, optional
+        The pytest caplog fixture, if provided, to capture logs during tests.
+    """
 
     def __init__(self, caplog=False):
+        """Initialize the ContextLogger."""
         from loguru import logger
 
         self.logger = logger
@@ -449,6 +470,7 @@ class ContextLogger:
             self.using_caplog = True
 
     def __enter__(self, package_name: str = "clisops"):
+        """If test is supplying caplog, pytest will manage setup."""
         self.logger.enable(package_name)
         self._package = package_name
         return self.logger
@@ -459,19 +481,25 @@ class ContextLogger:
         if not self.using_caplog:
             try:
                 self.logger.remove()
-            except ValueError:
+            except ValueError:  # noqa: S110
                 pass
 
 
-def load_registry(branch: str, repo: str):
+def load_registry(branch: str, repo: str) -> dict[str, str]:
     """
     Load the registry file for the test data.
+
+    Parameters
+    ----------
+    branch : str
+        The branch of the repository to use for the registry.
+    repo : str
+        The URL of the repository to use for the registry.
 
     Returns
     -------
     dict
         Dictionary of filenames and hashes.
-
     """
     if repo == ESGF_TEST_DATA_REPO_URL:
         project = "mini-esgf-data"
@@ -507,7 +535,7 @@ def load_registry(branch: str, repo: str):
     return registry
 
 
-def stratus(  # noqa: PR01
+def stratus(
     repo: str,
     branch: str,
     cache_dir: str | Path,
@@ -544,7 +572,6 @@ def stratus(  # noqa: PR01
         s = stratus(data_dir=..., repo=..., branch=...)
         example_file = s.fetch("example.nc")
         data = xr.open_dataset(example_file)
-
     """
     if pooch is None:
         raise ImportError(
@@ -579,7 +606,7 @@ def populate_testing_data(
     repo: str,
     branch: str,
     cache_dir: Path,
-) -> None:
+):
     """
     Populate the local cache with the testing data.
 
@@ -592,11 +619,6 @@ def populate_testing_data(
     cache_dir : Path
         The path to the local cache. Defaults to the location set by the platformdirs library.
         The testing data will be downloaded to this local cache.
-
-    Returns
-    -------
-    None
-
     """
     # Create the Pooch instance
     n = stratus(cache_dir=cache_dir, repo=repo, branch=branch)
@@ -649,7 +671,6 @@ def gather_testing_data(
         If the repository URL is not recognised.
     FileNotFoundError
         If the testing data is not found and UNIX-style file-locking is not supported on Windows.
-
     """
     cache_dir = Path(cache_dir)
     if repo.endswith("xclim-testdata"):
@@ -705,7 +726,6 @@ def audit_url(url: str, context: str | None = None) -> str:
     ------
     URLError
         If the URL is not well-formed.
-
     """
     msg = ""
     result = urlparse(url)

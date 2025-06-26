@@ -47,7 +47,7 @@ dependencies:
  - pytest-cov >=5.0.0
  - pytest-loguru >=0.3.0
  - pytest-xdist >=3.2
- - ruff >=0.11.12
+ - ruff >=0.12.0
  - tox >=4.24.1
  - watchdog >=4.0.0
 # # Documentation

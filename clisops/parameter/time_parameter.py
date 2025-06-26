@@ -1,3 +1,5 @@
+"""Time Parameter Class"""
+
 import datetime
 
 from clisops.exceptions import InvalidParameterValue
@@ -52,7 +54,7 @@ class TimeParameter(_BaseIntervalOrSeriesParameter):
         return value
 
     def asdict(self):
-        """Returns a dictionary of the time values"""
+        """Returns a dictionary of the time values."""
         if self.type in ("interval", "none"):
             value = self._value_as_tuple()
             return {"start_time": value[0], "end_time": value[1]}
@@ -71,6 +73,7 @@ class TimeParameter(_BaseIntervalOrSeriesParameter):
             return self.value[0], self.value[-1]
 
     def __str__(self):
+        """Returns a string representation of the time values."""
         if self.type in ("interval", "none"):
             value = self._value_as_tuple()
             return f"Time period to subset over\n start time: {value[0]}\n end time: {value[1]}"

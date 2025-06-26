@@ -1,3 +1,5 @@
+"""Base class for parameters used in operations (e.g. subset, average etc.)."""
+
 from clisops.exceptions import InvalidParameterValue
 from clisops.parameter._utils import interval, series
 

@@ -1,3 +1,5 @@
+"""Regridding operation for xarray datasets."""
+
 import warnings
 from datetime import datetime as dt
 from pathlib import Path
@@ -99,12 +101,14 @@ class Regrid(Operation):
 
         if method not in supported_regridding_methods:
             raise Exception(
-                "The selected regridding method is not supported. "
-                "Please choose one of %s." % ", ".join(supported_regridding_methods)
+                f"The selected regridding method is not supported. Please choose one of: "
+                f"{', '.join(supported_regridding_methods)}."
             )
 
         logger.debug(
-            f"Input parameters: method: {method}, grid: {grid}, adaptive_masking: {adaptive_masking_threshold}, mask: {mask}, keep_attrs: {keep_attrs}"
+            f"Input parameters: method: {method}, grid: {grid}, "
+            f"adaptive_masking: {adaptive_masking_threshold}, "
+            f"mask: {mask}, keep_attrs: {keep_attrs}"
         )
 
         # Compute bounds only when required
@@ -208,7 +212,7 @@ def regrid(
     method : {"nearest_s2d", "conservative", "patch", "bilinear"}
     adaptive_masking_threshold : Optional[Union[int, float]]
     grid : Union[xr.Dataset, xr.DataArray, int, float, tuple, str]
-    mask: {"ocean", "land"} = None
+    mask : {"ocean", "land"} = None
     output_dir : Optional[Union[str, Path]] = None
     output_type : {"netcdf", "nc", "zarr", "xarray"}
     split_method : {"time:auto"}

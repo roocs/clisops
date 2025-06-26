@@ -1,3 +1,5 @@
+"""TimeComponentsParameter class for handling time components in subsetting operations."""
+
 from clisops.exceptions import InvalidParameterValue
 from clisops.parameter._utils import string_to_dict, time_components
 from clisops.parameter.base_parameter import _BaseParameter
@@ -38,6 +40,7 @@ class TimeComponentsParameter(_BaseParameter):
             raise InvalidParameterValue(f"Cannot create TimeComponentsParameter from: {self.input}")
 
     def asdict(self):
+        """Returns a dictionary of the time components."""
         # Just return the value, either a dict or None
         return {"time_components": self.value}
 
@@ -54,6 +57,7 @@ class TimeComponentsParameter(_BaseParameter):
         return (start, end)
 
     def __str__(self):
+        """Returns a string representation of the time components."""
         if self.value is None:
             return "No time components specified"
 

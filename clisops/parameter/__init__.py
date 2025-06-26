@@ -1,3 +1,5 @@
+"""Parameter module for CLISOPS."""
+
 from clisops.parameter._utils import *
 from clisops.parameter.area_parameter import AreaParameter as AreaParameter
 

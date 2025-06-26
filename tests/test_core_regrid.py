@@ -331,9 +331,7 @@ def test_grid_init_shifted_lon_frame_IITM(mini_esgf_data):
 
 @pytest.mark.slow
 def test_grid_init_unmasked_missing_lon_lat(mini_esgf_data):
-    """
-    Test that the grid is initialized correctly even if the dataset has unmasked missing lat/lon coordinates.
-    """
+    """Test that the grid is initialised correctly even if the dataset has unmasked missing lat/lon coordinates."""
     # Test case 1
     with xr.open_dataset(mini_esgf_data["CMIP6_EXTENT_UNMASKED"]) as ds:
         g = Grid(ds=ds)

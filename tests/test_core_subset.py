@@ -289,7 +289,7 @@ class TestSubsetGridPoint:
             subset.subset_gridpoint(da, lon=-72.4, lat=46.1, start_date="2055-03-15", end_date="2055-03-14")
             subset.subset_gridpoint(da, lon=-72.4, lat=46.1, start_date="2055", end_date="2052")
         da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat)).tasmax.drop_vars(names=["lon", "lat"])
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             subset.subset_gridpoint(da, lon=-72.4, lat=46.1)
 
     def test_tolerance(self, nimbus):
@@ -577,7 +577,7 @@ class TestSubsetBbox:
 
         # 2nd case
         da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat)).tasmax.drop_vars(names=["lon", "lat"])
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             subset.subset_bbox(da, lon_bnds=self.lon, lat_bnds=self.lat)
 
         # 3rd case

@@ -1,3 +1,5 @@
+"""Common utility functions for CLISOPS."""
+
 import functools
 import os
 import re
@@ -102,6 +104,14 @@ def _logging_examples() -> None:
 
 
 def enable_logging() -> list[int]:
+    """
+    Enable logging for CLISOPS.
+
+    Returns
+    -------
+    list[int]
+        List of enabled log levels, e.g., [10, 20, 30, 40, 50].
+    """
     logger.enable("clisops")
 
     config = dict(

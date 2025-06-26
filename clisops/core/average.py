@@ -248,7 +248,6 @@ def average_time(
 
         # Average data array over each month
         prAvg = average_time(pr, freq="month")
-
     """
     if not freq:
         raise InvalidParameterValue("At least one frequency for averaging must be provided")

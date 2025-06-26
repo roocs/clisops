@@ -13,7 +13,7 @@ class FileMapper:
 
     If dirpath is not provided, it will be deduced from the file paths provided in file_list.
 
-    Attributes:
+    Attributes
     ----------
     file_list : list of str
         List of file names of the files represented.

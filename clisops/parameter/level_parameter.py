@@ -1,3 +1,5 @@
+"""LevelParameter class for handling level inputs in subsetting operations."""
+
 from clisops.exceptions import InvalidParameterValue
 from clisops.parameter._utils import to_float
 from clisops.parameter.base_parameter import _BaseIntervalOrSeriesParameter
@@ -14,9 +16,8 @@ class LevelParameter(_BaseIntervalOrSeriesParameter):
 
     A level input must be 2 values.
 
-    If using a string input a trailing slash indicates you want to use the lowest/highest
-    level of the dataset. e.g. "/2000" will subset from the lowest level in the dataset
-    to 2000.
+    If using a string input, a trailing slash indicates you want to use the lowest/highest
+    level of the dataset. E.g. "/2000" will subset from the lowest level in the dataset to 2000.
 
     Validates the level input and parses the values into numbers.
 
@@ -45,7 +46,7 @@ class LevelParameter(_BaseIntervalOrSeriesParameter):
         return value
 
     def asdict(self):
-        """Returns a dictionary of the level values"""
+        """Returns a dictionary of the level values."""
         if self.type in ("interval", "none"):
             value = self._value_as_tuple()
             return {"first_level": value[0], "last_level": value[1]}
@@ -53,6 +54,7 @@ class LevelParameter(_BaseIntervalOrSeriesParameter):
             return {"level_values": self.value}
 
     def __str__(self):
+        """Returns a string representation of the level values."""
         if self.type in ("interval", "none"):
             value = self._value_as_tuple()
             return f"Level range to subset over\n first_level: {value[0]}\n last_level: {value[1]}"
