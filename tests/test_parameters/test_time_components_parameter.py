@@ -1,5 +1,4 @@
 import pytest
-
 from clisops.exceptions import InvalidParameterValue
 from clisops.parameter import TimeComponentsParameter, string_to_dict, time_components
 

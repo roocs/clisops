@@ -1,27 +1,30 @@
+"""Project utilities for CLISOPS."""
+
 import glob
 import os
 
 import xarray as xr
-from loguru import logger
-
 from clisops import CONFIG
 from clisops.exceptions import InvalidProject
 from clisops.utils.file_utils import FileMapper
+from loguru import logger
 
 
-class DatasetMapper:
+class DatasetMapper:  # noqa: E501
     r"""
     Class to map to data path, dataset ID and files from any dataset input.
 
     Dset must be a string and can be input as:
-        - A dataset ID: e.g. "cmip5.output1.INM.inmcm4.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga".
-        - A file path: e.g. "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc".
-        - A path to a group of files: e.g. "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/\*.nc".
-        - A directory e.g. "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas".
-        - An instance of the FileMapper class (that represents a set of files within a single directory).
+      - A dataset ID: e.g. "cmip5.output1.INM.inmcm4.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga".
+      - A file path:
+        e.g. "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc".
+      - A path to a group of files:
+        e.g. "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/\*.nc".
+      - A directory e.g. "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas".
+      - An instance of the FileMapper class (that represents a set of files within a single directory).
 
-    When force=True, if the project can not be identified, any attempt to use the base_dir of a project
-    to resolve the data path will be ignored. Any of data_path, ds_id and files that can be set, will be set.
+    When force=True, if the project cannot be identified, any attempt to use the base_dir of a project
+    to resolve the data path will be ignored. Any of data_path, ds_id, and files that can be set will be set.
     """
 
     SUPPORTED_EXTENSIONS = (".nc", ".gz")
@@ -40,9 +43,7 @@ class DatasetMapper:
     @staticmethod
     def _get_base_dirs_dict():
         projects = get_projects()
-        base_dirs = {
-            project: CONFIG[f"project:{project}"]["base_dir"] for project in projects
-        }
+        base_dirs = {project: CONFIG[f"project:{project}"]["base_dir"] for project in projects}
         return base_dirs
 
     @staticmethod
@@ -55,11 +56,7 @@ class DatasetMapper:
                 # by default this returns c3s-cmip6 not cmip6 (as they have the same base_dir)
                 base_dirs_dict = self._get_base_dirs_dict()
                 for project, base_dir in base_dirs_dict.items():
-                    if (
-                        dset.startswith(base_dir)
-                        and CONFIG[f"project:{project}"].get("is_default_for_path")
-                        is True
-                    ):
+                    if dset.startswith(base_dir) and CONFIG[f"project:{project}"].get("is_default_for_path") is True:
                         return project
 
             elif self._is_ds_id(dset):
@@ -67,15 +64,11 @@ class DatasetMapper:
 
             # this will not return c3s project names
             elif dset.endswith(".nc") or os.path.isfile(dset):
-                dset = xr.open_dataset(
-                    dset, decode_times=xr.coders.CFDatetimeCoder(use_cftime=True)
-                )
+                dset = xr.open_dataset(dset, decode_times=xr.coders.CFDatetimeCoder(use_cftime=True))
                 return get_project_from_ds(dset)
 
         else:
-            raise InvalidProject(
-                f"The format of {dset} is not known and the project name could not be found."
-            )
+            raise InvalidProject(f"The format of {dset} is not known and the project name could not be found.")
 
     def _parse(self, force):
         # if instance of FileMapper
@@ -92,9 +85,7 @@ class DatasetMapper:
             except InvalidProject:
                 logger.info("The project could not be identified")
                 if not force:
-                    raise InvalidProject(
-                        "The project could not be identified and force was set to false"
-                    )
+                    raise InvalidProject("The project could not be identified and force was set to false")
 
         # get base_dir in the case where project has been supplied
         if not self._base_dir and self._project:
@@ -118,19 +109,13 @@ class DatasetMapper:
 
             # if base_dir identified, insert into data_path
             if self._base_dir:
-                self._ds_id = ".".join(
-                    self._data_path.replace(self._base_dir, self._project)
-                    .strip("/")
-                    .split("/")
-                )
+                self._ds_id = ".".join(self._data_path.replace(self._base_dir, self._project).strip("/").split("/"))
 
         # test if dataset id
         elif self._is_ds_id(dset):
             self._ds_id = dset
 
-            mappings = CONFIG.get(f"project:{self.project}", {}).get(
-                "fixed_path_mappings", {}
-            )
+            mappings = CONFIG.get(f"project:{self.project}", {}).get("fixed_path_mappings", {})
 
             # If the dataset uses a fixed path mapping (from the config file) then use it
             if self._ds_id in mappings:
@@ -142,9 +127,7 @@ class DatasetMapper:
 
             # Default mapping is done by converting '.' characters to '/' separators in path
             else:
-                self._data_path = os.path.join(
-                    self._base_dir, "/".join(dset.split(".")[1:])
-                )
+                self._data_path = os.path.join(self._base_dir, "/".join(dset.split(".")[1:]))
 
         # use to data_path to find files if not set already
         if len(self._files) < 1:
@@ -227,9 +210,26 @@ def dset_to_filepaths(dset, force=False):
     """
     Gets filepaths deduced from input dset.
 
-    :param dset: dset input of type described by DatasetMapper.
-    :param force: When True and if the project of the input dset cannot be identified, DatasetMapper will attempt to find the files anyway. Default is False.
-    :return: File paths deduced from input dataset.
+    Parameters
+    ----------
+    dset : xarray.Dataset or xarray.DataArray or str or FileMapper
+        The dataset input, which can be a Dataset/DataArray, a string representing a dataset ID or file path,
+        or an instance of FileMapper.
+    force : bool, optional
+        If True, the function will attempt to find files even if the project of the input dset cannot be identified.
+        Default is False.
+
+    Raises
+    ------
+    InvalidProject
+        If the project cannot be identified and force is set to False.
+    InconsistencyError
+        If there is an inconsistency that prevents files from being scanned.
+
+    Returns
+    -------
+    list
+        A list of file paths deduced from the input dataset.
     """
     mapper = DatasetMapper(dset, force=force)
     return mapper.files
@@ -288,7 +288,7 @@ def map_facet(facet, project):
 
 
 def get_facet(facet_name, facets, project):
-    """Get facet from project config"""
+    """Get facet from project config."""
     return facets[map_facet(facet_name, project)]
 
 
@@ -322,14 +322,13 @@ def get_project_from_data_node_root(url):
 
     if not project:
         raise InvalidProject(
-            f"The project could not be identified from the URL "
-            f"{url} so it could not be mapped to a file path."
+            f"The project could not be identified from the URL {url} so it could not be mapped to a file path."
         )
     return project
 
 
 def url_to_file_path(url):
-    """Convert input url of an original file to a file path"""
+    """Convert the input url of an original file to a file path."""
     project = get_project_from_data_node_root(url)
 
     data_node_root = CONFIG.get(f"project:{project}", {}).get("data_node_root")

@@ -1,6 +1,5 @@
 import pytest
 import xarray as xr
-
 from clisops import CONFIG
 from clisops.exceptions import InvalidProject
 from clisops.ops.subset import subset
@@ -126,9 +125,7 @@ def test_StandardFileNamer_cmip6_use_default_attr_names(mini_esgf_data):
         combine="by_coords",
     )
 
-    checks = [
-        (_ds, "siconc_SImon_no-model_historical_r1i1p1f1_no-grid_18500116-20141216.nc")
-    ]
+    checks = [(_ds, "siconc_SImon_no-model_historical_r1i1p1f1_no-grid_18500116-20141216.nc")]
     del _ds.attrs["source_id"]
     del _ds.attrs["grid_label"]
 

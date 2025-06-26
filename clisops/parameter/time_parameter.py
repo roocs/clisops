@@ -1,3 +1,5 @@
+"""Time Parameter Class"""
+
 import datetime
 
 from clisops.exceptions import InvalidParameterValue
@@ -28,13 +30,9 @@ class TimeParameter(_BaseIntervalOrSeriesParameter):
 
         try:
             if start is not None:
-                start = parse_datetime(
-                    start, defaults=[datetime.MINYEAR, 1, 1, 0, 0, 0]
-                )
+                start = parse_datetime(start, defaults=[datetime.MINYEAR, 1, 1, 0, 0, 0])
             if end is not None:
-                end = parse_datetime(
-                    end, defaults=[datetime.MAXYEAR, 12, 31, 23, 59, 59]
-                )
+                end = parse_datetime(end, defaults=[datetime.MAXYEAR, 12, 31, 23, 59, 59])
 
         except Exception:
             raise InvalidParameterValue("Unable to parse the time values entered")
@@ -56,7 +54,7 @@ class TimeParameter(_BaseIntervalOrSeriesParameter):
         return value
 
     def asdict(self):
-        """Returns a dictionary of the time values"""
+        """Returns a dictionary of the time values."""
         if self.type in ("interval", "none"):
             value = self._value_as_tuple()
             return {"start_time": value[0], "end_time": value[1]}
@@ -64,8 +62,10 @@ class TimeParameter(_BaseIntervalOrSeriesParameter):
             return {"time_values": self.value}
 
     def get_bounds(self):
-        """Returns a tuple of the (start, end) times, calculated from
-        the value of the parameter. Either will default to None."""
+        """
+        Returns a tuple of the (start, end) times, calculated from
+        the value of the parameter. Either will default to None.
+        """
         if self.type in ("interval", "none"):
             return self._value_as_tuple()
 
@@ -73,12 +73,9 @@ class TimeParameter(_BaseIntervalOrSeriesParameter):
             return self.value[0], self.value[-1]
 
     def __str__(self):
+        """Returns a string representation of the time values."""
         if self.type in ("interval", "none"):
             value = self._value_as_tuple()
-            return (
-                f"Time period to subset over"
-                f"\n start time: {value[0]}"
-                f"\n end time: {value[1]}"
-            )
+            return f"Time period to subset over\n start time: {value[0]}\n end time: {value[1]}"
         else:
             return f"Time values to select: {self.value}"

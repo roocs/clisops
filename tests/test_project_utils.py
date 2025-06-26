@@ -2,7 +2,6 @@ import os
 
 import pytest
 import xarray as xr
-
 from clisops import config, project_utils
 
 
@@ -12,7 +11,6 @@ def cds_domain():
 
 
 class TestProjectUtils:
-
     def test_get_project_name(self, mini_esgf_data):
         # cmip5
         dset = "cmip5.output1.INM.inmcm4.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga"
@@ -91,9 +89,7 @@ class TestProjectUtils:
         assert cmip5_base_dir == "/mnt/lustre/work/kd0956/CMIP5/data/cmip5"
 
         c3s_cordex_base_dir = project_utils.get_project_base_dir("c3s-cordex")
-        assert (
-            c3s_cordex_base_dir == "/mnt/lustre/work/ik1017/C3SCORDEX/data/c3s-cordex"
-        )
+        assert c3s_cordex_base_dir == "/mnt/lustre/work/ik1017/C3SCORDEX/data/c3s-cordex"
 
         with pytest.raises(Exception) as exc:
             project_utils.get_project_base_dir("test")
@@ -104,7 +100,6 @@ class TestDatasetMapper:
     dset = "CMIP6.CMIP.NCAR.CESM2.historical.r1i1p1f1.SImon.siconc.gn.latest"
 
     def test_raw(self):
-
         assert (
             project_utils.DatasetMapper(self.dset).raw
             == "CMIP6.CMIP.NCAR.CESM2.historical.r1i1p1f1.SImon.siconc.gn.latest"
@@ -123,10 +118,7 @@ class TestDatasetMapper:
         )
 
     def test_base_dir(self):
-        assert (
-            project_utils.DatasetMapper(self.dset).base_dir
-            == "/mnt/lustre/work/ik1017/CMIP6/data/CMIP6"
-        )
+        assert project_utils.DatasetMapper(self.dset).base_dir == "/mnt/lustre/work/ik1017/CMIP6/data/CMIP6"
 
     @pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
     def test_files(self):
@@ -198,8 +190,7 @@ def test_get_filepaths():
     files = project_utils.dset_to_filepaths(dset)
     assert (
         "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon"
-        "/atmos/Amon/r1i1p1/latest/tas/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_217412-219911.nc"
-        in files
+        "/atmos/Amon/r1i1p1/latest/tas/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_217412-219911.nc" in files
     )
 
     dset = "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc"
@@ -207,8 +198,7 @@ def test_get_filepaths():
     files_force = project_utils.dset_to_filepaths(dset, force=True)
     assert (
         "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon"
-        "/atmos/Amon/r1i1p1/latest/tas/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_217412-219911.nc"
-        in files_force
+        "/atmos/Amon/r1i1p1/latest/tas/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_217412-219911.nc" in files_force
     )
 
 
@@ -221,21 +211,13 @@ class TestDset:
         dset = "c3s-cmip6.CMIP.MIROC.MIROC6.historical.r1i1p1f1.SImon.siconc.gn.latest"
         ds_id = derive_dset(dset)
 
-        assert (
-            ds_id
-            == "/badc/cmip6/data/CMIP6/CMIP/MIROC/MIROC6/historical/r1i1p1f1/SImon/siconc/gn/latest"
-        )
+        assert ds_id == "/badc/cmip6/data/CMIP6/CMIP/MIROC/MIROC6/historical/r1i1p1f1/SImon/siconc/gn/latest"
 
         # cmip5
-        dset = (
-            "cmip5.output1.ICHEC.EC-EARTH.historical.day.atmos.day.r1i1p1.tas.v20131231"
-        )
+        dset = "cmip5.output1.ICHEC.EC-EARTH.historical.day.atmos.day.r1i1p1.tas.v20131231"
         ds_id = derive_dset(dset)
 
-        assert (
-            ds_id
-            == "/badc/cmip5/data/cmip5/output1/ICHEC/EC-EARTH/historical/day/atmos/day/r1i1p1/tas/v20131231"
-        )
+        assert ds_id == "/badc/cmip5/data/cmip5/output1/ICHEC/EC-EARTH/historical/day/atmos/day/r1i1p1/tas/v20131231"
 
         # c3s-cmip6-decadal
         dset = "c3s-cmip6-decadal.DCPP.MOHC.HadGEM3-GC31-MM.dcppA-hindcast.s1995-r1i1p1f2.Amon.tas.gn.v20200417"
@@ -265,10 +247,7 @@ class TestDset:
         dset = "/badc/cmip6/data/CMIP6/CMIP/MIROC/MIROC6/historical/r1i1p1f1/SImon/siconc/gn/latest/*.nc"
         ds_id = switch_dset(dset)
 
-        assert (
-            ds_id
-            == "c3s-cmip6.CMIP.MIROC.MIROC6.historical.r1i1p1f1.SImon.siconc.gn.latest"
-        )
+        assert ds_id == "c3s-cmip6.CMIP.MIROC.MIROC6.historical.r1i1p1f1.SImon.siconc.gn.latest"
 
     @pytest.mark.xfail(reason="outdated")
     def test_switch_dset_modified_config(self, write_roocs_cfg, monkeypatch):
@@ -280,10 +259,7 @@ class TestDset:
         ds_id = project_utils.switch_dset(dset)
 
         # The first match is returned when parsing the projects within the roocs.ini file
-        assert (
-            ds_id
-            == "c3s-cmip6-decadal.CMIP.MIROC.MIROC6.historical.r1i1p1f1.SImon.siconc.gn.latest"
-        )
+        assert ds_id == "c3s-cmip6-decadal.CMIP.MIROC.MIROC6.historical.r1i1p1f1.SImon.siconc.gn.latest"
 
         # reset the config
         monkeypatch.delenv("ROOCS_CONFIG")
@@ -296,16 +272,14 @@ def test_unknown_fpath_force():
     dm_force = project_utils.DatasetMapper(dset, force=True)
 
     assert dm_force.files == [
-        "/tmp/tmpxi6d78ng/subset_tttaum9d/"
-        "rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_19850116-20141216.nc"
+        "/tmp/tmpxi6d78ng/subset_tttaum9d/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_19850116-20141216.nc"
     ]
     assert dm_force.data_path == "/tmp/tmpxi6d78ng/subset_tttaum9d"
     assert dm_force.ds_id is None
 
     files = project_utils.dset_to_filepaths(dset, force=True)
     assert files == [
-        "/tmp/tmpxi6d78ng/subset_tttaum9d/"
-        "rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_19850116-20141216.nc"
+        "/tmp/tmpxi6d78ng/subset_tttaum9d/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_19850116-20141216.nc"
     ]
 
 
@@ -317,20 +291,14 @@ class TestExceptions:
 
         with pytest.raises(self.InvalidProject) as exc:
             project_utils.DatasetMapper(dset)
-        assert (
-            str(exc.value)
-            == "The project could not be identified and force was set to false"
-        )
+        assert str(exc.value) == "The project could not be identified and force was set to false"
 
     def test_unknown_project_no_force(self):
         dset = "unknown_project.data1.data2.data3.data4"
 
         with pytest.raises(self.InvalidProject) as exc:
             project_utils.DatasetMapper(dset)
-        assert (
-            str(exc.value)
-            == "The project could not be identified and force was set to false"
-        )
+        assert str(exc.value) == "The project could not be identified and force was set to false"
 
 
 class TestFileMapper:
@@ -353,10 +321,7 @@ class TestFileMapper:
             "/badc/cmip6/data/CMIP6/CMIP/MIROC/MIROC6/amip/r1i1p1f1/day/tas/gn/latest"
             "/tas_day_MIROC6_amip_r1i1p1f1_gn_19890101-19981231.nc",
         ]
-        assert (
-            dm.data_path
-            == "/badc/cmip6/data/CMIP6/CMIP/MIROC/MIROC6/amip/r1i1p1f1/day/tas/gn/latest"
-        )
+        assert dm.data_path == "/badc/cmip6/data/CMIP6/CMIP/MIROC/MIROC6/amip/r1i1p1f1/day/tas/gn/latest"
         assert dm.ds_id == "c3s-cmip6.CMIP.MIROC.MIROC6.amip.r1i1p1f1.day.tas.gn.latest"
 
 

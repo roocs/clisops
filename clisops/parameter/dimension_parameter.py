@@ -1,3 +1,5 @@
+"""Averaging dimensions parameter for clisops operations."""
+
 from collections.abc import Sequence
 
 from clisops.exceptions import InvalidParameterValue
@@ -38,16 +40,15 @@ class DimensionParameter(_BaseParameter):
                 raise InvalidParameterValue("Each dimension must be a string.")
 
             if item not in known_coord_types:
-                raise InvalidParameterValue(
-                    f"Dimensions for averaging must be one of {known_coord_types}"
-                )
+                raise InvalidParameterValue(f"Dimensions for averaging must be one of {known_coord_types}")
 
         return tuple(value)
 
     def asdict(self):
-        """Returns a dictionary of the dimensions"""
+        """Returns a dictionary of the dimensions."""
         if self.value is not None:
             return {"dims": self.value}
 
     def __str__(self):
-        return f"Dimensions to average over:" f"\n {self.value}"
+        """Returns a string representation of the dimensions."""
+        return f"Dimensions to average over:\n {self.value}"

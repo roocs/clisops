@@ -2,11 +2,10 @@ import os
 
 import pytest
 import xarray as xr
-from packaging.version import Version
-
-from clisops.core.average import XESMF_MINIMUM_VERSION  # noqa
+from clisops.core.regrid import XESMF_MINIMUM_VERSION
 from clisops.exceptions import InvalidParameterValue
 from clisops.ops.average import average_over_dims, average_shape, average_time
+from packaging.version import Version
 
 try:
     import xesmf
@@ -24,18 +23,12 @@ def _check_output_nc(result, fname="output_001.nc"):
 
 
 def _load_ds(fpath):
-    return xr.open_mfdataset(
-        fpath, decode_times=xr.coders.CFDatetimeCoder(use_cftime=True)
-    )
+    return xr.open_mfdataset(fpath, decode_times=xr.coders.CFDatetimeCoder(use_cftime=True))
 
 
 def test_average_basic_data_array(nimbus):
-    ds = xr.open_dataset(
-        nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc")
-    )
-    result = average_over_dims(
-        ds.tas, dims=["time"], ignore_undetected_dims=False, output_type="xarray"
-    )
+    ds = xr.open_dataset(nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"))
+    result = average_over_dims(ds.tas, dims=["time"], ignore_undetected_dims=False, output_type="xarray")
     assert "time" not in result[0]
 
 
@@ -107,9 +100,7 @@ def test_average_lat_nc(tmpdir, mini_esgf_data):
         file_namer="standard",
     )
 
-    _check_output_nc(
-        result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-22991216_avg-y.nc"
-    )
+    _check_output_nc(result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-22991216_avg-y.nc")
 
 
 def test_average_lon_nc(tmpdir, mini_esgf_data):
@@ -122,9 +113,7 @@ def test_average_lon_nc(tmpdir, mini_esgf_data):
         file_namer="standard",
     )
 
-    _check_output_nc(
-        result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-22991216_avg-x.nc"
-    )
+    _check_output_nc(result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-22991216_avg-x.nc")
 
 
 def test_average_level_nc(nimbus, tmpdir):
@@ -203,10 +192,7 @@ def test_dim_not_found(mini_esgf_data):
             ignore_undetected_dims=False,
             output_type="xarray",
         )
-    assert (
-        str(exc.value)
-        == "Requested dimensions were not found in input dataset: {'level'}."
-    )
+    assert str(exc.value) == "Requested dimensions were not found in input dataset: {'level'}."
 
 
 def test_dim_not_found_ignore(mini_esgf_data):
@@ -262,7 +248,7 @@ def test_average_multiple_shapes_xarray(mini_esgf_data, clisops_test_data):
         output_type="xarray",
     )
 
-    assert result[0].geom.size > int(1)
+    assert result[0].geom.size > 1
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MESSAGE)
@@ -271,7 +257,7 @@ def test_average_shape_no_shape(mini_esgf_data):
     with pytest.raises(InvalidParameterValue) as exc:
         average_shape(
             ds=mini_esgf_data["CMIP6_TAS_ONE_TIME_STEP"],
-            shape=None,  # noqa
+            shape=None,
             variable=None,
             output_type="xarray",
         )
@@ -339,9 +325,7 @@ def test_average_over_months(mini_esgf_data):
         output_type="xarray",
     )
 
-    time_length = (
-        ds.time.values[-1].year - ds.time.values[0].year + 1
-    ) * 12  # get number of months
+    time_length = (ds.time.values[-1].year - ds.time.values[0].year + 1) * 12  # get number of months
 
     assert result[0].time.shape == (time_length,)
     assert result[0].time.values[0].isoformat() == "1850-01-01T00:00:00"
@@ -363,7 +347,7 @@ def test_average_time_no_freq(mini_esgf_data):
         # average over time
         average_time(
             mini_esgf_data["CMIP6_SICONC_DAY"],
-            freq=None,  # noqa
+            freq=None,
             output_type="xarray",
         )
     assert str(exc.value) == "At least one frequency for averaging must be provided"
@@ -377,10 +361,7 @@ def test_average_time_incorrect_freq(mini_esgf_data):
             freq="week",
             output_type="xarray",
         )
-    assert (
-        str(exc.value)
-        == "Time frequency for averaging must be one of ['day', 'month', 'year']."
-    )
+    assert str(exc.value) == "Time frequency for averaging must be one of ['day', 'month', 'year']."
 
 
 def test_average_time_file_name(tmpdir, mini_esgf_data):
@@ -391,9 +372,7 @@ def test_average_time_file_name(tmpdir, mini_esgf_data):
         output_dir=tmpdir,
     )
 
-    _check_output_nc(
-        result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_20050101-22990101_avg-year.nc"
-    )
+    _check_output_nc(result, fname="tas_mon_HadGEM2-ES_rcp85_r1i1p1_20050101-22990101_avg-year.nc")
 
 
 def test_average_time_cordex(mini_esgf_data):
@@ -411,9 +390,7 @@ def test_average_time_cordex(mini_esgf_data):
         output_type="xarray",
     )
 
-    time_length = (
-        ds.time.values[-1].year - ds.time.values[0].year + 1
-    ) * 12  # get number of months
+    time_length = (ds.time.values[-1].year - ds.time.values[0].year + 1) * 12  # get number of months
 
     assert result[0].time.shape == (time_length,)
     assert result[0].time.values[0].isoformat() == "2071-01-01T00:00:00"
