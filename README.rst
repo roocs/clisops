@@ -9,7 +9,7 @@ clisops - climate simulation operations
 +----------------------------+---------------------------------+
 | Open Source                | |license|                       |
 +----------------------------+---------------------------------+
-| Coding Standards           | |black| |isort| |pre-commit|    |
+| Coding Standards           | |ruff| |pre-commit|             |
 +----------------------------+---------------------------------+
 | Development Status         | |status| |build| |coveralls|    |
 +----------------------------+---------------------------------+
@@ -102,6 +102,10 @@ This package was created with ``Cookiecutter`` and the ``audreyr/cookiecutter-py
 .. |pypi| image:: https://img.shields.io/pypi/v/clisops.svg
         :target: https://pypi.python.org/pypi/clisops
         :alt: Python Package Index Build
+
+.. |ruff| image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
+        :target: https://github.com/astral-sh/ruff
+        :alt: Ruff
 
 .. |status| image:: https://www.repostatus.org/badges/latest/active.svg
         :target: https://www.repostatus.org/#active
