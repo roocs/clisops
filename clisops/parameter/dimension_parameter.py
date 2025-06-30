@@ -51,7 +51,7 @@ class DimensionParameter(_BaseParameter):
         -------
         dict or None
             A dictionary with a single key "dims" containing the dimensions to average over.
-         If no dimensions are specified, returns None.
+            If no dimensions are specified, returns None.
         """
         if self.value is not None:
             return {"dims": self.value}
