@@ -547,13 +547,14 @@ class Grid:
 
         return False
 
-    def _apply_lsm(self, mask: str = None) -> bool:
+    def _apply_lsm(self, mask: str | None = None) -> bool:
         """
         Detect mask helper function.
 
         Parameters
         ----------
         self: Grid
+            The Grid object to which the mask will be applied.
         mask: str, optional
             Whether to mask "ocean" cells or "land" cells. The default is None.
 
@@ -566,7 +567,6 @@ class Grid:
         -------
         bool
             Whether self.lsm was assigned to a 2D-mask in form of a xr.DataArray or not.
-
         """
         if any(maskvar in self.ds for maskvar in ["sftlf", "lsm"]) and mask is not None:
             if "sftlf" in self.ds:

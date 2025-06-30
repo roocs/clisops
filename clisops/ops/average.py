@@ -57,22 +57,28 @@ def average_over_dims(
 
     Parameters
     ----------
-    ds : Union[xr.Dataset, str]
+    ds : xr.Dataset or str
         Xarray dataset.
-    dims : Optional[Union[Sequence[{"time", "level", "latitude", "longitude"}], DimensionParameter]]
+    dims : Sequence of str or DimensionParameter, optional
         The dimensions over which to apply the average. If None, none of the dimensions are averaged over. Dimensions
         must be one of ["time", "level", "latitude", "longitude"].
     ignore_undetected_dims : bool
         If the dimensions specified are not found in the dataset, an Exception will be raised if set to True.
         If False, an exception will not be raised and the other dimensions will be averaged over. Default = False
-    output_dir : Optional[Union[str, Path]]
+    output_dir : str or Path, optional
+        The directory where the output files will be saved. If None, the output will not be saved to disk.
     output_type : {"netcdf", "nc", "zarr", "xarray"}
+        The format of the output files. If "xarray", the output will be an xarray Dataset.
+        If "netcdf", "nc", or "zarr", the output will be saved to disk in the specified format.
     split_method : {"time:auto"}
+        The method to split the output files. Currently only "time:auto" is supported, which will
     file_namer : {"standard", "simple"}
+        The file namer to use for generating output file names.
+        "standard" uses a more descriptive naming convention, while "simple" uses a numbered sequence.
 
     Returns
     -------
-    List[Union[xr.Dataset, str]]
+    list of xr.Dataset or str
         A list of the outputs in the format selected; str corresponds to file paths if the
         output format selected is a file.
 
@@ -163,7 +169,6 @@ def average_shape(
     | output_type: "netcdf"
     | split_method: "time:auto"
     | file_namer: "standard"
-
     """
     op = AverageShape(**locals())
     return op.process()
@@ -205,6 +210,7 @@ def average_time(
     file_namer: str = "standard",
 ) -> list[xr.Dataset | str]:
     """
+    Calculate an average over time for a given frequency.
 
     Parameters
     ----------
