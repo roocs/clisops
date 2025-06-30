@@ -794,6 +794,8 @@ def test_compare_grid_hash_dict_and_verbose(capfd):
 
 def test_to_netcdf(tmp_path, mini_esgf_data):
     """Test if grid file is properly written to disk using to_netcdf method."""
+    pytest.importorskip("netCDF4", minversion="1.5.7", reason="Malformed test data only works with netCDF4 engine.")
+
     # Create Grid object
     dsA = xr.open_dataset(mini_esgf_data["CMIP6_TAS_PRECISION_A"])
     gA = Grid(ds=dsA)
@@ -801,7 +803,7 @@ def test_to_netcdf(tmp_path, mini_esgf_data):
     # Save to disk
     outdir = Path(tmp_path, "grids")
     outfile = "grid_test.nc"
-    gA.to_netcdf(folder=outdir, filename=outfile)
+    gA.to_netcdf(folder=outdir, filename=outfile, engine="netcdf4")
 
     # Read from disk - ensure outfile has been created and lockfile deleted
     assert os.path.isfile(Path(outdir, outfile))
@@ -1189,6 +1191,8 @@ def test_Weights_compute(tmp_path):
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_Weights_compute_unstructured(tmp_path, mini_esgf_data):
     """Test the generation of Weights for unstructured grids with the _compute method."""
+    pytest.importorskip("netCDF4", minversion="1.5.7", reason="Malformed test data only works with netCDF4 engine.")
+
     ds = xr.open_dataset(
         mini_esgf_data["CMIP6_UNSTR_ICON_A"],
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
@@ -1474,7 +1478,9 @@ class TestRegrid:
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
 def test_duplicated_cells_renormalization(tmp_path, mini_esgf_data):
-    # todo: Should probably be an xesmf test as well, will do PR there in the future
+    # TODO: Should probably be an xesmf test as well, will do PR there in the future
+    pytest.importorskip("netCDF4", minversion="1.5.7", reason="Malformed test data only works with netCDF4 engine.")
+
     with xr.open_dataset(
         mini_esgf_data["CMIP6_STAGGERED_UCOMP"],
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),

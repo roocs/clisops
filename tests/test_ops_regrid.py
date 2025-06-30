@@ -158,15 +158,17 @@ def test_regrid_ATLAS_datasets(tmpdir, dset, mini_esgf_data):
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_ATLAS_CORDEX(tmpdir, caplog, mini_esgf_data):
     """Test regridding for ATLAS CORDEX dataset."""
-    import netCDF4
+    netcdf4 = pytest.importorskip(
+        "netCDF4", minversion="1.5.7", reason="Malformed test data only works with netCDF4 engine."
+    )
 
     with ContextLogger(caplog) as _logger:
         _logger.add(sys.stdout, level="INFO")
         caplog.set_level("INFO", logger="clisops")
 
-        _logger.info("netcdf4-python version: %s" % netCDF4.__version__)
-        _logger.info("HDF5 lib version:       %s" % netCDF4.__hdf5libversion__)
-        _logger.info("netcdf lib version:     %s" % netCDF4.__netcdf4libversion__)
+        _logger.info("netcdf4-python version: %s" % netcdf4.__version__)
+        _logger.info("HDF5 lib version:       %s" % netcdf4.__hdf5libversion__)
+        _logger.info("netcdf lib version:     %s" % netcdf4.__netcdf4libversion__)
 
     ds = xr.open_dataset(
         mini_esgf_data["ATLAS_v0_CORDEX_ANT"],
@@ -204,6 +206,8 @@ def test_regrid_ATLAS_CORDEX(tmpdir, caplog, mini_esgf_data):
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_keep_attrs(tmp_path, mini_esgf_data):
     """Test if dataset and variable attributes are kept / removed as specified."""
+    pytest.importorskip("netCDF4", minversion="1.5.7", reason="Malformed test data only works with netCDF4 engine.")
+
     fpath = mini_esgf_data["CMIP6_TOS_ONE_TIME_STEP"]
     method = "nearest_s2d"
 
@@ -302,6 +306,8 @@ class TestRegridHalo:
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_shifted_lon_frame(tmp_path, mini_esgf_data):
     """Test regridding of dataset with shifted longitude frame."""
+    pytest.importorskip("netCDF4", minversion="1.5.7", reason="Malformed test data only works with netCDF4 engine.")
+
     fpath = mini_esgf_data["CMIP6_IITM_EXTENT"]
     ds = xr.open_dataset(fpath).isel(time=0)
 
@@ -347,6 +353,8 @@ def test_regrid_same_grid_exception(tmpdir, tmp_path):
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
 def test_regrid_cmip6_nc_consistent_bounds_and_coords(tmpdir, mini_esgf_data):
     """Tests clisops regrid function and check metadata added by xarray"""
+    pytest.importorskip("netCDF4", minversion="1.5.7", reason="Malformed test data only works with netCDF4 engine.")
+
     result = regrid(
         ds=mini_esgf_data["CMIP6_ATM_VERT_ONE_TIMESTEP"],
         method="nearest_s2d",

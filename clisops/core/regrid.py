@@ -1470,6 +1470,7 @@ class Grid:
         folder: str | Path | None = "./",
         filename: str | None = "",
         grid_format: str | None = "CF",
+        engine: str | None = None,
         keep_attrs: bool | None = True,
     ):
         """
@@ -1487,6 +1488,8 @@ class Grid:
         grid_format : str, optional
             The format the grid information shall be stored as (in terms of variable attributes and dimensions).
             The default is "CF", which is also the only supported output format currently supported.
+        engine : str, optional
+            The engine to use for writing the netCDF file. If None, the default engine will be used.
         keep_attrs : bool, optional
             Whether to store the global attributes in the output netCDF file. The default is True.
 
@@ -1497,7 +1500,12 @@ class Grid:
                 raise Exception("Target directory and filename have to be passed separately.")
             filename = Path(folder, filename).as_posix()
         else:
-            filename = Path(folder, "grid_" + self.hash + ".nc").as_posix()
+            filename = Path(folder, f"grid_{self.hash}.nc").as_posix()
+
+        if not isinstance(engine, str):
+            engine_kwargs = {}
+        else:
+            engine_kwargs = {"engine": engine}
 
         # Write to disk (just horizontal coordinate variables + global attrs)
         #  if not written by another process
@@ -1539,7 +1547,7 @@ class Grid:
                         grid_tmp.ds[grid_tmp.lon_bnds].encoding["_FillValue"] = None
 
                     # Call to_netcdf method of xarray.Dataset
-                    grid_tmp.ds.to_netcdf(filename)
+                    grid_tmp.ds.to_netcdf(filename, **engine_kwargs)
                 finally:
                     lock_obj.release()
         else:
@@ -1572,7 +1580,6 @@ class Weights:
     format: str, optional
         Not yet implemented. When reading weights from disk, the input format may be specified.
         If omitted, there will be an attempt to detect the format. The default is None.
-
     """
 
     @require_xesmf

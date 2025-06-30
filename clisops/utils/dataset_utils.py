@@ -484,7 +484,7 @@ def _get_kwargs_for_opener(otype, **kwargs):
         "target_options": {},
     }
 
-    if otype.lower().startswith("multi"):
+    if otype.lower() == "multi":
         args["combine"] = "by_coords"
         allowed_args.extend(allowed_multi_args)
     elif otype.lower() == "zarr":
