@@ -8,8 +8,20 @@ from clisops.utils.dataset_utils import get_main_variable
 from clisops.utils.output_utils import get_format_extension
 
 
-def get_file_namer(name):
-    """Returns the correct filenamer from the provided name."""
+def get_file_namer(name: str) -> object:
+    """
+    Return the correct filenamer from the provided name.
+
+    Parameters
+    ----------
+    name : str
+        The name of the file namer to return. Options are "standard" or "simple".
+
+    Returns
+    -------
+    _BaseFileNamer
+        The file namer class corresponding to the provided name.
+    """
     file_namer = {"standard": StandardFileNamer, "simple": SimpleFileNamer}
 
     return file_namer.get(name, StandardFileNamer)
@@ -54,7 +66,7 @@ class StandardFileNamer(SimpleFileNamer):
 
     def get_file_name(self, ds, fmt="nc") -> str:
         """
-        Constructs file name.
+        Construct file name.
 
         Parameters
         ----------

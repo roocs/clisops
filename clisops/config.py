@@ -12,7 +12,7 @@ _CONFIG = {}
 
 def reload_config(package: str | Path | None = None) -> dict[str, Any]:
     """
-    Reloads the configuration from the config file.
+    Reload the configuration from the config file.
 
     Used for forcibly reloading the configuration from the config file, particularly useful for pytesting mock imports.
 
@@ -39,7 +39,7 @@ def reload_config(package: str | Path | None = None) -> dict[str, Any]:
 
 def get_config(package=None) -> dict[str, Any]:
     """
-    Returns the configuration dictionary.
+    Return the configuration dictionary.
 
     If the configuration has not been loaded yet, it will load it from the config file.
 

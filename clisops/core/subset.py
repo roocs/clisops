@@ -49,7 +49,19 @@ from loguru import logger
 
 
 def get_lat(ds: xarray.Dataset | xarray.DataArray) -> xarray.DataArray:
-    """Get latitude coordinate from a Dataset or DataArray."""
+    """
+    Get latitude coordinate from a Dataset or DataArray.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset or xarray.DataArray
+        Input dataset or data array.
+
+    Returns
+    -------
+    xarray.DataArray
+        The latitude coordinate from the dataset or data array.
+    """
     try:
         return ds.cf["latitude"]
     except KeyError:
@@ -57,17 +69,43 @@ def get_lat(ds: xarray.Dataset | xarray.DataArray) -> xarray.DataArray:
 
 
 def get_lon(ds: xarray.Dataset | xarray.DataArray) -> xarray.DataArray:
-    """Get longitude coordinate from a Dataset or DataArray."""
+    """
+    Get longitude coordinate from a Dataset or DataArray.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset or xarray.DataArray
+        Input dataset or data array.
+
+    Returns
+    -------
+    xarray.DataArray
+        The longitude coordinate from the dataset or data array.
+    """
     try:
         return ds.cf["longitude"]
     except KeyError:
         return ds.lon
 
 
-def check_start_end_dates(func: Callable) -> Callable:
+def check_start_end_dates(func: Callable) -> Callable:  # numpydoc ignore=GL08
     @wraps(func)
     def func_checker(*args, **kwargs):
-        """Verify that start and end dates are valid in a time subsetting function."""
+        """
+        Verify that start and end dates are valid in a time subsetting function.
+
+        Parameters
+        ----------
+        *args : Sequence of any
+            Positional arguments passed to the wrapped function.
+        **kwargs : dict
+            Keyword arguments passed to the wrapped function.
+
+        Returns
+        -------
+        func
+            The wrapped function with modified arguments if the conditions are met.
+        """
         da = args[0]
         if "start_date" not in kwargs or kwargs["start_date"] is None:
             # use string for first year only - .sel() will include all time steps
@@ -136,10 +174,24 @@ def check_start_end_dates(func: Callable) -> Callable:
     return func_checker
 
 
-def check_start_end_levels(func: Callable) -> Callable:
+def check_start_end_levels(func: Callable) -> Callable:  # numpydoc ignore=GL08
     @wraps(func)
     def func_checker(*args, **kwargs):
-        """Verify that first and last levels are valid in a level subsetting function."""
+        """
+        Verify that first and last levels are valid in a level subsetting function.
+
+        Parameters
+        ----------
+        *args : Sequence of any
+            Positional arguments passed to the wrapped function.
+        **kwargs : dict
+            Keyword arguments passed to the wrapped function.
+
+        Returns
+        -------
+        func
+            The wrapped function with modified arguments if the conditions are met.
+        """
         da = args[0]
 
         try:
@@ -210,7 +262,7 @@ def check_start_end_levels(func: Callable) -> Callable:
     return func_checker
 
 
-def check_lons(func: Callable) -> Callable:
+def check_lons(func: Callable) -> Callable:  # numpydoc ignore=GL08
     @wraps(func)
     def func_checker(*args, **kwargs):
         """
@@ -219,6 +271,18 @@ def check_lons(func: Callable) -> Callable:
         Examines an xarray object longitude dimensions and depending on the extent (either -180 to +180 or 0 to +360),
         will reformat user-specified lon values to be synonymous with xarray object boundaries.
         Returns a numpy array of reformatted `lon` or `lon_bnds` in kwargs with min() and max() values.
+
+        Parameters
+        ----------
+        *args : Sequence of any
+            Positional arguments passed to the wrapped function.
+        **kwargs : dict
+            Keyword arguments passed to the wrapped function.
+
+        Returns
+        -------
+        func
+            The wrapped function with modified arguments if the conditions are met.
         """
         if "lon_bnds" in kwargs:
             lon = "lon_bnds"
@@ -255,7 +319,7 @@ def check_lons(func: Callable) -> Callable:
     return func_checker
 
 
-def check_levels_exist(func: Callable) -> Callable:
+def check_levels_exist(func: Callable) -> Callable:  # numpydoc ignore=GL08
     @wraps(func)
     def func_checker(*args, **kwargs):
         """
@@ -265,6 +329,18 @@ def check_levels_exist(func: Callable) -> Callable:
         re-sort them to match the array in the input data.
 
         Modifies the "level_values" list in `kwargs` in place, if required.
+
+        Parameters
+        ----------
+        *args : Sequence of any
+            Positional arguments passed to the wrapped function.
+        **kwargs : dict
+            Keyword arguments passed to the wrapped function.
+
+        Returns
+        -------
+        func
+            The wrapped function with modified arguments if the conditions are met.
         """
         da = args[0]
 
@@ -290,7 +366,7 @@ def check_levels_exist(func: Callable) -> Callable:
     return func_checker
 
 
-def check_datetimes_exist(func: Callable) -> Callable:
+def check_datetimes_exist(func: Callable) -> Callable:  # numpydoc ignore=GL08
     @wraps(func)
     def func_checker(*args, **kwargs):
         """
@@ -300,6 +376,18 @@ def check_datetimes_exist(func: Callable) -> Callable:
         re-sort them to match the array in the input data.
 
         Modifies the "time_values" list in `kwargs` in place, if required.
+
+        Parameters
+        ----------
+        *args : Sequence of any
+            Positional arguments passed to the wrapped function.
+        **kwargs : dict
+            Keyword arguments passed to the wrapped function.
+
+        Returns
+        -------
+        func
+            The wrapped function with modified arguments if the conditions are met.
         """
         da = args[0]
 
@@ -326,7 +414,7 @@ def check_datetimes_exist(func: Callable) -> Callable:
     return func_checker
 
 
-def convert_lat_lon_to_da(func: Callable) -> Callable:
+def convert_lat_lon_to_da(func: Callable) -> Callable:  # numpydoc ignore=GL08
     @wraps(func)
     def func_checker(*args, **kwargs):
         """
@@ -338,6 +426,18 @@ def convert_lat_lon_to_da(func: Callable) -> Callable:
 
         If the input are not already DataArrays, the new lon and lat objects are 1D DataArrays
         with dimension "site".
+
+        Parameters
+        ----------
+        *args : Sequence of any
+            Positional arguments passed to the wrapped function.
+        **kwargs : dict
+            Keyword arguments passed to the wrapped function.
+
+        Returns
+        -------
+        func
+            The wrapped function with modified arguments if the conditions are met.
         """
         lat = kwargs.pop("lat", None)
         lon = kwargs.pop("lon", None)
@@ -362,7 +462,7 @@ def convert_lat_lon_to_da(func: Callable) -> Callable:
     return func_checker
 
 
-def wrap_lons_and_split_at_greenwich(func: Callable) -> Callable:
+def wrap_lons_and_split_at_greenwich(func: Callable) -> Callable:  # numpydoc ignore=GL08
     @wraps(func)
     def func_checker(*args, **kwargs):
         """
@@ -373,6 +473,18 @@ def wrap_lons_and_split_at_greenwich(func: Callable) -> Callable:
         transforming the lons from WGS84 to WGS84 +lon_wrap=180 (longitudes from 0 to 360).
 
         Returns a GeoDataFrame with the new features in a wrap_lon WGS84 projection if needed.
+
+        Parameters
+        ----------
+        *args : Sequence of any
+            Positional arguments passed to the wrapped function.
+        **kwargs : dict
+            Keyword arguments passed to the wrapped function.
+
+        Returns
+        -------
+        func
+            The wrapped function with modified arguments if the conditions are met.
         """
         try:
             poly = kwargs["poly"]
@@ -468,16 +580,17 @@ def create_mask(
     y_dim : xarray.DataArray
         Y or latitudinal dimension of the xarray object. Can also be given through `ds_in`.
     poly : gpd.GeoDataFrame
-        A GeoDataFrame used to create the xarray.DataArray mask. If its index doesn't have an
-        integer dtype, it will be reset to integers, which will be used in the mask.
+        A GeoDataFrame used to create the xarray.DataArray mask.
+        If its index doesn't have an integer dtype, it will be reset to integers, which will be used in the mask.
     wrap_lons : bool
-        Shift vector longitudes by -180,180 degrees to 0,360 degrees; Default = False
+        Shift vector longitudes by -180,180 degrees to 0,360 degrees; Default = False.
     check_overlap : bool
         Perform a check to verify if shapes contain overlapping geometries.
 
     Returns
     -------
     xarray.DataArray
+        The mask array.
 
     Examples
     --------
@@ -499,7 +612,6 @@ def create_mask(
         # Extra step to retrieve the names of those polygons stored in another column (here "id")
         region_names = xr.DataArray(polys.id, dims=("regions",))
         ds = ds.assign_coords(regions_names=region_names)
-
     """
     if check_overlap:
         _check_has_overlaps(polygons=poly)
@@ -728,17 +840,16 @@ def shape_bbox_indexer(
     Returns
     -------
     dict
-        xarray indexer along native dataset coordinates, to be used as an argument to `isel`.
-
-    Examples
-    --------
-    >>> indexer = shape_bbox_indexer(ds, poly)
-    >>> ds.isel(indexer)
+        An xarray indexer along native dataset coordinates, to be used as an argument to `isel`.
 
     Notes
     -----
     This is used in particular to restrict the domain of a dataset before computing the weights for a spatial average.
 
+    Examples
+    --------
+    >>> indexer = shape_bbox_indexer(ds, poly)
+    >>> ds.isel(indexer)
     """
     # Cling wrap around shapes: GeoSeries -> Polygon
     # The first `convex_hull` is necessary to remove any holes in the polygon.
@@ -836,8 +947,8 @@ def create_weight_masks(
     Parameters
     ----------
     ds_in : xarray.DataArray or xarray.Dataset
-        xarray object containing the grid information, as understood by xESMF.
-        For 2D lat/lon coordinates, the bounded arrays are required,
+        An xarray object containing the grid information, as understood by xESMF.
+        For 2D lat/lon coordinates, the bounded arrays are required.
     poly : gpd.GeoDataFrame
         GeoDataFrame used to create the xarray.DataArray mask.
         One mask will be created for each row in the dataframe.
@@ -863,7 +974,6 @@ def create_weight_masks(
 
         # Get a weight mask for each polygon in the shape file
         mask = create_weight_masks(x_dim=ds.lon, y_dim=ds.lat, poly=polys)
-
     """
     try:
         from xesmf import SpatialAverager
@@ -1152,15 +1262,15 @@ def subset_bbox(
         Last level of the subset.
         Can be either an integer or float.
         Defaults to last level of input data-array.
-    time_values: sequence of str, optional
+    time_values : sequence of str, optional
         A list of datetime strings to subset.
-    level_values: sequence of int or float, optional
+    level_values : sequence of int or float, optional
         A list of level values to select.
 
     Returns
     -------
     Union[xarray.DataArray, xarray.Dataset]
-        Subsetted xarray.DataArray or xarray.Dataset
+        Subsetted xarray.DataArray or xarray.Dataset.
 
     Notes
     -----
@@ -1302,16 +1412,15 @@ def assign_bounds(
 
     Parameters
     ----------
-    bounds : Tuple[Optional[float], Optional[float]]
+    bounds : tuple[float or None, float or None]
         Boundaries.
     coord : xarray.DataArray
         Grid coordinates.
 
     Returns
     -------
-    Tuple[Optional[float], Optional[float]]
+    tuple[float or None, float or None]
         Lower and upper grid boundaries.
-
     """
     if bounds[0] > bounds[1]:
         bounds = np.flip(bounds)
@@ -1453,7 +1562,7 @@ def subset_gridpoint(
     Returns
     -------
     xarray.DataArray or xarray.Dataset
-         Subsetted xarray.DataArray or xarray.Dataset
+         Subsetted xarray.DataArray or xarray.Dataset.
 
     Examples
     --------
@@ -1546,7 +1655,7 @@ def subset_time(
 
     Parameters
     ----------
-    da : Union[xarray.DataArray, xarray.Dataset]
+    da : xarray.DataArray or xarray.Dataset
         Input data.
     start_date : str, optional
         Start date of the subset.
@@ -1559,8 +1668,12 @@ def subset_time(
 
     Returns
     -------
-    Union[xarray.DataArray, xarray.Dataset]
-        Subsetted xarray.DataArray or xarray.Dataset
+    xarray.DataArray or xarray.Dataset
+        Subsetted xarray.DataArray or xarray.Dataset.
+
+    Notes
+    -----
+    TODO: Add notes about different calendar types. Avoid "%Y-%m-31". If you want complete month use only "%Y-%m".
 
     Examples
     --------
@@ -1586,11 +1699,6 @@ def subset_time(
 
         # Subset with specific start_dates and end_dates
         tnSub = subset_time(ds.tasmin, start_date="1990-03-13", end_date="1990-08-17")
-
-    Notes
-    -----
-    TODO add notes about different calendar types. Avoid "%Y-%m-31". If you want complete month use only "%Y-%m".
-
     """
     return da.sel(time=slice(start_date, end_date))
 
@@ -1609,13 +1717,18 @@ def subset_time_by_values(
     ----------
     da : xarray.DataArray or xarray.Dataset
         Input data.
-    time_values : sequence[str], optional
-        Values for time. Default: ``None``
+    time_values : sequence of str, optional
+        Values for time. Default: `None`.
 
     Returns
     -------
     xarray.DataArray or xarray.Dataset
-        Subsetted xarray.DataArray or xarray.Dataset
+        Subsetted xarray.DataArray or xarray.Dataset.
+
+    Notes
+    -----
+    If any datetimes are not found, a ValueError will be raised.
+    The requested datetimes will automatically be reordered to match the order found in the input dataset.
 
     Examples
     --------
@@ -1629,12 +1742,6 @@ def subset_time_by_values(
         # Subset a selection of datetimes
         times = ["2015-01-01", "2018-12-05", "2021-06-06"]
         prSub = subset_time_by_values(ds.pr, time_values=times)
-
-    Notes
-    -----
-    If any datetimes are not found, a ValueError will be raised.
-    The requested datetimes will automatically be re-ordered to match the order in the
-    input dataset.
     """
     return da.sel(time=time_values)
 
@@ -1645,7 +1752,7 @@ def subset_time_by_components(
     time_components: dict | None = None,
 ) -> xarray.DataArray:
     """
-    Subsets by one or more time components (year, month, day etc).
+    Subset by one or more time components (year, month, day etc).
 
     Parameters
     ----------

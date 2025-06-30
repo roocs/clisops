@@ -5,6 +5,7 @@ import os
 import re
 import sys
 import warnings
+from collections.abc import Callable
 from pathlib import Path
 from types import FunctionType, ModuleType
 
@@ -21,13 +22,32 @@ __all__ = [
 ]
 
 
-def parse_size(size):
+def parse_size(size: str) -> int:
     """
-
     Parse size string into number of bytes.
 
-    :param size: (str) size to parse in any unit
-    :return: (int) number of bytes
+    Parses a size string with a number and a unit (e.g., "10MB", "2GB")
+    into an integer representing the number of bytes.
+
+    Parameters
+    ----------
+    size : str
+        The size string to parse, which should consist of a number followed by a unit (e.g., "10MB", "2GB").
+
+    Returns
+    -------
+    int
+        The size in bytes as an integer.
+
+    Raises
+    ------
+    ValueError
+        If the size string does not match the expected format or if the unit is not recognized.
+
+    Examples
+    --------
+    >>> parse_size("10MB")
+    10485760
     """
     n, suffix = re.match(r"^(\d+\.?\d*)([a-zA-Z]+)$", size).groups()
 
@@ -42,7 +62,19 @@ def parse_size(size):
 
 
 def expand_wildcards(paths: str | Path) -> list:
-    """Expand the wildcards that may be present in Paths."""
+    """
+    Expand the wildcards that may be present in Paths.
+
+    Parameters
+    ----------
+    paths : str or Path
+        The path or paths to expand, which may contain wildcards (e.g., `*.nc`).
+
+    Returns
+    -------
+    list
+        A list of Path objects that match the expanded wildcards.
+    """
     path = Path(paths).expanduser()
     parts = path.parts[1:] if path.is_absolute() else path.parts
     return [f for f in Path(path.root).glob(str(Path("").joinpath(*parts)))]
@@ -55,11 +87,35 @@ def require_module(
     min_version: str | None = "0.0.0",
     max_supported_version: str | None = None,
     max_supported_warning: str | None = None,
-):
-    """Ensure that module is installed before function/method is called, decorator."""
+) -> Callable:
+    """
+    Ensure that module is installed before function/method is called, decorator.
+
+    Parameters
+    ----------
+    func : FunctionType
+        The function to be decorated.
+    module : ModuleType
+        The module to check for availability.
+    module_name : str
+        The name of the module to check.
+    min_version : str, optional
+        The minimum version of the module required. Defaults to "0.0.0".
+    max_supported_version : str, optional
+        The maximum supported version of the module.
+        If provided, a warning will be issued if the module version exceeds this.
+        Defaults to None, meaning no maximum version check is performed.
+    max_supported_warning : str, optional
+        The warning message to display if the module version exceeds the maximum supported version.
+
+    Returns
+    -------
+    FunctionType
+        The decorated function that checks for the module's availability and version before execution.
+    """
 
     @functools.wraps(func)
-    def wrapper_func(*args, **kwargs):
+    def wrapper_func(*args, **kwargs):  # numpydoc ignore=GL08
         exception_msg = f"Package {module_name} >= {min_version} is required to use {func}."
         if module is None:
             raise ModuleNotFoundError(exception_msg)
@@ -80,13 +136,27 @@ def require_module(
     return wrapper_func
 
 
-def check_dir(func: FunctionType, dr: str | Path):
-    """Ensure that directory dr exists before function/method is called, decorator."""
+def check_dir(func: FunctionType, dr: str | Path) -> Callable:
+    """
+    Ensure that directory 'dr' exists before function/method is called, decorator.
+
+    Parameters
+    ----------
+    func : FunctionType
+        The function to be decorated.
+    dr : str or Path
+        The directory path to check for existence.
+
+    Returns
+    -------
+    FunctionType
+        The decorated function that checks for the directory's existence before execution.
+    """
     if not os.path.isdir(dr):
         os.makedirs(dr)
 
     @functools.wraps(func)
-    def wrapper_func(*args, **kwargs):
+    def wrapper_func(*args, **kwargs):  # numpydoc ignore=GL08
         return func(*args, **kwargs)
 
     return wrapper_func
@@ -114,26 +184,28 @@ def enable_logging() -> list[int]:
     """
     logger.enable("clisops")
 
-    config = dict(
-        handlers=[
-            dict(
-                sink=sys.stdout,
-                format="<green>{time:YYYY-MM-DD HH:mm:ss.SSS Z UTC}</>"
+    config = {
+        "handlers": [
+            {
+                "sink": sys.stdout,
+                "format": "<green>{time:YYYY-MM-DD HH:mm:ss.SSS Z UTC}</>"
                 " <red>|</> <lvl>{level}</> <red>|</> <cyan>{name}:{function}:{line}</>"
                 " <red>|</> <lvl>{message}</>",
-                level="INFO",
-            ),
-            dict(
-                sink=sys.stderr,
-                format="<red>{time:YYYY-MM-DD HH:mm:ss.SSS Z UTC} | {level} | {name}:{function}:{line} | {message}</>",
-                level="WARNING",
-            ),
+                "level": "INFO",
+            },
+            {
+                "sink": sys.stderr,
+                "format": "<red>"
+                "{time:YYYY-MM-DD HH:mm:ss.SSS Z UTC} | {level} | {name}:{function}:{line} | {message}"
+                "</>",
+                "level": "WARNING",
+            },
         ]
-    )
+    }
     return logger.configure(**config)
 
 
-def _list_ten(list1d):
+def _list_ten(list1d: list) -> str:
     """
     Convert list to string of 10 list elements equally distributed to beginning and end of the list.
 

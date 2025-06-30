@@ -18,7 +18,14 @@ class InconsistencyError(Exception):
 
 
 class InvalidCollection(Exception):
-    """Raised when a collection is not valid or not available in the roocs.ini file."""
+    """
+    Raised when a collection is not valid or not available in the roocs.ini file.
+
+    Parameters
+    ----------
+    message : str
+        Custom error message to be displayed.
+    """
 
     def __init__(
         self,

@@ -47,20 +47,56 @@ def check_format(fmt: str) -> None:
         raise KeyError(f'Format not recognised: "{fmt}". Must be one of: {SUPPORTED_FORMATS}.')
 
 
-def get_format_writer(fmt):
-    """Finds the output method for the requested output format."""
+def get_format_writer(fmt: str) -> str | None:
+    """
+    Find the output method for the requested output format.
+
+    Parameters
+    ----------
+    fmt : str
+        The format for which to find the output method.
+
+    Returns
+    -------
+    str or None
+        The method to use for writing the output format, or None if no method is defined.
+    """
     check_format(fmt)
     return SUPPORTED_FORMATS[fmt]["method"]
 
 
-def get_format_extension(fmt):
-    """Finds the extension for the requested output format."""
+def get_format_extension(fmt: str) -> str:
+    """
+    Find the extension for the requested output format.
+
+    Parameters
+    ----------
+    fmt : str
+        The format for which to find the file extension.
+
+    Returns
+    -------
+    str
+        The file extension associated with the requested format.
+    """
     check_format(fmt)
     return SUPPORTED_FORMATS[fmt]["extension"]
 
 
-def get_format_engine(fmt):
-    """Finds the engine for the requested output format."""
+def get_format_engine(fmt: str) -> str:
+    """
+    Find the engine for the requested output format.
+
+    Parameters
+    ----------
+    fmt : str
+        The format for which to find the engine.
+
+    Returns
+    -------
+    str
+        The engine to use for writing the output format.
+    """
     check_format(fmt)
     return SUPPORTED_FORMATS[fmt]["engine"]
 
@@ -104,8 +140,22 @@ def filter_times_within(times: np.array, start: str | None = None, end: str | No
     return filtered
 
 
-def get_da(ds):
-    """Returns xr.DataArray when the format of ds may be either xr.Dataset or xr.DataArray."""
+def get_da(ds: xr.DataArray | xr.Dataset) -> xr.DataArray:
+    """
+    Return xr.DataArray when the format of ds may be either xr.Dataset or xr.DataArray.
+
+    If ds is an xr.Dataset, it will extract the main variable DataArray.
+
+    Parameters
+    ----------
+    ds : xr.Dataset or xr.DataArray
+        The dataset or data array to extract the main variable from.
+
+    Returns
+    -------
+    xr.DataArray
+        The main variable DataArray from the dataset.
+    """
     if isinstance(ds, xr.DataArray):
         da = ds
     else:
@@ -125,13 +175,11 @@ def get_time_slices(
     """
     Get time slices for a dataset or data array.
 
-    Take an xarray Dataset or DataArray, assume it can be split on the time axis
-    into a sequence of slices. Optionally, take a start and end date to specify
-    a sub-slice of the main time axis.
+    Take an xarray Dataset or DataArray, assume it can be split on the time axis into a sequence of slices.
+    Optionally, take a start and end date to specify a sub-slice of the main time axis.
 
-    Use the prescribed file size limit to generate a list of
-    ("YYYY-MM-DD", "YYYY-MM-DD") slices so that the output files do
-    not (significantly) exceed the file size limit.
+    Use the prescribed file size limit to generate a list of ("YYYY-MM-DD", "YYYY-MM-DD") slices
+    so that the output files do not (significantly) exceed the file size limit.
 
     Parameters
     ----------
@@ -144,7 +192,7 @@ def get_time_slices(
     end : str, optional
         A string specifying the end date in "YYYY-MM-DD" format.
     file_size_limit : str
-        a string specifying "<number><units>".
+        A string specifying "<number><units>".
 
     Returns
     -------
@@ -209,7 +257,6 @@ def get_chunk_length(da: xr.DataArray) -> int:
     -------
     int
         The length of the chunk to be used for the time dimension.
-
     """
     size = da.nbytes
     n_times = len(da.time.values)
@@ -319,6 +366,11 @@ class FileLock:
     Create and release a lockfile.
 
     Adapted from https://github.com/cedadev/cmip6-object-store/cmip6_zarr/file_lock.py
+
+    Parameters
+    ----------
+    fpath : str
+        The file path for the lock file to be created.
     """
 
     def __init__(self, fpath):

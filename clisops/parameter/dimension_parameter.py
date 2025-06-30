@@ -20,7 +20,6 @@ class DimensionParameter(_BaseParameter):
     exist in the dataset being operated on.
 
     Validates the dims input and parses the values into a sequence of strings.
-
     """
 
     allowed_input_types = [Sequence, str, dimensions, type(None)]
@@ -44,10 +43,19 @@ class DimensionParameter(_BaseParameter):
 
         return tuple(value)
 
-    def asdict(self):
-        """Returns a dictionary of the dimensions."""
+    def asdict(self) -> dict | None:
+        """
+        Return a dictionary of the dimensions.
+
+        Returns
+        -------
+        dict or None
+            A dictionary with a single key "dims" containing the dimensions to average over.
+         If no dimensions are specified, returns None.
+        """
         if self.value is not None:
             return {"dims": self.value}
+        return None
 
     def __str__(self):
         """Returns a string representation of the dimensions."""

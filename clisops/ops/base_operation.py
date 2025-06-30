@@ -13,7 +13,26 @@ from clisops.utils.output_utils import get_output, get_time_slices
 
 
 class Operation:
-    """Base class for all Operations."""
+    """
+    Base class for all Operations.
+
+    This class provides the common interface and functionality for all operations in clisops.
+
+    Parameters
+    ----------
+    ds : str or Path or xr.Dataset
+        The input dataset, which can be a path to a file or an xarray Dataset.
+    file_namer : str, optional
+        The file namer to use for output files. Default is "standard".
+    split_method : str, optional
+        The method to use for splitting the dataset into time slices. Default is "time:auto".
+    output_dir : str or Path or None, optional
+        The directory where output files will be saved. If None, no files will be saved. Default is None.
+    output_type : str, optional
+        The type of output to generate. Can be "netcdf", "zarr", or "xarray". Default is "netcdf".
+    **params : dict, optional
+        Additional parameters specific to the operation. These will be resolved in `self._resolve_params()`.
+    """
 
     def __init__(
         self,
@@ -205,9 +224,8 @@ class Operation:
 
         Returns
         -------
-        List[Union[xarray.Dataset, os.PathLike]]
-            A list of outputs, which might be NetCDF file paths, Zarr file paths, or xarray.Dataset
-
+        list of xr.Dataset or Path
+            A list of outputs, which might be NetCDF file paths, Zarr file paths, or xarray.Dataset.
         """
         # Create an empty list for outputs
         outputs = list()

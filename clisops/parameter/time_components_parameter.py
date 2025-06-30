@@ -40,14 +40,28 @@ class TimeComponentsParameter(_BaseParameter):
             raise InvalidParameterValue(f"Cannot create TimeComponentsParameter from: {self.input}")
 
     def asdict(self):
-        """Returns a dictionary of the time components."""
+        """
+        Return a dictionary of the time components.
+
+        Returns
+        -------
+        dict
+            A dictionary with a single key "time_components" containing the time components.
+        """
         # Just return the value, either a dict or None
         return {"time_components": self.value}
 
     def get_bounds(self):
         """
-        Returns a tuple of the (start, end) times, calculated from
-        the value of the parameter. Either will default to None.
+        Return a tuple of the (start, end) times, calculated from the value of the parameter.
+
+        Either will default to None.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the start and end times in ISO format.
+            If no year is specified, both will be None.
         """
         if "year" in self.value:
             start = f"{self.value['year'][0]}-01-01T00:00:00"

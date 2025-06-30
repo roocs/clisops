@@ -7,7 +7,7 @@ import numpy as np
 
 def to_isoformat(tm):
     """
-    Returns an ISO 8601 string from a time object (of different types).
+    Return an ISO 8601 string from a time object (of different types).
 
     Parameters
     ----------
@@ -30,6 +30,21 @@ class AnyCalendarDateTime:
     A class to represent a datetime that could be of any calendar.
 
     Can add and subtract a day from the input based on MAX_DAY, MIN_DAY, MAX_MONTH and MIN_MONTH
+
+    Parameters
+    ----------
+    year : int
+        The year of the datetime.
+    month : int
+        The month of the datetime (1-12).
+    day : int
+        The day of the month (1-31).
+    hour : int
+        The hour of the day (0-23).
+    minute : int
+        The minute of the hour (0-59).
+    second : int
+        The second of the minute (0-59).
     """
 
     MONTH_RANGE = range(1, 13)
@@ -62,7 +77,6 @@ class AnyCalendarDateTime:
         ------
         ValueError
             If any of the input values are out of their respective ranges.
-
         """
         self.year = year
 
@@ -108,7 +122,14 @@ class AnyCalendarDateTime:
 
     @property
     def value(self):
-        """Show calendar value."""
+        """
+        Show calendar value.
+
+        Returns
+        -------
+        str
+            A string representation of the datetime in ISO 8601 format.
+        """
         return f"{self.year}-{self.month:02d}-{self.day:02d}T{self.hour:02d}:{self.minute:02d}:{self.second:02d}"
 
     def add_day(self):
@@ -136,7 +157,7 @@ class AnyCalendarDateTime:
             self.month = self.MONTH_RANGE[-1]
 
 
-def str_to_AnyCalendarDateTime(dt, defaults=None):
+def str_to_AnyCalendarDateTime(dt: str, defaults: list[int] | None = None):
     """
     Given a string representing date/time, return a DateTimeAnyTime object.
 
@@ -150,7 +171,6 @@ def str_to_AnyCalendarDateTime(dt, defaults=None):
     defaults : list, optional
         A list of default values for year, month, day, hour, minute, and second
         if they cannot be parsed from the string.
-        If defaults is None, the default values are [-1, 1, 1, 0, 0, 0], meaning:
 
     Returns
     -------

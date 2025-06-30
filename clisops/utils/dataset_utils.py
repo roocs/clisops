@@ -25,7 +25,7 @@ def get_coord_by_type(
     ds: xr.DataArray | xr.Dataset, coord_type: str, ignore_aux_coords: bool = True, return_further_matches: bool = False
 ):
     """
-    Returns the name of the coordinate that matches the given type.
+    Return the name of the coordinate that matches the given type.
 
     Parameters
     ----------
@@ -123,7 +123,7 @@ def get_coord_by_type(
 # from dachar
 def get_coord_by_attr(ds, attr, value):
     """
-    Returns a coordinate based on a known attribute of a coordinate.
+    Return a coordinate based on a known attribute of a coordinate.
 
     Parameters
     ----------
@@ -150,7 +150,7 @@ def get_coord_by_attr(ds, attr, value):
 
 def is_latitude(coord: xr.DataArray | xr.Dataset) -> bool:
     """
-    Determines if a coordinate is latitude.
+    Determine if a coordinate is latitude.
 
     Parameters
     ----------
@@ -179,7 +179,7 @@ def is_latitude(coord: xr.DataArray | xr.Dataset) -> bool:
 
 def is_longitude(coord: xr.DataArray | xr.Dataset) -> bool:
     """
-    Determines if a coordinate is longitude.
+    Determine if a coordinate is longitude.
 
     Parameters
     ----------
@@ -208,7 +208,7 @@ def is_longitude(coord: xr.DataArray | xr.Dataset) -> bool:
 
 def is_level(coord: xr.DataArray | xr.Dataset) -> bool:
     """
-    Determines if a coordinate is level.
+    Determine if a coordinate is level.
 
     Parameters
     ----------
@@ -258,7 +258,7 @@ def _is_time(coord: xr.DataArray | xr.Dataset) -> bool:
 
 def is_time(coord: xr.DataArray | xr.Dataset) -> bool:
     """
-    Determines if a coordinate is time.
+    Determine if a coordinate is time.
 
     Parameters
     ----------
@@ -292,7 +292,7 @@ def is_time(coord: xr.DataArray | xr.Dataset) -> bool:
 
 def is_realization(coord: xr.DataArray | xr.Dataset) -> bool:
     """
-    Determines if a coordinate is realisation.
+    Determine if a coordinate is realisation.
 
     Parameters
     ----------
@@ -315,7 +315,7 @@ def is_realization(coord: xr.DataArray | xr.Dataset) -> bool:
 
 def get_coord_type(coord: xr.DataArray | xr.Dataset) -> str | None:
     """
-    Gets the coordinate type.
+    Get the coordinate type.
 
     Parameters
     ----------
@@ -343,7 +343,7 @@ def get_coord_type(coord: xr.DataArray | xr.Dataset) -> str | None:
 
 def get_main_variable(ds, exclude_common_coords=True):
     """
-    Finds the main variable of an xarray Dataset.
+    Find the main variable of an xarray Dataset.
 
     Parameters
     ----------
@@ -401,7 +401,7 @@ def open_xr_dataset(dset: str | pathlib.Path | list[str | pathlib.Path], **kwarg
     ----------
     dset : str or Path or list of str or list of Path
         A dataset identifier, directory path, or file path ending in ``*.nc``.
-    kwargs : dict
+    **kwargs : dict
         Any additional keyword arguments for opening the dataset.
         `decode_times=xr.coders.CFDatetimeCoder(use_cftime=True)` and `decode_timedelta=False`
         are used by default, along with ``combine="by_coords"`` for ``open_mfdataset`` only.
@@ -500,7 +500,7 @@ def _get_kwargs_for_opener(otype, **kwargs):
 
 def is_kerchunk_file(dset: str | pathlib.Path) -> bool:
     """
-    Returns a boolean based on reading the file extension.
+    Return a boolean based on reading the file extension.
 
     Parameters
     ----------
@@ -588,7 +588,7 @@ def _patch_time_encoding(ds, file_list, **kwargs):
 
 def convert_coord_to_axis(coord):
     """
-    Converts coordinate type to its single character axis identifier (tzyx).
+    Convert coordinate type to its single character axis identifier (tzyx).
 
     Parameters
     ----------
@@ -764,7 +764,7 @@ def fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, xminma
     return fix
 
 
-def calculate_offset(lon: xr.DataArray, first_element_value: float):
+def calculate_offset(lon: xr.DataArray, first_element_value: float) -> int:
     """
     Calculate the number of elements to roll the dataset by in order to have longitude from within requested bounds.
 
@@ -774,6 +774,11 @@ def calculate_offset(lon: xr.DataArray, first_element_value: float):
         Longitude coordinate of xarray dataset.
     first_element_value : float
         The value of the first element of the longitude array to roll to.
+
+    Returns
+    -------
+    int
+        The number of elements to roll the dataset by.
     """
     # get resolution of data
     res = lon.values[1] - lon.values[0]
@@ -864,15 +869,15 @@ def cf_convert_between_lon_frames(ds_in, lon_interval, force=False):  # noqa: C9
     the lon_interval.
     Adjusts shifted longitude frames [0-x, 360-x] in the dataset to one of the two standard longitude
     frames, dependent on the specified lon_interval.
-    I the case of curvilinear grids featuring an additional 1D x-coordinate of the projection,
+    In the case of curvilinear grids featuring an additional 1D x-coordinate of the projection,
     this projection x-coordinate will not get converted.
 
     Parameters
     ----------
     ds_in : xarray.Dataset or xarray.DataArray
-        xarray data object with defined longitude dimension.
+        An xarray data object with defined longitude dimension.
     lon_interval : tuple or list
-        length-2-tuple or length-2-list of floats or integers denoting the bounds of the longitude interval.
+        Length-2-tuple or length-2-list of floats or integers denoting the bounds of the longitude interval.
     force : bool
         If True, force conversion even if longitude frames match.
 
@@ -1306,12 +1311,12 @@ def reformat_xESMF_to_CF(ds: xr.Dataset, keep_attrs: bool = False) -> xr.Dataset
     ----------
     ds : xarray.Dataset
         Input dataset in xESMF format.
-    keep_attrs: bool
+    keep_attrs : bool
         Whether to keep the global attributes.
 
     Returns
     -------
-    ds_ref : xarray.Dataset
+    xarray.Dataset
         The reformatted dataset.
     """
     # source_format="xESMF"
@@ -1371,7 +1376,7 @@ def detect_format(ds: xr.Dataset) -> str:
     Parameters
     ----------
     ds : xr.Dataset
-        xarray.Dataset of which to detect the format.
+        An xarray.Dataset of which to detect the format.
 
     Returns
     -------
@@ -1432,8 +1437,8 @@ def detect_shape(ds: xr.Dataset, lat: str, lon: str, grid_type: str) -> tuple[in
         Latitude variable name.
     lon : str
         Longitude variable name.
-    grid_type: str
-        One of "regular_lat_lon", "curvilinear", "unstructured"
+    grid_type : {"regular_lat_lon", "curvilinear", "unstructured"}
+        The grid type to detect the shape for.
 
     Returns
     -------
@@ -1550,10 +1555,10 @@ def generate_bounds_curvilinear(ds: xr.Dataset, lat: str, lon: str, clip_latitud
     ----------
     ds : xarray.Dataset
         Dataset to compute the bounds for.
-    lon : str
-        Longitude variable name.
     lat : str
         Latitude variable name.
+    lon : str
+        Longitude variable name.
     clip_latitude : bool, optional
         Whether to clip latitude values to [-90, 90]. The default is True.
     roll : bool, optional
@@ -1561,9 +1566,8 @@ def generate_bounds_curvilinear(ds: xr.Dataset, lat: str, lon: str, clip_latitud
 
     Returns
     -------
-    ds : xarray.Dataset
+    xarray.Dataset
         Dataset with bounds attached variables.
-
     """
     # Assume lon frame -180, 180
     if roll:
@@ -1784,15 +1788,15 @@ def detect_coordinate(ds: xr.Dataset | xr.DataArray, coord_type: str) -> str:
     coord_type : str
         Coordinate type understood by cf-xarray, eg. 'lat', 'lon', ...
 
-    Raises
-    ------
-    KeyError
-        Raised if the requested coordinate cannot be identified.
-
     Returns
     -------
     str
         Coordinate variable name.
+
+    Raises
+    ------
+    KeyError
+        Raised if the requested coordinate cannot be identified.
     """
     error_msg = f"A {coord_type} coordinate cannot be identified in the dataset."
 
@@ -1823,7 +1827,6 @@ def detect_bounds(ds: xr.Dataset | xr.DataArray, coordinate: str) -> str | None:
     str or None
         Returns the variable name of the requested coordinate bounds.
         Returns None if the variable has no bounds or if they cannot be identified.
-
     """
     try:
         return ds.cf.bounds[coordinate][0]

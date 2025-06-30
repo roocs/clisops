@@ -105,7 +105,7 @@ def weights_cache_flush(
     weights_dir_init: str | Path | None = "",
     dryrun: bool | None = False,
     verbose: bool | None = False,
-) -> None:
+):
     """
     Flush and reinitialize the local weights cache.
 
@@ -121,11 +121,6 @@ def weights_cache_flush(
     verbose : bool, optional
         If True, and dryrun is False, will print all files that are getting deleted.
         The default is False.
-
-    Returns
-    -------
-    None
-
     """
     # Read weights_dir from CONFIG
     weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
@@ -189,7 +184,6 @@ class Grid:
         The default is False.
     mask : str, optional
         Whether to mask "ocean" cells or "land" cells if a mask variable is found. The default is None.
-
     """
 
     def __init__(
@@ -464,7 +458,7 @@ class Grid:
         # Create regular lat-lon grid with these specifics
         self._grid_from_instructor((xfirst, xlast, xinc, yfirst, ylast, yinc))
 
-    def grid_reformat(self, grid_format: str, keep_attrs: bool = False):
+    def grid_reformat(self, grid_format: str, keep_attrs: bool = False) -> xr.Dataset:
         """
         Reformat the Dataset attached to the Grid object to a target format.
 
@@ -477,8 +471,13 @@ class Grid:
 
         Returns
         -------
-        ds_ref : xarray.Dataset
+        xarray.Dataset
             Reformatted dataset.
+
+        Raises
+        ------
+        Exception
+            If the reformat operation is not defined in clisops.utils.dataset_utils.
         """
         # TODO: Extend for formats CF, xESMF, ESMF, UGRID, SCRIP
         #      If CF and self.type=="regular_lat_lon":
@@ -504,7 +503,6 @@ class Grid:
         Warnings
         --------
         This method is not yet implemented.
-
         """
         # TODO
         # Plan:
@@ -627,7 +625,6 @@ class Grid:
         -------
         str
             The detected grid type.
-
         """
         # TODO: Extend for other formats for regular_lat_lon, curvilinear / rotated_pole, unstructured
 
@@ -646,7 +643,6 @@ class Grid:
         -------
         str
             'regional' or 'global'.
-
         """
         # TODO: support Units "rad" next to "degree ..."
 
@@ -766,7 +762,6 @@ class Grid:
             Number of longitude points in the grid.
         int
             Number of cells in the grid.
-
         """
         # Call clisops.utils.dataset_utils function
         return clidu.detect_shape(ds=self.ds, lat=self.lat, lon=self.lon, grid_type=self.type)
@@ -824,7 +819,6 @@ class Grid:
         str, optional
             Returns the variable name of the requested coordinate bounds.
             Returns None if the variable has no bounds or if they cannot be identified.
-
         """
         return clidu.detect_bounds(self.ds, coordinate)
 
@@ -972,8 +966,24 @@ class Grid:
         self.contains_smashed_cells = bool(np.any(self.smash_mask == 0))
 
     @staticmethod
-    def points_equal(p1, p2, tol=1e-15):
-        """Check if two points are equal within a given tolerance."""
+    def points_equal(p1: tuple | list, p2: tuple | list, tol: float = 1e-15) -> bool:
+        """
+        Check if two points are equal within a given tolerance.
+
+        Parameters
+        ----------
+        p1 : tuple or list
+            First point as a tuple or list of coordinates (x, y).
+        p2 : tuple or list
+            Second point as a tuple or list of coordinates (x, y).
+        tol : float
+            Tolerance for equality check, default is 1e-15.
+
+        Returns
+        -------
+        bool
+            True if the points are equal within the tolerance, otherwise False.
+        """
         return np.abs(p1[0] - p2[0]) < tol and np.abs(p1[1] - p2[1]) < tol
 
     @staticmethod
@@ -1492,7 +1502,6 @@ class Grid:
             The engine to use for writing the netCDF file. If None, the default engine will be used.
         keep_attrs : bool, optional
             Whether to store the global attributes in the output netCDF file. The default is True.
-
         """
         # Check inputs
         if filename:
@@ -1577,7 +1586,7 @@ class Weights:
     from_disk : str, optional
         Not yet implemented. Instead of calculating the regridding weights (or reading them from
         the cache), read them from disk. The default is None.
-    format: str, optional
+    format : str, optional
         Not yet implemented. When reading weights from disk, the input format may be specified.
         If omitted, there will be an attempt to detect the format. The default is None.
     """
@@ -1860,14 +1869,13 @@ class Weights:
         else:
             return
 
-    def save_to_disk(self, filename=None, wformat: str = "xESMF") -> None:
+    def save_to_disk(self, filename=None, wformat: str = "xESMF") -> None:  # numpydoc ignore=GL02,GLO3,PR01
         """
         Write weights to disk in a certain format.
 
-        Warning
-        -------
+        Warnings
+        --------
         This method is not yet implemented.
-
         """
         # TODO: if necessary, reformat weights, then save under specified path.
         raise NotImplementedError()
@@ -1879,7 +1887,6 @@ class Weights:
         Warning
         -------
         This method is not yet implemented.
-
         """
         # TODO: Reformat to other weight-file formats when loading/saving from disk
         # if format != "xESMF":
@@ -1888,25 +1895,23 @@ class Weights:
         #  generate_id, set ignore_degenerate, periodic, method to unknown if cannot be determined
         raise NotImplementedError()
 
-    def reformat(self, format_from: str, format_to: str) -> None:
+    def reformat(self, format_from: str, format_to: str) -> None:  # numpydoc ignore=GL02,GLO3,PR01
         """
         Reformat remapping weights.
 
-        Warning
-        -------
+        Warnings
+        --------
         This method is not yet implemented.
-
         """
         raise NotImplementedError()
 
-    def _detect_format(self, ds: xr.Dataset | xr.DataArray) -> None:
+    def _detect_format(self, ds: xr.Dataset | xr.DataArray) -> None:  # numpydoc ignore=GL02,GLO3
         """
         Detect format of remapping weights (read from disk).
 
         Warning
         -------
         This method is not yet implemented.
-
         """
         raise NotImplementedError()
 
@@ -1951,7 +1956,6 @@ def regrid(
     -------
     xarray.Dataset
         The regridded data in form of an xarray.Dataset.
-
     """
     if not isinstance(grid_out.ds, xr.Dataset):
         raise InvalidParameterValue(

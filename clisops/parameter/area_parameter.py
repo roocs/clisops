@@ -16,10 +16,9 @@ class AreaParameter(_BaseParameter):
     | A sequence of strings: ("0", "-10", "120", "40")
     | A sequence of numbers: [0, 49.5, 10, 65]
 
-    An area must have 4 values.
+    An area must have four values.
 
     Validates the area input and parses the values into numbers.
-
     """
 
     allowed_input_types = [Sequence, str, area, type(None)]
@@ -47,7 +46,14 @@ class AreaParameter(_BaseParameter):
         return tuple([to_float(i, allow_none=False) for i in value])
 
     def asdict(self):
-        """Returns a dictionary of the area values."""
+        """
+        Return a dictionary of the area values.
+
+        Returns
+        -------
+        dict
+            A dictionary with keys "lon_bnds" and "lat_bnds" containing tuples of the longitude and latitude bounds.
+        """
         if self.value is not None:
             return {
                 "lon_bnds": (self.value[0], self.value[2]),

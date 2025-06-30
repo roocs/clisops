@@ -209,20 +209,43 @@ def regrid(
 
     Parameters
     ----------
-    ds : Union[xr.Dataset, str]
+    ds : xarray.Dataset or str or Path
+        Dataset to regrid, or a path to a file or files (wildcards allowed).
     method : {"nearest_s2d", "conservative", "patch", "bilinear"}
-    adaptive_masking_threshold : Optional[Union[int, float]]
-    grid : Union[xr.Dataset, xr.DataArray, int, float, tuple, str]
-    mask : {"ocean", "land"} = None
-    output_dir : Optional[Union[str, Path]] = None
+        The regridding method to use. Default is "nearest_s2d".
+    adaptive_masking_threshold : int or float, optional
+        Threshold for adaptive masking. If None, adaptive masking is not applied.
+        Default is 0.5.
+    grid : xarray.Dataset or xarray.DataArray or int or float or tuple or str
+        The target grid for regridding. If None, the default grid is used.
+        If "adaptive", an adaptive grid will be used based on the input dataset.
+        If "auto", the grid will be automatically determined based on the input dataset.
+        If a tuple, it should be in the format (lat, lon) or (lat, lon, level).
+        Default is "adaptive".
+    mask : {"ocean", "land"}, optional
+        The mask to apply to the regridded data. If None, no mask is applied.
+    output_dir : str or Path, optional
+        The directory where the output files will be saved. If None, the output will not be saved to disk.
     output_type : {"netcdf", "nc", "zarr", "xarray"}
+        The format of the output files. If "xarray", the output will be an xarray Dataset.
+        If "netcdf", "nc", or "zarr", the output will be saved to files in the specified format.
+        Default is "netcdf".
     split_method : {"time:auto"}
+        The method to split the output files. Currently only "time:auto" is supported, which will
+        split the output files by time slices automatically.
+        Default is "time:auto".
     file_namer : {"standard", "simple"}
+        File namer to use for generating output file names.
+        "standard" uses the dataset name and adds a suffix for the operation.
+        "simple" uses a numbered sequence for the output files.
+        Default is "standard".
     keep_attrs : {True, False, "target"}
+        Whether to keep the attributes of the input dataset in the output dataset.
+        If "target", the attributes of the target grid will be kept. Default is True.
 
     Returns
     -------
-    List[Union[xr.Dataset, str]]
+    list of xr.Dataset or list of str
         A list of the regridded outputs in the format selected; str corresponds to file paths if the
         output format selected is a file.
 
@@ -238,7 +261,6 @@ def regrid(
     | split_method: "time:auto"
     | file_namer: "standard"
     | keep_attrs: True
-
     """
     op = Regrid(**locals())
     return op.process()

@@ -218,21 +218,39 @@ def subset(  # noqa: E501
 
     Parameters
     ----------
-    ds : Union[xr.Dataset, str]
-    time : Optional[Union[str, Tuple[str, str], TimeParameter, Series, Interval]] = None,
-    area : str or AreaParameter or Tuple[Union[int, float, str], Union[int, float, str], Union[int, float, str], Union[int, float, str]], optional
-    level : Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter, Interval] = None,
-    time_components : Optional[Union[str, Dict, TimeComponentsParameter]] = None,
-    output_dir : Optional[Union[str, Path]] = None
+    ds : xarray.Dataset or str or Path
+        The dataset to be subsetted, can be a path to a file or an xarray Dataset.
+    time : str or Tuple[str, str] or TimeParameter or Series or Interval, optional
+        Time parameter for subsetting, can be a string, tuple of strings, TimeParameter instance,
+        Series, or Interval. If None, no time subsetting is applied.
+    area : str or AreaParameter or Tuple[int or float or str, int or float or str, int or float or str, int or float or str], optional
+        Area parameter for subsetting, can be a string, AreaParameter instance, or a tuple of four values
+        representing the bounding box (lon_min, lat_min, lon_max, lat_max). If None, no area subsetting is applied.
+    level : str or Tuple[int or float or str, int or float or str] or LevelParameter or Interval, optional
+        Level parameter for subsetting, can be a string, tuple of two values, LevelParameter instance,
+        or Interval. If None, no level subsetting is applied.
+    time_components : str or dict or TimeComponentsParameter, optional
+        Time components for subsetting, can be a string, dictionary, or TimeComponentsParameter instance.
+    output_dir : str or Path, optional
+        Directory where the output will be saved. If None, the output will not be saved to a file.
     output_type : {"netcdf", "nc", "zarr", "xarray"}
+        The format of the output, can be "netcdf", "nc", "zarr", or "xarray". Default is "netcdf".
     split_method : {"time:auto"}
+        Method for splitting the output, currently only supports "time:auto". Default is "time:auto".
     file_namer : {"standard", "simple"}
+        The file naming strategy to use for the output files, can be "standard" or "simple". Default is "standard".
 
     Returns
     -------
-    List[Union[xr.Dataset, str]]
+    list of xr.Dataset or list of str
         A list of the subsetted outputs in the format selected; str corresponds to file paths if the
         output format selected is a file.
+
+    Notes
+    -----
+    If you request a selection range (such as level, latitude or longitude) that specifies the lower
+    and upper bounds in the opposite direction to the actual coordinate values then clisops.ops.subset
+    will detect this issue and reverse your selection before returning the data subset.
 
     Examples
     --------
@@ -245,12 +263,6 @@ def subset(  # noqa: E501
     | output_type: "netcdf"
     | split_method: "time:auto"
     | file_namer: "standard"
-
-    Notes
-    -----
-    If you request a selection range (such as level, latitude or longitude) that specifies the lower
-    and upper bounds in the opposite direction to the actual coordinate values then clisops.ops.subset
-    will detect this issue and reverse your selection before returning the data subset.
     """
     op = Subset(**locals())
     return op.process()

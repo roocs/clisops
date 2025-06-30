@@ -41,7 +41,7 @@ from clisops.config import get_config
 from clisops.utils.common import enable_logging as enable_logging
 
 
-def showwarning(message, *args, **kwargs):
+def showwarning(message, *args, **kwargs):  # numpydoc ignore=PR01
     """Inject warnings from `warnings.warn` into `loguru`."""
     logger.warning(message)
     showwarning_(message, *args, **kwargs)

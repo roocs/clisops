@@ -17,6 +17,8 @@ __all__ = ["average_over_dims", "average_shape", "average_time"]
 
 
 class Average(Operation):
+    """Average operation for xarray datasets."""
+
     def _resolve_params(self, **params):
         dims = DimensionParameter(params.get("dims", None)).value
         ignore_undetected_dims = params.get("ignore_undetected_dims", False)
@@ -65,7 +67,7 @@ def average_over_dims(
         must be one of ["time", "level", "latitude", "longitude"].
     ignore_undetected_dims : bool
         If the dimensions specified are not found in the dataset, an Exception will be raised if set to True.
-        If False, an exception will not be raised and the other dimensions will be averaged over. Default = False
+        If False, an exception will not be raised and the other dimensions will be averaged over. Default = False.
     output_dir : str or Path, optional
         The directory where the output files will be saved. If None, the output will not be saved to disk.
     output_type : {"netcdf", "nc", "zarr", "xarray"}
@@ -98,6 +100,8 @@ def average_over_dims(
 
 
 class AverageShape(Operation):
+    """Average operation for xarray datasets over a given shape."""
+
     def _resolve_params(self, **params):
         shape = params.get("shape")
         variable = params.get("variable", None)
@@ -176,6 +180,8 @@ def average_shape(
 
 
 class AverageTime(Operation):
+    """Average operation for xarray datasets over a given time frequency."""
+
     def _resolve_params(self, **params):
         freq = params.get("freq", None)
 
@@ -226,7 +232,7 @@ def average_time(
     split_method : {"time:auto"}
         The method to split the output files. Currently only "time:auto" is supported, which will
         automatically split the output files based on time.
-    file_namer: {"standard", "simple"}
+    file_namer : {"standard", "simple"}
         The file namer to use for generating output file names.
         "standard" uses a more descriptive naming convention, while "simple" uses a numbered sequence.
 

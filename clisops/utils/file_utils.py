@@ -1,17 +1,20 @@
 """File utilities for CLISOPS."""
 
 import os
+import pathlib
 
 
 class FileMapper:
     """
     Class to represent a set of files that exist in the same directory as one object.
 
-    Args:
-        file_list: the list of files to represent. If dirpath is not provided, these should be full file paths.
-        dirpath: The directory path where the files exist. Default is None.
-
-    If dirpath is not provided, it will be deduced from the file paths provided in file_list.
+    Parameters
+    ----------
+    file_list : list of str
+        The list of files to represent. If dirpath is not provided, these should be full file paths.
+    dirpath : str or Path, optional
+        The directory path where the files exist. Default is None.
+        If dirpath is not provided, it will be deduced from the file paths provided in file_list.
 
     Attributes
     ----------
@@ -20,11 +23,22 @@ class FileMapper:
     file_paths : list of str or list of Path
         List of full file paths of the files represented.
     dirpath : str or Path
-        The directory path where the files exist. Either deduced or provided.
-
+        The directory path where the files exist. Default is None.
+        If dirpath is not provided, it will be deduced from the file paths provided in file_list.
     """
 
-    def __init__(self, file_list, dirpath=None):
+    def __init__(self, file_list: list[str], dirpath: str | pathlib.Path | None = None):
+        """
+        Initialize the FileMapper with a list of files and an optional directory path.
+
+        Parameters
+        ----------
+        file_list : list of str
+            List of file names or full paths to the files.
+        dirpath : str or Path, optional
+            The directory path where the files exist. Default is None.
+            If dirpath is not provided, it will be deduced from the file paths provided in file_list.
+        """
         self.dirpath = dirpath
         self.file_list = file_list
 

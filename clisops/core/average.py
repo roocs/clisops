@@ -76,7 +76,6 @@ def average_shape(
         # Average multiple variables in a single dataset
         ds = xr.open_mfdataset([path_to_tasmin_file, path_to_tasmax_file])
         dsAvg = average_shape(ds, shape=path_to_shape_file)
-
     """
     try:
         from xesmf import SpatialAverager
@@ -143,18 +142,18 @@ def average_over_dims(
 
     Parameters
     ----------
-    ds : Union[xr.DataArray, xr.Dataset]
+    ds : xr.DataArray or xr.Dataset
         Input values.
     dims : Sequence[{"time", "level", "latitude", "longitude"}]
         The dimensions over which to apply the average. If None, none of the dimensions are averaged over.
         Dimensions must be one of ["time", "level", "latitude", "longitude"].
     ignore_undetected_dims : bool
         If the dimensions specified are not found in the dataset, an Exception will be raised if set to True.
-        If False, an exception will not be raised and the other dimensions will be averaged over. Default = False
+        If False, an exception will not be raised and the other dimensions will be averaged over. Default = False.
 
     Returns
     -------
-    Union[xr.DataArray, xr.Dataset]
+    xr.DataArray or xr.Dataset
         New Dataset or DataArray object averaged over the indicated dimensions.
         The indicated dimensions will have been removed.
 
@@ -168,7 +167,6 @@ def average_over_dims(
 
         # Average data array over latitude and longitude
         prAvg = average_over_dims(pr, dims=["latitude", "longitude"], ignore_undetected_dims=True)
-
     """
     if not dims:
         raise InvalidParameterValue("At least one dimension for averaging must be provided")
