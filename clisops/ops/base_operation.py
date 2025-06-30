@@ -1,6 +1,7 @@
+"""Base class for all Operations in clisops."""
+
 from collections import ChainMap
 from pathlib import Path
-from typing import Optional, Union
 
 import xarray as xr
 from loguru import logger
@@ -12,18 +13,38 @@ from clisops.utils.output_utils import get_output, get_time_slices
 
 
 class Operation:
-    """Base class for all Operations."""
+    """
+    Base class for all Operations.
+
+    This class provides the common interface and functionality for all operations in clisops.
+
+    Parameters
+    ----------
+    ds : str or Path or xr.Dataset
+        The input dataset, which can be a path to a file or an xarray Dataset.
+    file_namer : str, optional
+        The file namer to use for output files. Default is "standard".
+    split_method : str, optional
+        The method to use for splitting the dataset into time slices. Default is "time:auto".
+    output_dir : str or Path or None, optional
+        The directory where output files will be saved. If None, no files will be saved. Default is None.
+    output_type : str, optional
+        The type of output to generate. Can be "netcdf", "zarr", or "xarray". Default is "netcdf".
+    **params : dict, optional
+        Additional parameters specific to the operation. These will be resolved in `self._resolve_params()`.
+    """
 
     def __init__(
         self,
         ds,
         file_namer: str = "standard",
         split_method: str = "time:auto",
-        output_dir: Optional[Union[str, Path]] = None,
+        output_dir: str | Path | None = None,
         output_type: str = "netcdf",
         **params,
     ):
-        """Constructor for each operation.
+        """
+        Constructor for each operation.
 
         Sets common input parameters as attributes.
         Parameters that are specific to each operation are handled in `self._resolve_params()`
@@ -47,15 +68,11 @@ class Operation:
         self.ds = ds
 
     def _resolve_params(self, **params) -> None:
-        """
-        Resolve the operation-specific input parameters to `self.params`.
-        """
+        """Resolve the operation-specific input parameters to `self.params`."""
         self.params = params
 
     def _get_file_namer(self):
-        """
-        Return the appropriate file namer object.
-        """
+        """Return the appropriate file namer object."""
         namer = get_file_namer(self._file_namer)()
         return namer
 
@@ -71,7 +88,7 @@ class Operation:
         and xarray < 2023.11.0 the latter part needs to be conducted manually to avoid an Exception
         when writing the xarray.Dataset to disk.
         See issue:  https://github.com/Unidata/netcdf4-python/issues/1205
-        See PR: https://github.com/roocs/clisops/pull/319
+        See PR: https://github.com/roocs/clisops/pull/319.
         """
         if isinstance(ds, xr.Dataset):
             varlist = list(ds.coords) + list(ds.data_vars)
@@ -80,7 +97,7 @@ class Operation:
 
         for var in varlist:
             if "dtype" in ds[var].encoding:
-                if ds[var].encoding["dtype"] == str:
+                if isinstance(ds[var].encoding["dtype"], str):
                     for en in [
                         "compression",
                         "complevel",
@@ -99,7 +116,7 @@ class Operation:
         the balance between reduction of file size and degradation in performance. The values found
         were deflate_level=1, shuffle=True. To keep the write times at a minimum, compression level 1
         is not exceeded.
-        See issue: https://github.com/PCMDI/cmor/issues/403
+        See issue: https://github.com/PCMDI/cmor/issues/403.
         """
         if isinstance(ds, xr.Dataset):
             varlist = list(ds.coords) + list(ds.data_vars)
@@ -118,22 +135,22 @@ class Operation:
 
     @staticmethod
     def _remove_redundant_fill_values(ds):
-        """Get coordinate and data variables and remove fill values added by xarray.
+        """
+        Get coordinate and data variables and remove fill values added by xarray.
 
-        CF-conventions say that coordinate variables cannot have missing values.
+        CF-Conventions say that coordinate variables cannot have missing values.
 
         See Also
         --------
         https://github.com/roocs/clisops/issues/224
+
         """
         if isinstance(ds, xr.Dataset):
             var_list = list(ds.coords) + list(ds.data_vars)
         elif isinstance(ds, xr.DataArray):
             var_list = list(ds.coords)
         else:
-            raise ValueError(
-                f"Expected xarray.Dataset or xarray.DataArray, got {type(ds)}"
-            )
+            raise ValueError(f"Expected xarray.Dataset or xarray.DataArray, got {type(ds)}")
 
         for var in var_list:
             fval = ChainMap(ds[var].attrs, ds[var].encoding).get("_FillValue", None)
@@ -156,16 +173,19 @@ class Operation:
                     ds[var].attrs.pop("missing_value", None)
                     ds[var].attrs.pop("_FillValue", None)
                     logger.warning(
-                        f"The defined _FillValue and missing_value for '{var}' are not the same '{fval}' != '{mval}'. Setting '{mval}' for both."
+                        f"The defined _FillValue and missing_value for '{var}' are not the same "
+                        f"'{fval}' != '{mval}'. Setting '{mval}' for both."
                     )
         return ds
 
     @staticmethod
     def _remove_redundant_coordinates_attr(ds):
-        """This method removes the coordinates attribute added by xarray.
+        """
+        Remove the coordinate attribute added by xarray.
 
-        Example
-        -------
+        Examples
+        --------
+        If you have a dataset with a time_bnds variable that has a coordinate attribute:
         .. code-block:: cpp
 
             double time_bnds(time, bnds);
@@ -180,15 +200,14 @@ class Operation:
         See Also
         --------
         https://github.com/roocs/clisops/issues/224
+
         """
         if isinstance(ds, xr.Dataset):
             var_list = list(ds.coords) + list(ds.data_vars)
         elif isinstance(ds, xr.DataArray):
             var_list = list(ds.coords)
         else:
-            raise ValueError(
-                f"Expected xarray.Dataset or xarray.DataArray, got {type(ds)}"
-            )
+            raise ValueError(f"Expected xarray.Dataset or xarray.DataArray, got {type(ds)}")
 
         for var in var_list:
             c_attr = ChainMap(ds[var].attrs, ds[var].encoding).get("coordinates", None)
@@ -199,13 +218,14 @@ class Operation:
                 ds[var].attrs.pop("coordinates", None)
         return ds
 
-    def process(self) -> list[Union[xr.Dataset, Path]]:
-        """Main processing method used by all subclasses.
+    def process(self) -> list[xr.Dataset | Path]:
+        """
+        Main processing method used by all subclasses.
 
         Returns
         -------
-        List[Union[xarray.Dataset, os.PathLike]]
-            A list of outputs, which might be NetCDF file paths, Zarr file paths, or xarray.Dataset
+        list of xr.Dataset or Path
+            A list of outputs, which might be NetCDF file paths, Zarr file paths, or xarray.Dataset.
         """
         # Create an empty list for outputs
         outputs = list()

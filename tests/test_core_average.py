@@ -80,13 +80,9 @@ class TestAverageShape:
 
     def test_average_multiregions(self, nimbus, clisops_test_data):
         ds = xr.open_dataset(nimbus.fetch(self.nc_file))
-        regions = gpd.read_file(clisops_test_data["multi_regions_geojson"]).set_index(
-            "id"
-        )
+        regions = gpd.read_file(clisops_test_data["multi_regions_geojson"]).set_index("id")
         avg = average.average_shape(ds.tas, shape=regions)
-        np.testing.assert_array_almost_equal(
-            avg.isel(time=0), [268.620, 278.290, 277.863], decimal=3
-        )
+        np.testing.assert_array_almost_equal(avg.isel(time=0), [268.620, 278.290, 277.863], decimal=3)
         np.testing.assert_array_equal(avg.geom, ["Québec", "Europe", "Newfoundland"])
 
     def test_non_overlapping_regions(self, nimbus, clisops_test_data):
@@ -144,18 +140,13 @@ class TestAverageOverDims:
 
         with pytest.raises(InvalidParameterValue) as exc:
             average.average_over_dims(ds, ["level", "time"])
-        assert (
-            str(exc.value)
-            == "Requested dimensions were not found in input dataset: {'level'}."
-        )
+        assert str(exc.value) == "Requested dimensions were not found in input dataset: {'level'}."
 
     def test_average_undetected_dim_ignore(self, nimbus):
         ds = xr.open_dataset(nimbus.fetch(self.nc_file))
 
         # exception should not be raised as ignore_undetected_dims set to True
-        avg_ds = average.average_over_dims(
-            ds, ["level", "time"], ignore_undetected_dims=True
-        )
+        avg_ds = average.average_over_dims(ds, ["level", "time"], ignore_undetected_dims=True)
 
         # time has been averaged over
         assert "time" not in avg_ds.dims
@@ -192,7 +183,7 @@ class TestAverageTime:
         ds = xu.open_xr_dataset(mini_esgf_data[self.month_ds])
 
         with pytest.raises(InvalidParameterValue) as exc:
-            average.average_time(ds, freq=None)  # noqa
+            average.average_time(ds, freq=None)
 
         assert str(exc.value) == "At least one frequency for averaging must be provided"
 
@@ -201,16 +192,13 @@ class TestAverageTime:
 
         with pytest.raises(InvalidParameterValue) as exc:
             average.average_time(ds, freq="wrong")
-        assert (
-            str(exc.value)
-            == "Time frequency for averaging must be one of ['day', 'month', 'year']."
-        )
+        assert str(exc.value) == "Time frequency for averaging must be one of ['day', 'month', 'year']."
 
     def test_freq_wrong_format(self, mini_esgf_data):
         ds = xu.open_xr_dataset(mini_esgf_data[self.month_ds])
 
         with pytest.raises(InvalidParameterValue) as exc:
-            average.average_time(ds, freq=0)  # noqa
+            average.average_time(ds, freq=0)
 
         assert str(exc.value) == "At least one frequency for averaging must be provided"
 

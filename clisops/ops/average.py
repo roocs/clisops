@@ -1,6 +1,7 @@
+"""Average operations for xarray datasets."""
+
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Union
 
 import geopandas as gpd
 import xarray as xr
@@ -12,10 +13,12 @@ from clisops.parameter import DimensionParameter
 from clisops.utils.dataset_utils import convert_coord_to_axis
 from clisops.utils.file_namers import get_file_namer
 
-__all__ = ["average_over_dims", "average_time", "average_shape"]
+__all__ = ["average_over_dims", "average_shape", "average_time"]
 
 
 class Average(Operation):
+    """Average operation for xarray datasets."""
+
     def _resolve_params(self, **params):
         dims = DimensionParameter(params.get("dims", None)).value
         ignore_undetected_dims = params.get("ignore_undetected_dims", False)
@@ -44,34 +47,41 @@ class Average(Operation):
 
 
 def average_over_dims(
-    ds: Union[xr.Dataset, str],
-    dims: Optional[Union[Sequence[str], DimensionParameter]] = None,
+    ds: xr.Dataset | str,
+    dims: Sequence[str] | DimensionParameter | None = None,
     ignore_undetected_dims: bool = False,
-    output_dir: Optional[Union[str, Path]] = None,
+    output_dir: str | Path | None = None,
     output_type: str = "netcdf",
     split_method: str = "time:auto",
     file_namer: str = "standard",
-) -> list[Union[xr.Dataset, str]]:
-    """Calculate an average over given dimensions.
+) -> list[xr.Dataset | str]:
+    """
+    Calculate an average over given dimensions.
 
     Parameters
     ----------
-    ds : Union[xr.Dataset, str]
+    ds : xr.Dataset or str
         Xarray dataset.
-    dims : Optional[Union[Sequence[{"time", "level", "latitude", "longitude"}], DimensionParameter]]
+    dims : Sequence of str or DimensionParameter, optional
         The dimensions over which to apply the average. If None, none of the dimensions are averaged over. Dimensions
         must be one of ["time", "level", "latitude", "longitude"].
     ignore_undetected_dims : bool
         If the dimensions specified are not found in the dataset, an Exception will be raised if set to True.
-        If False, an exception will not be raised and the other dimensions will be averaged over. Default = False
-    output_dir : Optional[Union[str, Path]]
+        If False, an exception will not be raised and the other dimensions will be averaged over. Default = False.
+    output_dir : str or Path, optional
+        The directory where the output files will be saved. If None, the output will not be saved to disk.
     output_type : {"netcdf", "nc", "zarr", "xarray"}
+        The format of the output files. If "xarray", the output will be an xarray Dataset.
+        If "netcdf", "nc", or "zarr", the output will be saved to disk in the specified format.
     split_method : {"time:auto"}
+        The method to split the output files. Currently only "time:auto" is supported, which will
     file_namer : {"standard", "simple"}
+        The file namer to use for generating output file names.
+        "standard" uses a more descriptive naming convention, while "simple" uses a numbered sequence.
 
     Returns
     -------
-    List[Union[xr.Dataset, str]]
+    list of xr.Dataset or str
         A list of the outputs in the format selected; str corresponds to file paths if the
         output format selected is a file.
 
@@ -84,13 +94,14 @@ def average_over_dims(
     | output_type: "netcdf"
     | split_method: "time:auto"
     | file_namer: "standard"
-
     """
     op = Average(**locals())
     return op.process()
 
 
 class AverageShape(Operation):
+    """Average operation for xarray datasets over a given shape."""
+
     def _resolve_params(self, **params):
         shape = params.get("shape")
         variable = params.get("variable", None)
@@ -98,9 +109,7 @@ class AverageShape(Operation):
         self.params = {"shape": shape, "variable": variable}
 
         if not shape:
-            raise InvalidParameterValue(
-                "At least one area for averaging must be provided"
-            )
+            raise InvalidParameterValue("At least one area for averaging must be provided")
 
     def _get_file_namer(self):
         extra = "_avg-shape"
@@ -119,35 +128,42 @@ class AverageShape(Operation):
 
 
 def average_shape(
-    ds: Union[xr.Dataset, Path, str],
-    shape: Union[str, Path, gpd.GeoDataFrame],
-    variable: Optional[Union[str, Sequence[str]]] = None,
-    output_dir: Optional[Union[str, Path]] = None,
+    ds: xr.Dataset | Path | str,
+    shape: str | Path | gpd.GeoDataFrame,
+    variable: str | Sequence[str] | None = None,
+    output_dir: str | Path | None = None,
     output_type: str = "netcdf",
     split_method: str = "time:auto",
     file_namer: str = "standard",
-) -> list[Union[xr.Dataset, str]]:
-    """Calculate a spatial average over a given shape.
+) -> list[xr.Dataset | str]:
+    """
+    Calculate a spatial average over a given shape.
 
     Parameters
     ----------
-    ds : Union[xr.Dataset, str]
+    ds : xr.Dataset or str or Path
         Xarray dataset.
-    shape : Union[str, Path, gpd.GeoDataFrame]
+    shape : str, Path, or gpd.GeoDataFrame
         Path to shape file, or directly a GeoDataFrame. Supports formats compatible with geopandas.
         Will be converted to EPSG:4326 if needed.
-    variable : Optional[Union[str, Sequence[str], None]]
+    variable : str or sequence of str, optional
         Variables to average. If None, average over all data variables.
-    output_dir : Optional[Union[str, Path]]
+    output_dir : str or Path, optional
+        The directory where the output files will be saved. If None, the output will not be saved to disk.
     output_type : {"netcdf", "nc", "zarr", "xarray"}
+        The format of the output files. If "xarray", the output will be an xarray Dataset.
     split_method : {"time:auto"}
+        The method to split the output files.
+        Currently only "time:auto" is supported, which will automatically split the output files based on time.
     file_namer : {"standard", "simple"}
+        The file namer to use for generating output file names.
+        "standard" uses a more descriptive naming convention, while "simple" uses a numbered sequence.
 
     Returns
     -------
-    List[Union[xr.Dataset, str]]
-        A list of the outputs in the format selected; str corresponds to file paths if the
-        output format selected is a file.
+    list of xr.Dataset or str
+        A list of the outputs in the format selected.
+        str corresponds to file paths if the output format selected is a file.
 
     Examples
     --------
@@ -164,18 +180,16 @@ def average_shape(
 
 
 class AverageTime(Operation):
+    """Average operation for xarray datasets over a given time frequency."""
+
     def _resolve_params(self, **params):
         freq = params.get("freq", None)
 
         if not freq:
-            raise InvalidParameterValue(
-                "At least one frequency for averaging must be provided"
-            )
+            raise InvalidParameterValue("At least one frequency for averaging must be provided")
 
         if freq not in list(average.freqs.keys()):
-            raise InvalidParameterValue(
-                f"Time frequency for averaging must be one of {list(average.freqs.keys())}."
-            )
+            raise InvalidParameterValue(f"Time frequency for averaging must be one of {list(average.freqs.keys())}.")
 
         self.params = {"freq": freq}
 
@@ -195,31 +209,38 @@ class AverageTime(Operation):
 
 
 def average_time(
-    ds: Union[xr.Dataset, str],
+    ds: xr.Dataset | str,
     freq: str,
-    output_dir: Optional[Union[str, Path]] = None,
+    output_dir: str | Path | None = None,
     output_type: str = "netcdf",
     split_method: str = "time:auto",
     file_namer: str = "standard",
-) -> list[Union[xr.Dataset, str]]:
+) -> list[xr.Dataset | str]:
     """
+    Calculate an average over time for a given frequency.
 
     Parameters
     ----------
-    ds : Union[xr.Dataset, str]
+    ds : xr.Dataset or str
         Xarray dataset.
     freq : str
         The frequency to average over, either "month" or "year".
-    output_dir : Optional[Union[str, Path]]
+    output_dir : str or Path, optional
+        The directory where the output files will be saved. If None, the output will not be saved to disk.
     output_type : {"netcdf", "nc", "zarr", "xarray"}
+        The format of the output files. If "xarray", the output will be an xarray Dataset.
     split_method : {"time:auto"}
-    file_namer: {"standard", "simple"}
+        The method to split the output files. Currently only "time:auto" is supported, which will
+        automatically split the output files based on time.
+    file_namer : {"standard", "simple"}
+        The file namer to use for generating output file names.
+        "standard" uses a more descriptive naming convention, while "simple" uses a numbered sequence.
 
     Returns
     -------
-    List[Union[xr.Dataset, str]]
-    A list of the outputs in the format selected; str corresponds to file paths if the
-    output format selected is a file.
+    List of datasets or file paths
+        A list of the outputs in the format selected.
+        str corresponds to file paths if the output format selected is a file.
 
     Examples
     --------
@@ -230,7 +251,6 @@ def average_time(
     | output_type: "netcdf"
     | split_method: "time:auto"
     | file_namer: "standard"
-
     """
     op = AverageTime(**locals())
     return op.process()

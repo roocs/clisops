@@ -31,16 +31,17 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ######################################################################################
 
+import os
 import warnings
 
 from loguru import logger
 
-from clisops.__version__ import __version__
+from clisops.__version__ import __version__ as __version__
 from clisops.config import get_config
-from clisops.utils.common import enable_logging
+from clisops.utils.common import enable_logging as enable_logging
 
 
-def showwarning(message, *args, **kwargs):
+def showwarning(message, *args, **kwargs):  # numpydoc ignore=PR01
     """Inject warnings from `warnings.warn` into `loguru`."""
     logger.warning(message)
     showwarning_(message, *args, **kwargs)
@@ -60,9 +61,7 @@ try:
     # Set the memory limit for each dask chunk
     chunk_memory_limit = CONFIG["clisops:read"].get("chunk_memory_limit", None)
 except KeyError:
-    logger.warning(
-        "No chunk_memory_limit set in configuration file. Defaulting to None."
-    )
+    logger.warning("No chunk_memory_limit set in configuration file. Defaulting to None.")
     chunk_memory_limit = None
 
 from clisops.parameter import *

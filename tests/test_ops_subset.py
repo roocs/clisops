@@ -1,7 +1,6 @@
 import os
 import random
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 import pytest
@@ -20,10 +19,10 @@ from clisops.parameter import (
     time_series,
 )
 from clisops.utils.dataset_utils import determine_lon_lat_range
-from clisops.utils.output_utils import _format_time  # noqa
+from clisops.utils.output_utils import _format_time
 
 
-def _load_ds(fpath: Union[str, Path]):
+def _load_ds(fpath: str | Path):
     if isinstance(fpath, (str, Path)):
         if str(fpath).endswith("*.nc"):
             return xr.open_mfdataset(fpath)
@@ -58,10 +57,7 @@ def test_subset_time(nimbus, tmpdir, check_output_nc):
 
 def test_subset_args_as_parameter_classes(nimbus, tmpdir, check_output_nc):
     """Tests clisops subset function with a time subset with the arguments as parameter classes from roocs-utils."""
-
-    time = time_parameter.TimeParameter(
-        time_interval("2000-01-01T00:00:00", "2020-12-30T00:00:00")
-    )
+    time = time_parameter.TimeParameter(time_interval("2000-01-01T00:00:00", "2020-12-30T00:00:00"))
     area = area_parameter.AreaParameter((0, -90.0, 360.0, 90.0))
 
     result = subset(
@@ -87,9 +83,7 @@ def test_subset_args_as_parameter_classes(nimbus, tmpdir, check_output_nc):
 )
 def test_subset_ATLAS_datasets(tmpdir, dset, check_output_nc, mini_esgf_data):
     """Test temporal and spatial subset for several ATLAS datasets."""
-    time = time_parameter.TimeParameter(
-        time_interval("2000-01-01T00:00:00", "2020-12-30T00:00:00")
-    )
+    time = time_parameter.TimeParameter(time_interval("2000-01-01T00:00:00", "2020-12-30T00:00:00"))
     area = area_parameter.AreaParameter((0, -90.0, 360.0, 90.0))
 
     result = subset(
@@ -120,7 +114,7 @@ def test_subset_ds_is_none(tmpdir):
     """Tests subset with ds=None."""
     with pytest.raises(InvalidParameterValue):
         subset(
-            ds=None,  # noqa
+            ds=None,
             time=time_interval("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
             area=(0, -90.0, 360.0, 90.0),
             output_dir=tmpdir,
@@ -134,7 +128,7 @@ def test_subset_no_ds(tmpdir):
             time=time_interval("2020-01-01T00:00:00", "2020-12-30T00:00:00"),
             area=(0, -90.0, 360.0, 90.0),
             output_dir=tmpdir,
-        )  # noqa
+        )
 
 
 def test_subset_area_simple_file_name(nimbus, tmpdir, check_output_nc):
@@ -184,7 +178,8 @@ def test_subset_invalid_area(nimbus, tmpdir):
 
 
 def test_subset_with_time_and_area(nimbus, tmpdir):
-    """Tests clisops subset function with time and area subsets.
+    """
+    Tests clisops subset function with time and area subsets.
 
     On completion:
     - assert all dimensions have been reduced.
@@ -210,7 +205,8 @@ def test_subset_with_time_and_area(nimbus, tmpdir):
 
 
 def test_subset_4D_data_all_argument_permutations(tmpdir, mini_esgf_data):
-    """Tests clisops subset function with:
+    """
+    Tests clisops subset function with:
     - no args (collection only)
     - time only
     - level only
@@ -277,7 +273,7 @@ def test_subset_4D_data_all_argument_permutations(tmpdir, mini_esgf_data):
 
 
 def test_subset_with_multiple_files_tas(tmpdir, check_output_nc, mini_esgf_data):
-    """Tests with multiple tas files"""
+    """Tests with multiple tas files."""
     result = subset(
         ds=mini_esgf_data["CMIP5_TAS"],
         time=time_interval("2001-01-01T00:00:00", "2020-12-30T00:00:00"),
@@ -290,7 +286,7 @@ def test_subset_with_multiple_files_tas(tmpdir, check_output_nc, mini_esgf_data)
 
 
 def test_subset_with_multiple_files_zostoga(tmpdir, check_output_nc, mini_esgf_data):
-    """Tests with multiple zostoga files"""
+    """Tests with multiple zostoga files."""
     result = subset(
         ds=mini_esgf_data["CMIP5_ZOSTOGA"],
         time=time_interval("2000-01-01T00:00:00", "2020-12-30T00:00:00"),
@@ -302,7 +298,7 @@ def test_subset_with_multiple_files_zostoga(tmpdir, check_output_nc, mini_esgf_d
 
 
 def test_subset_with_multiple_files_rh(tmpdir, check_output_nc, mini_esgf_data):
-    """Tests with multiple rh files"""
+    """Tests with multiple rh files."""
     result = subset(
         ds=mini_esgf_data["CMIP5_RH"],
         time=time_interval("2005-01-01T00:00:00", "2020-12-30T00:00:00"),
@@ -315,7 +311,7 @@ def test_subset_with_multiple_files_rh(tmpdir, check_output_nc, mini_esgf_data):
 
 
 def test_subset_with_tas_series(tmpdir, tas_series, check_output_nc):
-    """Test with tas_series fixture"""
+    """Test with tas_series fixture."""
     result = subset(
         ds=tas_series(["20", "22", "25"]),
         time=time_interval("2000-07-01T00:00:00", "2020-12-30T00:00:00"),
@@ -390,12 +386,8 @@ def test_time_slices_in_subset_rh(mini_esgf_data):
 
         count = 0
         for _ in outputs:
-            assert (
-                _format_time(outputs[count].time.values.min()) >= time_slices[count][0]
-            )
-            assert (
-                _format_time(outputs[count].time.values.max()) >= time_slices[count][1]
-            )
+            assert _format_time(outputs[count].time.values.min()) >= time_slices[count][0]
+            assert _format_time(outputs[count].time.values.max()) >= time_slices[count][1]
             count += 1
 
 
@@ -435,7 +427,8 @@ def test_area_within_area_subset_cmip6(mini_esgf_data):
 
 
 def test_subset_with_lat_lon_single_values(mini_esgf_data):
-    """Creates subset where lat and lon only have one value. Then
+    """
+    Creates subset where lat and lon only have one value. Then
     subsets that. This tests that the `lat_bnds` and `lon_bnds`
     are not being reversed by the `_check_desc_coords` function in
     `clisops.core.subset`.
@@ -493,9 +486,7 @@ def test_subset_level(nimbus):
 
     ds = _load_ds(cmip6_o3)
 
-    result1 = subset(
-        ds=cmip6_o3, level=level_interval("100000/100"), output_type="xarray"
-    )
+    result1 = subset(ds=cmip6_o3, level=level_interval("100000/100"), output_type="xarray")
 
     np.testing.assert_array_equal(result1[0].o3.values, ds.o3.values)
 
@@ -503,16 +494,14 @@ def test_subset_level(nimbus):
 
     np.testing.assert_array_equal(result2[0].o3.shape, (1200, 1, 2, 3))
 
-    result3 = subset(
-        ds=cmip6_o3, level=level_interval("101/-23.234"), output_type="xarray"
-    )
+    result3 = subset(ds=cmip6_o3, level=level_interval("101/-23.234"), output_type="xarray")
 
     np.testing.assert_array_equal(result3[0].o3.values, result2[0].o3.values)
 
 
 def test_aux_variables():
     """
-    test auxiliary variables are remembered in output dataset
+    Test auxiliary variables are remembered in output dataset
     Have to create a netcdf file with auxiliary variable
     """
     ds = _load_ds("tests/data/test_file.nc")
@@ -531,7 +520,7 @@ def test_aux_variables():
 
 def test_coord_variables_exist(mini_esgf_data):
     """
-    check coord variables e.g. lat/lon when original data
+    Check coord variables e.g. lat/lon when original data
     is on an irregular grid exist in output dataset
     """
     ds = _load_ds(mini_esgf_data["C3S_CMIP5_TSICE"])
@@ -552,7 +541,7 @@ def test_coord_variables_exist(mini_esgf_data):
 
 def test_coord_variables_subsetted_i_j(mini_esgf_data):
     """
-    check coord variables e.g. lat/lon when original data
+    Check coord variables e.g. lat/lon when original data
     is on an irregular grid are subsetted correctly in output dataset
     """
     ds = _load_ds(mini_esgf_data["C3S_CMIP5_TSICE"])
@@ -575,12 +564,8 @@ def test_coord_variables_subsetted_i_j(mini_esgf_data):
     assert out.values.shape == (180, 7, 4)
 
     # all lats and lons (hence i and j) have been dropped in these ranges as they are all masked, only time dim remains
-    assert out.where(
-        np.logical_and(out.lon < area[0], out.lon > area[2]), drop=True
-    ).values.shape == (180, 0, 0)
-    assert out.where(
-        np.logical_and(out.lat < area[1], out.lat > area[3]), drop=True
-    ).values.shape == (180, 0, 0)
+    assert out.where(np.logical_and(out.lon < area[0], out.lon > area[2]), drop=True).values.shape == (180, 0, 0)
+    assert out.where(np.logical_and(out.lat < area[1], out.lat > area[3]), drop=True).values.shape == (180, 0, 0)
 
     mask1 = ~(np.isnan(out.sel(time=out.time[0])))
 
@@ -592,7 +577,7 @@ def test_coord_variables_subsetted_i_j(mini_esgf_data):
 
 def test_coord_variables_subsetted_rlat_rlon(mini_esgf_data):
     """
-    check coord variables e.g. lat/lon when original data
+    Check coord variables e.g. lat/lon when original data
     is on an irregular grid are subsetted correctly in output dataset
     """
     ds = _load_ds(mini_esgf_data["CMIP5_WRONG_CF_UNITS"])
@@ -615,12 +600,8 @@ def test_coord_variables_subsetted_rlat_rlon(mini_esgf_data):
     assert out.values.shape == (1, 65, 15)
 
     # all lats and lons (hence rlat and rlon) have been dropped in these ranges as they are all masked, only time dim remains
-    assert out.where(
-        np.logical_and(out.lon < area[0], out.lon > area[2]), drop=True
-    ).values.shape == (1, 0, 0)
-    assert out.where(
-        np.logical_and(out.lat < area[1], out.lat > area[3]), drop=True
-    ).values.shape == (1, 0, 0)
+    assert out.where(np.logical_and(out.lon < area[0], out.lon > area[2]), drop=True).values.shape == (1, 0, 0)
+    assert out.where(np.logical_and(out.lat < area[1], out.lat > area[3]), drop=True).values.shape == (1, 0, 0)
 
     mask1 = ~(np.isnan(out.sel(time=out.time[0])))
 
@@ -808,9 +789,7 @@ def test_roll_positive_mini_data(mini_esgf_data):
     assert area[1] <= all(result[0].lat.values) <= area[3]
 
     # check array contains expected values
-    assert np.array_equal(
-        result[0].lon.values, [-170.15625, -106.875, -43.59375, 0.0, 63.28125]
-    )
+    assert np.array_equal(result[0].lon.values, [-170.15625, -106.875, -43.59375, 0.0, 63.28125])
 
 
 def test_lon_alignment_curvilinear_grid(mini_esgf_data):
@@ -884,17 +863,13 @@ class TestSubset:
     def test_resolve_params_invalid_time(self, nimbus):
         with pytest.raises(InvalidParameterValue):
             Subset(
-                ds=nimbus.fetch(
-                    "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"
-                ),
+                ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
                 time=time_interval("1999-01-01T00:00:00", "maybe tomorrow"),
                 area=(0, -90, 360, 90),
             )
         with pytest.raises(InvalidParameterValue):
             Subset(
-                ds=nimbus.fetch(
-                    "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"
-                ),
+                ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
                 time=time_interval("", "2100"),
                 area=(0, -90, 360, 90),
             )
@@ -917,16 +892,12 @@ class TestSubset:
     def test_map_params_invalid_area(self, nimbus):
         with pytest.raises(InvalidParameterValue):
             Subset(
-                ds=nimbus.fetch(
-                    "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"
-                ),
+                ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
                 area=(0, 10, 50),
             )
         with pytest.raises(InvalidParameterValue):
             Subset(
-                ds=nimbus.fetch(
-                    "cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"
-                ),
+                ds=nimbus.fetch("cmip5/tas_Amon_HadGEM2-ES_rcp85_r1i1p1_200512-203011.nc"),
                 area=("zero", 10, 50, 60),
             )
 
@@ -940,9 +911,7 @@ def test_end_date_nudged_backwards(mini_esgf_data):
     # check end date normally raises an error
     with pytest.raises(ValueError) as exc:
         ds.time.sel(time=slice(None, end_date))
-    assert str(exc.value).startswith(
-        "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0"
-    )
+    assert str(exc.value).startswith("invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0")
 
     result = subset(
         ds=mini_esgf_data["CMIP6_SICONC_DAY"],
@@ -964,9 +933,7 @@ def test_start_date_nudged_forwards(mini_esgf_data):
     # check start date normally raises an error
     with pytest.raises(ValueError) as exc:
         ds.time.sel(time=slice(None, start_date))
-    assert str(exc.value).startswith(
-        "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0"
-    )
+    assert str(exc.value).startswith("invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0")
 
     result = subset(
         ds=mini_esgf_data["CMIP6_SICONC_DAY"],
@@ -988,9 +955,7 @@ def test_end_date_nudged_backwards_monthly_data(mini_esgf_data):
     # check end date normally raises an error
     with pytest.raises(ValueError) as exc:
         ds.time.sel(time=slice(None, end_date))
-    assert str(exc.value).startswith(
-        "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0"
-    )
+    assert str(exc.value).startswith("invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0")
 
     result = subset(
         ds=mini_esgf_data["CMIP6_SICONC"],
@@ -1012,9 +977,7 @@ def test_start_date_nudged_backwards_monthly_data(mini_esgf_data):
     # check start date normally raises an error
     with pytest.raises(ValueError) as exc:
         ds.time.sel(time=slice(None, start_date))
-    assert str(exc.value).startswith(
-        "invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0"
-    )
+    assert str(exc.value).startswith("invalid day number provided in cftime.DatetimeNoLeap(2012, 2, 29, 12, 0, 0, 0")
 
     result = subset(
         ds=mini_esgf_data["CMIP6_SICONC"],
@@ -1037,8 +1000,7 @@ def test_no_lon_in_range(mini_esgf_data):
         )
 
     assert (
-        str(exc.value)
-        == "There were no valid data points found in the requested subset. Please expand "
+        str(exc.value) == "There were no valid data points found in the requested subset. Please expand "
         "the area covered by the bounding box, the time period or the level range you have selected."
     )
 
@@ -1053,8 +1015,7 @@ def test_no_lat_in_range(mini_esgf_data):
         )
 
     assert (
-        str(exc.value)
-        == "There were no valid data points found in the requested subset. Please expand "
+        str(exc.value) == "There were no valid data points found in the requested subset. Please expand "
         "the area covered by the bounding box, the time period or the level range you have selected."
     )
 
@@ -1069,8 +1030,7 @@ def test_no_lat_lon_in_range(mini_esgf_data):
         )
 
     assert (
-        str(exc.value)
-        == "There were no valid data points found in the requested subset. Please expand "
+        str(exc.value) == "There were no valid data points found in the requested subset. Please expand "
         "the area covered by the bounding box, the time period or the level range you have selected."
     )
 
@@ -1114,8 +1074,7 @@ def test_curvilinear_ds_no_data_in_bbox(mini_esgf_data):
             output_type="xarray",
         )
     assert (
-        str(exc.value)
-        == "There were no valid data points found in the requested subset. "
+        str(exc.value) == "There were no valid data points found in the requested subset. "
         "Please expand the area covered by the bounding box."
     )
 
@@ -1132,7 +1091,6 @@ def test_curvilinear_increase_lon_of_bbox(mini_esgf_data):
 
 
 class TestReverseBounds:
-
     rlds = "CMIP6_RLDS_ONE_TIME_STEP"
     tos = "CMIP6_TOS_ONE_TIME_STEP"
 
@@ -1275,9 +1233,7 @@ class TestReverseBounds:
         )
 
         # return lat and lon to ascending
-        result_rev = (
-            result_rev[0].sortby("lat", ascending=True).sortby("lon", ascending=True)
-        )
+        result_rev = result_rev[0].sortby("lat", ascending=True).sortby("lon", ascending=True)
 
         np.testing.assert_array_equal(result[0].rlds, result_rev.rlds)
 
@@ -1300,9 +1256,7 @@ class TestReverseBounds:
         )
 
         # return lat and lon to ascending
-        result_rev = (
-            result_rev[0].sortby("i", ascending=True).sortby("j", ascending=True)
-        )
+        result_rev = result_rev[0].sortby("i", ascending=True).sortby("j", ascending=True)
 
         np.testing.assert_array_equal(result[0].tos, result_rev.tos)
 
@@ -1340,14 +1294,10 @@ class TestReverseBounds:
                 time=time_interval("2050-12-31/2021-01-01"),
                 output_type="xarray",
             )
-        assert (
-            str(exc.value)
-            == 'Start date ("2051-01-16T00:00:00") is after end date ("2020-12-16T00:00:00").'
-        )
+        assert str(exc.value) == 'Start date ("2051-01-16T00:00:00") is after end date ("2020-12-16T00:00:00").'
 
 
 class TestByValues:
-
     @staticmethod
     def shuffle(lst):
         l_copy = lst[:]
@@ -1356,7 +1306,8 @@ class TestByValues:
 
     @staticmethod
     def assert_vars_equal(var_id, *ds_list, extras=None):
-        """Extract variable/DataArray `var_id` from each Dataset in the `ds_list`.
+        """
+        Extract variable/DataArray `var_id` from each Dataset in the `ds_list`.
 
         Check they are all the same by comparing the arrays and common attributes.
         `extras` is an optional list of extra attributes to check.
@@ -1525,9 +1476,7 @@ class TestByValues:
         self.assert_vars_equal("plev", *ds_list)
 
     def test_subset_time_by_values_all(self, tmpdir, mini_esgf_data):
-        all_times = [
-            str(tm) for tm in xr.open_dataset(mini_esgf_data["CMIP6_TA"]).time.values
-        ]
+        all_times = [str(tm) for tm in xr.open_dataset(mini_esgf_data["CMIP6_TA"]).time.values]
 
         shuffled_1 = self.shuffle(all_times)
         shuffled_2 = self.shuffle(all_times)
@@ -1553,9 +1502,7 @@ class TestByValues:
         self.assert_vars_equal("time", *ds_list)
 
     def test_subset_time_by_values_partial(self, tmpdir, mini_esgf_data):
-        all_times = [
-            str(tm) for tm in xr.open_dataset(mini_esgf_data["CMIP6_TA"]).time.values
-        ]
+        all_times = [str(tm) for tm in xr.open_dataset(mini_esgf_data["CMIP6_TA"]).time.values]
         some_times = all_times[20:-15]
 
         shuffled_1 = self.shuffle(some_times)
@@ -1580,9 +1527,7 @@ class TestByValues:
         self.assert_vars_equal("time", *ds_list)
 
     def test_subset_time_by_values_with_gaps(self, tmpdir, mini_esgf_data):
-        all_times = [
-            str(tm) for tm in xr.open_dataset(mini_esgf_data["CMIP6_TA"]).time.values
-        ]
+        all_times = [str(tm) for tm in xr.open_dataset(mini_esgf_data["CMIP6_TA"]).time.values]
         some_times = [
             all_times[0],
             all_times[100],
@@ -1672,9 +1617,7 @@ def test_subset_by_time_components_month_day(tmpdir, mini_esgf_data):
     kwargs = {"output_dir": tmpdir, "output_type": "xarray"}
 
     for tc in (tc1, tc2):
-        with subset(mini_esgf_data["CMIP6_SICONC_DAY"], time_components=tc, **kwargs)[
-            0
-        ] as ds:
+        with subset(mini_esgf_data["CMIP6_SICONC_DAY"], time_components=tc, **kwargs)[0] as ds:
             assert set(ds.time.dt.month.values) == {7}
             assert set(ds.time.dt.day.values) == {1, 11, 21}
             assert len(ds.time.values) == (2014 - 1850 + 1) * 3
@@ -1694,9 +1637,7 @@ def test_subset_by_time_interval_and_components_month_day(tmpdir, mini_esgf_data
     kwargs = {"output_dir": tmpdir, "output_type": "xarray"}
 
     for tc in (tc1, tc2):
-        with subset(
-            mini_esgf_data["CMIP6_SICONC_DAY"], time=ti, time_components=tc, **kwargs
-        )[0] as ds:
+        with subset(mini_esgf_data["CMIP6_SICONC_DAY"], time=ti, time_components=tc, **kwargs)[0] as ds:
             assert set(ds.time.dt.month.values) == set(months)
             assert set(ds.time.dt.day.values) == set(days)
             assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
@@ -1706,9 +1647,7 @@ def test_subset_by_time_series_and_components_month_day(tmpdir, mini_esgf_data):
     # CMIP6_SICONC_DAY: 18500101-20141231 ;  n_times = 60225
     ys, ye = 1850, 1869
     req_times = [
-        tm.isoformat()
-        for tm in xr.open_dataset(mini_esgf_data["CMIP6_SICONC_DAY"]).time.values
-        if ys <= tm.year <= ye
+        tm.isoformat() for tm in xr.open_dataset(mini_esgf_data["CMIP6_SICONC_DAY"]).time.values if ys <= tm.year <= ye
     ]
 
     ts = time_series(req_times)
@@ -1721,9 +1660,7 @@ def test_subset_by_time_series_and_components_month_day(tmpdir, mini_esgf_data):
     kwargs = {"output_dir": tmpdir, "output_type": "xarray"}
 
     for tc in (tc1, tc2):
-        with subset(
-            mini_esgf_data["CMIP6_SICONC_DAY"], time=ts, time_components=tc, **kwargs
-        )[0] as ds:
+        with subset(mini_esgf_data["CMIP6_SICONC_DAY"], time=ts, time_components=tc, **kwargs)[0] as ds:
             assert set(ds.time.dt.month.values) == set(months)
             assert set(ds.time.dt.day.values) == set(days)
             assert len(ds.time.values) == (ye - ys + 1) * len(months) * len(days)
@@ -1760,7 +1697,6 @@ def test_subset_by_area_and_components_month_day(tmpdir, mini_esgf_data):
 @pytest.mark.thread_unsafe
 @pytest.mark.slow
 class TestSubsetResultLocking:
-
     def test_subset_nc_no_fill_value(self, nimbus, tmpdir, mini_esgf_data):
         """Tests clisops subset function with a time subset."""
         # FIXME: The `subset` operation relies on opening a file with xarray as a reference.
@@ -1853,11 +1789,13 @@ class TestSubsetResultLocking:
             assert "coordinates" not in res.time_bnds.encoding
 
     def test_subset_cmip6_issue_308_fillvalue(self, tmpdir, capsys, mini_esgf_data):
-        """Tests clisops subset function with a time subset and check the metadata.
+        """
+        Tests clisops subset function with a time subset and check the metadata.
 
         Notes
         -----
         This test is used for fillvalue issues. See: https://github.com/roocs/clisops/issues/308
+
         """
         from clisops.utils.common import enable_logging
         from clisops.utils.testing import ContextLogger

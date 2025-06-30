@@ -20,10 +20,7 @@ def test_file_mapper():
     ]
     fm = FileMapper(file_paths)
 
-    assert (
-        fm.dirpath
-        == "/badc/cmip6/data/CMIP6/CMIP/MIROC/MIROC6/amip/r1i1p1f1/day/tas/gn/latest"
-    )
+    assert fm.dirpath == "/badc/cmip6/data/CMIP6/CMIP/MIROC/MIROC6/amip/r1i1p1f1/day/tas/gn/latest"
     assert fm.file_paths == file_paths
     assert fm.file_list == [
         "tas_day_MIROC6_amip_r1i1p1f1_gn_19790101-19881231.nc",
@@ -41,10 +38,7 @@ def test_file_mapper_different_dirpath():
 
     with pytest.raises(Exception) as exc:
         FileMapper(file_paths)
-    assert (
-        str(exc.value)
-        == "File inputs are not from the same directory so cannot be resolved."
-    )
+    assert str(exc.value) == "File inputs are not from the same directory so cannot be resolved."
 
 
 @pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
@@ -77,6 +71,4 @@ def test_is_file_list(cds_domain):
     with pytest.raises(Exception) as exc:
         coll = "/badc/cmip6/fake1.nc"
         is_file_list(coll)
-    assert (
-        str(exc.value) == "Expected collection as a list, have received <class 'str'>"
-    )
+    assert str(exc.value) == "Expected collection as a list, have received <class 'str'>"

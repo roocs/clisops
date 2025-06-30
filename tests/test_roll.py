@@ -1,4 +1,3 @@
-import os
 from math import isclose
 
 import numpy as np
@@ -9,7 +8,6 @@ from clisops.utils.dataset_utils import get_coord_by_type
 
 
 class TestRoll:
-
     @staticmethod
     def calculate_offset(x, lon):
         # get resolution of data

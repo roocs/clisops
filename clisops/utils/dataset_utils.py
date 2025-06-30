@@ -1,9 +1,11 @@
+"""Dataset utilities for CLISOPS."""
+
 import inspect
 import os
+import pathlib
 import warnings
-from typing import Optional
 
-import cf_xarray as cfxr  # noqa
+import cf_xarray as cfxr
 import cftime
 import dask.array as da
 import fsspec
@@ -20,10 +22,10 @@ KERCHUNK_EXTS = [".json", ".zst", ".zstd", ".parquet"]
 
 
 def get_coord_by_type(
-    ds, coord_type, ignore_aux_coords=True, return_further_matches=False
+    ds: xr.DataArray | xr.Dataset, coord_type: str, ignore_aux_coords: bool = True, return_further_matches: bool = False
 ):
     """
-    Returns the name of the coordinate that matches the given type.
+    Return the name of the coordinate that matches the given type.
 
     Parameters
     ----------
@@ -40,7 +42,7 @@ def get_coord_by_type(
     -------
     str
         Name of the coordinate that matches the given type.
-    str, list of str
+    str or list of str
         If return_further_matches is True, apart from the matching coordinate,
         a list with further potential matches is returned.
 
@@ -50,7 +52,7 @@ def get_coord_by_type(
         If the coordinate type is not known.
     """
     # List for all potential matches
-    coords = list()
+    coords = []
 
     # If coord_type is not in known_coord_types then raise an error
     if coord_type not in known_coord_types:
@@ -75,7 +77,7 @@ def get_coord_by_type(
     else:
         raise TypeError("Not an xarray.Dataset or xarray.DataArray.")
     for coord_id in coord_vars:
-        # If ignore_aux_coords is True then: ignore coords that are not dimensions
+        # If ignore_aux_coords is True, then ignore coords that are not dimensions
         if ignore_aux_coords and coord_id not in ds.dims:
             continue
 
@@ -95,14 +97,12 @@ def get_coord_by_type(
             return coords[0]
     # If more than one match is found, a selection has to be made
     else:
-        warnings.warn(
-            f"More than one coordinate variable found for type '{coord_type}'. Selecting the best fit."
-        )
+        warnings.warn(f"More than one coordinate variable found for type '{coord_type}'. Selecting the best fit.")
         # Sort in terms of number of dimensions
         coords = sorted(coords, key=lambda x: len(ds[x].dims), reverse=True)
 
         if main_var is not None:
-            # Get dimensions and singleton coords of main variable
+            # Get dimensions and singleton coords of the main variable
             main_var_dims = list(ds[main_var].dims)
 
             # Select coordinate with most dims (matching with main variable dims)
@@ -113,7 +113,7 @@ def get_coord_by_type(
                             return coord_id, [x for x in coords if x != coord_id]
                         else:
                             return coord_id
-        # If the decision making fails, pass the first match
+        # If the decision-making fails, pass the first match
         if return_further_matches:
             return coords[0], coords[1:]
         else:
@@ -123,12 +123,21 @@ def get_coord_by_type(
 # from dachar
 def get_coord_by_attr(ds, attr, value):
     """
-    Returns a coordinate based on a known attribute of a coordinate.
+    Return a coordinate based on a known attribute of a coordinate.
 
-    :param ds: Xarray Dataset or DataArray
-    :param attr: (str) Name of attribute to look for.
-    :param value: Expected value of attribute you are looking for.
-    :return: Coordinate of xarray dataset if found.
+    Parameters
+    ----------
+    ds : xarray.Dataset or xarray.DataArray
+        The xarray dataset or data array to search for the coordinate.
+    attr : str
+        The name of the attribute to look for in the coordinates.
+    value : any
+        The expected value of the attribute you are looking for.
+
+    Returns
+    -------
+    xarray.DataArray, optional
+        The coordinate of the xarray dataset if found, otherwise None.
     """
     coords = ds.coords
 
@@ -139,24 +148,24 @@ def get_coord_by_attr(ds, attr, value):
     return None
 
 
-def is_latitude(coord):
+def is_latitude(coord: xr.DataArray | xr.Dataset) -> bool:
     """
-    Determines if a coordinate is latitude.
+    Determine if a coordinate is latitude.
 
-    :param coord: coordinate of xarray dataset e.g. coord = ds.coords[coord_id]
-    :return: (bool) True if the coordinate is latitude.
+    Parameters
+    ----------
+    coord : xarray.DataArray or xarray.Dataset
+        Coordinate of xarray dataset, e.g. coord = ds.coords[coord_id].
+
+    Returns
+    -------
+    bool
+        True if the coordinate is latitude, otherwise False.
     """
-
-    if (
-        "latitude" in coord.cf.coordinates
-        and coord.name in coord.cf.coordinates["latitude"]
-    ):
+    if "latitude" in coord.cf.coordinates and coord.name in coord.cf.coordinates["latitude"]:
         return True
 
-    if (
-        "latitude" in coord.cf.standard_names
-        and coord.name in coord.cf.standard_names["latitude"]
-    ):
+    if "latitude" in coord.cf.standard_names and coord.name in coord.cf.standard_names["latitude"]:
         return True
 
     if hasattr(coord, "standard_name") and coord.standard_name == "latitude":
@@ -168,23 +177,24 @@ def is_latitude(coord):
     return False
 
 
-def is_longitude(coord):
+def is_longitude(coord: xr.DataArray | xr.Dataset) -> bool:
     """
-    Determines if a coordinate is longitude.
+    Determine if a coordinate is longitude.
 
-    :param coord: coordinate of xarray dataset e.g. coord = ds.coords[coord_id]
-    :return: (bool) True if the coordinate is longitude.
+    Parameters
+    ----------
+    coord : xarray.DataArray or xarray.Dataset
+        Coordinate of xarray dataset, e.g. coord = ds.coords[coord_id].
+
+    Returns
+    -------
+    bool
+        True if the coordinate is longitude, otherwise False.
     """
-    if (
-        "longitude" in coord.cf.coordinates
-        and coord.name in coord.cf.coordinates["longitude"]
-    ):
+    if "longitude" in coord.cf.coordinates and coord.name in coord.cf.coordinates["longitude"]:
         return True
 
-    if (
-        "longitude" in coord.cf.standard_names
-        and coord.name in coord.cf.standard_names["longitude"]
-    ):
+    if "longitude" in coord.cf.standard_names and coord.name in coord.cf.standard_names["longitude"]:
         return True
 
     if hasattr(coord, "standard_name") and coord.standard_name == "longitude":
@@ -196,17 +206,21 @@ def is_longitude(coord):
     return False
 
 
-def is_level(coord):
+def is_level(coord: xr.DataArray | xr.Dataset) -> bool:
     """
-    Determines if a coordinate is level.
+    Determine if a coordinate is level.
 
-    :param coord: coordinate of xarray dataset e.g. coord = ds.coords[coord_id]
-    :return: (bool) True if the coordinate is level.
+    Parameters
+    ----------
+    coord : xarray.DataArray or xarray.Dataset
+        Coordinate of xarray dataset, e.g. coord = ds.coords[coord_id].
+
+    Returns
+    -------
+    bool
+        True if the coordinate is level, otherwise False.
     """
-    if (
-        "vertical" in coord.cf.coordinates
-        and coord.name in coord.cf.coordinates["vertical"]
-    ):
+    if "vertical" in coord.cf.coordinates and coord.name in coord.cf.coordinates["vertical"]:
         return True
 
     if hasattr(coord, "positive"):
@@ -220,7 +234,7 @@ def is_level(coord):
     return False
 
 
-def _is_time(coord):
+def _is_time(coord: xr.DataArray | xr.Dataset) -> bool:
     """
     Check if a coordinate uses cftime datetime objects.
 
@@ -232,7 +246,7 @@ def _is_time(coord):
     if isinstance(coord.dtype.type(), cftime.datetime):
         return True
 
-    # Safely get first element without loading entire array
+    # Safely get the first element without loading the entire array
     first_value = coord.isel({dim: 0 for dim in coord.dims}).values
 
     # Compute only if it's a Dask array
@@ -242,12 +256,19 @@ def _is_time(coord):
     return isinstance(first_value.item(0), cftime.datetime)
 
 
-def is_time(coord):
+def is_time(coord: xr.DataArray | xr.Dataset) -> bool:
     """
-    Determines if a coordinate is time.
+    Determine if a coordinate is time.
 
-    :param coord: coordinate of xarray dataset e.g. coord = ds.coords[coord_id]
-    :return: (bool) True if the coordinate is time.
+    Parameters
+    ----------
+    coord : xarray.DataArray or xarray.Dataset
+        Coordinate of xarray dataset, e.g. coord = ds.coords[coord_id].
+
+    Returns
+    -------
+    bool
+        True if the coordinate is time, otherwise False.
     """
     if False and coord.ndim >= 2:
         # skip variables with more than two dimensions: lat_bnds, lon_bnds, time_bnds, t, ...
@@ -256,10 +277,7 @@ def is_time(coord):
     if "time" in coord.cf.coordinates and coord.name in coord.cf.coordinates["time"]:
         return True
 
-    if (
-        "time" in coord.cf.standard_names
-        and coord.name in coord.cf.standard_names["time"]
-    ):
+    if "time" in coord.cf.standard_names and coord.name in coord.cf.standard_names["time"]:
         return True
 
     if np.issubdtype(coord.dtype, np.datetime64):
@@ -272,17 +290,21 @@ def is_time(coord):
     return _is_time(coord)
 
 
-def is_realization(coord):
+def is_realization(coord: xr.DataArray | xr.Dataset) -> bool:
     """
-    Determines if a coordinate is realization.
+    Determine if a coordinate is realisation.
 
-    :param coord: coordinate of xarray dataset e.g. coord = ds.coords[coord_id]
-    :return: (bool) True if the coordinate is longitude.
+    Parameters
+    ----------
+    coord : xarray.DataArray or xarray.Dataset
+        Coordinate of xarray dataset, e.g. coord = ds.coords[coord_id].
+
+    Returns
+    -------
+    bool
+        True if the coordinate is realization, otherwise False.
     """
-    if (
-        "realization" in coord.cf.standard_names
-        and coord.name in coord.cf.standard_names["realization"]
-    ):
+    if "realization" in coord.cf.standard_names and coord.name in coord.cf.standard_names["realization"]:
         return True
 
     if coord.attrs.get("standard_name", None) == "realization":
@@ -291,14 +313,20 @@ def is_realization(coord):
     return False
 
 
-def get_coord_type(coord):
+def get_coord_type(coord: xr.DataArray | xr.Dataset) -> str | None:
     """
-    Gets the coordinate type.
+    Get the coordinate type.
 
-    :param coord: coordinate of xarray dataset e.g. coord = ds.coords[coord_id]
-    :return: The type of coordinate as a string. Either longitude, latitude, time, level or None
+    Parameters
+    ----------
+    coord : xarray.DataArray or xarray.Dataset
+        Coordinate of xarray dataset, e.g. coord = ds.coords[coord_id].
+
+    Returns
+    -------
+    str, optional
+        The type of coordinate as a string. Either 'longitude', 'latitude', 'time', 'level', 'realization' or None.
     """
-
     if is_longitude(coord):
         return "longitude"
     elif is_latitude(coord):
@@ -315,13 +343,20 @@ def get_coord_type(coord):
 
 def get_main_variable(ds, exclude_common_coords=True):
     """
-    Finds the main variable of an xarray Dataset
+    Find the main variable of an xarray Dataset.
 
-    :param ds: xarray Dataset
-    :param exclude_common_coords: (bool) If True then common coordinates are excluded from the search for the
-                                main variable. common coordinates are time, level, latitude, longitude and bounds.
-                                Default is True.
-    :return: (str) The main variable of the dataset e.g. 'tas'
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The xarray Dataset to search for the main variable.
+    exclude_common_coords : bool
+        If True, common coordinates (time, level, latitude, longitude, bounds) are excluded from the search for the
+        main variable. Default is True.
+
+    Returns
+    -------
+    str
+        The name of the main variable in the dataset, e.g. 'tas'.
     """
     if isinstance(ds, xr.Dataset):
         variables = list(ds.variables.items())
@@ -343,12 +378,10 @@ def get_main_variable(ds, exclude_common_coords=True):
         "realization",
     ]
 
-    for var_id, data in variables:
+    for var_id, _data in variables:
         if var_id in flat_dims:
             continue
-        if exclude_common_coords is True and any(
-            coord in var_id for coord in common_coords
-        ):
+        if exclude_common_coords is True and any(coord in var_id for coord in common_coords):
             continue
         else:
             results.update({var_id: len(ds[var_id].shape)})
@@ -360,17 +393,27 @@ def get_main_variable(ds, exclude_common_coords=True):
         return result
 
 
-def open_xr_dataset(dset, **kwargs):
+def open_xr_dataset(dset: str | pathlib.Path | list[str | pathlib.Path], **kwargs):
     """
-    Opens an xarray dataset from a dataset input.
+    Open an xarray dataset from a dataset input.
 
-    :param dset: (str or Path) A dataset identifier, directory path, or file path ending in ``*.nc``.
-    :param kwargs: Any additional keyword arguments for opening the dataset.
-                   ``decode_times=xr.coders.CFDatetimeCoder(use_cftime=True)`` and ``decode_timedelta=False`` are used by default,
-                   along with ``combine="by_coords"`` for ``open_mfdataset`` only.
+    Parameters
+    ----------
+    dset : str or Path or list of str or list of Path
+        A dataset identifier, directory path, or file path ending in ``*.nc``.
+    **kwargs : dict
+        Any additional keyword arguments for opening the dataset.
+        `decode_times=xr.coders.CFDatetimeCoder(use_cftime=True)` and `decode_timedelta=False`
+        are used by default, along with ``combine="by_coords"`` for ``open_mfdataset`` only.
 
-    Notes:
-        - Any list will be interpreted as a list of files.
+    Returns
+    -------
+    xarray.Dataset
+        An xarray Dataset object opened from the provided dataset input.
+
+    Notes
+    -----
+    Any list will be interpreted as a list of files.
     """
     # Set up dictionaries of arguments to send to all `xr.open_*dataset()` calls
     zarr_file_kwargs = _get_kwargs_for_opener("zarr", **kwargs)
@@ -389,7 +432,7 @@ def open_xr_dataset(dset, **kwargs):
             dset = dset_to_filepaths(dset, force=True)
 
     # If an empty sequence, then raise an Exception
-    if len(dset) == 0:
+    if not len(dset):
         raise Exception("No files found to open with xarray.")
 
     # if a list we want a multi-file dataset
@@ -399,7 +442,7 @@ def open_xr_dataset(dset, **kwargs):
         _patch_time_encoding(ds, dset, **single_file_kwargs)
         return ds
 
-    # if there is only one file we only need to call open_dataset
+    # if there is only one file, we only need to call open_dataset
     else:
         return xr.open_dataset(dset[0], **single_file_kwargs)
 
@@ -411,8 +454,17 @@ def _get_kwargs_for_opener(otype, **kwargs):
     The provided `kwargs` dictionary is used to extend/override the default
     values.
 
-    :param otype: (Str) type of opener (either "single" or "multi")
-    :param kwargs: Any further keyword arguments to include when opening the dataset.
+    Parameters
+    ----------
+    otype : str
+        The type of opener, either "single" for `xr.open_dataset()` or "multi" for `xr.open_mfdataset()`.
+    **kwargs : dict
+        Additional keyword arguments to include when opening the dataset.
+
+    Returns
+    -------
+    dict[str, any]
+        A dictionary of keyword arguments to be used with the specified xarray dataset opener.
     """
     allowed_args = inspect.getfullargspec(xr.open_dataset).kwonlyargs
     allowed_zarr_args = [
@@ -432,7 +484,7 @@ def _get_kwargs_for_opener(otype, **kwargs):
         "target_options": {},
     }
 
-    if otype.lower().startswith("multi"):
+    if otype.lower() == "multi":
         args["combine"] = "by_coords"
         allowed_args.extend(allowed_multi_args)
     elif otype.lower() == "zarr":
@@ -446,25 +498,30 @@ def _get_kwargs_for_opener(otype, **kwargs):
     return args
 
 
-def is_kerchunk_file(dset):
+def is_kerchunk_file(dset: str | pathlib.Path) -> bool:
     """
-    Returns a boolean based on reading the file extension.
+    Return a boolean based on reading the file extension.
+
+    Parameters
+    ----------
+    dset : str or Path
+        The dataset identifier, which is expected to be a file path or name.
+
+    Returns
+    -------
+    bool
+        True if the file is a Kerchunk file (i.e., has a .json, .zst, .zstd, or .parquet extension),
+        otherwise False.
     """
-    if not isinstance(dset, str):
+    if not isinstance(dset, str) or not isinstance(dset, pathlib.Path):
         return False
 
     return os.path.splitext(dset)[-1] in KERCHUNK_EXTS
 
 
 def _open_as_kerchunk(dset, **kwargs):
-    """
-    Open the dataset `dset` as a Kerchunk file. Return an Xarray Dataset.
-    """
-    compression = (
-        "zstd"
-        if dset.split(".")[-1].startswith("zst")
-        else kwargs.get("compression", None)
-    )
+    """Open the dataset `dset` as a Kerchunk file. Return an Xarray Dataset."""
+    compression = "zstd" if dset.split(".")[-1].startswith("zst") else kwargs.get("compression", None)
     target_options = kwargs.get("target_options", {})
     remote_options = kwargs.get("remote_options", {})
     remote_protocol = kwargs.get("remote_protocol", None)
@@ -499,14 +556,22 @@ def _open_as_kerchunk(dset, **kwargs):
 
 def _patch_time_encoding(ds, file_list, **kwargs):
     """
-    NOTE: Hopefully this will be fixed in Xarray at some point. The problem is that if
-          time is present, the multi-file dataset has an empty `encoding` dictionary.
+    Patches the time encoding of an xarray Dataset that has been opened from multiple files.
 
-    Reads the first file in `file_list` to read in the time units attribute. It then
+    Read the first file in `file_list` to read in the time units attribute. It then
     saves that attribute in `ds.time.encoding["units"]`.
 
-    :param ds: xarray.Dataset
-    :file_list: list of file paths
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The xarray dataset to patch.
+    file_list : list of str or Path
+        List of file paths to the dataset files.
+
+    Notes
+    -----
+    Hopefully this will be fixed in Xarray at some point.
+    The problem is that if time is present, the multi-file dataset has an empty `encoding` dictionary.
     """
     # Check that first file exists, if not return
     f1 = sorted(file_list)[0]
@@ -523,12 +588,19 @@ def _patch_time_encoding(ds, file_list, **kwargs):
 
 def convert_coord_to_axis(coord):
     """
-    Converts coordinate type to its single character axis identifier (tzyx).
+    Convert coordinate type to its single character axis identifier (tzyx).
 
-    :param coord: (str) The coordinate to convert.
-    :return: (str) The single character axis identifier of the coordinate (tzyx).
+    Parameters
+    ----------
+    coord : str
+        The coordinate type to convert, e.g. 'time', 'longitude', 'latitude', 'level', 'realization'.
+
+    Returns
+    -------
+    str
+        The single character axis identifier of the coordinate
+        (t for time, z for level, y for latitude, x for longitude, r for realization).
     """
-
     axis_dict = {
         "time": "t",
         "longitude": "x",
@@ -540,12 +612,13 @@ def convert_coord_to_axis(coord):
 
 
 def determine_lon_lat_range(ds, lon, lat, lon_bnds=None, lat_bnds=None, apply_fix=True):
-    """Determine the min/max lon/lat values of the dataset (and potentially apply fix for unmasked missing values).
+    """
+    Determine the min/max lon/lat values of the dataset (and potentially apply fix for unmasked missing values).
 
     Parameters
     ----------
     ds : xarray.Dataset
-        Input dataset.
+        Input dataset object.
     lon : str
         Name of longitude coordinate.
     lat : str
@@ -576,9 +649,7 @@ def determine_lon_lat_range(ds, lon, lat, lon_bnds=None, lat_bnds=None, apply_fi
 
     # Potentially apply fix for unmasked missing values
     if apply_fix:
-        if fix_unmasked_missing_values_lon_lat(
-            ds, lon, lat, lon_bnds, lat_bnds, [xmin, xmax], [ymin, ymax]
-        ):
+        if fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, [xmin, xmax], [ymin, ymax]):
             xmin = ds[lon].min().item()
             xmax = ds[lon].max().item()
             ymin = ds[lat].min().item()
@@ -587,15 +658,14 @@ def determine_lon_lat_range(ds, lon, lat, lon_bnds=None, lat_bnds=None, apply_fi
     return xmin, xmax, ymin, ymax
 
 
-def fix_unmasked_missing_values_lon_lat(
-    ds, lon, lat, lon_bnds, lat_bnds, xminmax, yminmax
-):
-    """Fix for unmasked missing values in longitude and latitude coordinates and their bounds
+def fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, xminmax, yminmax):
+    """
+    Fix for unmasked missing values in longitude and latitude coordinates and their bounds.
 
     Parameters
     ----------
     ds : xarray.Dataset
-        Input dataset.
+        Input dataset object.
     lon : str
         Name of longitude coordinate.
     lat : str
@@ -611,7 +681,7 @@ def fix_unmasked_missing_values_lon_lat(
 
     Returns
     -------
-    fix : bool
+    bool
         Whether the fix on ds[lon] and ds[lat] (and if specified ds[lon_bnds] and ds[lat_bnds]) was applied or not.
     """
     fix = False
@@ -619,10 +689,7 @@ def fix_unmasked_missing_values_lon_lat(
     maxval = 999
 
     # Potentially fix unmasked missing values in longitude/latitude arrays
-    if any([xymin <= minval for xymin in xminmax + yminmax]) or any(
-        [xymax >= maxval for xymax in xminmax + yminmax]
-    ):
-
+    if any([xymin <= minval for xymin in xminmax + yminmax]) or any([xymax >= maxval for xymax in xminmax + yminmax]):
         # Identify potential missing values by detecting outliers
         mask_y = (ds[lat] <= minval) | (ds[lat] >= maxval)
         possible_missing_values_y = ds[lat].where(mask_y)
@@ -652,11 +719,7 @@ def fix_unmasked_missing_values_lon_lat(
         ]
 
         # Compare the masks for lat / lon and abort the fix if they differ
-        if (
-            ds[lat].dims != ds[lon].dims
-            and len(ds[lon].dims) == 1
-            and len(ds[lat].dims) == 1
-        ):
+        if ds[lat].dims != ds[lon].dims and len(ds[lon].dims) == 1 and len(ds[lat].dims) == 1:
             # Abort fix for regular lat-lon grids (1D coordinate variables should not include missing values
             #  - for some of the operations the outliers will cause an exception later on)
             warnings.warn(
@@ -683,40 +746,39 @@ def fix_unmasked_missing_values_lon_lat(
             for var in lat, lon:
                 ds[var] = ds[var].where(ds[var] != missing_value, other=np.nan)
             if lat_bnds is not None and lon_bnds is not None:
-                ds[lat_bnds] = ds[lat_bnds].where(
-                    ds[lat] != missing_value, other=np.nan
-                )
-                ds[lon_bnds] = ds[lon_bnds].where(
-                    ds[lon] != missing_value, other=np.nan
-                )
-            for var in [
-                var for var in [lat, lon, lat_bnds, lon_bnds] if var is not None
-            ]:
-                ds[var].encoding["_FillValue"] = float(1e20)
-                ds[var].encoding["missing_value"] = float(1e20)
-                ds[var].attrs["_FillValue"] = float(1e20)
-                ds[var].attrs["missing_value"] = float(1e20)
-            warnings.warn(
-                f"Unmasked missing_value found (and treated) in {lon} and {lat} arrays: '{missing_value}'."
-            )
+                ds[lat_bnds] = ds[lat_bnds].where(ds[lat] != missing_value, other=np.nan)
+                ds[lon_bnds] = ds[lon_bnds].where(ds[lon] != missing_value, other=np.nan)
+            for var in [var for var in [lat, lon, lat_bnds, lon_bnds] if var is not None]:
+                ds[var].encoding["_FillValue"] = 1e20
+                ds[var].encoding["missing_value"] = 1e20
+                ds[var].attrs["_FillValue"] = 1e20
+                ds[var].attrs["missing_value"] = 1e20
+            warnings.warn(f"Unmasked missing_value found (and treated) in {lon} and {lat} arrays: '{missing_value}'.")
         else:
             # Raise warning - the values will likely cause an exception later on, depending on the operation
             warnings.warn(
-                f"Multiple extreme values (potentially unmasked missing_values) found in {lon} and {lat} arrays: {set(possible_missing_values)}. This may cause issues."
+                "Multiple extreme values (potentially unmasked missing_values) found in "
+                f"{lon} and {lat} arrays: {set(possible_missing_values)}. This may cause issues."
             )
 
     return fix
 
 
-def calculate_offset(lon, first_element_value):
-    """Calculate the number of elements to roll the dataset by in order to have longitude from within requested bounds.
+def calculate_offset(lon: xr.DataArray, first_element_value: float) -> int:
+    """
+    Calculate the number of elements to roll the dataset by in order to have longitude from within requested bounds.
 
     Parameters
     ----------
-    lon
+    lon : xarray.DataArray
         Longitude coordinate of xarray dataset.
-    first_element_value
+    first_element_value : float
         The value of the first element of the longitude array to roll to.
+
+    Returns
+    -------
+    int
+        The number of elements to roll the dataset by.
     """
     # get resolution of data
     res = lon.values[1] - lon.values[0]
@@ -734,13 +796,14 @@ def calculate_offset(lon, first_element_value):
 
 
 def _crosses_0_meridian(lon_c: xr.DataArray):
-    """Determine whether grid extents over the 0-meridian.
+    """
+    Determine whether grid extents over the 0-meridian.
 
     Assumes approximate constant width of grid cells.
 
     Parameters
     ----------
-    lon_c: xr.DataArray
+    lon_c : xr.DataArray
         Longitude coordinate variable in the longitude frame [-180, 180].
 
     Returns
@@ -786,39 +849,36 @@ def _convert_interval_between_lon_frames(low, high):
     """Convert a longitude interval to another longitude frame, returns Tuple of two floats."""
     diff = high - low
     if low < 0 and high > 0:
-        raise ValueError(
-            "Cannot convert longitude interval if it includes the 0°- or 180°-meridian."
-        )
+        raise ValueError("Cannot convert longitude interval if it includes the 0°- or 180°-meridian.")
     elif low < 0:
         return tuple(sorted((low + 360.0, low + 360.0 + diff)))
     elif low < 180 and high > 180:
-        raise ValueError(
-            "Cannot convert longitude interval if it includes the 0°- or 180°-meridian."
-        )
+        raise ValueError("Cannot convert longitude interval if it includes the 0°- or 180°-meridian.")
     elif high > 180:
         return tuple(sorted((high - 360.0 - diff, high - 360.0)))
     else:
         return float(low), float(high)
 
 
-def cf_convert_between_lon_frames(ds_in, lon_interval, force=False):
-    """Convert ds or lon_interval (whichever deems appropriate) to the other longitude frame, if the longitude frames do not match.
+def cf_convert_between_lon_frames(ds_in, lon_interval, force=False):  # noqa: C901
+    """
+    Convert ds or lon_interval to the other longitude frame if the longitude frames do not match, as appropriate.
 
     If ds and lon_interval are defined on different longitude frames ([-180, 180] and [0, 360]),
     this function will convert one of the input parameters to the other longitude frame, preferably
     the lon_interval.
     Adjusts shifted longitude frames [0-x, 360-x] in the dataset to one of the two standard longitude
     frames, dependent on the specified lon_interval.
-    In case of curvilinear grids featuring an additional 1D x-coordinate of the projection,
+    In the case of curvilinear grids featuring an additional 1D x-coordinate of the projection,
     this projection x-coordinate will not get converted.
 
     Parameters
     ----------
-    ds_in: xarray.Dataset or xarray.DataArray
-        xarray data object with defined longitude dimension.
-    lon_interval: tuple or list
-        length-2-tuple or -list of floats or integers denoting the bounds of the longitude interval.
-    force: bool
+    ds_in : xarray.Dataset or xarray.DataArray
+        An xarray data object with defined longitude dimension.
+    lon_interval : tuple or list
+        Length-2-tuple or length-2-list of floats or integers denoting the bounds of the longitude interval.
+    force : bool
         If True, force conversion even if longitude frames match.
 
     Returns
@@ -835,14 +895,10 @@ def cf_convert_between_lon_frames(ds_in, lon_interval, force=False):
         # lat_bnds = detect_bounds(ds_in, lat)
         # Do not consider bounds in gridtype detection (yet fails due to open_mfdataset bug that adds
         #  time dimension to bounds - todo)
-        gridtype = detect_gridtype(
-            ds_in, lon=lon, lat=lat
-        )  # lat_bnds=lat_bnds, lon_bnds = lon_bnds)
+        gridtype = detect_gridtype(ds_in, lon=lon, lat=lat)  # lat_bnds=lat_bnds, lon_bnds = lon_bnds)
         ds = ds_in.copy()
     else:
-        raise InvalidParameterValue(
-            "This function requires an xarray.DataArray or xarray.Dataset as input."
-        )
+        raise InvalidParameterValue("This function requires an xarray.DataArray or xarray.Dataset as input.")
     low, high = lon_interval
     lon_min, lon_max = ds.coords[lon].min().item(), ds.coords[lon].max().item()
     atol = 0.5
@@ -875,15 +931,11 @@ def cf_convert_between_lon_frames(ds_in, lon_interval, force=False):
         if low < 0 and lon_min > 0:
             ds[lon] = ds[lon].where(ds[lon] <= 180, ds[lon] - 360.0)
             if lon_bnds:
-                ds[lon_bnds] = ds[lon_bnds].where(
-                    ds[lon_bnds] <= 180, ds[lon_bnds] - 360.0
-                )
+                ds[lon_bnds] = ds[lon_bnds].where(ds[lon_bnds] <= 180, ds[lon_bnds] - 360.0)
         elif low > 0 and lon_min < 0:
             ds[lon] = ds[lon].where(ds[lon] >= 0, ds[lon] + 360.0)
             if lon_bnds:
-                ds[lon_bnds] = ds[lon_bnds].where(
-                    ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0
-                )
+                ds[lon_bnds] = ds[lon_bnds].where(ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0)
         return ds, low, high
 
     # Conversion: 1D or 2D longitude coordinate variable
@@ -897,30 +949,22 @@ def cf_convert_between_lon_frames(ds_in, lon_interval, force=False):
             if low < 0:
                 ds[lon] = ds[lon].where(ds[lon] > -180, ds[lon] + 360.0)
                 if lon_bnds:
-                    ds[lon_bnds] = ds[lon_bnds].where(
-                        ds[lon_bnds] > -180, ds[lon_bnds] + 360.0
-                    )
+                    ds[lon_bnds] = ds[lon_bnds].where(ds[lon_bnds] > -180, ds[lon_bnds] + 360.0)
             elif low >= 0:
                 ds[lon] = ds[lon].where(ds[lon] >= 0, ds[lon] + 360.0)
                 if lon_bnds:
-                    ds[lon_bnds] = ds[lon_bnds].where(
-                        ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0
-                    )
+                    ds[lon_bnds] = ds[lon_bnds].where(ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0)
 
         # shifted frame beyond 0, eg. [-60, 300]
         elif lon_min < -atol and lon_max > 180 + atol:
             if low < 0:
                 ds[lon] = ds[lon].where(ds[lon] <= 180, ds[lon] - 360.0)
                 if lon_bnds:
-                    ds[lon_bnds] = ds[lon_bnds].where(
-                        ds[lon_bnds] <= 180, ds[lon_bnds] - 360.0
-                    )
+                    ds[lon_bnds] = ds[lon_bnds].where(ds[lon_bnds] <= 180, ds[lon_bnds] - 360.0)
             elif low >= 0:
                 ds[lon] = ds[lon].where(ds[lon] >= 0, ds[lon] + 360.0)
                 if lon_bnds:
-                    ds[lon_bnds] = ds[lon_bnds].where(
-                        ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0
-                    )
+                    ds[lon_bnds] = ds[lon_bnds].where(ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0)
 
         # [-180 ... 180]
         elif lon_min < 0:
@@ -928,9 +972,7 @@ def cf_convert_between_lon_frames(ds_in, lon_interval, force=False):
             if low < 180 and high > 180:
                 ds[lon] = ds[lon].where(ds[lon] >= 0, ds[lon] + 360.0)
                 if lon_bnds:
-                    ds[lon_bnds] = ds[lon_bnds].where(
-                        ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0
-                    )
+                    ds[lon_bnds] = ds[lon_bnds].where(ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0)
             # interval does not include 180°-meridian: convert interval to [-180,180]
             else:
                 if low >= 0:
@@ -939,9 +981,7 @@ def cf_convert_between_lon_frames(ds_in, lon_interval, force=False):
                     else:
                         ds[lon] = ds[lon].where(ds[lon] >= 0, ds[lon] + 360.0)
                         if lon_bnds:
-                            ds[lon_bnds] = ds[lon_bnds].where(
-                                ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0
-                            )
+                            ds[lon_bnds] = ds[lon_bnds].where(ds[lon_bnds] >= 0, ds[lon_bnds] + 360.0)
                 return ds, low, high
 
         # [0 ... 360]
@@ -953,9 +993,7 @@ def cf_convert_between_lon_frames(ds_in, lon_interval, force=False):
             elif high > 0:
                 ds[lon] = ds[lon].where(ds[lon] <= 180, ds[lon] - 360.0)
                 if lon_bnds:
-                    ds[lon_bnds] = ds[lon_bnds].where(
-                        ds[lon_bnds] <= 180, ds[lon_bnds] - 360.0
-                    )
+                    ds[lon_bnds] = ds[lon_bnds].where(ds[lon_bnds] <= 180, ds[lon_bnds] - 360.0)
             # interval negative
             else:
                 if not force:
@@ -964,9 +1002,7 @@ def cf_convert_between_lon_frames(ds_in, lon_interval, force=False):
                 else:
                     ds[lon] = ds[lon].where(ds[lon] <= 180, ds[lon] - 360.0)
                     if lon_bnds:
-                        ds[lon_bnds] = ds[lon_bnds].where(
-                            ds[lon_bnds] <= 180, ds[lon_bnds] - 360.0
-                        )
+                        ds[lon_bnds] = ds[lon_bnds].where(ds[lon_bnds] <= 180, ds[lon_bnds] - 360.0)
         # 1D coordinate variable: Sort, since order might no longer be ascending / descending
         if gridtype == "regular_lat_lon":
             ds = ds.sortby(lon)
@@ -974,10 +1010,23 @@ def cf_convert_between_lon_frames(ds_in, lon_interval, force=False):
         return ds, low, high
 
 
-def check_lon_alignment(ds, lon_bnds):
-    """Check whether the longitude subset requested is within the bounds of the dataset.
+def check_lon_alignment(ds: xr.Dataset, lon_bnds: tuple) -> xr.Dataset:
+    """
+    Check whether the longitude subset requested is within the bounds of the dataset.
 
-    If not try to roll the dataset so that the request is. Raise an exception if rolling is not possible.
+    If not, try to roll the dataset so that the request is. Raise an exception if rolling is not possible.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The xarray dataset to check.
+    lon_bnds : tuple
+        A tuple of two floats representing the longitude bounds to check against the dataset.
+
+    Returns
+    -------
+    xarray.Dataset
+        The dataset with the longitude coordinate adjusted if necessary.
     """
     low, high = lon_bnds
     lon = get_coord_by_type(ds, "longitude", ignore_aux_coords=False)
@@ -1004,8 +1053,9 @@ def check_lon_alignment(ds, lon_bnds):
         if lon.name not in ds.dims:
             raise Exception(
                 f"The requested longitude subset {lon_bnds} is not within the longitude bounds "
-                f"of this dataset and the data could not be converted to this longitude frame successfully. "
-                f"Please re-run your request with longitudes within the bounds of the dataset: ({lon_min:.2f}, {lon_max:.2f})"
+                "of this dataset and the data could not be converted to this longitude frame successfully. "
+                "Please re-run your request with longitudes within the bounds of the dataset: "
+                f"({lon_min:.2f}, {lon_max:.2f})"
             )
         # roll the dataset and reassign the longitude values
         else:
@@ -1029,20 +1079,21 @@ def check_lon_alignment(ds, lon_bnds):
             return ds_roll
 
 
-def adjust_date_to_calendar(da, date, direction="backwards"):
-    """Check that the date specified exists in the calendar type of the dataset.
+def adjust_date_to_calendar(ds: xr.DataArray | xr.Dataset, date: str, direction: str = "backwards") -> str:
+    """
+    Check that the date specified exists in the calendar type of the dataset.
 
-    If not present, changes the date a day at a time (up to a maximum of 5 times) to find a date that does exist.
-    The direction to change the date by is indicated by 'direction'.
+    If not present, changes the date a day at a time (up to a maximum of five (5) times) to find a date that does exist.
+    'Direction' indicates the direction to change the date by.
 
     Parameters
     ----------
-    da : xarray.Dataset or xarray.DataArray
+    ds : xarray.Dataset or xarray.DataArray
         The data to examine.
     date : str
         The date to check.
     direction : str
-        The direction to move in days to find a date that does exist.
+        The direction to move the index in days to find a date that does exist.
         'backwards' means the search will go backwards in time until an existing date is found.
         'forwards' means the search will go forwards in time.
         The default is 'backwards'.
@@ -1056,9 +1107,9 @@ def adjust_date_to_calendar(da, date, direction="backwards"):
     d = str_to_AnyCalendarDateTime(date)
 
     # get the calendar type
-    cal = da.cf["time"].data[0].calendar
+    cal = ds.cf["time"].data[0].calendar
 
-    for i in range(5):
+    for _i in range(5):
         try:
             cftime.datetime(
                 d.year,
@@ -1077,31 +1128,37 @@ def adjust_date_to_calendar(da, date, direction="backwards"):
                 d.sub_day()
             else:
                 raise Exception(
-                    f"Invalid value for direction: {direction}. This should be either 'backwards' to indicate subtracting a day or 'forwards' for adding a day."
+                    f"Invalid value for direction: {direction}. "
+                    "This should be either 'backwards' to indicate subtracting a day or 'forwards' for adding a day."
                 )
 
-    raise ValueError(
-        f"Could not find an existing date near {date} in the calendar: {cal}"
-    )
+    raise ValueError(f"Could not find an existing date near {date} in the calendar: {cal}")
 
 
 def add_hor_CF_coord_attrs(
-    ds, lat="lat", lon="lon", lat_bnds="lat_bnds", lon_bnds="lon_bnds", keep_attrs=False
-):
+    ds: xr.Dataset,
+    lat: str = "lat",
+    lon: str = "lon",
+    lat_bnds: str = "lat_bnds",
+    lon_bnds: str = "lon_bnds",
+    keep_attrs: bool = False,
+) -> xr.Dataset:
     """
     Add the common CF variable attributes to the horizontal coordinate variables.
 
     Parameters
     ----------
-    lat : str, optional
+    ds : xarray.Dataset
+        An xarray Dataset.
+    lat : str
         Latitude coordinate variable name. The default is "lat".
-    lon : str, optional
+    lon : str
         Longitude coordinate variable name. The default is "lon".
-    lat_bnds : str, optional
+    lat_bnds : str
         Latitude bounds coordinate variable name. The default is "lat_bnds".
-    lon_bnds : str, optional
+    lon_bnds : str
         Longitude bounds coordinate variable name. The default is "lon_bnds".
-    keep_attrs : bool, optional
+    keep_attrs : bool
         Whether to keep original coordinate variable attributes if they do not conflict.
         In case of a conflict, the attribute value will be overwritten independent of this setting.
         The default is False.
@@ -1143,19 +1200,20 @@ def add_hor_CF_coord_attrs(
     return ds
 
 
-def reformat_SCRIP_to_CF(ds, keep_attrs=False):
-    """Reformat dataset from SCRIP to CF format.
+def reformat_SCRIP_to_CF(ds: xr.Dataset, keep_attrs: bool = False) -> xr.Dataset:
+    """
+    Reformat dataset from SCRIP to CF format.
 
     Parameters
     ----------
     ds : xarray.Dataset
         Input dataset in SCRIP format.
-    keep_attrs: bool
+    keep_attrs : bool
         Whether to keep the global attributes.
 
     Returns
     -------
-    ds_ref : xarray.Dataset
+    xarray.Dataset
         Reformatted dataset.
     """
     source_format = "SCRIP"
@@ -1172,42 +1230,26 @@ def reformat_SCRIP_to_CF(ds, keep_attrs=False):
 
     if not isinstance(ds, xr.Dataset):
         raise InvalidParameterValue(
-            "Reformat is only possible for Datasets."
-            " DataArrays have to be CF conformal coordinate variables defined."
+            "Reformat is only possible for Datasets. DataArrays have to be CF conformal coordinate variables defined."
         )
 
     # Cannot reformat data variables yet
-    if not (
-        all([var in SCRIP_vars for var in ds.data_vars])
-        and all([coord in SCRIP_vars for coord in ds.coords])
-    ):
+    if not (all([var in SCRIP_vars for var in ds.data_vars]) and all([coord in SCRIP_vars for coord in ds.coords])):
         raise Exception(
-            "Converting the grid format from %s to %s is not yet possible for data variables."
-            % (source_format, target_format)
+            f"Converting the grid format from {source_format} to {target_format} "
+            "is not yet possible for data variables."
         )
 
     # center lat and lon arrays will become the lat and lon arrays
-    lat = ds.grid_center_lat.values.reshape(
-        (ds.grid_dims.values[1], ds.grid_dims.values[0])
-    ).astype(np.float32)
-    lon = ds.grid_center_lon.values.reshape(
-        (ds.grid_dims.values[1], ds.grid_dims.values[0])
-    ).astype(np.float32)
+    lat = ds.grid_center_lat.values.reshape((ds.grid_dims.values[1], ds.grid_dims.values[0])).astype(np.float32)
+    lon = ds.grid_center_lon.values.reshape((ds.grid_dims.values[1], ds.grid_dims.values[0])).astype(np.float32)
 
     # corner coordinates will become lat_bnds and lon_bnds arrays
     # regular lat-lon case
     # todo: bounds of curvilinear case
     if all(
-        [
-            np.array_equal(lat[:, i], lat[:, i + 1], equal_nan=True)
-            for i in range(ds.grid_dims.values[0] - 1)
-        ]
-    ) and all(
-        [
-            np.array_equal(lon[i, :], lon[i + 1, :], equal_nan=True)
-            for i in range(ds.grid_dims.values[1] - 1)
-        ]
-    ):
+        [np.array_equal(lat[:, i], lat[:, i + 1], equal_nan=True) for i in range(ds.grid_dims.values[0] - 1)]
+    ) and all([np.array_equal(lon[i, :], lon[i + 1, :], equal_nan=True) for i in range(ds.grid_dims.values[1] - 1)]):
         # regular lat-lon grid:
         # - 1D coordinate variables
         lat = lat[:, 0]
@@ -1256,25 +1298,26 @@ def reformat_SCRIP_to_CF(ds, keep_attrs=False):
         return ds_ref
     else:
         raise Exception(
-            "Converting the grid format from %s to %s is yet only possible for regular latitude longitude grids."
-            % (source_format, target_format)
+            f"Converting the grid format from {source_format} to {target_format} "
+            "is yet only possible for regular latitude longitude grids."
         )
 
 
-def reformat_xESMF_to_CF(ds, keep_attrs=False):
-    """Reformat dataset from xESMF to CF format.
+def reformat_xESMF_to_CF(ds: xr.Dataset, keep_attrs: bool = False) -> xr.Dataset:
+    """
+    Reformat dataset from xESMF to CF format.
 
     Parameters
     ----------
     ds : xarray.Dataset
         Input dataset in xESMF format.
-    keep_attrs: bool
+    keep_attrs : bool
         Whether to keep the global attributes.
 
     Returns
     -------
-    ds_ref : xarray.Dataset
-        Reformatted dataset.
+    xarray.Dataset
+        The reformatted dataset.
     """
     # source_format="xESMF"
     # target_format="CF"
@@ -1322,20 +1365,18 @@ def reformat_xESMF_to_CF(ds, keep_attrs=False):
         ds_ref.attrs.update(ds.attrs)
 
     return ds_ref
-    #        else:
-    #            raise Exception(
-    #                "Converting the grid format from %s to %s is yet only possible for regular latitude longitude grids."
-    #                % (self.format, grid_format)
-    #            )
 
 
-def detect_format(ds):
-    """Detect format of a dataset. Yet supported are 'CF', 'SCRIP', 'xESMF'.
+def detect_format(ds: xr.Dataset) -> str:
+    """
+    Detect format of a dataset.
+
+    Supported formats are 'CF', 'SCRIP', 'xESMF'.
 
     Parameters
     ----------
     ds : xr.Dataset
-        xarray.Dataset of which to detect the format.
+        An xarray.Dataset of which to detect the format.
 
     Returns
     -------
@@ -1363,21 +1404,15 @@ def detect_format(ds):
     xESMF_dims = ["x", "y", "x_b", "y_b"]
 
     # Test if SCRIP
-    if all([var in ds for var in SCRIP_vars]) and all(
-        [dim in ds.dims for dim in SCRIP_dims]
-    ):
+    if all([var in ds for var in SCRIP_vars]) and all([dim in ds.dims for dim in SCRIP_dims]):
         return "SCRIP"
 
     # Test if xESMF
-    elif all([var in ds.coords for var in xESMF_vars]) and all(
-        [dim in ds.dims for dim in xESMF_dims]
-    ):
+    elif all([var in ds.coords for var in xESMF_vars]) and all([dim in ds.dims for dim in xESMF_dims]):
         return "xESMF"
 
     # Test if latitude and longitude can be found - standard_names would be set later if undef.
-    elif (
-        "latitude" in ds.cf.standard_names and "longitude" in ds.cf.standard_names
-    ) or (
+    elif ("latitude" in ds.cf.standard_names and "longitude" in ds.cf.standard_names) or (
         get_coord_by_type(ds, "latitude", ignore_aux_coords=False) is not None
         and get_coord_by_type(ds, "longitude", ignore_aux_coords=False) is not None
     ):
@@ -1387,10 +1422,11 @@ def detect_format(ds):
         raise Exception("The grid format is not supported.")
 
 
-def detect_shape(ds, lat, lon, grid_type) -> tuple[int, int, int]:
-    """Detect the shape of the grid.
+def detect_shape(ds: xr.Dataset, lat: str, lon: str, grid_type: str) -> tuple[int, int, int]:
+    """
+    Detect the shape of the grid.
 
-    Returns a tuple of (nlat, nlon, ncells). For an unstructured grid nlat and nlon are not defined
+    Returns a tuple of (nlat, nlon, ncells). For an unstructured grid nlat and nlon are not defined,
     and therefore the returned tuple will be (ncells, ncells, ncells).
 
     Parameters
@@ -1401,8 +1437,8 @@ def detect_shape(ds, lat, lon, grid_type) -> tuple[int, int, int]:
         Latitude variable name.
     lon : str
         Longitude variable name.
-    grid_type: str
-        One of "regular_lat_lon", "curvilinear", "unstructured"
+    grid_type : {"regular_lat_lon", "curvilinear", "unstructured"}
+        The grid type to detect the shape for.
 
     Returns
     -------
@@ -1417,9 +1453,7 @@ def detect_shape(ds, lat, lon, grid_type) -> tuple[int, int, int]:
         raise Exception(f"The specified grid_type '{grid_type}' is not supported.")
 
     if ds[lon].ndim != ds[lat].ndim:
-        raise Exception(
-            f"The coordinate variables {lat} and {lon} do not have the same number of dimensions."
-        )
+        raise Exception(f"The coordinate variables {lat} and {lon} do not have the same number of dimensions.")
     elif ds[lat].ndim == 2:
         nlat = ds[lat].shape[0]
         nlon = ds[lat].shape[1]
@@ -1434,14 +1468,13 @@ def detect_shape(ds, lat, lon, grid_type) -> tuple[int, int, int]:
             nlon = ds[lon].shape[0]
             ncells = nlat * nlon
     else:
-        raise Exception(
-            f"The coordinate variables {lat} and {lon} are not 1- or 2-dimensional."
-        )
+        raise Exception(f"The coordinate variables {lat} and {lon} are not 1- or 2-dimensional.")
     return nlat, nlon, ncells
 
 
 def _lonbnds_mids_trans_check(lon1, lon2, lon3, lon4):
-    """Checks if the midpoints of the bounds traverse the Greenwich Meridian or
+    """
+    Checks if the midpoints of the bounds traverse the Greenwich Meridian or
     antimeridian.If so, the midpoints are adjusted.
     """
     arr = np.array([lon1, lon2, lon3, lon4])
@@ -1460,7 +1493,8 @@ def _lonbnds_mids_trans_check(lon1, lon2, lon3, lon4):
 
 
 def _lonbnds_mids_trans_check_diff(lon1, lon2):
-    """Checks if the midpoints of the bounds traverse the Greenwich Meridian or
+    """
+    Checks if the midpoints of the bounds traverse the Greenwich Meridian or
     antimeridian.If so, the midpoints are adjusted.
     """
     arr = np.array([lon1, lon2])
@@ -1473,7 +1507,8 @@ def _lonbnds_mids_trans_check_diff(lon1, lon2):
 
 
 def _lonbnds_mids_trans_check_sum(lon1, lon2):
-    """Checks if the midpoints of the bounds traverse the Greenwich Meridian or
+    """
+    Checks if the midpoints of the bounds traverse the Greenwich Meridian or
     antimeridian.If so, the midpoints are adjusted.
     """
     arr = np.array([lon1, lon2])
@@ -1498,18 +1533,19 @@ def _determine_grid_orientation(lon):
         return "nlon_nlat"  # Axis 0 corresponds to longitude (nlon, nlat)
 
 
-def generate_bounds_curvilinear(ds, lat, lon, clip_latitude=True, roll=True):
-    """Compute bounds for curvilinear grids.
+def generate_bounds_curvilinear(ds: xr.Dataset, lat: str, lon: str, clip_latitude: bool = True, roll: bool = True):
+    """
+    Compute bounds for curvilinear grids.
 
     Assumes 2D latitude and longitude coordinate variables. The bounds will be attached as coords
-    to the xarray.Dataset. Assumes the longitudes are defined on the longitude frame [-180, 180].
+    to the xarray.Dataset. Assume the longitudes are defined on the longitude frame [-180, 180].
     The default setting for 'roll' ensures that the longitudes
     are converted if this is not the case.
 
     The bound calculation for curvilinear grids was adapted from
     https://github.com/SantanderMetGroup/ATLAS/blob/mai-devel/scripts/ATLAS-data/\
     bash-interpolation-scripts/AtlasCDOremappeR_CORDEX/grid_bounds_calc.py
-    which based on work by Caillaud Cécile and Samuel Somot from Meteo-France.
+    which is based on work by Caillaud Cécile and Samuel Somot from Meteo-France.
     Compared with the original code, there is an additional correction performed in the calculation,
     ensuring that at the Greenwich meridian and anti meridian the sign of the bounds does not differ.
     The new implementation is also significantly faster, as it replaces for loops with numpy.vectorize
@@ -1519,10 +1555,10 @@ def generate_bounds_curvilinear(ds, lat, lon, clip_latitude=True, roll=True):
     ----------
     ds : xarray.Dataset
         Dataset to compute the bounds for.
-    lon : str
-        Longitude variable name.
     lat : str
         Latitude variable name.
+    lon : str
+        Longitude variable name.
     clip_latitude : bool, optional
         Whether to clip latitude values to [-90, 90]. The default is True.
     roll : bool, optional
@@ -1530,13 +1566,17 @@ def generate_bounds_curvilinear(ds, lat, lon, clip_latitude=True, roll=True):
 
     Returns
     -------
-    ds : xarray.Dataset
+    xarray.Dataset
         Dataset with bounds attached variables.
     """
     # Assume lon frame -180, 180
     if roll:
         ds, lonmin, lonmax = cf_convert_between_lon_frames(ds, (-180, 180), force=True)
-    assert lonmin == -180 and lonmax == 180
+    if lonmin != -180 or lonmax != 180:
+        raise ValueError(
+            "The longitude coordinate values have to lie within the interval "
+            "[-180, 180] degrees and not exceed an extent of 360 degrees."
+        )
 
     # Detect shape
     nlat, nlon, ncells = detect_shape(ds=ds, lat=lat, lon=lon, grid_type="curvilinear")
@@ -1559,31 +1599,29 @@ def generate_bounds_curvilinear(ds, lat, lon, clip_latitude=True, roll=True):
         lats_crnr = np.full((nlat + 1, nlon + 1), np.nan)
 
     if londim == 1 or londim == 0:
-        lats_crnr[1:-1, 1:-1] = (
-            lats[:-1, :-1] + lats[1:, :-1] + lats[:-1, 1:] + lats[1:, 1:]
-        ) / 4.0
-        lons_crnr[1:-1, 1:-1] = np.vectorize(
-            lambda x1, x2, x3, x4: _lonbnds_mids_trans_check(x1, x2, x3, x4)
-        )(lons[:-1, :-1], lons[1:, :-1], lons[:-1, 1:], lons[1:, 1:])
+        lats_crnr[1:-1, 1:-1] = (lats[:-1, :-1] + lats[1:, :-1] + lats[:-1, 1:] + lats[1:, 1:]) / 4.0
+        lons_crnr[1:-1, 1:-1] = np.vectorize(lambda x1, x2, x3, x4: _lonbnds_mids_trans_check(x1, x2, x3, x4))(
+            lons[:-1, :-1], lons[1:, :-1], lons[:-1, 1:], lons[1:, 1:]
+        )
 
     # print(lons_crnr)
 
     # Grid points at boundaries - incl correction for cells crossing the prime/anti meridian
-    lons_crnr[0, :] = np.vectorize(
-        lambda x1, x2: _lonbnds_mids_trans_check_diff(x1, x2)
-    )(lons_crnr[1, :], lons_crnr[2, :])
+    lons_crnr[0, :] = np.vectorize(lambda x1, x2: _lonbnds_mids_trans_check_diff(x1, x2))(
+        lons_crnr[1, :], lons_crnr[2, :]
+    )
     # lons_crnr[1, :] - (lons_crnr[2, :] - lons_crnr[1, :])
-    lons_crnr[-1, :] = np.vectorize(
-        lambda x1, x2: _lonbnds_mids_trans_check_sum(x1, x2)
-    )(lons_crnr[-2, :], lons_crnr[-3, :])
+    lons_crnr[-1, :] = np.vectorize(lambda x1, x2: _lonbnds_mids_trans_check_sum(x1, x2))(
+        lons_crnr[-2, :], lons_crnr[-3, :]
+    )
     # lons_crnr[-2, :] + (lons_crnr[-2, :] - lons_crnr[-3, :])
-    lons_crnr[:, 0] = np.vectorize(
-        lambda x1, x2: _lonbnds_mids_trans_check_diff(x1, x2)
-    )(lons_crnr[:, 1], lons_crnr[:, 2])
+    lons_crnr[:, 0] = np.vectorize(lambda x1, x2: _lonbnds_mids_trans_check_diff(x1, x2))(
+        lons_crnr[:, 1], lons_crnr[:, 2]
+    )
     # lons_crnr[:, 1] - (lons_crnr[:, 2] - lons_crnr[:, 1])
-    lons_crnr[:, -1] = np.vectorize(
-        lambda x1, x2: _lonbnds_mids_trans_check_sum(x1, x2)
-    )(lons_crnr[:, -2], lons_crnr[:, -3])
+    lons_crnr[:, -1] = np.vectorize(lambda x1, x2: _lonbnds_mids_trans_check_sum(x1, x2))(
+        lons_crnr[:, -2], lons_crnr[:, -3]
+    )
     # lons_crnr[:, -2] + (lons_crnr[:, -2] - lons_crnr[:, -3])
 
     lats_crnr[0, :] = lats_crnr[1, :] - (lats_crnr[2, :] - lats_crnr[1, :])
@@ -1653,8 +1691,9 @@ def generate_bounds_curvilinear(ds, lat, lon, clip_latitude=True, roll=True):
     return ds
 
 
-def generate_bounds_rectilinear(ds, lat, lon):
-    """Compute bounds for rectilinear grids.
+def generate_bounds_rectilinear(ds: xr.Dataset, lat: str, lon: str) -> xr.Dataset:
+    """
+    Compute bounds for rectilinear grids.
 
     The bounds will be attached as coords to the xarray.Dataset of the Grid object.
     If no bounds can be created, a warning is issued. It is assumed but not ensured that no
@@ -1663,7 +1702,7 @@ def generate_bounds_rectilinear(ds, lat, lon):
     Parameters
     ----------
     ds : xarray.Dataset
-        .
+        The dataset to modify.
     lat : str
         Latitude variable name.
     lon : str
@@ -1675,9 +1714,7 @@ def generate_bounds_rectilinear(ds, lat, lon):
         Dataset with attached bounds.
     """
     # Detect shape
-    nlat, nlon, ncells = detect_shape(
-        ds=ds, lat=lat, lon=lon, grid_type="regular_lat_lon"
-    )
+    nlat, nlon, ncells = detect_shape(ds=ds, lat=lat, lon=lon, grid_type="regular_lat_lon")
 
     # Assuming lat / lon values are strong monotonically decreasing/increasing
     # Latitude / Longitude bounds shaped (nlat, 2) / (nlon, 2)
@@ -1740,25 +1777,26 @@ def generate_bounds_rectilinear(ds, lat, lon):
     return ds
 
 
-def detect_coordinate(ds, coord_type):
-    """Use cf_xarray to obtain the variable name of the requested coordinate.
+def detect_coordinate(ds: xr.Dataset | xr.DataArray, coord_type: str) -> str:
+    """
+    Use cf_xarray to obtain the variable name of the requested coordinate.
 
     Parameters
     ----------
-    ds: xarray.Dataset, xarray.DataArray
+    ds : xarray.Dataset or xarray.DataArray
         Dataset the coordinate variable name shall be obtained from.
-    coord_type: str
+    coord_type : str
         Coordinate type understood by cf-xarray, eg. 'lat', 'lon', ...
-
-    Raises
-    ------
-    KeyError
-        Raised if the requested coordinate cannot be identified.
 
     Returns
     -------
     str
         Coordinate variable name.
+
+    Raises
+    ------
+    KeyError
+        Raised if the requested coordinate cannot be identified.
     """
     error_msg = f"A {coord_type} coordinate cannot be identified in the dataset."
 
@@ -1773,12 +1811,13 @@ def detect_coordinate(ds, coord_type):
     return coord
 
 
-def detect_bounds(ds, coordinate) -> Optional[str]:
-    """Use cf_xarray to obtain the variable name of the requested coordinates bounds.
+def detect_bounds(ds: xr.Dataset | xr.DataArray, coordinate: str) -> str | None:
+    """
+    Use cf_xarray to obtain the variable name of the requested coordinates bounds.
 
     Parameters
     ----------
-    ds : xarray.Dataset, xarray.DataArray
+    ds : xarray.Dataset or xarray.DataArray
         Dataset the coordinate bounds variable name shall be obtained from.
     coordinate : str
         Name of the coordinate variable to determine the bounds from.
@@ -1792,16 +1831,35 @@ def detect_bounds(ds, coordinate) -> Optional[str]:
     try:
         return ds.cf.bounds[coordinate][0]
     except (KeyError, AttributeError):
-        warnings.warn(
-            "For coordinate variable '%s' no bounds can be identified." % coordinate
-        )
+        warnings.warn(f"For coordinate variable '{coordinate}' no bounds can be identified.")
     return
 
 
-def detect_gridtype(ds, lon, lat, lon_bnds=None, lat_bnds=None):
-    """Detect type of the grid as one of "regular_lat_lon", "curvilinear", "unstructured".
+def detect_gridtype(
+    ds: xr.Dataset, lon: str, lat: str, lon_bnds: str | None = None, lat_bnds: str | None = None
+) -> str:
+    """
+    Detect the type of the grid as one of "regular_lat_lon", "curvilinear", "unstructured".
 
     Assumes the grid description / structure follows the CF conventions.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        Dataset containing the grid / coordinate variables.
+    lon : str
+        Longitude variable name.
+    lat : str
+        Latitude variable name.
+    lon_bnds : str, optional
+        Longitude bounds variable name. If not provided, the bounds will not be considered.
+    lat_bnds : str, optional
+        Latitude bounds variable name. If not provided, the bounds will not be considered.
+
+    Returns
+    -------
+    str
+        The type of the grid, one of "regular_lat_lon", "curvilinear", "unstructured".
     """
     # 1D coordinate variables
     if ds[lat].ndim == 1 and ds[lon].ndim == 1:
@@ -1854,17 +1912,15 @@ def detect_gridtype(ds, lon, lat, lon_bnds=None, lat_bnds=None):
         #      lat_bnds[:, 2]=[min(lat_bnds[:,j, :]), max(lat_bnds[:,j, :])]
         #      lon_bnds similar
         if not ds[lat].shape == ds[lon].shape:
-            raise ValueError(
-                "The horizontal coordinate variables have differing shapes."
-            )
+            raise ValueError("The horizontal coordinate variables have differing shapes.")
         else:
             if not lat_bnds or not lon_bnds:
                 return "curvilinear"
             else:
                 # Shape of curvilinear bounds either [nlat, nlon, 4] or [nlat+1, nlon+1]
-                if list(ds[lat].shape) + [4] == list(ds[lat_bnds].shape) and list(
-                    ds[lon].shape
-                ) + [4] == list(ds[lon_bnds].shape):
+                if list(ds[lat].shape) + [4] == list(ds[lat_bnds].shape) and list(ds[lon].shape) + [4] == list(
+                    ds[lon_bnds].shape
+                ):
                     return "curvilinear"
                 elif [si + 1 for si in ds[lat].shape] == list(ds[lat_bnds].shape) and [
                     si + 1 for si in ds[lon].shape
@@ -1875,6 +1931,4 @@ def detect_gridtype(ds, lon, lat, lon_bnds=None, lat_bnds=None):
 
     # >2D coordinate variables, or coordinate variables of different dimensionality
     else:
-        raise ValueError(
-            "The horizontal coordinate variables have more than 2 dimensions."
-        )
+        raise ValueError("The horizontal coordinate variables have more than 2 dimensions.")
