@@ -1109,8 +1109,8 @@ def subset_shape(
 @check_lons
 def subset_bbox(
     da: xarray.DataArray | xarray.Dataset,
-    lon_bnds: np.array | tuple[float | None, float | None],
-    lat_bnds: np.array | tuple[float | None, float | None],
+    lon_bnds: np.ndarray | tuple[float | None, float | None],
+    lat_bnds: np.ndarray | tuple[float | None, float | None],
     start_date: str | None = None,
     end_date: str | None = None,
     first_level: float | int | None = None,
@@ -1131,9 +1131,9 @@ def subset_bbox(
     ----------
     da : Union[xarray.DataArray, xarray.Dataset]
         Input data.
-    lon_bnds : Union[np.array, Tuple[Optional[float], Optional[float]]]
+    lon_bnds : np.ndarray or tuple[float or None, float or None]
         List of minimum and maximum longitudinal bounds. Optional. Defaults to all longitudes in original data-array.
-    lat_bnds : Union[np.array, Tuple[Optional[float], Optional[float]]]
+    lat_bnds : np.ndarray or tuple[float or None, float or None]
         List of minimum and maximum latitudinal bounds. Optional. Defaults to all latitudes in original data-array.
     start_date : str, optional
         Start date of the subset.
