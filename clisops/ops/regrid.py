@@ -5,12 +5,13 @@ from datetime import datetime as dt
 from pathlib import Path
 
 import xarray as xr
+from loguru import logger
+
 from clisops.core import Grid, Weights
 from clisops.core import regrid as core_regrid
 from clisops.exceptions import InvalidParameterValue
 from clisops.ops.base_operation import Operation
 from clisops.utils.file_namers import get_file_namer
-from loguru import logger
 
 __all__ = [
     "regrid",

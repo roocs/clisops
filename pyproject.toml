@@ -300,7 +300,7 @@ xarray = "xr"
 [tool.ruff.lint.isort]
 case-sensitive = true
 detect-same-package = false
-known-first-party = ["xclim"]
+known-first-party = ["clisops"]
 no-lines-before = ["future"]
 
 [tool.ruff.lint.mccabe]

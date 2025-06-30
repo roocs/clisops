@@ -3,6 +3,8 @@
 from pathlib import Path
 
 import xarray as xr
+from loguru import logger
+
 from clisops.core import (
     subset_bbox,
     subset_level,
@@ -24,7 +26,6 @@ from clisops.parameter import (
 )
 from clisops.parameter.area_parameter import AreaParameter
 from clisops.utils.dataset_utils import cf_convert_between_lon_frames
-from loguru import logger
 
 __all__ = ["Subset", "subset"]
 

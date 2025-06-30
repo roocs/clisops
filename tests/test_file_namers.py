@@ -1,5 +1,6 @@
 import pytest
 import xarray as xr
+
 from clisops import CONFIG
 from clisops.exceptions import InvalidProject
 from clisops.ops.subset import subset

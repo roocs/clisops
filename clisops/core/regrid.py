@@ -13,17 +13,18 @@ from math import sqrt
 from pathlib import Path
 
 import cf_xarray  # noqa: F401
-import clisops.utils.dataset_utils as clidu
 import numpy as np
 import platformdirs
 import roocs_grids
 import xarray as xr
+from packaging.version import Version
+
+import clisops.utils.dataset_utils as clidu
 from clisops import CONFIG
 from clisops import __version__ as __clisops_version__
 from clisops.exceptions import InvalidParameterValue
 from clisops.utils.common import check_dir, require_module
 from clisops.utils.output_utils import FileLock, create_lock
-from packaging.version import Version
 
 # Try importing xesmf and set to None if not found at correct version
 # If set to None, the `require_module` decorator will throw an exception

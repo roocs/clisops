@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 import xarray as xr
+
 from clisops import CONFIG
 from clisops.exceptions import InvalidParameterValue
 from clisops.ops.subset import Subset, subset

@@ -4,11 +4,12 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import xarray as xr
-from clisops.core import subset
-from clisops.utils.testing import ContextLogger
 from pyproj.crs import CRS
 from pyproj.exceptions import CRSError
 from shapely.geometry import Point, Polygon
+
+from clisops.core import subset
+from clisops.utils.testing import ContextLogger
 
 try:
     import xesmf

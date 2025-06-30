@@ -2,10 +2,11 @@ import os
 
 import pytest
 import xarray as xr
+from packaging.version import Version
+
 from clisops.core.regrid import XESMF_MINIMUM_VERSION
 from clisops.exceptions import InvalidParameterValue
 from clisops.ops.average import average_over_dims, average_shape, average_time
-from packaging.version import Version
 
 try:
     import xesmf

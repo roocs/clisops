@@ -34,10 +34,11 @@
 import os
 import warnings
 
+from loguru import logger
+
 from clisops.__version__ import __version__ as __version__
 from clisops.config import get_config
 from clisops.utils.common import enable_logging as enable_logging
-from loguru import logger
 
 
 def showwarning(message, *args, **kwargs):

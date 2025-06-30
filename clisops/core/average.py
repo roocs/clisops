@@ -8,6 +8,7 @@ import cf_xarray  # noqa: F401
 import geopandas as gpd
 import numpy as np
 import xarray as xr
+
 from clisops.core.regrid import XESMF_MINIMUM_VERSION
 from clisops.core.subset import shape_bbox_indexer
 from clisops.exceptions import InvalidParameterValue

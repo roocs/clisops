@@ -2,11 +2,12 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import xarray as xr
+from packaging.version import Version
+
 from clisops.core import average
 from clisops.core.regrid import XESMF_MINIMUM_VERSION
 from clisops.exceptions import InvalidParameterValue
 from clisops.utils import dataset_utils as xu
-from packaging.version import Version
 
 try:
     import xesmf

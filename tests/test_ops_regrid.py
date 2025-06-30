@@ -5,11 +5,12 @@ from pathlib import Path
 import cf_xarray  # noqa: F401
 import pytest
 import xarray as xr
+from roocs_grids import get_grid_file, grid_dict
+
 from clisops.core.regrid import XESMF_MINIMUM_VERSION, weights_cache_init, xe
 from clisops.ops.regrid import regrid
 from clisops.ops.subset import subset
 from clisops.utils.testing import ContextLogger
-from roocs_grids import get_grid_file, grid_dict
 
 XESMF_IMPORT_MSG = f"xESMF >= {XESMF_MINIMUM_VERSION} is needed for regridding functionalities."
 

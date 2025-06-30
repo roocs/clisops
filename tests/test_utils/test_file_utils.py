@@ -1,6 +1,7 @@
 import os
 
 import pytest
+
 from clisops.utils.file_utils import FileMapper, is_file_list
 
 

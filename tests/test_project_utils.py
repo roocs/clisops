@@ -2,6 +2,7 @@ import os
 
 import pytest
 import xarray as xr
+
 from clisops import config, project_utils
 
 

@@ -1,14 +1,15 @@
 import glob
 
 import cf_xarray  # noqa: F401
-import clisops.utils.dataset_utils as clidu
 import numpy as np
 import packaging.version
 import pytest
 import xarray as xr
-from clisops.core.regrid import XESMF_MINIMUM_VERSION
 from packaging.version import Version
 from roocs_grids import get_grid_file
+
+import clisops.utils.dataset_utils as clidu
+from clisops.core.regrid import XESMF_MINIMUM_VERSION
 
 try:
     import xesmf

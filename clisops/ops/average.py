@@ -5,6 +5,7 @@ from pathlib import Path
 
 import geopandas as gpd
 import xarray as xr
+
 from clisops.core import average
 from clisops.exceptions import InvalidParameterValue
 from clisops.ops.base_operation import Operation

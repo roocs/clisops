@@ -1,6 +1,7 @@
 import datetime
 
 import pytest
+
 from clisops.exceptions import InvalidParameterValue
 from clisops.parameter import LevelParameter, level_interval, level_series
 

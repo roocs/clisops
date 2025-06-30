@@ -10,8 +10,6 @@ import cf_xarray  # noqa: F401
 import geopandas as gpd
 import numpy as np
 import xarray
-from clisops.utils.dataset_utils import adjust_date_to_calendar, get_coord_by_type
-from clisops.utils.time_utils import to_isoformat
 from packaging import version
 from pandas import DataFrame
 from pandas.api.types import is_integer_dtype
@@ -23,6 +21,9 @@ from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import split, unary_union
 from xarray.core import indexing
 from xarray.core.utils import get_temp_dimname
+
+from clisops.utils.dataset_utils import adjust_date_to_calendar, get_coord_by_type
+from clisops.utils.time_utils import to_isoformat
 
 from .regrid import XESMF_MINIMUM_VERSION
 

@@ -4,10 +4,11 @@ import glob
 import os
 
 import xarray as xr
+from loguru import logger
+
 from clisops import CONFIG
 from clisops.exceptions import InvalidProject
 from clisops.utils.file_utils import FileMapper
-from loguru import logger
 
 
 class DatasetMapper:  # noqa: E501

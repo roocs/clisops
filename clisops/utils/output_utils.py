@@ -13,10 +13,11 @@ import dask
 import numpy as np
 import pandas as pd
 import xarray as xr
+from loguru import logger
+
 from clisops import CONFIG, chunk_memory_limit
 from clisops.utils.common import parse_size
 from clisops.utils.dataset_utils import get_main_variable
-from loguru import logger
 
 SUPPORTED_FORMATS = {
     "netcdf": {"method": "to_netcdf", "extension": "nc", "engine": "h5netcdf"},

@@ -1,4 +1,5 @@
 import pytest
+
 from clisops.exceptions import InvalidParameterValue, MissingParameterValue
 from clisops.parameter import CollectionParameter, collection
 
