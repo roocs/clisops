@@ -142,9 +142,7 @@ class DatasetMapper:  # noqa: E501
 
             # Default mapping is done by converting '.' characters to '/' separators in path
             else:
-                self._data_path = os.path.join(
-                    self._base_dir, os.path.join(*dset.split(".")[1:])
-                )
+                self._data_path = os.path.join(self._base_dir, os.path.join(*dset.split(".")[1:]))
 
         # use to data_path to find files if not set already
         if len(self._files) < 1:

@@ -108,9 +108,7 @@ def write_roocs_cfg(
 
     cfg_template = template or default_template
     roocs_config = Path(cache_dir, "roocs.ini")
-    cfg = Template(cfg_template).render(
-        base_dir=Path(ESGF_TEST_DATA_CACHE_DIR).joinpath(ESGF_TEST_DATA_VERSION)
-    )
+    cfg = Template(cfg_template).render(base_dir=Path(ESGF_TEST_DATA_CACHE_DIR).joinpath(ESGF_TEST_DATA_VERSION))
     with open(roocs_config, "w") as fp:
         fp.write(cfg)
 
