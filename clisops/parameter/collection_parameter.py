@@ -1,3 +1,5 @@
+"""Collection Parameter Module."""
+
 from collections.abc import Sequence
 
 from clisops.exceptions import InvalidParameterValue, MissingParameterValue
@@ -10,13 +12,16 @@ class CollectionParameter(_BaseParameter):
     """
     Class for collection parameter used in operations.
 
-    | A collection can be input as:
-    | A string of comma separated values: "cmip5.output1.INM.inmcm4.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga,cmip5.output1.MPI-M.MPI-ESM-LR.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga"
-    | A sequence of strings: e.g. ("cmip5.output1.INM.inmcm4.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga", "cmip5.output1.MPI-M.MPI-ESM-LR.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga")
-    | A sequence of clisops.utils.file_utils.FileMapper objects
+    A collection can be input as:
+      - A string of comma separated values: e.g.
+        "cmip5.output1.INM.inmcm4.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga,
+        cmip5.output1.MPI-M.MPI-ESM-LR.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga"
+      - A sequence of strings:
+        e.g. ("cmip5.output1.INM.inmcm4.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga",
+        "cmip5.output1.MPI-M.MPI-ESM-LR.rcp45.mon.ocean.Omon.r1i1p1.latest.zostoga")
+      - A sequence of clisops.utils.file_utils.FileMapper objects
 
     Validates the input and parses the items.
-
     """
 
     allowed_input_types = [Sequence, str, collection, FileMapper]
@@ -33,13 +38,12 @@ class CollectionParameter(_BaseParameter):
 
         for item in value:
             if not isinstance(item, (str, FileMapper)):
-                raise InvalidParameterValue(
-                    f"Each id in a collection must be a string or an instance of {FileMapper}"
-                )
+                raise InvalidParameterValue(f"Each id in a collection must be a string or an instance of {FileMapper}")
 
         return tuple(value)
 
     def __str__(self):
+        """Returns a string representation of the collection."""
         string = "Datasets to analyse:"
         for i in self.value:
             string += f"\n{i}"

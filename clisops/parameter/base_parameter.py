@@ -1,3 +1,5 @@
+"""Base class for parameters used in operations (e.g. subset, average etc.)."""
+
 from clisops.exceptions import InvalidParameterValue
 from clisops.parameter._utils import interval, series
 
@@ -23,16 +25,17 @@ class _BaseParameter:
             return
         if not isinstance(self.input, tuple(self.allowed_input_types)):
             raise InvalidParameterValue(
-                f"Input type of {type(self.input)} not allowed. "
-                f"Must be one of: {self.allowed_input_types}"
+                f"Input type of {type(self.input)} not allowed. Must be one of: {self.allowed_input_types}"
             )
 
     def _parse(self):
         raise NotImplementedError()
 
     def get_bounds(self):
-        """Returns a tuple of the (start, end) times, calculated from
-        the value of the parameter. Either will default to None."""
+        """
+        Returns a tuple of the (start, end) times, calculated from
+        the value of the parameter. Either will default to None.
+        """
         raise NotImplementedError()
 
     def __str__(self):

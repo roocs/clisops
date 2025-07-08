@@ -1,6 +1,6 @@
 import glob
 
-import cf_xarray as cfxr  # noqa
+import cf_xarray  # noqa: F401
 import numpy as np
 import packaging.version
 import pytest
@@ -19,9 +19,7 @@ try:
 except ImportError:
     xesmf = None
 
-XESMF_IMPORT_MSG = (
-    f"xESMF >= {XESMF_MINIMUM_VERSION} is needed for regridding functionalities."
-)
+XESMF_IMPORT_MSG = f"xESMF >= {XESMF_MINIMUM_VERSION} is needed for regridding functionalities."
 
 
 def test_add_day(mini_esgf_data):
@@ -72,9 +70,7 @@ def test_date_out_of_expected_range(mini_esgf_data):
 
     with pytest.raises(Exception) as exc:
         clidu.adjust_date_to_calendar(da, date, "forwards")
-    assert (
-        str(exc.value) == "Invalid input 0 for month. Expected value between 1 and 12."
-    )
+    assert str(exc.value) == "Invalid input 0 for month. Expected value between 1 and 12."
 
 
 def test_add_hor_CF_coord_attrs():
@@ -89,7 +85,6 @@ def test_add_hor_CF_coord_attrs():
             "lon_bnds": (["lon", "bnds"], np.ones((1, 2))),
         },
     ) as ds:
-
         # Ensuring attributes have been added
         ds = clidu.add_hor_CF_coord_attrs(ds=ds)
         assert ds["lat"].attrs["bounds"] == "lat_bnds"
@@ -119,10 +114,7 @@ def test_add_hor_CF_coord_attrs():
         # Incorrect coordinate variable name supplied should lead to a KeyError
         with pytest.raises(KeyError) as exc:
             ds = clidu.add_hor_CF_coord_attrs(ds, lat="latitude")
-        assert (
-            str(exc.value)
-            == "'Not all specified coordinate variables exist in the dataset.'"
-        )
+        assert str(exc.value) == "'Not all specified coordinate variables exist in the dataset.'"
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MSG)
@@ -130,7 +122,6 @@ def test_reformat_xESMF_to_CF():
     """Test reformat operation reformat_xESMF_to_CF."""
     # Use xesmf utility function to create dataset with global grid
     with xesmf.util.grid_global(5.0, 5.0) as ds:
-
         # It should have certain variables defined
         assert all([coord in ds for coord in ["lat", "lon", "lat_b", "lon_b"]])
         assert all([dim in ds.dims for dim in ["x", "y", "x_b", "y_b"]])
@@ -138,9 +129,7 @@ def test_reformat_xESMF_to_CF():
         # Reformat
         ds.attrs["xesmf"] = xesmf.__version__
         ds_ref = clidu.reformat_xESMF_to_CF(ds=ds, keep_attrs=True)
-        assert all(
-            [coord in ds_ref for coord in ["lat", "lon", "lat_bnds", "lon_bnds"]]
-        )
+        assert all([coord in ds_ref for coord in ["lat", "lon", "lat_bnds", "lon_bnds"]])
         assert all([dim in ds_ref.dims for dim in ["lat", "lon", "bnds"]])
         assert ds_ref.attrs["xesmf"] == xesmf.__version__
 
@@ -149,7 +138,6 @@ def test_reformat_SCRIP_to_CF():
     """Test reformat operation reformat_SCRIP_to_CF."""
     # Load dataset in SCRIP format (using roocs_grids)
     with xr.open_dataset(get_grid_file("2pt5deg")) as ds:
-
         # It should have certain variables defined
         assert all(
             [
@@ -165,15 +153,11 @@ def test_reformat_SCRIP_to_CF():
                 ]
             ]
         )
-        assert all(
-            [dim in ds.dims for dim in ["grid_corners", "grid_size", "grid_rank"]]
-        )
+        assert all([dim in ds.dims for dim in ["grid_corners", "grid_size", "grid_rank"]])
 
         # Reformat
         ds_ref = clidu.reformat_SCRIP_to_CF(ds=ds, keep_attrs=True)
-        assert all(
-            [coord in ds_ref for coord in ["lat", "lon", "lat_bnds", "lon_bnds"]]
-        )
+        assert all([coord in ds_ref for coord in ["lat", "lon", "lat_bnds", "lon_bnds"]])
         assert all([dim in ds_ref.dims for dim in ["lat", "lon", "bnds"]])
         assert ds_ref.attrs["Conventions"] == "SCRIP"
 
@@ -182,11 +166,8 @@ def test_detect_shape_regular():
     """Test detect_shape function for a regular grid."""
     # Load dataset
     with xr.open_dataset(get_grid_file("0pt25deg_era5_lsm")) as ds:
-
         # Detect shape
-        nlat, nlon, ncells = clidu.detect_shape(
-            ds, lat="latitude", lon="longitude", grid_type="regular_lat_lon"
-        )
+        nlat, nlon, ncells = clidu.detect_shape(ds, lat="latitude", lon="longitude", grid_type="regular_lat_lon")
 
         # Assertion
         assert nlat == 721
@@ -201,11 +182,8 @@ def test_detect_shape_unstructured(mini_esgf_data):
         mini_esgf_data["CMIP6_UNSTR_ICON_A"],
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
     ) as ds:
-
         # Detect shape
-        nlat, nlon, ncells = clidu.detect_shape(
-            ds, lat="latitude", lon="longitude", grid_type="unstructured"
-        )
+        nlat, nlon, ncells = clidu.detect_shape(ds, lat="latitude", lon="longitude", grid_type="unstructured")
 
         # Assertion
         assert nlat == ncells
@@ -222,7 +200,6 @@ def test_detect_format():
         xr.open_dataset(get_grid_file("0pt25deg_era5")) as ds_scrip,
         xesmf.util.grid_global(5.0, 5.0) as ds_xesmf,
     ):
-
         # Assertion
         assert clidu.detect_format(ds_cf) == "CF"
         assert clidu.detect_format(ds_scrip) == "SCRIP"
@@ -303,13 +280,9 @@ def test_detect_coordinate_robustness(tmpdir, mini_esgf_data):
         # Set illegal units attribute to confuse cf_xarray
         ds.rlat.attrs["units"] = "degrees_north"
         ds.rlon.attrs["units"] = "degrees_east"
-        with pytest.raises(
-            KeyError, match="Receive multiple variables for key 'latitude':"
-        ):
+        with pytest.raises(KeyError, match="Receive multiple variables for key 'latitude':"):
             ds.cf["latitude"]
-        with pytest.raises(
-            KeyError, match="Receive multiple variables for key 'longitude':"
-        ):
+        with pytest.raises(KeyError, match="Receive multiple variables for key 'longitude':"):
             ds.cf["longitude"]
         assert clidu.detect_coordinate(ds, "latitude") == "lat"
         assert clidu.detect_coordinate(ds, "longitude") == "lon"
@@ -356,10 +329,7 @@ def test_detect_gridtype(mini_esgf_data):
         == "curvilinear"
     )
     assert (
-        clidu.detect_gridtype(
-            ds_c, lat="lat", lon="lon", lat_bnds="lat_bnds", lon_bnds="lon_bnds"
-        )
-        == "regular_lat_lon"
+        clidu.detect_gridtype(ds_c, lat="lat", lon="lon", lat_bnds="lat_bnds", lon_bnds="lon_bnds") == "regular_lat_lon"
     )
 
 
@@ -367,9 +337,7 @@ def test_determine_lon_lat_range(mini_esgf_data):
     """Test the function determine_lon_lat_range incl. and without fix for unmasked missing values."""
     # Test case 1 - without fix
     with xr.open_dataset(mini_esgf_data["CMIP6_EXTENT_UNMASKED"]) as ds:
-        x0, x1, y0, y1 = clidu.determine_lon_lat_range(
-            ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=False
-        )
+        x0, x1, y0, y1 = clidu.determine_lon_lat_range(ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=False)
         for i, j in [
             (x0, -300),
             (x1, 1e20),
@@ -379,9 +347,7 @@ def test_determine_lon_lat_range(mini_esgf_data):
             assert np.isclose(i, j, atol=0.1)
 
         # Test case 1 - with fix
-        x0, x1, y0, y1 = clidu.determine_lon_lat_range(
-            ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=True
-        )
+        x0, x1, y0, y1 = clidu.determine_lon_lat_range(ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=True)
         for i, j in [
             (x0, -300.0),
             (x1, 60.0),
@@ -392,9 +358,7 @@ def test_determine_lon_lat_range(mini_esgf_data):
 
     # Test case 2 - without fix
     with xr.open_dataset(mini_esgf_data["CMIP6_UNTAGGED_MISSVALS"]) as ds:
-        x0, x1, y0, y1 = clidu.determine_lon_lat_range(
-            ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=False
-        )
+        x0, x1, y0, y1 = clidu.determine_lon_lat_range(ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=False)
         for i, j in [
             (x0, 0.0),
             (x1, 9.9692e36),
@@ -404,9 +368,7 @@ def test_determine_lon_lat_range(mini_esgf_data):
             assert np.isclose(i, j, atol=0.1)
 
         # Test case 2 - with fix
-        x0, x1, y0, y1 = clidu.determine_lon_lat_range(
-            ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=True
-        )
+        x0, x1, y0, y1 = clidu.determine_lon_lat_range(ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=True)
         for i, j in [
             (x0, 0.0),
             (x1, 360),
@@ -416,9 +378,7 @@ def test_determine_lon_lat_range(mini_esgf_data):
             assert np.isclose(i, j, atol=0.1)
 
         # Fix is applied on the ds "in place"
-        x0, x1, y0, y1 = clidu.determine_lon_lat_range(
-            ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=False
-        )
+        x0, x1, y0, y1 = clidu.determine_lon_lat_range(ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=False)
         for i, j in [
             (x0, 0.0),
             (x1, 360),
@@ -499,9 +459,7 @@ def test_determine_lon_lat_range_regular_lat_lon(mini_esgf_data):
     with xr.open_mfdataset(mini_esgf_data["CMIP5_TAS"]) as ds:
         ds.lat.values[1] = -999.0
         with pytest.warns(UserWarning, match="fix is not possible for regular"):
-            clidu.determine_lon_lat_range(
-                ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=True
-            )
+            clidu.determine_lon_lat_range(ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=True)
 
 
 def test_crosses_0_meridian(mini_esgf_data):
@@ -565,9 +523,7 @@ def test_convert_lon_frame_bounds():
         assert conv["lon"].values[-1] == -30.0
 
         # Check that bounds contain the respective cell centers
-        if packaging.version.parse(xr.__version__) >= packaging.version.parse(
-            "2022.11.0"
-        ):
+        if packaging.version.parse(xr.__version__) >= packaging.version.parse("2022.11.0"):
             assert np.all(
                 conv["lon"].values[:] > conv["lon_bounds"].values[:, 0]
             )  # xarray >=2022.11.0 reorders dim values
@@ -621,7 +577,6 @@ def test_convert_lon_frame_shifted_bounds(mini_esgf_data):
         mini_esgf_data["CMIP6_GFDL_EXTENT"],
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
     ) as ds:
-
         # confirm shifted frame
         assert np.isclose(ds["lon"].min(), -300.0, atol=0.5)
         assert np.isclose(ds["lon"].max(), 60.0, atol=0.5)
@@ -668,7 +623,6 @@ def test_convert_lon_frame_shifted_no_bounds(mini_esgf_data):
         mini_esgf_data["CMIP6_IITM_EXTENT"],
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
     ) as ds:
-
         # confirm shifted frame
         assert np.isclose(ds["longitude"].min(), -280.0, atol=1.0)
         assert np.isclose(ds["longitude"].max(), 80.0, atol=1.0)
@@ -707,12 +661,10 @@ def test_convert_lon_frame_shifted_no_bounds(mini_esgf_data):
 
 def test_calculate_bounds_curvilinear(mini_esgf_data):
     """Test for bounds calculation for curvilinear grid."""
-
     # Load CORDEX dataset (curvilinear grid)
     with xr.open_dataset(mini_esgf_data["CORDEX_TAS_ONE_TIMESTEP"]).isel(
         {"rlat": range(100, 120), "rlon": range(100, 120)}
     ) as ds:
-
         # Drop bounds variables and compute them
         ds_nb = ds.drop_vars(["lon_vertices", "lat_vertices"])
         ds_nb = clidu.generate_bounds_curvilinear(ds_nb, lat="lat", lon="lon")
@@ -722,12 +674,8 @@ def test_calculate_bounds_curvilinear(mini_esgf_data):
             for j in range(1, 19):
                 ds.lat_vertices[i, j, :] = np.sort(ds.lat_vertices.values[i, j, :])
                 ds.lon_vertices[i, j, :] = np.sort(ds.lon_vertices.values[i, j, :])
-                ds_nb.vertices_latitude[i, j, :] = np.sort(
-                    ds_nb.vertices_latitude.values[i, j, :]
-                )
-                ds_nb.vertices_longitude[i, j, :] = np.sort(
-                    ds_nb.vertices_longitude.values[i, j, :]
-                )
+                ds_nb.vertices_latitude[i, j, :] = np.sort(ds_nb.vertices_latitude.values[i, j, :])
+                ds_nb.vertices_longitude[i, j, :] = np.sort(ds_nb.vertices_longitude.values[i, j, :])
 
         # Assert all values are close (discard cells at edge of selected grid area)
         xr.testing.assert_allclose(
@@ -746,10 +694,8 @@ def test_calculate_bounds_curvilinear(mini_esgf_data):
 
 def test_calculate_bounds_rectilinear(mini_esgf_data):
     """Test for bounds calculation for rectilinear grid."""
-
     # Load CORDEX dataset (curvilinear grid)
     with xr.open_dataset(mini_esgf_data["CMIP6_TAS_PRECISION_A"]) as ds:
-
         # Drop bounds variables and compute them
         ds_nb = ds.drop_vars(["lon_bnds", "lat_bnds"])
         ds_nb = clidu.generate_bounds_rectilinear(ds_nb, lat="lat", lon="lon")
@@ -846,12 +792,8 @@ def test_get_latitude_cf_xarray(mini_esgf_data):
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
     ) as ds:
-        xr.testing.assert_identical(
-            ds["lat"].reset_coords("height", drop=True), ds.cf["lat"]
-        )
-        xr.testing.assert_identical(
-            ds["lat"].reset_coords("height", drop=True), ds.cf["latitude"]
-        )
+        xr.testing.assert_identical(ds["lat"].reset_coords("height", drop=True), ds.cf["lat"])
+        xr.testing.assert_identical(ds["lat"].reset_coords("height", drop=True), ds.cf["latitude"])
 
 
 def test_get_latitude_2_cf_xarray(mini_esgf_data):
@@ -883,9 +825,7 @@ def test_get_time_cf_xarray(mini_esgf_data):
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
     ) as ds:
-        xr.testing.assert_identical(
-            ds["time"].reset_coords(("height"), drop=True), ds.cf["time"]
-        )
+        xr.testing.assert_identical(ds["time"].reset_coords(("height"), drop=True), ds.cf["time"])
 
 
 # Adapted from roocs_utils:tests.test_xarray_utils.test_get_coords
@@ -1041,7 +981,6 @@ def test_get_coords_by_type(mini_esgf_data):
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
     ) as ds:
-
         # check lat, lon, time and level are found when they are coordinates
         lat = clidu.get_coord_by_type(ds, "latitude", ignore_aux_coords=False)
         lon = clidu.get_coord_by_type(ds, "longitude", ignore_aux_coords=False)
@@ -1126,26 +1065,18 @@ def _common_test_open_xr_dataset_kerchunk(uri):
 
 @pytest.mark.xfail(reason="Remote access fails on GitHub")
 def test_open_xr_dataset_kerchunk_json(mini_esgf_data):
-    _common_test_open_xr_dataset_kerchunk(
-        mini_esgf_data["CMIP6_KERCHUNK_HTTPS_OPEN_JSON"]
-    )
+    _common_test_open_xr_dataset_kerchunk(mini_esgf_data["CMIP6_KERCHUNK_HTTPS_OPEN_JSON"])
 
 
 @pytest.mark.xfail(reason="Remote access fails on GitHub")
 def test_open_xr_dataset_kerchunk_zst(mini_esgf_data):
-    _common_test_open_xr_dataset_kerchunk(
-        mini_esgf_data["CMIP6_KERCHUNK_HTTPS_OPEN_ZST"]
-    )
+    _common_test_open_xr_dataset_kerchunk(mini_esgf_data["CMIP6_KERCHUNK_HTTPS_OPEN_ZST"])
 
 
 @pytest.mark.xfail(reason="Remote access fails on GitHub")
 def test_open_xr_dataset_kerchunk_compare_json_vs_zst(mini_esgf_data):
-    ds1 = _common_test_open_xr_dataset_kerchunk(
-        mini_esgf_data["CMIP6_KERCHUNK_HTTPS_OPEN_JSON"]
-    )
-    ds2 = _common_test_open_xr_dataset_kerchunk(
-        mini_esgf_data["CMIP6_KERCHUNK_HTTPS_OPEN_ZST"]
-    )
+    ds1 = _common_test_open_xr_dataset_kerchunk(mini_esgf_data["CMIP6_KERCHUNK_HTTPS_OPEN_JSON"])
+    ds2 = _common_test_open_xr_dataset_kerchunk(mini_esgf_data["CMIP6_KERCHUNK_HTTPS_OPEN_ZST"])
 
     diff = ds1.isel(time=slice(0, 2)) - ds2.isel(time=slice(0, 2))
     assert diff.max() == diff.min() == 0.0

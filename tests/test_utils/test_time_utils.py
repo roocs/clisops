@@ -4,7 +4,6 @@ from clisops.utils.time_utils import AnyCalendarDateTime, str_to_AnyCalendarDate
 
 
 class TestAnyCalendarDateTime:
-
     def test_simple(self):
         d = AnyCalendarDateTime(1997, 4, 9, 0, 0, 0)
         assert d.value == "1997-04-09T00:00:00"
@@ -35,23 +34,14 @@ class TestAnyCalendarDateTime:
         # month is 00
         with pytest.raises(ValueError) as exc:
             str_to_AnyCalendarDateTime("1999-00-33")
-        assert (
-            str(exc.value)
-            == "Invalid input 0 for month. Expected value between 1 and 12."
-        )
+        assert str(exc.value) == "Invalid input 0 for month. Expected value between 1 and 12."
 
         # month is 13
         with pytest.raises(ValueError) as exc:
             str_to_AnyCalendarDateTime("1999-13-22")
-        assert (
-            str(exc.value)
-            == "Invalid input 13 for month. Expected value between 1 and 12."
-        )
+        assert str(exc.value) == "Invalid input 13 for month. Expected value between 1 and 12."
 
         # hour is 27
         with pytest.raises(ValueError) as exc:
             str_to_AnyCalendarDateTime("1999-01-22T27:00:00")
-        assert (
-            str(exc.value)
-            == "Invalid input 27 for hour. Expected value between 0 and 23."
-        )
+        assert str(exc.value) == "Invalid input 27 for hour. Expected value between 0 and 23."

@@ -1,5 +1,6 @@
+"""Subset operations for xarray datasets."""
+
 from pathlib import Path
-from typing import List, Optional, Union
 
 import xarray as xr
 from loguru import logger
@@ -12,7 +13,7 @@ from clisops.core import (
     subset_time_by_components,
     subset_time_by_values,
 )
-from clisops.core.subset import assign_bounds, get_lat, get_lon  # noqa
+from clisops.core.subset import assign_bounds, get_lat, get_lon
 from clisops.ops.base_operation import Operation
 from clisops.parameter import (
     Interval,
@@ -30,6 +31,42 @@ __all__ = ["Subset", "subset"]
 
 
 class Subset(Operation):
+    """
+    Subset operation for xarray datasets.
+
+    This operation allows subsetting of datasets based on time, area, and level parameters.
+
+    Attributes
+    ----------
+    ds : xr.Dataset or str or Path
+        The dataset to be subsetted, can be a path to a file or an xarray Dataset.
+    time : str or tuple or TimeParameter or Series or Interval, optional
+        Time parameter for subsetting, can be a string, tuple, or TimeParameter instance.
+    area : str or tuple or AreaParameter, optional
+        Area parameter for subsetting, can be a string, tuple, or AreaParameter instance.
+    level : str or tuple or LevelParameter or Interval, optional
+        Level parameter for subsetting, can be a string, tuple, or LevelParameter instance.
+    time_components : str or dict or TimeComponents or TimeComponentsParameter, optional
+        Time components for subsetting, can be a string, dictionary, or TimeComponentsParameter instance.
+    output_dir : str or Path, optional
+        Directory where the output will be saved. If None, the output will not be saved to a file.
+    output_type : str, default "netcdf"
+        The format of the output, can be "netcdf", "nc", "zarr", or "xarray".
+    split_method : str, default "time:auto"
+        Method for splitting the output, currently only supports "time:auto".
+    file_namer : str, default "standard"
+        The file naming strategy to use for the output files, can be "standard" or "simple".
+
+    Methods
+    -------
+    _resolve_params(**params)
+        Generates a dictionary of subset parameters based on the provided arguments.
+    _calculate()
+        Processes the subsetting request and returns the subsetted dataset.
+    process()
+        Executes the subsetting operation and returns the result.
+    """
+
     def _resolve_params(self, **params):
         """Generates a dictionary of subset parameters."""
         time = params.get("time", None)
@@ -37,10 +74,7 @@ class Subset(Operation):
         level = params.get("level", None)
         time_comps = params.get("time_components", None)
 
-        logger.debug(
-            f"Mapping parameters: time: {time}, area: {area}, "
-            f"level: {level}, time_components: {time_comps}."
-        )
+        logger.debug(f"Mapping parameters: time: {time}, area: {area}, level: {level}, time_components: {time_comps}.")
 
         # Set up args dictionary to be used by `self._calculate()`
         args = dict()
@@ -85,9 +119,7 @@ class Subset(Operation):
             # subset with space and optionally time and level
             logger.debug(f"subset_bbox with parameters: {self.params}")
             # bounds are always ascending, so if lon is descending rolling will not work.
-            ds, lb, ub = cf_convert_between_lon_frames(
-                self.ds, self.params.get("lon_bnds")
-            )
+            ds, lb, ub = cf_convert_between_lon_frames(self.ds, self.params.get("lon_bnds"))
             self.params["lon_bnds"] = (lb, ub)
             try:
                 kwargs = {}
@@ -124,9 +156,7 @@ class Subset(Operation):
                 result = subset_time(self.ds, **kwargs)
             # Subset a series of time values if requested
             elif self.params.get("time_values"):
-                result = subset_time_by_values(
-                    self.ds, time_values=self.params["time_values"]
-                )
+                result = subset_time_by_values(self.ds, time_values=self.params["time_values"])
             else:
                 result = self.ds
 
@@ -141,9 +171,7 @@ class Subset(Operation):
             if any(kwargs.values()):
                 # ensure bounds are ascending
                 if self.params.get("first_level") > self.params.get("last_level"):
-                    first, last = self.params.get("first_level"), self.params.get(
-                        "last_level"
-                    )
+                    first, last = self.params.get("first_level"), self.params.get("last_level")
                     self.params["first_level"], self.params["last_level"] = last, first
 
                 logger.debug(f"subset_level with parameters: {kwargs}")
@@ -163,57 +191,66 @@ class Subset(Operation):
         return result
 
 
-def subset(
-    ds: Union[xr.Dataset, str, Path],
+def subset(  # noqa: E501
+    ds: xr.Dataset | str | Path,
     *,
-    time: Optional[Union[str, tuple[str, str], TimeParameter, Series, Interval]] = None,
-    area: Optional[
-        Union[
-            str,
-            tuple[
-                Union[int, float, str],
-                Union[int, float, str],
-                Union[int, float, str],
-                Union[int, float, str],
-            ],
-            AreaParameter,
+    time: str | tuple[str, str] | TimeParameter | Series | Interval | None = None,
+    area: None
+    | (
+        str
+        | tuple[
+            int | float | str,
+            int | float | str,
+            int | float | str,
+            int | float | str,
         ]
-    ] = None,
-    level: Optional[
-        Union[
-            str,
-            tuple[Union[int, float, str], Union[int, float, str]],
-            LevelParameter,
-            Interval,
-        ]
-    ] = None,
-    time_components: Optional[
-        Union[str, dict, TimeComponents, TimeComponentsParameter]
-    ] = None,
-    output_dir: Optional[Union[str, Path]] = None,
+        | AreaParameter
+    ) = None,
+    level: None | (str | tuple[int | float | str, int | float | str] | LevelParameter | Interval) = None,
+    time_components: None | (str | dict | TimeComponents | TimeComponentsParameter) = None,
+    output_dir: str | Path | None = None,
     output_type="netcdf",
     split_method="time:auto",
     file_namer="standard",
-) -> list[Union[xr.Dataset, str]]:
-    """Subset operation.
+) -> list[xr.Dataset | str]:
+    """
+    Subset operation.
 
     Parameters
     ----------
-    ds : Union[xr.Dataset, str]
-    time : Optional[Union[str, Tuple[str, str], TimeParameter, Series, Interval]] = None,
-    area : str or AreaParameter or Tuple[Union[int, float, str], Union[int, float, str], Union[int, float, str], Union[int, float, str]], optional
-    level : Optional[Union[str, Tuple[Union[int, float, str], Union[int, float, str]], LevelParameter, Interval] = None,
-    time_components : Optional[Union[str, Dict, TimeComponentsParameter]] = None,
-    output_dir : Optional[Union[str, Path]] = None
+    ds : xarray.Dataset or str or Path
+        The dataset to be subsetted, can be a path to a file or an xarray Dataset.
+    time : str or Tuple[str, str] or TimeParameter or Series or Interval, optional
+        Time parameter for subsetting, can be a string, tuple of strings, TimeParameter instance,
+        Series, or Interval. If None, no time subsetting is applied.
+    area : str or AreaParameter or Tuple[int or float or str, int or float or str, int or float or str, int or float or str], optional
+        Area parameter for subsetting, can be a string, AreaParameter instance, or a tuple of four values
+        representing the bounding box (lon_min, lat_min, lon_max, lat_max). If None, no area subsetting is applied.
+    level : str or Tuple[int or float or str, int or float or str] or LevelParameter or Interval, optional
+        Level parameter for subsetting, can be a string, tuple of two values, LevelParameter instance,
+        or Interval. If None, no level subsetting is applied.
+    time_components : str or dict or TimeComponentsParameter, optional
+        Time components for subsetting, can be a string, dictionary, or TimeComponentsParameter instance.
+    output_dir : str or Path, optional
+        Directory where the output will be saved. If None, the output will not be saved to a file.
     output_type : {"netcdf", "nc", "zarr", "xarray"}
+        The format of the output, can be "netcdf", "nc", "zarr", or "xarray". Default is "netcdf".
     split_method : {"time:auto"}
+        Method for splitting the output, currently only supports "time:auto". Default is "time:auto".
     file_namer : {"standard", "simple"}
+        The file naming strategy to use for the output files, can be "standard" or "simple". Default is "standard".
 
     Returns
     -------
-    List[Union[xr.Dataset, str]]
+    list of xr.Dataset or list of str
         A list of the subsetted outputs in the format selected; str corresponds to file paths if the
         output format selected is a file.
+
+    Notes
+    -----
+    If you request a selection range (such as level, latitude or longitude) that specifies the lower
+    and upper bounds in the opposite direction to the actual coordinate values then clisops.ops.subset
+    will detect this issue and reverse your selection before returning the data subset.
 
     Examples
     --------
@@ -226,12 +263,6 @@ def subset(
     | output_type: "netcdf"
     | split_method: "time:auto"
     | file_namer: "standard"
-
-    Note
-    ----
-    If you request a selection range (such as level, latitude or longitude) that specifies the lower
-    and upper bounds in the opposite direction to the actual coordinate values then clisops.ops.subset
-    will detect this issue and reverse your selection before returning the data subset.
     """
     op = Subset(**locals())
     return op.process()

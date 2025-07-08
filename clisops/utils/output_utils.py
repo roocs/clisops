@@ -1,14 +1,16 @@
-import math
+"""Utility functions for handling output formats and file writing in CLISOPS."""
+
 import os
 import shutil
 import tempfile
 import time
 from datetime import datetime as dt
 from datetime import timedelta as td
+from math import ceil
 from pathlib import Path
-from typing import Union
 
 import dask
+import numpy as np
 import pandas as pd
 import xarray as xr
 from loguru import logger
@@ -27,33 +29,79 @@ SUPPORTED_FORMATS = {
 SUPPORTED_SPLIT_METHODS = ["time:auto"]
 
 
-def check_format(fmt):
-    """Check that the requested format exists."""
+def check_format(fmt: str) -> None:
+    """
+    Check that the requested format exists.
+
+    Parameters
+    ----------
+    fmt : str
+        The format to check against the supported formats.
+
+    Raises
+    ------
+    KeyError
+        If the format is not recognized.
+    """
     if fmt not in SUPPORTED_FORMATS:
-        raise KeyError(
-            f'Format not recognised: "{fmt}". Must be one of: {SUPPORTED_FORMATS}.'
-        )
+        raise KeyError(f'Format not recognised: "{fmt}". Must be one of: {SUPPORTED_FORMATS}.')
 
 
-def get_format_writer(fmt):
-    """Finds the output method for the requested output format."""
+def get_format_writer(fmt: str) -> str | None:
+    """
+    Find the output method for the requested output format.
+
+    Parameters
+    ----------
+    fmt : str
+        The format for which to find the output method.
+
+    Returns
+    -------
+    str or None
+        The method to use for writing the output format, or None if no method is defined.
+    """
     check_format(fmt)
     return SUPPORTED_FORMATS[fmt]["method"]
 
 
-def get_format_extension(fmt):
-    """Finds the extension for the requested output format."""
+def get_format_extension(fmt: str) -> str:
+    """
+    Find the extension for the requested output format.
+
+    Parameters
+    ----------
+    fmt : str
+        The format for which to find the file extension.
+
+    Returns
+    -------
+    str
+        The file extension associated with the requested format.
+    """
     check_format(fmt)
     return SUPPORTED_FORMATS[fmt]["extension"]
 
 
-def get_format_engine(fmt):
-    """Finds the engine for the requested output format."""
+def get_format_engine(fmt: str) -> str:
+    """
+    Find the engine for the requested output format.
+
+    Parameters
+    ----------
+    fmt : str
+        The format for which to find the engine.
+
+    Returns
+    -------
+    str
+        The engine to use for writing the output format.
+    """
     check_format(fmt)
     return SUPPORTED_FORMATS[fmt]["engine"]
 
 
-def _format_time(tm: Union[str, dt], fmt="%Y-%m-%d"):
+def _format_time(tm: str | dt, fmt="%Y-%m-%d"):
     """Convert to datetime if time is a numpy datetime."""
     if not hasattr(tm, "strftime"):
         tm = pd.to_datetime(str(tm))
@@ -61,10 +109,23 @@ def _format_time(tm: Union[str, dt], fmt="%Y-%m-%d"):
     return tm.strftime(fmt)
 
 
-def filter_times_within(times, start=None, end=None):
+def filter_times_within(times: np.array, start: str | None = None, end: str | None = None):
     """
-    Takes an array of datetimes, returning a reduced array if start or end times
-    are defined and are within the main array.
+    Return a reduced array if start or end times are defined and are within the main array.
+
+    Parameters
+    ----------
+    times : array-like
+        An array of datetime objects or strings representing times.
+    start : str, optional
+        A string representing the start date in "YYYY-MM-DD" format. If None, no start filter is applied.
+    end : str, optional
+        A string representing the end date in "YYYY-MM-DD" format. If None, no end filter is applied.
+
+    Returns
+    -------
+    list
+        A list of datetime objects that fall within the specified start and end times.
     """
     filtered = []
     for tm in times:
@@ -79,8 +140,22 @@ def filter_times_within(times, start=None, end=None):
     return filtered
 
 
-def get_da(ds):
-    """Returns xr.DataArray when the format of ds may be either xr.Dataset or xr.DataArray."""
+def get_da(ds: xr.DataArray | xr.Dataset) -> xr.DataArray:
+    """
+    Return xr.DataArray when the format of ds may be either xr.Dataset or xr.DataArray.
+
+    If ds is an xr.Dataset, it will extract the main variable DataArray.
+
+    Parameters
+    ----------
+    ds : xr.Dataset or xr.DataArray
+        The dataset or data array to extract the main variable from.
+
+    Returns
+    -------
+    xr.DataArray
+        The main variable DataArray from the dataset.
+    """
     if isinstance(ds, xr.DataArray):
         da = ds
     else:
@@ -91,39 +166,41 @@ def get_da(ds):
 
 
 def get_time_slices(
-    ds: Union[xr.Dataset, xr.DataArray],
-    split_method,
-    start=None,
-    end=None,
-    file_size_limit: str = None,
+    ds: xr.Dataset | xr.DataArray,
+    split_method: str,
+    start: str | None = None,
+    end: str | None = None,
+    file_size_limit: str | None = None,
 ) -> list[tuple[str, str]]:
     """
-    Take an xarray Dataset or DataArray, assume it can be split on the time axis
-    into a sequence of slices. Optionally, take a start and end date to specify
-    a sub-slice of the main time axis.
+    Get time slices for a dataset or data array.
 
-    Use the prescribed file size limit to generate a list of
-    ("YYYY-MM-DD", "YYYY-MM-DD") slices so that the output files do
-    not (significantly) exceed the file size limit.
+    Take an xarray Dataset or DataArray, assume it can be split on the time axis into a sequence of slices.
+    Optionally, take a start and end date to specify a sub-slice of the main time axis.
+
+    Use the prescribed file size limit to generate a list of ("YYYY-MM-DD", "YYYY-MM-DD") slices
+    so that the output files do not (significantly) exceed the file size limit.
 
     Parameters
     ----------
-    ds : Union[xr.Dataset, xr.DataArray]
-    split_method
-    start
-    end
+    ds : xr.Dataset or xr.DataArray
+        A dataset or data array that contains a time dimension.
+    split_method : str
+        The method to use for splitting the dataset.
+    start : str, optional
+        A string specifying the start date in "YYYY-MM-DD" format.
+    end : str, optional
+        A string specifying the end date in "YYYY-MM-DD" format.
     file_size_limit : str
-        a string specifying "<number><units>".
+        A string specifying "<number><units>".
 
     Returns
     -------
-    List[Tuple[str, str]]
+    list of tuples
+        A list of tuples, each containing two strings representing the start and end dates of each slice.
     """
-
     if split_method not in SUPPORTED_SPLIT_METHODS:
-        raise NotImplementedError(
-            f"The split method {split_method} is not implemented."
-        )
+        raise NotImplementedError(f"The split method {split_method} is not implemented.")
 
     # Use the default file size limit if not provided
     if not file_size_limit:
@@ -160,28 +237,37 @@ def get_time_slices(
 
         if end_ind_x > final_ind_x:
             end_ind_x = final_ind_x
-        slices.append(
-            (f"{_format_time(times[start_ind_x])}", f"{_format_time(times[end_ind_x])}")
-        )
+        slices.append((f"{_format_time(times[start_ind_x])}", f"{_format_time(times[end_ind_x])}"))
 
     return slices
 
 
-def get_chunk_length(da):
-    """Calculate the chunk length to use when chunking xarray datasets.
+def get_chunk_length(da: xr.DataArray) -> int:
+    """
+    Calculate the chunk length to use when chunking xarray datasets.
 
     Based on the memory limit provided in config and the size of the dataset.
+
+    Parameters
+    ----------
+    da : xr.DataArray
+        The data array to be chunked.
+
+    Returns
+    -------
+    int
+        The length of the chunk to be used for the time dimension.
     """
     size = da.nbytes
     n_times = len(da.time.values)
     mem_limit = parse_size(chunk_memory_limit)
 
     if size > 0:
-        n_chunks = math.ceil(size / mem_limit)
+        n_chunks = ceil(size / mem_limit)
     else:
         n_chunks = 1
 
-    chunk_length = math.ceil(n_times / n_chunks)
+    chunk_length = ceil(n_times / n_chunks)
 
     return chunk_length
 
@@ -194,8 +280,26 @@ def _get_chunked_dataset(ds):
     return chunked_ds
 
 
-def get_output(ds, output_type, output_dir, namer):
-    """Return output after applying chunking and determining the output format and chunking."""
+def get_output(ds: xr.Dataset, output_type: str, output_dir: str | Path, namer: object):
+    """
+    Return output after applying chunking and determining the output format and chunking.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The dataset to be processed.
+    output_type : str
+        The type of output format to be used (e.g., "netcdf", "zarr").
+    output_dir : str or Path
+        The directory where the output file will be saved. If None, the current directory is used.
+    namer : object
+        An object responsible for generating the file name based on the dataset attributes and output type.
+
+    Returns
+    -------
+    str or xarray.Dataset
+        The path to the output file if written, or the original dataset if no writing is performed.
+    """
     format_writer = get_format_writer(output_type)
     logger.info(f"format_writer={format_writer}, output_type={output_type}")
 
@@ -258,9 +362,15 @@ def get_output(ds, output_type, output_dir, namer):
 
 
 class FileLock:
-    """Create and release a lockfile.
+    """
+    Create and release a lockfile.
 
     Adapted from https://github.com/cedadev/cmip6-object-store/cmip6_zarr/file_lock.py
+
+    Parameters
+    ----------
+    fpath : str
+        The file path for the lock file to be created.
     """
 
     def __init__(self, fpath):
@@ -272,8 +382,21 @@ class FileLock:
 
         self.state = "UNLOCKED"
 
-    def acquire(self, timeout=10):
-        """Create actual lockfile, raise error if already exists beyond 'timeout'."""
+    def acquire(self, timeout: int = 10):
+        """
+        Create actual lockfile, raise error if already exists beyond 'timeout'.
+
+        Parameters
+        ----------
+        timeout : int
+            Maximum time in seconds to wait for the lockfile to be created.
+            Default is 10 seconds.
+
+        Raises
+        ------
+        Exception
+            If the lockfile cannot be created within the specified timeout.
+        """
         start = dt.now()
         deadline = start + td(seconds=timeout)
 
@@ -294,13 +417,15 @@ class FileLock:
             try:
                 os.remove(self._fpath)
             except FileNotFoundError:
+                logger.info("Lock file already removed.")
                 pass
 
         self.state = "UNLOCKED"
 
 
-def create_lock(fname: Union[str, Path]):
-    """Check whether lockfile already exists and else creates lockfile.
+def create_lock(fname: str | Path) -> FileLock | None:
+    """
+    Check whether lockfile already exists and else creates lockfile.
 
     Parameters
     ----------
@@ -309,7 +434,9 @@ def create_lock(fname: Union[str, Path]):
 
     Returns
     -------
-    FileLock object or None.
+    FileLock or None
+        Returns a FileLock object if the lockfile is created successfully,
+        or None if the lockfile already exists.
     """
     lock_obj = FileLock(fname)
     try:
