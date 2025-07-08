@@ -9,7 +9,7 @@ clisops - climate simulation operations
 +----------------------------+---------------------------------+
 | Open Source                | |license|                       |
 +----------------------------+---------------------------------+
-| Coding Standards           | |black| |isort| |pre-commit|    |
+| Coding Standards           | |ruff| |pre-commit|             |
 +----------------------------+---------------------------------+
 | Development Status         | |status| |build| |coveralls|    |
 +----------------------------+---------------------------------+
@@ -67,10 +67,6 @@ This package was created with ``Cookiecutter`` and the ``audreyr/cookiecutter-py
 * cookiecutter-pypackage: https://github.com/audreyr/cookiecutter-pypackage
 
 
-.. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
-        :target: https://github.com/python/black
-        :alt: Black
-
 .. |build| image:: https://github.com/roocs/clisops/workflows/main.yml/badge.svg
         :target: https://github.com/roocs/clisops/actions/workflows/main.yml
         :alt: Build Status
@@ -87,10 +83,6 @@ This package was created with ``Cookiecutter`` and the ``audreyr/cookiecutter-py
         :target: https://clisops.readthedocs.io/en/latest/?badge=latest
         :alt: Documentation
 
-.. |isort| image:: https://img.shields.io/badge/%20imports-isort-%231674b1?style=flat&labelColor=ef8336
-        :target: https://pycqa.github.io/isort/
-        :alt: Isort
-
 .. |license| image:: https://img.shields.io/github/license/roocs/clisops.svg
         :target: https://github.com/roocs/clisops/blob/master/LICENSE
         :alt: License
@@ -102,6 +94,10 @@ This package was created with ``Cookiecutter`` and the ``audreyr/cookiecutter-py
 .. |pypi| image:: https://img.shields.io/pypi/v/clisops.svg
         :target: https://pypi.python.org/pypi/clisops
         :alt: Python Package Index Build
+
+.. |ruff| image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
+        :target: https://github.com/astral-sh/ruff
+        :alt: Ruff
 
 .. |status| image:: https://www.repostatus.org/badges/latest/active.svg
         :target: https://www.repostatus.org/#active

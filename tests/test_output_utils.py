@@ -30,9 +30,7 @@ def _open(coll):
             combine="by_coords",
         ).load()
     else:
-        ds = xr.open_dataset(
-            coll[0], decode_times=xr.coders.CFDatetimeCoder(use_cftime=True)
-        )
+        ds = xr.open_dataset(coll[0], decode_times=xr.coders.CFDatetimeCoder(use_cftime=True))
     return ds
 
 
@@ -53,7 +51,7 @@ def test_get_time_slices_single_slice(mini_esgf_data):
     for (
         ds,
         limit,
-        n_times,
+        _,
         slices,
     ) in test_data:
         resp = get_time_slices(ds, split_method, file_size_limit=limit)
@@ -83,7 +81,7 @@ def test_get_time_slices_multiple_slices(mini_esgf_data):
     ]
 
     split_method = "time:auto"
-    for ds, limit, n_times, first, second, last in test_data:
+    for ds, limit, _, first, second, last in test_data:
         resp = get_time_slices(ds, split_method, file_size_limit=limit)
         assert resp[0] == first
         assert resp[-1] == last
@@ -150,9 +148,7 @@ def test_no_staging_dir(caplog, mini_esgf_data, tmp_path):
 
         CONFIG["clisops:write"]["output_staging_dir"] = ""
         ds = _open(mini_esgf_data["CMIP5_TAS"])
-        output_path = get_output(
-            ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")()
-        )
+        output_path = get_output(ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")())
 
         assert "Writing to temporary path: " not in caplog.text
         assert output_path == (out_dir / "output_001.nc").as_posix()
@@ -171,9 +167,7 @@ def test_invalid_staging_dir(caplog, mini_esgf_data, tmp_path):
         CONFIG["clisops:write"]["output_staging_dir"] = "test/not/real/dir/"
 
         ds = _open(mini_esgf_data["CMIP5_TAS"])
-        output_path = get_output(
-            ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")()
-        )
+        output_path = get_output(ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")())
         assert "Writing to temporary path: " not in caplog.text
         assert output_path == (out_dir / "output_001.nc").as_posix()
 
@@ -193,9 +187,7 @@ def test_staging_dir_used(caplog, mini_esgf_data, tmpdir, tmp_path):
         CONFIG["clisops:write"]["output_staging_dir"] = str(staging)
         ds = _open(mini_esgf_data["CMIP5_TAS"])
 
-        output_path = get_output(
-            ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")()
-        )
+        output_path = get_output(ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")())
 
         assert f"Writing to temporary path: {staging}" in caplog.text
         assert output_path == (out_dir / "output_001.nc").as_posix()
@@ -210,9 +202,7 @@ def test_final_output_path_staging_dir(mini_esgf_data, tmp_path):
     out_dir.mkdir()
 
     ds = _open(mini_esgf_data["CMIP5_TAS"])
-    get_output(
-        ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")()
-    )
+    get_output(ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")())
 
     assert Path(out_dir / "output_001.nc").is_file()
 
@@ -225,9 +215,7 @@ def test_final_output_path_no_staging_dir(mini_esgf_data, tmp_path):
     out_dir.mkdir()
 
     ds = _open(mini_esgf_data["CMIP5_TAS"])
-    get_output(
-        ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")()
-    )
+    get_output(ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")())
 
     assert Path(out_dir / "output_001.nc").is_file()
 
@@ -243,16 +231,15 @@ def test_tmp_dir_deleted(tmpdir, mini_esgf_data, tmp_path):
     out_dir.mkdir()
 
     ds = _open(mini_esgf_data["CMIP5_TAS"])
-    get_output(
-        ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")()
-    )
+    get_output(ds, output_type="nc", output_dir=out_dir, namer=get_file_namer("simple")())
 
     # check that no tmpdir directories exist
     assert len([f for f in staging.glob("tmp*")]) == 0
 
 
 def test_unify_chunks_cmip5(mini_esgf_data):
-    """test unify chunks with a cmip5 example.
+    """
+    Test unify chunks with a cmip5 example.
 
     da.unify_chunks() doesn't change da.chunks
     ds = ds.unify_chunks() doesn't appear to change ds.chunks in our case
@@ -276,7 +263,8 @@ def test_unify_chunks_cmip5(mini_esgf_data):
 
 
 def test_unify_chunks_cmip6(mini_esgf_data):
-    """Test unify chunks with a cmip6 example.
+    """
+    Test unify chunks with a cmip6 example.
 
     da.unify_chunks() doesn't change da.chunks
     ds = ds.unify_chunks() doesn't appear to change ds.chunks in our case

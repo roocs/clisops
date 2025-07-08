@@ -1,6 +1,6 @@
 import sys
 
-from clisops.utils.common import _logging_examples, enable_logging  # noqa
+from clisops.utils.common import _logging_examples, enable_logging
 from clisops.utils.testing import ContextLogger
 
 
@@ -9,7 +9,7 @@ class TestLoggingFuncs:
         with ContextLogger(caplog):
             caplog.set_level("WARNING", logger="clisops")
 
-            _logging_examples()  # noqa
+            _logging_examples()
 
             assert ("clisops.utils.common", 10, "1") not in caplog.record_tuples
             assert ("clisops.utils.common", 40, "4") in caplog.record_tuples
@@ -22,7 +22,7 @@ class TestLoggingFuncs:
             _logger.add(sys.stderr, level="WARNING")
             _logger.add(sys.stdout, level="INFO")
 
-            _logging_examples()  # noqa
+            _logging_examples()
 
             captured = capsys.readouterr()
             assert "WARNING" not in captured.err
@@ -31,7 +31,7 @@ class TestLoggingFuncs:
             # re-enable CLISOPS logging
             _logger.enable("clisops")
 
-            _logging_examples()  # noqa
+            _logging_examples()
 
             captured = capsys.readouterr()
             assert "INFO" not in captured.err
@@ -40,7 +40,7 @@ class TestLoggingFuncs:
 
     def test_logging_enabler(self, capsys):
         with ContextLogger():
-            _logging_examples()  # noqa
+            _logging_examples()
 
             captured = capsys.readouterr()
             assert "WARNING" not in captured.err
@@ -48,7 +48,7 @@ class TestLoggingFuncs:
 
             enable_logging()
 
-            _logging_examples()  # noqa
+            _logging_examples()
 
             captured = capsys.readouterr()
             assert "INFO" not in captured.err

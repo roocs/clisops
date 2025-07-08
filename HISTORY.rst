@@ -4,16 +4,24 @@ Version History
 v0.17.0 (unreleased)
 --------------------
 
+New Features
+^^^^^^^^^^^^
+* Added an `engine` argument to `Grid.ds.to_netcdf()` to allow users to specify the engine used for writing NetCDF files (#439).
+* Coding conventions have been updated to use Python 3.10+ features (#439).
+
 Bug Fixes
 ^^^^^^^^^
 * Fixed support for `kerchunk` with `s3`. Pinned `zarr >=2.13.0,<3.0` (#429).
 * Lift pin on `xarray` that was previously due to incompatibilities with `xesmf`. `xarray>=2025.1.1` now required for general usage and `xarray>=2025.6.0` for `regrid` operations (#437).
+* Non-`numpydoc` docstrings in the codebase have been converted to the `numpydoc` format (#439).
 
 Internal Changes
 ^^^^^^^^^^^^^^^^
 * `tox` and Makefile configuration for testing docs has been adjusted to ensure that builds do not rely on opening a browser window (#437).
 * `step-security/harden-runner` Action is now configured to audit connections to the GitHub API and other services (#434).
 * Output utilities tests have been modified to no longer create files in the current working directory, but rather in a temporary directory. (#434).
+* `black` and `isort` as well as most linting checks performed by `flake8` have been replaced by `ruff` for code formatting and linting (#439).
+* `pre-commit` hooks have been updated to use `ruff` for code formatting and linting, as well as a few others (#439).
 
 v0.16.2 (2025-04-14)
 --------------------

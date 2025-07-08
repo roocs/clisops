@@ -79,9 +79,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "clisops"
-copyright = (
-    f"2020-{datetime.datetime.now().year}, United Kingdom Research and Innovation"
-)
+copyright = f"2020-{datetime.datetime.now().year}, United Kingdom Research and Innovation"
 author = "Eleanor Smith"
 
 # The version info for the project you're documenting, acts as replacement

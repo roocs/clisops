@@ -38,10 +38,7 @@ def test_series_string_input():
 def test__str__():
     level = level_interval("1000/2000")
     parameter = LevelParameter(level)
-    assert (
-        parameter.__str__()
-        == "Level range to subset over\n first_level: 1000.0\n last_level: 2000.0"
-    )
+    assert parameter.__str__() == "Level range to subset over\n first_level: 1000.0\n last_level: 2000.0"
     assert parameter.__repr__() == parameter.__str__()
     assert parameter.__unicode__() == parameter.__str__()
 
@@ -66,9 +63,7 @@ def test_validate_error_len_1_tuple():
 
 
 def test_not_numbers():
-    level = level_interval(
-        datetime.datetime(2085, 1, 1), datetime.datetime(2120, 12, 30)
-    )
+    level = level_interval(datetime.datetime(2085, 1, 1), datetime.datetime(2120, 12, 30))
     with pytest.raises(InvalidParameterValue) as exc:
         LevelParameter(level)
     assert str(exc.value) == "Values must be valid numbers"
