@@ -55,13 +55,19 @@ jobs:
           python -m tox -e lint
 
   test-pypi:
-    name: Python${{ matrix.python-version }} (PyPI + Tox)
+    name: Python${{ matrix.python-version }} (PyPI + Tox, ${{ matrix.os }})
     needs: lint
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
       matrix:
-        python-version: [ "3.10", "3.11", "3.12", "3.13" ]
+        python-version: [ "3.10", "3.13" ]
+        os: [ "macos-latest", "ubuntu-latest" ]
+        positional_args: [ "" ]
+        include:
+          - python-version: "3.11"
+            os: "windows-latest"
+            positional_args: "--numprocesses=0"
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2.12.2
@@ -80,17 +86,29 @@ jobs:
       - name: Install CI libraries
         run: |
           python -m pip install --require-hashes -r CI/requirements_ci.txt
-      - name: Environment Caching
+
+      - name: Environment Caching (Linux)
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        if: matrix.os == 'ubuntu-latest'
         with:
           path: |
             ~/.cache/mini-esgf-data
             ~/.cache/xclim-testdata
             .tox
           key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-Python${{ matrix.python-version }}-${{ env.ESGF_TEST_DATA_VERSION }}
+      - name: Environment Caching (macOS)
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        if: matrix.os == 'macos-latest'
+        with:
+          path: |
+            ~/Library/Caches/mini-esgf-data
+            ~/Library/Caches/xclim-testdata
+            .tox
+          key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-Python${{ matrix.python-version }}-${{ env.ESGF_TEST_DATA_VERSION }}
+
       - name: Test with tox
         run: |
-          python -m tox
+          python -m tox -- ${{ matrix.positional_args }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           COVERALLS_FLAG_NAME: run-Python${{ matrix.python-version }}
@@ -98,20 +116,22 @@ jobs:
           COVERALLS_SERVICE_NAME: github
 
   test-conda:
-    name: Python${{ matrix.python-version }} (Anaconda)
+    name: Python${{ matrix.python-version }} (Anaconda, ${{ matrix.os}})
     needs: lint
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ "3.10", "3.11", "3.12", "3.13" ]
+        python-version: [ "3.10", "3.13" ]
+        os: [ "macos-latest", "ubuntu-latest" ]
     defaults:
       run:
         shell: bash -l {0}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49 # v2.12.2
+        if: matrix.os == 'ubuntu-latest'
         with:
           disable-sudo: true
           egress-policy: audit
@@ -131,13 +151,24 @@ jobs:
       - name: Install CLISOPS
         run: |
           python -m pip install --no-user --no-deps --editable .
-      - name: Test Data Caching
+
+      - name: Test Data Caching (Linux)
         uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        if : matrix.os == 'ubuntu-latest'
         with:
           path: |
             ~/.cache/mini-esgf-data
             ~/.cache/xclim-testdata
-          key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-conda-Python${{ matrix.python-version }}-${{ env.ESGF_TEST_DATA_VERSION }}
+          key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-conda-${{ env.ESGF_TEST_DATA_VERSION }}
+      - name: Test Data Caching (macOS)
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          path: |
+            ~/.cache/mini-esgf-data
+            ~/.cache/xclim-testdata
+          key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-conda-${{ env.ESGF_TEST_DATA_VERSION }}
+
       - name: Check versions
         run: |
           micromamba list
