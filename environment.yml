@@ -34,7 +34,7 @@ dependencies:
  # Compression
  - zstandard
  # Extras
- - xesmf >=0.8.10
+# - xesmf >=0.8.11 # until PR444 is merged and a release triggered, install from source branch for testing
 #  # Dev tools and testing
  - bump-my-version >=1.2.0
  - coverage >=7.5.0
@@ -58,9 +58,10 @@ dependencies:
  - matplotlib-base >=3.6.0
  - nbconvert >=7.14.0
  - nbsphinx >=0.9.5
- # - psy-maps >=1.5.0  # FIXME: This library is unmaintained and not available on conda-forge for Python 3.13
  - sphinx >=7.1.0,<8.2.0 # pinned until nbsphinx supports sphinx 8.2
  - sphinx-autodoc-typehints
  - sphinx-codeautolink
  - sphinx-copybutton
  - sphinx-rtd-theme >=1.0
+ - pip:
+   - git+https://github.com/sol1105/xESMF.git@domain_mask_nearest

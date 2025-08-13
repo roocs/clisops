@@ -24,7 +24,7 @@ from clisops import CONFIG
 from clisops import __version__ as __clisops_version__
 from clisops.exceptions import InvalidParameterValue
 from clisops.utils.common import check_dir, require_module
-from clisops.utils.output_utils import FileLock, create_lock
+from clisops.utils.output_utils import FileLock, create_lock, fix_netcdf_attrs_encoding
 
 # Try importing xesmf and set to None if not found at correct version
 # If set to None, the `require_module` decorator will throw an exception
@@ -58,11 +58,11 @@ coord_precision_hor = int(CONFIG["clisops:coordinate_precision"]["hor_coord_deci
 require_xesmf = functools.partial(require_module, module=xe, module_name="xESMF", min_version=XESMF_MINIMUM_VERSION)
 
 # Check if xarray version is compatible - decorator, used below
-require_older_xarray = functools.partial(
+require_xarray = functools.partial(
     require_module,
     module=xr,
     module_name="xarray",
-    max_supported_version=XARRAY_INCOMPATIBLE_VERSION,
+    unsupported_version_range=[XARRAY_INCOMPATIBLE_VERSION, XARRAY_COMPATIBLE_VERSION],
     max_supported_warning=XARRAY_WARNING_MESSAGE,
 )
 
@@ -199,6 +199,7 @@ class Grid:
         self.type = None
         self.format = None
         self.extent = None
+        self.extent_lat = None
         self.nlat = 0
         self.nlon = 0
         self.ncells = 0
@@ -266,7 +267,7 @@ class Grid:
 
         # Extent of the grid (global or regional)
         if not self.extent:
-            self.extent = self.detect_extent()
+            self.extent, self.extent_lat = self.detect_extent()
 
         # Detect duplicated grid cells / halos
         if self.contains_duplicated_cells is None:
@@ -337,6 +338,7 @@ class Grid:
             + f"Format:           {self.format}\n"
             + f"Type:             {self.type}\n"
             + f"Extent (x):       {self.extent}\n"
+            + f"Extent (y):       {self.extent_lat}\n"
             + f"Source:           {self.source}\n"
             + f"Bounds?           {self.lat_bnds is not None and self.lon_bnds is not None}\n"
             + f"Degenerate cells? {self.contains_degenerate_cells}\n"
@@ -377,7 +379,7 @@ class Grid:
         self.format = self.detect_format()
 
     @require_xesmf
-    @require_older_xarray
+    @require_xarray
     def _grid_from_instructor(self, grid_instructor: tuple | float | int):
         """Process instructions to create regional or global grid (uses xESMF utility functions)."""
         # grid_instructor:
@@ -413,7 +415,7 @@ class Grid:
         self.format = "xESMF"
 
     @require_xesmf
-    @require_older_xarray
+    @require_xarray
     def _grid_from_ds_adaptive(self, ds: xr.Dataset | xr.DataArray):
         """Create Grid of similar extent and resolution of input dataset."""
         # Create temporary Grid object out of input dataset
@@ -426,8 +428,16 @@ class Grid:
         ylast = float(grid_tmp.ds[grid_tmp.lat].max())
 
         # fix for regional grids that wrap around the Greenwich meridian
-        if grid_tmp.extent == "regional" and (xfirst > 180 or xlast > 180):
-            grid_tmp.ds.lon.data = grid_tmp.ds.lon.where(grid_tmp.ds.lon <= 180, grid_tmp.ds.lon - 360.0)
+        if grid_tmp.extent == "regional" and xfirst < 2 * grid_tmp.xinc and xlast > 360 - 2 * grid_tmp.xinc:
+            grid_tmp.ds = grid_tmp.ds.assign_coords(
+                lon=grid_tmp.ds.lon.where(grid_tmp.ds.lon <= 180, grid_tmp.ds.lon - 360.0)
+            )
+            xfirst = float(grid_tmp.ds[grid_tmp.lon].min())
+            xlast = float(grid_tmp.ds[grid_tmp.lon].max())
+        elif grid_tmp.extent == "regional" and xfirst < -180 + 2 * grid_tmp.xinc and xlast > 180 - 2 * grid_tmp.xinc:
+            grid_tmp.ds = grid_tmp.ds.assign_coords(
+                lon=grid_tmp.ds.lon.where(grid_tmp.ds.lon >= 180, grid_tmp.ds.lon + 360.0)
+            )
             xfirst = float(grid_tmp.ds[grid_tmp.lon].min())
             xlast = float(grid_tmp.ds[grid_tmp.lon].max())
 
@@ -641,8 +651,8 @@ class Grid:
 
         Returns
         -------
-        str
-            'regional' or 'global'.
+        tuple of str
+            'regional' or 'global' for the zonal and meridional extent, respectively.
         """
         # TODO: support Units "rad" next to "degree ..."
 
@@ -705,24 +715,27 @@ class Grid:
         #  width of the bins/sections dependent on the resolution in x-direction
         extent_hist = np.histogram(
             self.ds[self.lon],
-            bins=np.arange(min_range - approx_res, max_range + approx_res, atol),
+            bins=np.arange(min_range - approx_res, max_range + approx_res, 2 * xinc),
         )
+        # Same for latitude, however, many ocean models cut Antarctica from their grid, so the histogram
+        #  will only contain values between -75°S and 90°N
+        lat_bins = np.arange(-75.0, 90.0, 2 * yinc)
+        lat_bins[-1] = 90.1
+        extent_hist_lat = np.histogram(self.ds[self.lat], bins=lat_bins)
 
         # Set attributes
         self.xinc = xinc
         self.yinc = yinc
         self.res = approx_res
 
-        # If the counts for all bins are greater than zero, the grid is considered global in x-direction
-        # Yet, this information is only needed for xesmf.Regridder, as "periodic in longitude"
-        # and hence, the extent in y-direction does not matter.
-        # If at some point the qualitative extent in y-direction has to be checked, one needs to
-        # take into account that global ocean grids often tend to end at the antarctic coast and do not
-        # reach up to -90°S.
-        if np.all(extent_hist[0]):
-            return "global"
-        else:
-            return "regional"
+        # If the counts for all bins are greater than zero, the grid is considered global in x-direction or y-direction,
+        #  respectively. With respect to the x-direction, this information is needed for xesmf.Regridder, as "periodic
+        #  in longitude". With respect to the x-direction and y-direction, this information is needed to decide whether
+        #  it is truly a regional grid.
+        return (
+            "global" if np.all(extent_hist[0]) else "regional",
+            "global" if np.all(extent_hist_lat[0]) else "regional",
+        )
 
     def _detect_mask(self):
         """
@@ -786,7 +799,7 @@ class Grid:
             Raised if the requested coordinate cannot be identified.
         """
         coord, further_matches = clidu.get_coord_by_type(
-            self.ds, coord_type, ignore_aux_coords=False, return_further_matches=True
+            self.ds, coord_type, ignore_aux_coords=False, return_further_matches=True, warn_if_no_main_variable=False
         )
         # Remove standard_name and other attributes for further matches to not confuse cf_xarray
         #  when calling xesmf.Regridder later on
@@ -1556,6 +1569,13 @@ class Grid:
                         grid_tmp.ds[grid_tmp.lon_bnds].encoding["_FillValue"] = None
 
                     # Call to_netcdf method of xarray.Dataset
+                    grid_tmp.ds = fix_netcdf_attrs_encoding(grid_tmp.ds)
+                    # There is currently also an issue that xarray.Dataset.encoding['unlimited_dims']
+                    #   is not updated when dropping the time dimension from the dataset
+                    if "unlimited_dims" in grid_tmp.ds.encoding:
+                        grid_tmp.ds.encoding["unlimited_dims"] = {
+                            dim for dim in grid_tmp.ds.encoding["unlimited_dims"] if dim in grid_tmp.ds.dims
+                        }
                     grid_tmp.ds.to_netcdf(filename, **engine_kwargs)
                 finally:
                     lock_obj.release()
@@ -1592,7 +1612,7 @@ class Weights:
     """
 
     @require_xesmf
-    @require_older_xarray
+    @require_xarray
     def __init__(
         self,
         grid_in: Grid,
@@ -1628,6 +1648,15 @@ class Weights:
                     "The grid extent could not be accessed. "
                     "It will be assumed that the input grid is not periodic in longitude."
                 )
+
+        # Regional source grid fix for nearest neighbour
+        self.post_mask_source = False
+        if (
+            (self.grid_in.extent == "regional" or self.grid_in.extent_lat == "regional")
+            and self.method == "nearest_s2d"
+            and self.grid_in.type != "unstructured"
+        ):
+            self.post_mask_source = True
 
         # Activate ignore degenerate cells setting to avoid potential Errors because of
         # unidentified / unmasked degenerated cells.
@@ -1722,6 +1751,7 @@ class Weights:
                 unmapped_to_nan=True,
                 filename=regridder_filename,
                 reuse_weights=reuse_weights,
+                post_mask_source="domain_edge" if self.post_mask_source else None,
             )
 
             # Save Weights to cache
@@ -1777,6 +1807,8 @@ class Weights:
         weights_dir = CONFIG["clisops:grid_weights"]["local_weights_dir"]
 
         # Compile metadata
+        # ToDo: for CMIP7 there will be a list of metadata requirements
+        #       for remapping weights, which have to be implemented here
         grid_in_source = self.grid_in.ds.encoding.get("source", "")
         grid_out_source = self.grid_out.ds.encoding.get("source", "")
         grid_in_tracking_id = self.grid_in.ds.attrs.get("tracking_id", "")
@@ -1794,6 +1826,7 @@ class Weights:
             "source_type": self.grid_in.type,
             "source_format": self.grid_in.format,
             "source_extent": self.grid_in.extent,
+            "source_extent_lat": self.grid_in.extent_lat,
             "source_source": grid_in_source,
             "source_tracking_id": grid_in_tracking_id,
             "target_lat": self.grid_out.lat,
@@ -1806,11 +1839,13 @@ class Weights:
             "target_type": self.grid_out.type,
             "target_format": self.grid_out.format,
             "target_extent": self.grid_out.extent,
+            "target_extent_lat": self.grid_out.extent_lat,
             "target_source": grid_out_source,
             "target_tracking_id": grid_out_tracking_id,
             "format": self.format,
             "ignore_degenerate": str(self.ignore_degenerate),
             "periodic": str(self.periodic),
+            "post_mask_source": "domain_edge" if self.post_mask_source else "None",
             "method": self.method,
             "uid": self.id,
             "filename": self.filename,
@@ -1917,7 +1952,7 @@ class Weights:
 
 
 @require_xesmf
-@require_older_xarray
+@require_xarray
 def regrid(
     grid_in: Grid,
     grid_out: Grid,
