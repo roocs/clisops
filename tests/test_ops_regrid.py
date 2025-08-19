@@ -2,11 +2,13 @@ import os
 from pathlib import Path
 
 import cf_xarray  # noqa: F401
+import numpy as np
 import pytest
 import xarray as xr
 from roocs_grids import get_grid_file, grid_dict
 
 from clisops.core.regrid import XESMF_MINIMUM_VERSION, weights_cache_init, xe
+from clisops.exceptions import InvalidParameterValue
 from clisops.ops.regrid import regrid
 from clisops.ops.subset import subset
 
@@ -30,13 +32,35 @@ def test_regrid_basic(tmpdir, tmp_path, mini_esgf_data):
         fpath,
         method=method,
         adaptive_masking_threshold=0.5,
-        grid="1deg",
+        grid="auto",
         output_dir=tmpdir,
         output_type="netcdf",
         file_namer="standard",
     )
 
-    _check_output_nc(result, fname=f"{basename}-20051201_regrid-{method}-180x360_cells_grid.nc")
+    _check_output_nc(result, fname=f"{basename}-20051201_regrid-{method}-144x192_cells_grid.nc")
+
+
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+def test_regrid_to_ds(tmpdir, tmp_path, mini_esgf_data):
+    """Test a basic regridding operation to another dataset."""
+    fpath = mini_esgf_data["CMIP5_MRSOS_ONE_TIME_STEP"]
+    basename = os.path.splitext(os.path.basename(fpath))[0]
+    ds_tgt = xe.util.grid_2d(10, 20, 2, 10, 20, 2)
+    method = "nearest_s2d"
+
+    weights_cache_init(Path(tmp_path, "weights"))
+
+    result = regrid(
+        fpath,
+        method=method,
+        grid=ds_tgt,
+        output_dir=tmpdir,
+        output_type="netcdf",
+        file_namer="standard",
+    )
+
+    _check_output_nc(result, fname=f"{basename}-20051201_regrid-{method}-5x5_cells_grid.nc")
 
 
 @pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
@@ -57,6 +81,106 @@ def test_regrid_grid_as_none(tmpdir, tmp_path, mini_esgf_data):
         regrid(
             fpath,
             grid=None,
+            output_dir=tmpdir,
+            output_type="netcdf",
+            file_namer="standard",
+        )
+
+
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+def test_regrid_invalid_grid_id(tmpdir, tmp_path, mini_esgf_data):
+    """Test behaviour when an invalid grid_id is passed as target grid."""
+    fpath = mini_esgf_data["CMIP5_MRSOS_ONE_TIME_STEP"]
+
+    weights_cache_init(Path(tmp_path, "weights"))
+
+    with pytest.raises(
+        KeyError,
+        match="The grid_id 'invalid' you specified does not exist.",
+    ):
+        regrid(
+            fpath,
+            grid="invalid",
+            output_dir=tmpdir,
+            output_type="netcdf",
+            file_namer="standard",
+        )
+
+
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+def test_regrid_invalid_grid_instructor(tmpdir, tmp_path, mini_esgf_data):
+    """Test behaviour when an invalid grid_instructor is passed as target grid."""
+    fpath = mini_esgf_data["CMIP5_MRSOS_ONE_TIME_STEP"]
+
+    weights_cache_init(Path(tmp_path, "weights"))
+
+    with pytest.raises(
+        InvalidParameterValue,
+        match="The grid_instructor has to be a tuple of length 1, 2, 3 or 6.",
+    ):
+        regrid(
+            fpath,
+            grid=(1, 2, 3, 4, 5),
+            output_dir=tmpdir,
+            output_type="netcdf",
+            file_namer="standard",
+        )
+
+
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+def test_regrid_no_ds_da(tmpdir, tmp_path):
+    """Test behaviour when no Dataset or DataArray is passed."""
+    weights_cache_init(Path(tmp_path, "weights"))
+
+    with pytest.raises(
+        InvalidParameterValue,
+        match="An xarray.Dataset or xarray.DataArray has to be provided as input for the source grid.",
+    ):
+        regrid(
+            np.array([1, 2, 3]),
+            grid="1deg",
+            output_dir=tmpdir,
+            output_type="netcdf",
+            file_namer="standard",
+        )
+
+
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+def test_regrid_invalid_mask(tmpdir, tmp_path, mini_esgf_data):
+    """Test behaviour when an invalid masking option is passed."""
+    fpath = mini_esgf_data["CMIP5_MRSOS_ONE_TIME_STEP"]
+
+    weights_cache_init(Path(tmp_path, "weights"))
+
+    with pytest.raises(
+        ValueError,
+        match="mask must be one of 'land', 'ocean' or None, not 'invalid'",
+    ):
+        regrid(
+            fpath,
+            grid="1deg_lsm",
+            mask="invalid",
+            output_dir=tmpdir,
+            output_type="netcdf",
+            file_namer="standard",
+        )
+
+
+@pytest.mark.skipif(xe is None, reason=XESMF_IMPORT_MSG)
+def test_regrid_invalid_method(tmpdir, tmp_path, mini_esgf_data):
+    """Test behaviour when an invalid regridding method is passed."""
+    fpath = mini_esgf_data["CMIP5_MRSOS_ONE_TIME_STEP"]
+
+    weights_cache_init(Path(tmp_path, "weights"))
+
+    with pytest.raises(
+        Exception,
+        match="selected regridding method is not supported. Please choose one of",
+    ):
+        regrid(
+            fpath,
+            grid="1deg_lsm",
+            method="invalid",
             output_dir=tmpdir,
             output_type="netcdf",
             file_namer="standard",

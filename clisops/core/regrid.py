@@ -161,7 +161,7 @@ class Grid:
     Create a Grid object that is suitable to serve as source or target grid of the Weights class.
 
     Pre-processes coordinate variables of input dataset (e.g. create or read dataset from input,
-    reformat, generate bounds, identify duplicated and collapsing cells, determine zonal / east-west extent).
+    reformat, generate bounds, identify duplicated and collapsing cells, determine extent).
 
     Parameters
     ----------
@@ -200,6 +200,7 @@ class Grid:
         self.format = None
         self.extent = None
         self.extent_lat = None
+        self.extent_lon = None
         self.nlat = 0
         self.nlon = 0
         self.ncells = 0
@@ -267,7 +268,11 @@ class Grid:
 
         # Extent of the grid (global or regional)
         if not self.extent:
-            self.extent, self.extent_lat = self.detect_extent()
+            self.extent_lon, self.extent_lat = self.detect_extent()
+        if self.extent_lon == "global" and self.extent_lat == "global":
+            self.extent = "global"
+        else:
+            self.extent = "regional"
 
         # Detect duplicated grid cells / halos
         if self.contains_duplicated_cells is None:
@@ -337,7 +342,8 @@ class Grid:
             + f"Gridcells:        {self.ncells}\n"
             + f"Format:           {self.format}\n"
             + f"Type:             {self.type}\n"
-            + f"Extent (x):       {self.extent}\n"
+            + f"Extent:           {self.extent}\n"
+            + f"Extent (x):       {self.extent_lon}\n"
             + f"Extent (y):       {self.extent_lat}\n"
             + f"Source:           {self.source}\n"
             + f"Bounds?           {self.lat_bnds is not None and self.lon_bnds is not None}\n"
@@ -369,7 +375,7 @@ class Grid:
         try:
             grid_file = roocs_grids.get_grid_file(grid_id)
             grid = xr.open_dataset(grid_file)
-        except KeyError:
+        except (KeyError, FileNotFoundError):
             raise KeyError(f"The grid_id '{grid_id}' you specified does not exist.")
 
         # Set attributes
@@ -428,13 +434,15 @@ class Grid:
         ylast = float(grid_tmp.ds[grid_tmp.lat].max())
 
         # fix for regional grids that wrap around the Greenwich meridian
-        if grid_tmp.extent == "regional" and xfirst < 2 * grid_tmp.xinc and xlast > 360 - 2 * grid_tmp.xinc:
+        if grid_tmp.extent_lon == "regional" and xfirst < 2 * grid_tmp.xinc and xlast > 360 - 2 * grid_tmp.xinc:
             grid_tmp.ds = grid_tmp.ds.assign_coords(
                 lon=grid_tmp.ds.lon.where(grid_tmp.ds.lon <= 180, grid_tmp.ds.lon - 360.0)
             )
             xfirst = float(grid_tmp.ds[grid_tmp.lon].min())
             xlast = float(grid_tmp.ds[grid_tmp.lon].max())
-        elif grid_tmp.extent == "regional" and xfirst < -180 + 2 * grid_tmp.xinc and xlast > 180 - 2 * grid_tmp.xinc:
+        elif (
+            grid_tmp.extent_lon == "regional" and xfirst < -180 + 2 * grid_tmp.xinc and xlast > 180 - 2 * grid_tmp.xinc
+        ):
             grid_tmp.ds = grid_tmp.ds.assign_coords(
                 lon=grid_tmp.ds.lon.where(grid_tmp.ds.lon >= 180, grid_tmp.ds.lon + 360.0)
             )
@@ -452,18 +460,29 @@ class Grid:
             xsize = grid_tmp.nlon
             ysize = grid_tmp.nlat
 
-        # Compute meridional / zonal resolution (=increment)
-        xinc = (xlast - xfirst) / (xsize - 1)
-        yinc = (ylast - yfirst) / (ysize - 1)
+        # Compute average meridional / zonal resolution (=increment)
+        dx_mean = (xlast - xfirst) / (xsize - 1)
+        dy_mean = (ylast - yfirst) / (ysize - 1)
         xrange = [0.0, 360.0] if xlast > 180 else [-180.0, 180.0]
-        xfirst = xfirst - xinc / 2.0
-        xlast = xlast + xinc / 2.0
-        xfirst = xfirst if xfirst > xrange[0] - xinc / 2.0 else xrange[0]
-        xlast = xlast if xlast < xrange[1] + xinc / 2.0 else xrange[1]
-        yfirst = yfirst - yinc / 2.0
-        ylast = ylast + yinc / 2.0
-        yfirst = yfirst if yfirst > -90.0 else -90.0
-        ylast = ylast if ylast < 90.0 else 90.0
+
+        # Potentially adjust resolution for global extent in lon / lat direction
+        #  -> adjust the increment to fit the extent precisely
+        if grid_tmp.extent_lon == "global":
+            xfirst, xlast = xrange[0], xrange[1]
+            xinc = float(360 / round(360.0 / dx_mean))
+        else:  # regional
+            xinc = dx_mean
+            xfirst = xfirst - xinc / 2.0
+            xlast = xlast + xinc / 2.0 + 1.0e-7
+        if grid_tmp.extent_lat == "global":
+            yfirst, ylast = -90.0, 90.0
+            yinc = float(180 / round(180.0 / dy_mean))
+        else:  # regional
+            yinc = dy_mean
+            yfirst = yfirst - yinc / 2.0
+            ylast = ylast + yinc / 2.0 + 1.0e-7
+            yfirst = yfirst if yfirst > -90.0 else -90.0
+            ylast = ylast if ylast < 90.0 else 90.0
 
         # Create regular lat-lon grid with these specifics
         self._grid_from_instructor((xfirst, xlast, xinc, yfirst, ylast, yinc))
@@ -684,15 +703,15 @@ class Grid:
                 # in proportion to extent in zonal and meridional direction
                 # TODO: Alternatively one can use the kdtree method to calculate the approx. resolution
                 # once it is implemented here
-                xsize = int(sqrt(abs(xlast - xfirst) / abs(ylast - yfirst) * self.ncells))
-                ysize = int(sqrt(abs(ylast - yfirst) / abs(xlast - xfirst) * self.ncells))
+                xsize = max(2, int(sqrt(abs(xlast - xfirst) / abs(ylast - yfirst) * self.ncells)))
+                ysize = max(2, int(sqrt(abs(ylast - yfirst) / abs(xlast - xfirst) * self.ncells)))
                 xinc = (xlast - xfirst) / (xsize - 1)
                 yinc = (ylast - yfirst) / (ysize - 1)
                 approx_res = (xinc + yinc) / 2.0
             else:
                 yinc = np.average(np.absolute(self.ds[self.lat].values[1:] - self.ds[self.lat].values[:-1]))
-                approx_res = np.average(np.absolute(self.ds[self.lon].values[1:] - self.ds[self.lon].values[:-1]))
-                xinc = approx_res
+                xinc = np.average(np.absolute(self.ds[self.lon].values[1:] - self.ds[self.lon].values[:-1]))
+                approx_res = (xinc + yinc) / 2.0
         else:
             raise Exception("Only 1D and 2D longitude and latitude coordinate variables supported.")
 
@@ -713,10 +732,11 @@ class Grid:
 
         # Generate a histogram with bins for sections along a zonal circle,
         #  width of the bins/sections dependent on the resolution in x-direction
-        extent_hist = np.histogram(
+        extent_hist_lon = np.histogram(
             self.ds[self.lon],
             bins=np.arange(min_range - approx_res, max_range + approx_res, 2 * xinc),
         )
+
         # Same for latitude, however, many ocean models cut Antarctica from their grid, so the histogram
         #  will only contain values between -75°S and 90°N
         lat_bins = np.arange(-75.0, 90.0, 2 * yinc)
@@ -733,7 +753,7 @@ class Grid:
         #  in longitude". With respect to the x-direction and y-direction, this information is needed to decide whether
         #  it is truly a regional grid.
         return (
-            "global" if np.all(extent_hist[0]) else "regional",
+            "global" if np.all(extent_hist_lon[0]) else "regional",
             "global" if np.all(extent_hist_lat[0]) else "regional",
         )
 
@@ -1638,7 +1658,7 @@ class Weights:
         #  global == is grid periodic in longitude
         self.periodic = False
         try:
-            if self.grid_in.extent == "global":
+            if self.grid_in.extent_lon == "global":
                 self.periodic = True
         except AttributeError:
             # forced to False for conservative regridding in xesmf
@@ -1651,11 +1671,7 @@ class Weights:
 
         # Regional source grid fix for nearest neighbour
         self.post_mask_source = False
-        if (
-            (self.grid_in.extent == "regional" or self.grid_in.extent_lat == "regional")
-            and self.method == "nearest_s2d"
-            and self.grid_in.type != "unstructured"
-        ):
+        if self.grid_in.extent == "regional" and self.method == "nearest_s2d" and self.grid_in.type != "unstructured":
             self.post_mask_source = True
 
         # Activate ignore degenerate cells setting to avoid potential Errors because of
@@ -1826,6 +1842,7 @@ class Weights:
             "source_type": self.grid_in.type,
             "source_format": self.grid_in.format,
             "source_extent": self.grid_in.extent,
+            "source_extent_lon": self.grid_in.extent_lon,
             "source_extent_lat": self.grid_in.extent_lat,
             "source_source": grid_in_source,
             "source_tracking_id": grid_in_tracking_id,
@@ -1839,6 +1856,7 @@ class Weights:
             "target_type": self.grid_out.type,
             "target_format": self.grid_out.format,
             "target_extent": self.grid_out.extent,
+            "target_extent_lon": self.grid_out.extent_lon,
             "target_extent_lat": self.grid_out.extent_lat,
             "target_source": grid_out_source,
             "target_tracking_id": grid_out_tracking_id,
