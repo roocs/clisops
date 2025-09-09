@@ -174,6 +174,9 @@ def is_latitude(coord: xr.DataArray | xr.Dataset) -> bool:
     if hasattr(coord, "long_name") and coord.long_name == "latitude":
         return True
 
+    if coord.name == "lat":
+        return True
+
     return False
 
 
@@ -201,6 +204,9 @@ def is_longitude(coord: xr.DataArray | xr.Dataset) -> bool:
         return True
 
     if hasattr(coord, "long_name") and coord.long_name == "longitude":
+        return True
+
+    if coord.name == "lon":
         return True
 
     return False
