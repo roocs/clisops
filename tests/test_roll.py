@@ -163,6 +163,8 @@ def test_irregular_grid_dataset(mini_esgf_data):
     assert str(exc.value) in [
         "dimensions ['longitude'] do not exist",
         "Dimensions ['longitude'] not found in data dimensions ('i', 'j', 'time', 'bnds', 'vertices')",
+        # xarray 2025.7 changes the order of dimensions in the error message
+        "Dimensions ['longitude'] not found in data dimensions ('time', 'j', 'i', 'bnds', 'vertices')",
     ]
 
 
