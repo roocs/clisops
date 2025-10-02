@@ -8,6 +8,7 @@ New Features
 ^^^^^^^^^^^^
 * Added an `engine` argument to `Grid.ds.to_netcdf()` to allow users to specify the engine used for writing NetCDF files (#439).
 * Coding conventions have been updated to use Python 3.10+ features (#439).
+* `core.subset.subset_gridpoint` will find nearest neighbours using a KDTree based on euclidean distance in lat/lon space instead of using great circle distances. The small loss in precision is compensated by a significant performance boost, especially for large grids and long point lists (#452).
 
 Bug Fixes
 ^^^^^^^^^
