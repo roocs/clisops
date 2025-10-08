@@ -361,6 +361,72 @@ def get_output(ds: xr.Dataset, output_type: str, output_dir: str | Path, namer: 
     return output_path
 
 
+def _fix_str_encoding(s, encoding="utf-8"):
+    """
+    Helper function to fix string encoding of surrogates.
+
+    Parameters
+    ----------
+    s : str, byte
+        The string to be fixed. If the input is not of type str or bytes,
+        it is returned as is.
+    encoding : str, optional
+        The encoding to be used. Default is "utf-8".
+
+    Returns
+    -------
+    str
+        The fixed string.
+    """
+    if isinstance(s, bytes):
+        # Decode directly from bytes, replacing undecodable sequences
+        return s.decode("utf-8", errors="replace")
+    elif isinstance(s, str):
+        try:
+            s.encode("utf-8")  # If this works, no surrogates present
+            return s
+        except UnicodeEncodeError:
+            # Handle surrogate escapes
+            b = s.encode("utf-8", "surrogateescape")
+            return b.decode("utf-8", errors="replace")
+    return s
+
+
+def fix_netcdf_attrs_encoding(ds, encoding="utf-8"):
+    """
+    Fix strings that contain invalid chars in Dataset attrs to be safe for NetCDF writing.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The dataset with attrs to be fixed.
+    encoding : str, optional
+        The encoding to be used. Default is "utf-8".
+
+    Returns
+    -------
+    xarray.Dataset
+        The dataset with fixed attrs.
+    """
+    # Work on a shallow copy so original ds is untouched
+    ds = ds.copy()
+
+    # Fix global attributes
+    for k, v in list(ds.attrs.items()):
+        fixed_v = _fix_str_encoding(v, encoding)
+        if fixed_v is not v:
+            ds.attrs[k] = fixed_v
+
+    # Fix variable attributes
+    for var in ds.variables:
+        for k, v in list(ds[var].attrs.items()):
+            fixed_v = _fix_str_encoding(v, encoding)
+            if fixed_v is not v:
+                ds[var].attrs[k] = fixed_v
+
+    return ds
+
+
 class FileLock:
     """
     Create and release a lockfile.

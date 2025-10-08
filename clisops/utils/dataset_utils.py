@@ -22,7 +22,11 @@ KERCHUNK_EXTS = [".json", ".zst", ".zstd", ".parquet"]
 
 
 def get_coord_by_type(
-    ds: xr.DataArray | xr.Dataset, coord_type: str, ignore_aux_coords: bool = True, return_further_matches: bool = False
+    ds: xr.DataArray | xr.Dataset,
+    coord_type: str,
+    ignore_aux_coords: bool = True,
+    return_further_matches: bool = False,
+    warn_if_no_main_variable: bool = True,
 ):
     """
     Return the name of the coordinate that matches the given type.
@@ -34,9 +38,11 @@ def get_coord_by_type(
     coord_type : str
         Type of coordinate, e.g. 'time', 'level', 'latitude', 'longitude', 'realization'.
     ignore_aux_coords : bool
-        Whether to ignore auxiliary coordinates.
+        Whether to ignore auxiliary coordinates. Default is True.
     return_further_matches : bool
-        Whether to return further matches.
+        Whether to return further matches. Default is False.
+    warn_if_no_main_variable : bool
+        Whether to warn if no main variable can be identified. Default is True.
 
     Returns
     -------
@@ -62,7 +68,8 @@ def get_coord_by_type(
     try:
         main_var = get_main_variable(ds)
     except ValueError:
-        warnings.warn(f"No main variable found for dataset '{ds}'.")
+        if warn_if_no_main_variable:
+            warnings.warn(f"No main variable found for dataset '{ds}'.")
         main_var = None
 
     # Loop through all (potential) coordinates to find all possible matches
