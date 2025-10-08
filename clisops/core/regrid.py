@@ -435,17 +435,19 @@ class Grid:
 
         # fix for regional grids that wrap around the Greenwich meridian
         if grid_tmp.extent_lon == "regional" and xfirst < 2 * grid_tmp.xinc and xlast > 360 - 2 * grid_tmp.xinc:
-            grid_tmp.ds = grid_tmp.ds.assign_coords(
-                lon=grid_tmp.ds.lon.where(grid_tmp.ds.lon <= 180, grid_tmp.ds.lon - 360.0)
-            )
+            # grid_tmp.ds = grid_tmp.ds.assign_coords(
+            #    lon=grid_tmp.ds.lon.where(grid_tmp.ds.lon <= 180, grid_tmp.ds.lon - 360.0)
+            # )
+            grid_tmp.ds, low, high = clidu.cf_convert_between_lon_frames(grid_tmp.ds, [-180.0, 180.0], force=True)
             xfirst = float(grid_tmp.ds[grid_tmp.lon].min())
             xlast = float(grid_tmp.ds[grid_tmp.lon].max())
         elif (
             grid_tmp.extent_lon == "regional" and xfirst < -180 + 2 * grid_tmp.xinc and xlast > 180 - 2 * grid_tmp.xinc
         ):
-            grid_tmp.ds = grid_tmp.ds.assign_coords(
-                lon=grid_tmp.ds.lon.where(grid_tmp.ds.lon >= 180, grid_tmp.ds.lon + 360.0)
-            )
+            # grid_tmp.ds = grid_tmp.ds.assign_coords(
+            #    lon=grid_tmp.ds.lon.where(grid_tmp.ds.lon >= -180, grid_tmp.ds.lon + 360.0)
+            # )
+            grid_tmp.ds, low, high = clidu.cf_convert_between_lon_frames(grid_tmp.ds, [0.0, 360.0], force=True)
             xfirst = float(grid_tmp.ds[grid_tmp.lon].min())
             xlast = float(grid_tmp.ds[grid_tmp.lon].max())
 
