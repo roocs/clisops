@@ -9,7 +9,7 @@ from loguru import logger
 from clisops.utils.common import expand_wildcards
 from clisops.utils.dataset_utils import open_xr_dataset
 from clisops.utils.file_namers import get_file_namer
-from clisops.utils.output_utils import get_output, get_time_slices
+from clisops.utils.output_utils import fix_netcdf_attrs_encoding, get_output, get_time_slices
 
 
 class Operation:
@@ -108,6 +108,12 @@ class Operation:
                     ]:
                         if en in ds[var].encoding:
                             del ds[var].encoding[en]
+        return ds
+
+    def _fix_netcdf_attrs_encoding(self, ds):
+        """Executes output_utils.fix_netcdf_attrs_encoding for xarray.Datasets"""
+        if isinstance(ds, xr.Dataset):
+            ds = fix_netcdf_attrs_encoding(ds)
         return ds
 
     def _cap_deflate_level(self, ds):
@@ -246,6 +252,8 @@ class Operation:
         processed_ds = self._remove_str_compression(processed_ds)
         # cap deflate level at 1
         processed_ds = self._cap_deflate_level(processed_ds)
+        # fix string encoding of xarray.Dataset.attrs (incl. variable attrs)
+        processed_ds = self._fix_netcdf_attrs_encoding(processed_ds)
 
         # Work out how many outputs should be created based on the size
         # of the array. Manage this as a list of time slices.
