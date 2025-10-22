@@ -456,7 +456,7 @@ def test_determine_lon_lat_range_unstructured(mini_esgf_data):
 
 def test_determine_lon_lat_range_regular_lat_lon(mini_esgf_data):
     """Test the function determine_lon_lat_range for regular lat lon grids."""
-    with xr.open_mfdataset(mini_esgf_data["CMIP5_TAS"]) as ds:
+    with xr.open_mfdataset(mini_esgf_data["CMIP5_TAS"], decode_times=xr.coders.CFDatetimeCoder(use_cftime=True)) as ds:
         ds.lat.values[1] = -999.0
         with pytest.warns(UserWarning, match="fix is not possible for regular"):
             clidu.determine_lon_lat_range(ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=True)
