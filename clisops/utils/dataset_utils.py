@@ -900,7 +900,9 @@ def cf_convert_between_lon_frames(ds_in, lon_interval, force=False):  # noqa: C9
     else:
         raise InvalidParameterValue("This function requires an xarray.DataArray or xarray.Dataset as input.")
     low, high = lon_interval
-    lon_min, lon_max = ds.coords[lon].min().item(), ds.coords[lon].max().item()
+    # Compute min and max lazily if needed, then convert to Python floats
+    lon_min = float(ds.coords[lon].min().compute().item())
+    lon_max = float(ds.coords[lon].max().compute().item())
     atol = 0.5
 
     # Conversion between longitude frames if required
