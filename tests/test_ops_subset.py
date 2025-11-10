@@ -1570,6 +1570,23 @@ def test_subset_by_time_components_year_month(tmpdir, mini_esgf_data):
             assert set(ds.time.dt.month.values) == {12, 1, 2}
 
 
+def test_subset_by_time_components_year_and_bbox(tmpdir, mini_esgf_data):
+    # Test for issue #451: 
+    # NotImplementedError: 'item' is not yet a valid method on dask arrays in cf_convert_between_lon_frames
+    tc = time_components(year=(2021, 2022), month=["dec", "jan", "feb"])
+    bbox = (0.0, -80, 170.0, 65.0)
+
+    kwargs = {"output_dir": tmpdir, "output_type": "xarray"}
+
+    with subset(
+        mini_esgf_data["CMIP6_TA"], 
+        time_components=tc,
+        area=bbox, 
+        **kwargs)[0] as ds:
+        assert set(ds.time.dt.year.values) == {2021, 2022}
+        assert set(ds.time.dt.month.values) == {12, 1, 2}
+
+
 def test_subset_empty(tmpdir, mini_esgf_data):
     # Monthly mean dataset with 360-day calendar
     with pytest.raises(Exception) as exc:
