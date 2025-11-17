@@ -700,12 +700,14 @@ def fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, xminma
         possible_missing_values_x_max = float(ds[lon].where(mask_x).max().compute().item())
 
         possible_missing_values = [
-            val for val in [
+            val
+            for val in [
                 possible_missing_values_x_min,
                 possible_missing_values_x_max,
                 possible_missing_values_y_min,
                 possible_missing_values_y_max,
-            ] if not np.isnan(val)
+            ]
+            if not np.isnan(val)
         ]
 
         # Abort fix for 1D lat/lon coordinates or if masks differ
