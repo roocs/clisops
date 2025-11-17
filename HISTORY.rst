@@ -22,6 +22,8 @@ Internal Changes
 * Output utilities tests have been modified to no longer create files in the current working directory, but rather in a temporary directory. (#434).
 * `black` and `isort` as well as most linting checks performed by `flake8` have been replaced by `ruff` for code formatting and linting (#439).
 * `pre-commit` hooks have been updated to use `ruff` for code formatting and linting, as well as a few others (#439).
+* Addressed a few `RuntimeWarning` messages emitted by the test suite (#463).
+* Adjusted the CI workflows to not use Python 3.14 (due to incompatibilities with some dependencies) (#463).
 
 v0.16.2 (2025-04-14)
 --------------------

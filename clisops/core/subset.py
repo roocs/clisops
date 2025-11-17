@@ -9,6 +9,7 @@ from pathlib import Path
 import cf_xarray  # noqa: F401
 import geopandas as gpd
 import numpy as np
+import shapely
 import xarray
 from packaging import version
 from pandas import DataFrame
@@ -16,7 +17,6 @@ from pandas.api.types import is_integer_dtype
 from pyproj import Geod
 from pyproj.crs import CRS
 from pyproj.exceptions import CRSError
-from shapely import vectorized
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import split, unary_union
 from xarray.core import indexing
@@ -444,7 +444,7 @@ def convert_lat_lon_to_da(func: Callable) -> Callable:  # numpydoc ignore=GL08
         if not isinstance(lat, (type(None), xarray.DataArray)) or not isinstance(lon, (type(None), xarray.DataArray)):
             try:
                 if len(lat) != len(lon):
-                    raise ValueError("'lat' and 'lon' must have the same length")
+                    raise ValueError("'lat' and 'lon' must have the same length.")
             except TypeError:  # They have no len : not iterables
                 lat = [lat]
                 lon = [lon]
@@ -487,9 +487,9 @@ def wrap_lons_and_split_at_greenwich(func: Callable) -> Callable:  # numpydoc ig
             The wrapped function with modified arguments if the conditions are met.
         """
         try:
-            poly = kwargs["poly"]
-            x_dim = kwargs["x_dim"]
-            wrap_lons = kwargs["wrap_lons"]
+            poly: gpd.GeoDataFrame = kwargs["poly"]
+            x_dim: str = kwargs["x_dim"]
+            wrap_lons: bool = kwargs["wrap_lons"]
         except KeyError:
             return func(*args, **kwargs)
 
@@ -550,7 +550,7 @@ def wrap_lons_and_split_at_greenwich(func: Callable) -> Callable:  # numpydoc ig
                     stacklevel=4,
                 )
                 poly = gpd.GeoDataFrame(poly.buffer(0.000000001), columns=["geometry"])
-                poly.crs = wrapped_lons
+                poly = poly.set_crs(wrapped_lons)
 
             kwargs["poly"] = poly
 
@@ -637,8 +637,8 @@ def create_mask(
     geoms = poly.geometry.values
     mask = np.full(lat1.shape, np.nan)
     for val, geom in zip(poly.index[::-1], geoms[::-1], strict=False):
-        contained = vectorized.contains(geom, lon1.flatten(), lat1.flatten()).reshape(lat1.shape)
-        touched = vectorized.touches(geom, lon1.flatten(), lat1.flatten()).reshape(lat1.shape)
+        contained = shapely.contains_xy(geom, lon1.flatten(), lat1.flatten()).reshape(lat1.shape)
+        touched = shapely.intersects_xy(geom, lon1.flatten(), lat1.flatten()).reshape(lat1.shape)
         intersection = np.logical_or(contained, touched)
         mask[intersection] = val
 
@@ -858,9 +858,9 @@ def shape_bbox_indexer(
     if isinstance(poly, (gpd.GeoDataFrame, gpd.GeoSeries)):
         # Note that this function is somewhat redundant with functionality found in rioxarray (see `clip` and `Window`).
         geom = poly.geometry
-        hull = geom.convex_hull.unary_union.convex_hull
+        hull = geom.convex_hull.union_all()
     elif isinstance(poly, gpd.array.GeometryArray):
-        hull = poly.convex_hull.unary_union().convex_hull
+        hull = poly.convex_hull.union_all()
     elif isinstance(poly, (list, tuple)):
         hpoly = [p.convex_hull for p in poly]
         hull = unary_union(hpoly).convex_hull
@@ -981,7 +981,7 @@ def create_weight_masks(
         raise ValueError(f"Package xesmf >= {XESMF_MINIMUM_VERSION} is required to use create_weight_masks.")
 
     if poly.crs is not None:
-        poly = poly.to_crs(4326)
+        poly = poly.set_crs(4326)
 
     poly = poly.copy()
     poly.index.name = "geom"
@@ -1609,7 +1609,8 @@ def subset_gridpoint(
             dists = []
             for site in dist[ptdim]:
                 # Find the indices for the closest point
-                inds = np.unravel_index(dist.sel({ptdim: site}).argmin(), dist.sel({ptdim: site}).shape)
+                distances = dist.sel({ptdim: site})
+                inds = np.unravel_index(np.nanargmin(distances), distances.shape)
 
                 # Select data from closest point
                 args = {xydim: ind for xydim, ind in zip(dist.dims, inds, strict=False)}
