@@ -14,6 +14,7 @@ Bug Fixes
 * Fixed support for `kerchunk` with `s3`. Pinned `zarr >=2.13.0,<3.0` (#429).
 * Lift pin on `xarray` that was previously due to incompatibilities with `xesmf`. `xarray>=2025.1.1` now required for general usage and `xarray>=2025.6.0` for `regrid` operations (#437).
 * Non-`numpydoc` docstrings in the codebase have been converted to the `numpydoc` format (#439).
+* Fixed issue with dask: "NotImplementedError: item is not yet a valid method on dask arrays" (#451).
 
 Internal Changes
 ^^^^^^^^^^^^^^^^
