@@ -207,13 +207,14 @@ def average_over_dims(
     # Short-term solution to error: "NotImplementedError: Computing the mean of an " ...
     #    "array containing cftime.datetime objects is not yet implemented on dask arrays."
     # See GITHUB ISSUE: https://github.com/roocs/clisops/issues/185
+    untouched_ds = None
     if isinstance(ds, xr.Dataset):
         untouched_ds = ds.drop_dims(dims_to_average)
         ds = ds.drop_vars(untouched_ds.data_vars.keys())
 
     ds_averaged_over_dims = ds.mean(dim=dims_to_average, skipna=True, keep_attrs=True)
 
-    if isinstance(ds, xr.Dataset):
+    if untouched_ds is not None:
         return xr.merge((ds_averaged_over_dims, untouched_ds))
     return ds_averaged_over_dims
 
@@ -228,14 +229,14 @@ def average_time(
     Parameters
     ----------
     ds : Union[xr.DataArray, xr.Dataset]
-      Input values.
+        Input values.
     freq : str
-      The frequency to average over. One of "month", "year".
+        The frequency to average over. One of "month", "year".
 
     Returns
     -------
     Union[xr.DataArray, xr.Dataset]
-      New Dataset or DataArray object averaged over the indicated time frequency.
+        New Dataset or DataArray object averaged over the indicated time frequency.
 
     Examples
     --------
