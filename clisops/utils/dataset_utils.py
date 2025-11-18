@@ -724,6 +724,8 @@ def fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, xminma
 
         # Abort fix for 1D lat/lon coordinates or if masks differ
         if ds[lat].dims != ds[lon].dims and len(ds[lon].dims) == 1 and len(ds[lat].dims) == 1:
+            # Abort fix for regular lat-lon grids (1D coordinate variables should not include missing values
+            #  - for some of the operations the outliers will cause an exception later on)
             warnings.warn(
                 f"Extreme value(s) (potentially unmasked missing_values) found in {lon} and {lat} arrays: "
                 f"{set(possible_missing_values)}. A fix is not possible for regular latitude-longitude grids."
