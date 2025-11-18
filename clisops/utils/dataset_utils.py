@@ -729,7 +729,7 @@ def fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, xminma
                 f"{set(possible_missing_values)}. A fix is not possible for regular latitude-longitude grids."
             )
             return fix
-        elif not bool((mask_x == mask_y).all().compute().item()):
+        elif not mask_x.equals(mask_y):
             # Abort fix if the masks differ
             warnings.warn(
                 f"Extreme value(s) (potentially unmasked missing_values) found in {lon} and {lat} arrays: "
