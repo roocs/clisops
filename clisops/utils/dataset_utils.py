@@ -694,10 +694,16 @@ def fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, xminma
     minval = -999
     maxval = 999
 
-    # Check if any extreme values indicate potential missing values
+    # Potentially fix unmasked missing values in longitude/latitude arrays
     if any(xymin <= minval for xymin in xminmax + yminmax) or any(xymax >= maxval for xymax in xminmax + yminmax):
+        # Identify potential missing values by detecting outliers
         mask_y = (ds[lat] <= minval) | (ds[lat] >= maxval)
         mask_x = (ds[lon] <= minval) | (ds[lon] >= maxval)
+
+        # TBD - potential TODO - Explicitly check the vertices as well for possible missing values
+        #                        and not apply the mask from lat / lon.
+        #                      - Check if the fields already contain nans (and if they are consistent
+        #                        between lat and lon).
 
         # Identify potential missing values safely
         possible_missing_values_y_min = float(ds[lat].where(mask_y).min().compute().item())
@@ -724,6 +730,7 @@ def fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, xminma
             )
             return fix
         elif not bool((mask_x == mask_y).all().compute().item()):
+            # Abort fix if the masks differ
             warnings.warn(
                 f"Extreme value(s) (potentially unmasked missing_values) found in {lon} and {lat} arrays: "
                 f"{set(possible_missing_values)}. A fix is not possible since their locations are not consistent "
@@ -735,6 +742,9 @@ def fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, xminma
         if len(set(possible_missing_values)) == 1:
             fix = True
             missing_value = possible_missing_values[0]
+            # Replace the missing value with np.NaN in place
+            # and add _FillValue and missing_value attributes
+            #  (ignoring already present attributes)
             for var in lat, lon:
                 ds[var] = ds[var].where(ds[var] != missing_value, other=np.nan)
             if lat_bnds is not None and lon_bnds is not None:
@@ -748,6 +758,7 @@ def fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, xminma
                 ds[var].attrs["missing_value"] = 1e20
             warnings.warn(f"Unmasked missing_value found (and treated) in {lon} and {lat} arrays: '{missing_value}'.")
         else:
+            # Raise warning - the values will likely cause an exception later on, depending on the operation
             warnings.warn(
                 "Multiple extreme values (potentially unmasked missing_values) found in "
                 f"{lon} and {lat} arrays: {set(possible_missing_values)}. This may cause issues."
