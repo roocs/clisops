@@ -7,6 +7,7 @@ import warnings
 
 import cf_xarray as cfxr
 import cftime
+import dask
 import dask.array as da
 import fsspec
 import numpy as np
