@@ -739,7 +739,8 @@ def fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, xminma
             if lat_bnds is not None and lon_bnds is not None:
                 ds[lat_bnds] = ds[lat_bnds].where(ds[lat] != missing_value, other=np.nan)
                 ds[lon_bnds] = ds[lon_bnds].where(ds[lon] != missing_value, other=np.nan)
-            for var in [v for v in [lat, lon, lat_bnds, lon_bnds] if v is not None]:
+            vars_not_none = [v for v in [lat, lon, lat_bnds, lon_bnds] if v is not None]
+            for var in vars_not_none:
                 ds[var].encoding["_FillValue"] = 1e20
                 ds[var].encoding["missing_value"] = 1e20
                 ds[var].attrs["_FillValue"] = 1e20
