@@ -641,11 +641,16 @@ def determine_lon_lat_range(ds, lon, lat, lon_bnds=None, lat_bnds=None, apply_fi
     ymax : float
         Maximum latitude value.
     """
+    # Load coordinates
+    dlon, dlat = dask.compute(ds[lon], ds[lat])
+    ds[lon] = dlon
+    ds[lat] = dlat
+
     # Determine min/max lon/lat values safely (supports lazy Dask arrays)
-    xmin = float(ds[lon].min().compute().item())
-    xmax = float(ds[lon].max().compute().item())
-    ymin = float(ds[lat].min().compute().item())
-    ymax = float(ds[lat].max().compute().item())
+    xmin = float(ds[lon].min().item())
+    xmax = float(ds[lon].max().item())
+    ymin = float(ds[lat].min().item())
+    ymax = float(ds[lat].max().item())
 
     # Potentially apply fix for unmasked missing values
     if apply_fix:
