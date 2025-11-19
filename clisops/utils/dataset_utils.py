@@ -7,6 +7,7 @@ import warnings
 
 import cf_xarray as cfxr
 import cftime
+import dask
 import dask.array as da
 import fsspec
 import numpy as np
@@ -641,19 +642,24 @@ def determine_lon_lat_range(ds, lon, lat, lon_bnds=None, lat_bnds=None, apply_fi
     ymax : float
         Maximum latitude value.
     """
-    # Determine min/max lon/lat values
-    xmin = ds[lon].min().item()
-    xmax = ds[lon].max().item()
-    ymin = ds[lat].min().item()
-    ymax = ds[lat].max().item()
+    # Load coordinates
+    dlon, dlat = dask.compute(ds[lon], ds[lat])
+    ds[lon] = dlon
+    ds[lat] = dlat
+
+    # Determine min/max lon/lat values safely (supports lazy Dask arrays)
+    xmin = float(ds[lon].min().item())
+    xmax = float(ds[lon].max().item())
+    ymin = float(ds[lat].min().item())
+    ymax = float(ds[lat].max().item())
 
     # Potentially apply fix for unmasked missing values
     if apply_fix:
         if fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, [xmin, xmax], [ymin, ymax]):
-            xmin = ds[lon].min().item()
-            xmax = ds[lon].max().item()
-            ymin = ds[lat].min().item()
-            ymax = ds[lat].max().item()
+            xmin = float(ds[lon].min().compute().item())
+            xmax = float(ds[lon].max().compute().item())
+            ymin = float(ds[lat].min().compute().item())
+            ymax = float(ds[lat].max().compute().item())
 
     return xmin, xmax, ymin, ymax
 
@@ -689,23 +695,21 @@ def fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, xminma
     maxval = 999
 
     # Potentially fix unmasked missing values in longitude/latitude arrays
-    if any([xymin <= minval for xymin in xminmax + yminmax]) or any([xymax >= maxval for xymax in xminmax + yminmax]):
+    if any(xymin <= minval for xymin in xminmax + yminmax) or any(xymax >= maxval for xymax in xminmax + yminmax):
         # Identify potential missing values by detecting outliers
         mask_y = (ds[lat] <= minval) | (ds[lat] >= maxval)
-        possible_missing_values_y = ds[lat].where(mask_y)
         mask_x = (ds[lon] <= minval) | (ds[lon] >= maxval)
-        possible_missing_values_x = ds[lon].where(mask_x)
 
         # TBD - potential TODO - Explicitly check the vertices as well for possible missing values
         #                        and not apply the mask from lat / lon.
         #                      - Check if the fields already contain nans (and if they are consistent
         #                        between lat and lon).
 
-        # Find out if the outlier values are unique
-        possible_missing_values_x_min = possible_missing_values_x.min().item()
-        possible_missing_values_x_max = possible_missing_values_x.max().item()
-        possible_missing_values_y_min = possible_missing_values_y.min().item()
-        possible_missing_values_y_max = possible_missing_values_y.max().item()
+        # Identify potential missing values safely
+        possible_missing_values_y_min = float(ds[lat].where(mask_y).min().compute().item())
+        possible_missing_values_y_max = float(ds[lat].where(mask_y).max().compute().item())
+        possible_missing_values_x_min = float(ds[lon].where(mask_x).min().compute().item())
+        possible_missing_values_x_max = float(ds[lon].where(mask_x).max().compute().item())
 
         possible_missing_values = [
             val
@@ -718,7 +722,7 @@ def fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, xminma
             if not np.isnan(val)
         ]
 
-        # Compare the masks for lat / lon and abort the fix if they differ
+        # Abort fix for 1D lat/lon coordinates or if masks differ
         if ds[lat].dims != ds[lon].dims and len(ds[lon].dims) == 1 and len(ds[lat].dims) == 1:
             # Abort fix for regular lat-lon grids (1D coordinate variables should not include missing values
             #  - for some of the operations the outliers will cause an exception later on)
@@ -727,7 +731,7 @@ def fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, xminma
                 f"{set(possible_missing_values)}. A fix is not possible for regular latitude-longitude grids."
             )
             return fix
-        elif not (mask_x == mask_y).all().item():
+        elif not mask_x.equals(mask_y):
             # Abort fix if the masks differ
             warnings.warn(
                 f"Extreme value(s) (potentially unmasked missing_values) found in {lon} and {lat} arrays: "
@@ -736,7 +740,7 @@ def fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, xminma
             )
             return fix
 
-        # Check if there's only one unique extreme value
+        # Apply fix if there is only one unique extreme value
         if len(set(possible_missing_values)) == 1:
             fix = True
             missing_value = possible_missing_values[0]
@@ -748,7 +752,8 @@ def fix_unmasked_missing_values_lon_lat(ds, lon, lat, lon_bnds, lat_bnds, xminma
             if lat_bnds is not None and lon_bnds is not None:
                 ds[lat_bnds] = ds[lat_bnds].where(ds[lat] != missing_value, other=np.nan)
                 ds[lon_bnds] = ds[lon_bnds].where(ds[lon] != missing_value, other=np.nan)
-            for var in [var for var in [lat, lon, lat_bnds, lon_bnds] if var is not None]:
+            vars_not_none = [v for v in [lat, lon, lat_bnds, lon_bnds] if v is not None]
+            for var in vars_not_none:
                 ds[var].encoding["_FillValue"] = 1e20
                 ds[var].encoding["missing_value"] = 1e20
                 ds[var].attrs["_FillValue"] = 1e20
@@ -900,7 +905,9 @@ def cf_convert_between_lon_frames(ds_in, lon_interval, force=False):  # noqa: C9
     else:
         raise InvalidParameterValue("This function requires an xarray.DataArray or xarray.Dataset as input.")
     low, high = lon_interval
-    lon_min, lon_max = ds.coords[lon].min().item(), ds.coords[lon].max().item()
+    # Compute min and max lazily if needed, then convert to Python floats
+    lon_min = float(ds.coords[lon].min().compute().item())
+    lon_max = float(ds.coords[lon].max().compute().item())
     atol = 0.5
 
     # Conversion between longitude frames if required

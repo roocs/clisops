@@ -68,7 +68,7 @@ dependencies = [
   "s3fs >=2025.5.1",
   "scipy>=1.11.0",
   "shapely >=2.0",
-  "xarray >=2025.1.1", # Use decode_times=CFDatetimeCoder(use_cftime=True)
+  "xarray >=2025.1.1,<2025.11.0", # Use decode_times=CFDatetimeCoder(use_cftime=True)
   "zarr >=2.13.0,<3.0"
 ]
 
