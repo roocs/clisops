@@ -68,7 +68,7 @@ dependencies = [
   "s3fs >=2025.5.1",
   "scipy>=1.11.0",
   "shapely >=2.0",
-  "xarray >=2025.1.1", # Use decode_times=CFDatetimeCoder(use_cftime=True)
+  "xarray >=2025.1.1,<2025.11.0", # Use decode_times=CFDatetimeCoder(use_cftime=True)
   "zarr >=2.13.0,<3.0"
 ]
 
@@ -77,18 +77,18 @@ dev = [
   # Dev tools and testing
   "bump-my-version >=1.2.0",
   "coverage[toml] >=7.5.0",
-  "deptry >=0.23.0",
-  "flake8 >=7.2.0",
-  "flake8-rst-docstrings >=0.3.0",
-  "h5netcdf >=1.4.0",
-  "pip >=25.0",
+  "deptry >=0.23.1",
+  "flake8 >=7.3.0",
+  "flake8-rst-docstrings >=0.4.0",
+  "h5netcdf >=1.5.0",
+  "pip >=25.2",
   "pre-commit >=3.5.0",
   "pytest >=8.0.0",
   "pytest-cov >=5.0.0",
   "pytest-loguru >=0.3.0",
   "pytest-xdist[psutil] >=3.2",
-  "ruff >=0.12.0",
-  "tox >=4.24.1",
+  "ruff >=0.14.3",
+  "tox >=4.30.3",
   "watchdog >=4.0.0"
 ]
 docs = [
