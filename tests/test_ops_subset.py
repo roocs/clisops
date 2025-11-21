@@ -623,10 +623,6 @@ def test_time_invariant_subset_standard_name(tmpdir, check_output_nc, mini_esgf_
     check_output_nc(result, fname="mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc")
 
 
-@pytest.mark.xfail(
-    reason="Dataset metadata are badly encoded and not easily handled by h5netcdf",
-    strict=False,
-)
 def test_longitude_and_latitude_coords_only(tmpdir, check_output_nc, mini_esgf_data):
     """Test subset succeeds when latitude and longitude are coordinates not dims and are not called lat/lon"""
     result = subset(
