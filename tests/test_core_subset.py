@@ -868,7 +868,7 @@ class TestDistance:
         assert d.units == "m"
 
         # Example of how to get the actual 2D indices.
-        k = d.argmin()
+        k = np.argmin(d.data)
         i, j = np.unravel_index(k, da.data.shape)
         assert d[i, j] == d.min()
 

@@ -14,6 +14,7 @@ Bug Fixes
 * Fixed support for `kerchunk` with `s3`. Pinned `zarr >=2.13.0,<3.0` (#429).
 * Lift pin on `xarray` that was previously due to incompatibilities with `xesmf`. `xarray>=2025.1.1` now required for general usage and `xarray>=2025.6.0` for `regrid` operations (#437).
 * Non-`numpydoc` docstrings in the codebase have been converted to the `numpydoc` format (#439).
+* Fixed issue with dask: "NotImplementedError: item is not yet a valid method on dask arrays" (#451).
 
 Internal Changes
 ^^^^^^^^^^^^^^^^
@@ -22,6 +23,8 @@ Internal Changes
 * Output utilities tests have been modified to no longer create files in the current working directory, but rather in a temporary directory. (#434).
 * `black` and `isort` as well as most linting checks performed by `flake8` have been replaced by `ruff` for code formatting and linting (#439).
 * `pre-commit` hooks have been updated to use `ruff` for code formatting and linting, as well as a few others (#439).
+* Addressed a few `RuntimeWarning` messages emitted by the test suite (#463).
+* Adjusted the CI workflows to not use Python 3.14 (due to incompatibilities with some dependencies) (#463).
 
 v0.16.2 (2025-04-14)
 --------------------
