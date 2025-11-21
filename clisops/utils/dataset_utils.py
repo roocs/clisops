@@ -1537,8 +1537,8 @@ def _lonbnds_mids_trans_check_sum(lon1, lon2):
 def _determine_grid_orientation(lon):
     """Determine grid orientation by checking the longitude range along each axis."""
     # Compute the range of longitude values along both axes
-    lon_range_axis_0 = abs(lon.max(axis=0) - lon.min(axis=0)).mean().item()
-    lon_range_axis_1 = abs(lon.max(axis=1) - lon.min(axis=1)).mean().item()
+    lon_range_axis_0 = abs(lon.max(axis=0) - lon.min(axis=0)).mean().compute().item()
+    lon_range_axis_1 = abs(lon.max(axis=1) - lon.min(axis=1)).mean().compute().item()
     # print(lon_range_axis_0, lon_range_axis_1)
 
     if lon_range_axis_1 > lon_range_axis_0:
