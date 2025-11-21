@@ -64,4 +64,4 @@ dependencies:
  - sphinx-copybutton
  - sphinx-rtd-theme >=1.0
  - pip:
-   - git+https://github.com/sol1105/xESMF.git@domain_mask_nearest
+   - git+https://github.com/pangeo-data/xESMF.git@master
