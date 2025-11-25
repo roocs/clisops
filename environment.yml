@@ -34,7 +34,7 @@ dependencies:
  # Compression
  - zstandard
  # Extras
-# - xesmf >=0.8.11 # until PR444 is merged and a release triggered, install from source branch for testing
+ - xesmf >=0.9
 #  # Dev tools and testing
  - bump-my-version >=1.2.0
  - coverage >=7.5.0
@@ -63,5 +63,3 @@ dependencies:
  - sphinx-codeautolink
  - sphinx-copybutton
  - sphinx-rtd-theme >=1.0
- - pip:
-   - git+https://github.com/pangeo-data/xESMF.git@master

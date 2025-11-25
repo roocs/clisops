@@ -23,7 +23,7 @@ def _check_output_nc(result, fname="output_001.nc"):
 def test_regrid_basic(tmpdir, tmp_path, mini_esgf_data):
     """Test a basic regridding operation."""
     fpath = mini_esgf_data["CMIP5_MRSOS_ONE_TIME_STEP"]
-    basename = os.path.splitext(os.path.basename(fpath))[0]
+    basename = Path(fpath).stem
     method = "nearest_s2d"
 
     weights_cache_init(Path(tmp_path, "weights"))
@@ -45,7 +45,7 @@ def test_regrid_basic(tmpdir, tmp_path, mini_esgf_data):
 def test_regrid_to_ds(tmpdir, tmp_path, mini_esgf_data):
     """Test a basic regridding operation to another dataset."""
     fpath = mini_esgf_data["CMIP5_MRSOS_ONE_TIME_STEP"]
-    basename = os.path.splitext(os.path.basename(fpath))[0]
+    basename = Path(fpath).stem
     ds_tgt = xe.util.grid_2d(10, 20, 2, 10, 20, 2)
     method = "nearest_s2d"
 
@@ -193,7 +193,7 @@ def test_regrid_invalid_method(tmpdir, tmp_path, mini_esgf_data):
 def test_regrid_regular_grid_to_all_roocs_grids(tmpdir, tmp_path, grid_id, mini_esgf_data):
     """Test for regridding a regular lat/lon field to all roocs grid types."""
     fpath = mini_esgf_data["CMIP5_MRSOS_ONE_TIME_STEP"]
-    basename = os.path.splitext(os.path.basename(fpath))[0]
+    basename = Path(fpath).stem
     method = "nearest_s2d"
 
     weights_cache_init(Path(tmp_path, "weights"))
@@ -222,7 +222,7 @@ def test_regrid_regular_grid_to_all_roocs_grids(tmpdir, tmp_path, grid_id, mini_
 def test_subset_and_regrid_erroneous_cf_units_cmip5(tmpdir, mini_esgf_data, tmp_path):
     """Test subset and regrid ds with erroneous cf units."""
     fpath = mini_esgf_data["CMIP5_WRONG_CF_UNITS"]
-    basename = os.path.splitext(os.path.basename(fpath))[0]
+    basename = Path(fpath).stem
     method = "conservative"
     weights_cache_init(Path(tmp_path, "weights"))
 

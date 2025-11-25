@@ -85,7 +85,7 @@ def require_module(
     module: ModuleType,
     module_name: str,
     min_version: str | None = "0.0.0",
-    unsupported_version_range: list | None = None,
+    unsupported_version_range: list | tuple[str, str] | None = None,
     max_supported_version: str | None = None,
     max_supported_warning: str | None = None,
 ) -> Callable:
@@ -102,7 +102,7 @@ def require_module(
         The name of the module to check.
     min_version : str, optional
         The minimum version of the module required. Defaults to "0.0.0".
-    unsupported_version_range : list of str, optional
+    unsupported_version_range : list of str or tuple of str, optional
         A list with two elements, with the elements marking a range of unsupported versions,
         with the first element being the first unsupported and the second element being
         the first supported version.
@@ -141,9 +141,9 @@ def require_module(
                     )
 
         if unsupported_version_range is not None:
-            if not isinstance(unsupported_version_range, list) or not len(unsupported_version_range) == 2:
+            if not isinstance(unsupported_version_range, list | tuple) or not len(unsupported_version_range) == 2:
                 raise ValueError(
-                    "The unsupported_version_range argument must be a list with two elements of type str, "
+                    "The unsupported_version_range argument must be a list or tuple with two elements of type str, "
                     "with the elements being the minimum and maximum versions of an unsupported version range."
                 )
             if Version(module.__version__) >= Version(unsupported_version_range[0]) and Version(

@@ -367,7 +367,7 @@ def _fix_str_encoding(s, encoding="utf-8"):
 
     Parameters
     ----------
-    s : str, byte
+    s : str or byte
         The string to be fixed. If the input is not of type str or bytes,
         it is returned as is.
     encoding : str, optional
@@ -379,16 +379,20 @@ def _fix_str_encoding(s, encoding="utf-8"):
         The fixed string.
     """
     if isinstance(s, bytes):
-        # Decode directly from bytes, replacing undecodable sequences
-        return s.decode("utf-8", errors="replace")
+        # Decode directly from bytes, potentially replacing undecodable sequences
+        try:
+            return s.decode(encoding, errors="surrogateescape")
+        except UnicodeDecodeError:
+            return s.decode(encoding, errors="replace")
     elif isinstance(s, str):
         try:
-            s.encode("utf-8")  # If this works, no surrogates present
+            # If this works, no surrogates present:
+            s.encode(encoding)
             return s
         except UnicodeEncodeError:
             # Handle surrogate escapes
-            b = s.encode("utf-8", "surrogateescape")
-            return b.decode("utf-8", errors="replace")
+            b = s.encode(encoding, "surrogateescape")
+            return b.decode(encoding, errors="replace")
     return s
 
 
