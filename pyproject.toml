@@ -15,7 +15,7 @@ maintainers = [
   {name = "Trevor James Smith", email = "smith.trevorj@ouranos.ca"}
 ]
 readme = {file = "README.rst", content-type = "text/x-rst"}
-requires-python = ">=3.10.0"
+requires-python = ">=3.11.0"
 keywords = ["clisops", "xarray", "climate", "gis", "subsetting", "operations"]
 license = {file = "LICENSE"}
 classifiers = [
@@ -29,7 +29,6 @@ classifiers = [
   "Programming Language :: Python",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -56,7 +55,7 @@ dependencies = [
   "geopandas >=1.0",
   "jinja2 >=2.11",
   "loguru >=0.5.3",
-  "numpy >=1.25.0,<2.3.0",
+  "numpy >=1.26.0,<2.3.0",
   "packaging >=23.2",
   "pandas >=2.2.0",
   "platformdirs >=4.0",
