@@ -24,6 +24,7 @@ Bug Fixes
 
 Breaking Changes
 ^^^^^^^^^^^^^^^^
+* Support for Python 3.10 has been dropped. `numpy >=1.26` is the new minimum supported version (#469).
 * `Grid.detect_extent()` now returns a tuple `(lon_extent, lat_extent)` instead of only `lon_extent` (#447).
 * `Grid.extent` now represents the combined lon/lat extent: `"global"` if both are global; otherwise `"regional"`. The new `Grid.extent_lon` and `Grid.extent_lat` attributes provide axis-specific extent information (#447).
 
