@@ -87,7 +87,7 @@ author = "Eleanor Smith"
 # the built documents.
 #
 # The short X.Y version.
-version = "0.16.2"
+version = "0.17.0"
 # The full version, including alpha/beta/rc tags.
 release = version
 

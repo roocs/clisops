@@ -1,7 +1,8 @@
 Version History
 ===============
 
-v0.17.0 (unreleased)
+
+v0.17.0 (2025-12-16)
 --------------------
 
 New Features
