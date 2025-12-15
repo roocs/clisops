@@ -2,7 +2,7 @@ name: clisops
 channels:
  - conda-forge
 dependencies:
- - python >=3.10,<3.14
+ - python >=3.11,<3.14
  - flit >=3.11.0,<4.0
  - pip >=25.0
  - aiohttp # Needed for HTTPFileSystem
@@ -18,7 +18,7 @@ dependencies:
  - geopandas >=1.0
  - jinja2 >=2.11
  - loguru >=0.5.3
- - numpy >=1.25.0,<2.3.0
+ - numpy >=1.26.0,<2.3.0
  - packaging >=23.2
  - pandas >=2.2.0
  - platformdirs >=4.0
@@ -29,12 +29,12 @@ dependencies:
  - s3fs >=2025.5.1
  - scipy >=1.11.0
  - shapely >=2.0
- - xarray >=2025.6.0
+ - xarray >=2025.6.0,<2025.11.0
  - zarr >=2.13.0,<3.0
  # Compression
  - zstandard
  # Extras
- - xesmf >=0.8.10
+ - xesmf >=0.9.2
 #  # Dev tools and testing
  - bump-my-version >=1.2.0
  - coverage >=7.5.0
@@ -58,7 +58,6 @@ dependencies:
  - matplotlib-base >=3.6.0
  - nbconvert >=7.14.0
  - nbsphinx >=0.9.5
- # - psy-maps >=1.5.0  # FIXME: This library is unmaintained and not available on conda-forge for Python 3.13
  - sphinx >=7.1.0,<8.2.0 # pinned until nbsphinx supports sphinx 8.2
  - sphinx-autodoc-typehints
  - sphinx-codeautolink

@@ -8,6 +8,8 @@ New Features
 ^^^^^^^^^^^^
 * Added an `engine` argument to `Grid.ds.to_netcdf()` to allow users to specify the engine used for writing NetCDF files (#439).
 * Coding conventions have been updated to use Python 3.10+ features (#439).
+* `Weights` will now use `post_mask_source='domain_edge'` introduced in `xesmf` version 0.9 when remapping a regional grid via nearest-neighbour to avoid extrapolation beyond the source domain (#447).
+* Added `Grid.extent_lon` and `Grid.extent_lat` attributes to expose longitude- and latitude-specific extents (#447).
 
 Bug Fixes
 ^^^^^^^^^
@@ -15,6 +17,21 @@ Bug Fixes
 * Lift pin on `xarray` that was previously due to incompatibilities with `xesmf`. `xarray>=2025.1.1` now required for general usage and `xarray>=2025.6.0` for `regrid` operations (#437).
 * Non-`numpydoc` docstrings in the codebase have been converted to the `numpydoc` format (#439).
 * Fixed issue with dask: "NotImplementedError: item is not yet a valid method on dask arrays" (#451).
+* Added `fix_netcdf_attrs_encoding()` and `_fix_str_encoding()` in `output_utils` to correct UTF-8 encoding issues in global and variable attributes (#447).
+* Fixed `Grid._grid_from_ds_adaptive` for regional grids crossing the meridian or antimeridian (#447).
+* Fixed `Grid.to_netcdf()` so that `ds.encoding['unlimited_dims']` is correctly updated when writing horizontal-grid-only datasets (#447).
+* Corrected `xarray` version-compatibility warnings in `core/regrid.py` (#447).
+
+Breaking Changes
+^^^^^^^^^^^^^^^^
+* Support for Python 3.10 has been dropped. `numpy >=1.26` is the new minimum supported version (#469).
+* `Grid.detect_extent()` now returns a tuple `(lon_extent, lat_extent)` instead of only `lon_extent` (#447).
+* `Grid.extent` now represents the combined lon/lat extent: `"global"` if both are global; otherwise `"regional"`. The new `Grid.extent_lon` and `Grid.extent_lat` attributes provide axis-specific extent information (#447).
+
+Other Changes
+^^^^^^^^^^^^^
+* Added a `suppress_main_variable_warning` option to `get_coord_by_type()` for cases where no main variable can be uniquely identified (#447).
+* Updated `require_module()` to support intervals of unsupported versions (#447).
 
 Internal Changes
 ^^^^^^^^^^^^^^^^
@@ -25,6 +42,8 @@ Internal Changes
 * `pre-commit` hooks have been updated to use `ruff` for code formatting and linting, as well as a few others (#439).
 * Addressed a few `RuntimeWarning` messages emitted by the test suite (#463).
 * Adjusted the CI workflows to not use Python 3.14 (due to incompatibilities with some dependencies) (#463).
+* Fixed and updated `regrid.ipynb` and removed dependency on `psymaps` / `psyplot` (#447).
+* Expanded and updated tests, including restoring tests previously skipped or xfailed with `engine="h5netcdf"` (#447).
 
 v0.16.2 (2025-04-14)
 --------------------
