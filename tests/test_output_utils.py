@@ -11,6 +11,8 @@ from clisops.utils.common import expand_wildcards
 from clisops.utils.file_namers import get_file_namer
 from clisops.utils.output_utils import (
     FileLock,
+    _fix_str_encoding,
+    fix_netcdf_attrs_encoding,
     get_chunk_length,
     get_da,
     get_output,
@@ -285,6 +287,31 @@ def test_unify_chunks_cmip6(mini_esgf_data):
     assert chunked_ds1.chunks == chunked_ds2.chunks
     # test that ds = ds.unify_chunks hasn't changed ds.chunks
     assert chunked_ds2.chunks == chunked_ds2_unified.chunks
+
+
+def test_fix_str_encoding():
+    assert _fix_str_encoding("test") == "test"
+
+    # Simulate the surrogate-escaped form of 'MPI–ESM1.2–HR'
+    bad = (
+        "MPI"
+        + "".join(chr(0xDC00 + x) for x in b"\xe2\x80\x90")
+        + "ESM1.2"
+        + "".join(chr(0xDC00 + x) for x in b"\xe2\x80\x90")
+        + "HR"
+    )
+
+    fixed = _fix_str_encoding(bad)
+
+    assert fixed == "MPI‐ESM1.2‐HR"
+
+
+def test_fix_netcdf_attrs_encoding(mini_esgf_data, tmp_path):
+    ds = _open(mini_esgf_data["CMIP6_STAGGERED_UCOMP"])
+    ds = fix_netcdf_attrs_encoding(ds)
+    # If the fix did not work, this will fail with
+    #   UnicodeEncodeError: 'utf-8' codec can't encode characters *: surrogates not allowed
+    ds.to_netcdf(tmp_path / "test.nc")
 
 
 def test_filelock_simple(tmp_path):

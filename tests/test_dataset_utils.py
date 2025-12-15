@@ -1080,3 +1080,19 @@ def test_open_xr_dataset_kerchunk_compare_json_vs_zst(mini_esgf_data):
 
     diff = ds1.isel(time=slice(0, 2)) - ds2.isel(time=slice(0, 2))
     assert diff.max() == diff.min() == 0.0
+
+
+def test_determine_grid_orientation():
+    # Set up the longitude array
+    lon = np.arange(350, 355)
+    lat = np.arange(-5, 5)
+
+    # Test case 1: "nlat_nlon"
+    lon2D, lat2D = np.meshgrid(lon, lat)  # 1D -> 2D, default cartesian indexing
+    assert clidu._determine_grid_orientation(xr.DataArray(lon2D, dims=("nlat", "nlon"))) == "nlat_nlon"
+    assert lon2D.shape == (10, 5)
+
+    # Test case 2: "nlon_nlat"
+    lon2D_swapped, lat2D_swapped = np.meshgrid(lon, lat, indexing="ij")  # 1D -> 2D, matrix indexing
+    assert clidu._determine_grid_orientation(xr.DataArray(lon2D_swapped, dims=("nlon", "nlat"))) == "nlon_nlat"
+    assert lon2D_swapped.shape == (5, 10)
