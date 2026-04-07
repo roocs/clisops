@@ -1,5 +1,4 @@
 import glob
-from os import write
 
 import cf_xarray  # noqa: F401
 import numpy as np
