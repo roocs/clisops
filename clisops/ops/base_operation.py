@@ -189,6 +189,10 @@ class Operation:
         """
         Remove the coordinate attribute added by xarray.
 
+        See Also
+        --------
+        https://github.com/roocs/clisops/issues/224
+
         Examples
         --------
         If you have a dataset with a time_bnds variable that has a coordinate attribute:
@@ -202,11 +206,6 @@ class Operation:
         .. code-block:: shell
 
             Warning (cdf_set_var): Inconsistent variable definition for time_bnds!
-
-        See Also
-        --------
-        https://github.com/roocs/clisops/issues/224
-
         """
         if isinstance(ds, xr.Dataset):
             var_list = list(ds.coords) + list(ds.data_vars)

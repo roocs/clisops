@@ -583,20 +583,20 @@ class Grid:
 
         Parameters
         ----------
-        self: Grid
+        self : Grid
             The Grid object to which the mask will be applied.
-        mask: str, optional
+        mask : str, optional
             Whether to mask "ocean" cells or "land" cells. The default is None.
-
-        Raises
-        ------
-        Warning
-            If mask is specified but not found in dataset.
 
         Returns
         -------
         bool
             Whether self.lsm was assigned to a 2D-mask in form of a xr.DataArray or not.
+
+        Raises
+        ------
+        UserWarning
+            If mask is specified but not found in dataset.
         """
         if any(maskvar in self.ds for maskvar in ["sftlf", "lsm"]) and mask is not None:
             if "sftlf" in self.ds:
