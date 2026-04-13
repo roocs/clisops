@@ -17,6 +17,7 @@ from pandas.api.types import is_integer_dtype
 from pyproj import Geod
 from pyproj.crs import CRS
 from pyproj.exceptions import CRSError
+from scipy.spatial import KDTree
 from shapely.geometry import LineString, MultiPolygon, Point, Polygon
 from shapely.ops import split, unary_union
 from xarray.core import indexing
@@ -1521,6 +1522,7 @@ def subset_gridpoint(
     last_level: float | int | None = None,
     tolerance: float | None = None,
     add_distance: bool = False,
+    mask: np.ndarray | xarray.DataArray | None = None,
 ) -> xarray.DataArray | xarray.Dataset:
     """
     Extract one or more of the nearest gridpoint(s) from datarray based on lat lon coordinate(s).
@@ -1558,6 +1560,8 @@ def subset_gridpoint(
         Masks values if the distance to the nearest gridpoint is larger than tolerance in meters.
     add_distance : bool
         Whether to add a new coordinate "distance" to the output DataArray or Dataset.
+    mask : bool
+        2d boolean array with the same spatial dimensions as da, where True values indicate valid grid points to be considered for subsetting.
 
     Returns
     -------
@@ -1580,6 +1584,39 @@ def subset_gridpoint(
         ds = xr.open_mfdataset([path_to_tasmax_file, path_to_tasmin_file])
         dsSub = subset_gridpoint(ds, lon=-75, lat=45)
     """
+    def _subset_gridpoint_mask(da, lat, lon, mask):
+        
+        # 1. Apply mask and extract coordinates of valid points
+        # Create a 2D array of (lon, lat) pairs from the valid data
+        lon_grid, lat_grid = xarray.broadcast(da.lon, da.lat)
+        lon_grid = lon_grid.where(mask)
+        lat_grid = lat_grid.where(mask)
+        
+        # Flatten and remove NaNs (points that didn't pass the mask)
+        v_lons = lon_grid.values.ravel()
+        v_lats = lat_grid.values.ravel()
+        valid_idx = ~np.isnan(v_lons)
+        
+        coords_pool = np.column_stack((v_lons[valid_idx], v_lats[valid_idx]))
+
+        # 2. Build the KD Tree
+        tree = KDTree(coords_pool)
+
+        # 3. Batch Query for all sites
+        # target_lons/lats should be lists or 1D arrays of equal length
+        targets = np.column_stack((lon, lat))
+        distances, indices = tree.query(targets)
+
+        # 4. Extract the closest valid coordinates
+        nearest_coords = coords_pool[indices]
+
+        # 5. Convert result to DataArrays for xarray indexing
+        nearest_lons = nearest_coords[:, 0]
+        nearest_lats = nearest_coords[:, 1]
+
+        #6. subset ds
+        return da.sel(lon=nearest_lons, lat=nearest_lats)    
+    
     if lat is None or lon is None:
         raise ValueError("Insufficient coordinates provided to locate grid point(s).")
 
@@ -1594,7 +1631,8 @@ def subset_gridpoint(
 
         # if 'lon' and 'lat' are present as data dimensions use the .sel method.
         if lat_name in dims and lon_name in dims:
-            da = da.sel(lat=lat, lon=lon, method="nearest")
+            if mask is None:
+                da = da.sel(lat=lat, lon=lon, method="nearest")
 
             if tolerance is not None or add_distance:
                 # Calculate the geodesic distance between grid points and the point of interest.
