@@ -157,8 +157,10 @@ class TestSubsetGridPoint:
     nc_tasmax_file = "NRCANdaily/nrcan_canada_daily_tasmax_1990.nc"
     nc_tasmin_file = "NRCANdaily/nrcan_canada_daily_tasmin_1990.nc"
     nc_2dlonlat = "CRCM5/tasmax_bby_198406_se.nc"
-
-    def test_time_simple(self, nimbus):
+    
+    
+    @pytest.mark.parametrize("method", ["distance", "geographic"])
+    def test_time_simple(self, method, nimbus):
         da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         da = da.assign_coords(lon=(da.lon - 360))
         lon = -72.4
@@ -166,42 +168,42 @@ class TestSubsetGridPoint:
         yr_st = "2050"
         yr_ed = "2059"
 
-        out = subset.subset_gridpoint(da, lon=lon, lat=lat, start_date=yr_st, end_date=yr_ed)
+        out = subset.subset_gridpoint(da, lon=lon, lat=lat, method=method, start_date=yr_st, end_date=yr_ed)
         np.testing.assert_almost_equal(out.lon, lon, 1)
         np.testing.assert_almost_equal(out.lat, lat, 1)
         np.testing.assert_array_equal(len(np.unique(out.time.dt.year)), 10)
         np.testing.assert_array_equal(out.time.dt.year.max(), int(yr_ed))
         np.testing.assert_array_equal(out.time.dt.year.min(), int(yr_st))
-
-    def test_dataset(self, nimbus):
+    @pytest.mark.parametrize("method", ["distance", "geographic"])
+    def test_dataset(self, method, nimbus):
         da = xr.open_mfdataset(
             [nimbus.fetch(self.nc_tasmax_file), nimbus.fetch(self.nc_tasmin_file)],
-            combine="by_coords",
+            combine="by_coords", compat="no_conflicts"
         )
         lon = -72.4
         lat = 46.1
-        out = subset.subset_gridpoint(da, lon=lon, lat=lat)
+        out = subset.subset_gridpoint(da, lon=lon, lat=lat, method=method)
         np.testing.assert_almost_equal(out.lon, lon, 1)
         np.testing.assert_almost_equal(out.lat, lat, 1)
         np.testing.assert_array_equal(out.tasmin.shape, out.tasmax.shape)
 
     @pytest.mark.parametrize("lon,lat", [([-72.4], [46.1]), ([-67.4, -67.3], [43.1, 46.1])])
     @pytest.mark.parametrize("add_distance", [True, False])
-    def test_simple(self, lat, lon, add_distance, nimbus):
+    @pytest.mark.parametrize("method", ["distance", "geographic"])
+    def test_simple(self, lat, lon, add_distance, method, nimbus):
         da = xr.open_dataset(nimbus.fetch(self.nc_tasmax_file)).tasmax
-
-        out = subset.subset_gridpoint(da, lon=lon, lat=lat, add_distance=add_distance)
+        out = subset.subset_gridpoint(da, lon=lon, lat=lat, add_distance=add_distance, method=method)
         np.testing.assert_almost_equal(out.lon, lon, 1)
         np.testing.assert_almost_equal(out.lat, lat, 1)
 
         assert ("site" in out.dims) ^ (len(lat) == 1)
         assert ("distance" in out.coords) ^ (not add_distance)
-
-    def test_irregular(self, nimbus):
+    @pytest.mark.parametrize("method", ["distance", "geographic"])
+    def test_irregular(self, method, nimbus):
         da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat)).tasmax
         lon = -72.4
         lat = 46.1
-        out = subset.subset_gridpoint(da, lon=lon, lat=lat)
+        out = subset.subset_gridpoint(da, lon=lon, lat=lat, method=method)
         np.testing.assert_almost_equal(out.lon, lon, 1)
         np.testing.assert_almost_equal(out.lat, lat, 1)
         assert "site" not in out.dims
@@ -235,7 +237,7 @@ class TestSubsetGridPoint:
         out1 = subset.subset_gridpoint(daT, lon=lon, lat=lat)
         np.testing.assert_almost_equal(out1.lon, lon, 1)
         np.testing.assert_almost_equal(out1.lat, lat, 1)
-        np.testing.assert_array_equal(out, out1)
+        np.testing.assert_array_equal(out, out1.transpose(*out.dims))
 
         # Dataset with tasmax, lon and lat as data variables (i.e. lon, lat not coords of tasmax)
         daT1 = xr.DataArray(np.transpose(da1.values), dims=dims)
@@ -250,11 +252,11 @@ class TestSubsetGridPoint:
         out2 = subset.subset_gridpoint(dsT, lon=lon, lat=lat)
         np.testing.assert_almost_equal(out2.lon, lon, 1)
         np.testing.assert_almost_equal(out2.lat, lat, 1)
-        np.testing.assert_array_equal(out, out2.tasmax)
+        np.testing.assert_array_equal(out, out2.tasmax.transpose(*out.dims))
 
         # Dataset with lon and lat as 1D arrays
         lon = -60
-        lat = -45
+        lat = 45
         da = xr.DataArray(
             np.random.rand(5, 4),
             dims=("time", "site"),
@@ -271,6 +273,50 @@ class TestSubsetGridPoint:
         np.testing.assert_almost_equal(gp.lon, lon)
         np.testing.assert_almost_equal(gp.lat, lat)
         assert gp.site == 0
+
+        # extracting two points close together should give a duplicate point in the output
+        # extract the same grid cell for two 'sites'
+        lon = [-60, -59]
+        lat = [-45, 45]
+        gp = subset.subset_gridpoint(ds, lon=lon, lat=lat)
+        # 'site' dim already in input da so output has '_site' dim
+        np.testing.assert_array_equal(gp.da.isel(_site=0), gp.da.isel(_site=1))
+        assert len(gp._site) == 2 and len(gp.lon) == 2 and len(gp.lat) == 2
+        assert len(np.unique(gp._site)) == 2 and len(np.unique(gp.lon)) == 1 and len(np.unique(gp.lat)) == 1
+    
+    @pytest.mark.parametrize("method", ["distance", "geographic"])
+    def test_masked(self, method, nimbus):
+        da = xr.open_dataset(nimbus.fetch(self.nc_tasmax_file)).tasmax
+        # mask where there is valid data
+        mask = ~np.isnan(da.isel(time=0))
+        # lat lon close to coastline where there are masked gridcells in the dataset
+        # Halifax harbor 
+        lon = -63.48131910815178
+        lat = 44.56206467361616
+        out = subset.subset_gridpoint(da, lon=lon, lat=lat, method=method)
+        out_mask = subset.subset_gridpoint(da, lon=lon, lat=lat, method=method, mask=mask)
+        assert out.isnull().all()
+        assert out_mask.notnull().all()
+        np.testing.assert_almost_equal(out_mask.mean(), 284.91546631)
+
+    @pytest.mark.parametrize("method", ["distance", "geographic"])
+    def test_masked_irregular(self, method, nimbus, clisops_test_data):
+        da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat)).tasmax
+        regions = gpd.read_file(clisops_test_data["multi_regions_geojson"])
+        reg_mask = subset.create_mask(x_dim=da.lon, y_dim=da.lat, poly=regions)
+        da = da.where(reg_mask==0) #Quebec only 
+        
+        # mask where there is valid data
+        mask = ~np.isnan(da.isel(time=0))
+        # lat lon close to coastline where there are masked gridcells in the dataset
+        # Halifax harbor 
+        lon = -63.009725545080705
+        lat = 48.25160814508184
+        out = subset.subset_gridpoint(da, lon=lon, lat=lat, method=method)
+        out_mask = subset.subset_gridpoint(da, lon=lon, lat=lat, method=method, mask=mask)
+        assert out.isnull().all()
+        assert out_mask.notnull().all()
+        np.testing.assert_almost_equal(out_mask.mean(), 285.34141642)
 
     def test_positive_lons(self, nimbus):
         da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
@@ -300,7 +346,8 @@ class TestSubsetGridPoint:
         out = subset.subset_gridpoint(da, lon=lon, lat=lat, tolerance=1)
         assert out.isnull().all()
 
-        subset.subset_gridpoint(da, lon=lon, lat=lat, tolerance=1e5)
+        out = subset.subset_gridpoint(da, lon=lon, lat=lat, tolerance=1e5)
+        assert out.notnull().all()
 
 
 class TestSubsetBbox:
@@ -871,6 +918,16 @@ class TestDistance:
         k = np.argmin(d.data)
         i, j = np.unravel_index(k, da.data.shape)
         assert d[i, j] == d.min()
+
+    def test_no_numpy_deprecation_warning(self):
+        # Test that distance function doesn't trigger NumPy deprecation warnings
+        da = xr.DataArray(0, coords={"lon": [0], "lat": [0]}, dims=["lon", "lat"])
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            d = subset.distance(da, lon=1, lat=1)
+            # Check no DeprecationWarning about array to scalar conversion
+            deprecation_warnings = [warning for warning in w if issubclass(warning.category, DeprecationWarning) and "array with ndim > 0 to a scalar" in str(warning.message)]
+            assert len(deprecation_warnings) == 0
 
 
 class TestSubsetLevel:
