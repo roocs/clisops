@@ -2024,6 +2024,7 @@ def distance(
 
     def _func(lons, lats, lon, lat):
         ndim = lons.ndim
+        outshape = lons.shape
         if hasattr(lons, "item") and lons.size == 1:
             lons = lons.item()
         if hasattr(lats, "item") and lats.size == 1:
@@ -2033,7 +2034,7 @@ def distance(
         if hasattr(lat, "item") and lat.size == 1:
             lat = lat.item()
         out = g.inv(lons, lats, lon, lat)[2]
-        return out if ndim == 0 else np.array(out).reshape(lons.shape)
+        return out if ndim == 0 else np.array(out).reshape(outshape)
 
     if len(da.lon.dims) == 1 and len(da.lat.dims) == 1:
         lon_grid, lat_grid = xarray.broadcast(da.lon, da.lat)
