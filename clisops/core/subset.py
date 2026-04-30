@@ -1542,7 +1542,7 @@ def subset_gridpoint(
     lat : float, Sequence[float], xarray.DataArray, optional
         Latitude coordinate(s). Must be of the same length as lon.
     method : str, optional
-        Method to use for finding the nearest grid point. Options are "geographic" (default) and "distance"; 
+        Method to use for finding the nearest grid point. Options are "geographic" (default) and "distance";
         "geographic" uses longitude and latitude coordinates directly while "distance" calculates distances on the Earth's surface.
     start_date : str, optional
         Start date of the subset.
@@ -1588,14 +1588,15 @@ def subset_gridpoint(
         ds = xr.open_mfdataset([path_to_tasmax_file, path_to_tasmin_file])
         dsSub = subset_gridpoint(ds, lon=-75, lat=45)
     """
+
     def _subset_gridpoint_mask(
-            da: xarray.DataArray | xarray.Dataset,
-            lon: float | Sequence[float] | xarray.DataArray | None = None,
-            lat: float | Sequence[float] | xarray.DataArray | None = None,
-            mask: np.ndarray | xarray.DataArray | None = None,
-            ptdim: str | None = None,
-        ) -> xarray.DataArray | xarray.Dataset: 
-        
+        da: xarray.DataArray | xarray.Dataset,
+        lon: float | Sequence[float] | xarray.DataArray | None = None,
+        lat: float | Sequence[float] | xarray.DataArray | None = None,
+        mask: np.ndarray | xarray.DataArray | None = None,
+        ptdim: str | None = None,
+    ) -> xarray.DataArray | xarray.Dataset:
+
         dims = list(da.dims)
         dists = None
         lon_name = lon.name or "lon"
@@ -1616,17 +1617,17 @@ def subset_gridpoint(
                 lat_grid = da[lat_name]
             else:
                 raise ValueError("Latitude and longitude coordinates must be either 1D or 2D arrays.")
-            
+
             dim0, dim1 = lat_grid.dims
             if mask is not None:
                 lon_grid = lon_grid.where(mask)
                 lat_grid = lat_grid.where(mask)
-            
+
             # Flatten and remove NaNs (points that didn't pass the mask)
             v_lons = lon_grid.values.ravel()
             v_lats = lat_grid.values.ravel()
             valid_idx = ~np.isnan(v_lons)
-            
+
             coords_pool = np.column_stack((v_lons[valid_idx], v_lats[valid_idx]))
 
             # 2. Build the KD Tree
@@ -1644,20 +1645,20 @@ def subset_gridpoint(
             nearest_lons = nearest_coords[:, 0]
             nearest_lats = nearest_coords[:, 1]
 
-            #6. subset ds
+            # 6. subset ds
             idx = []
             for i in range(len(nearest_lons)):
                 idx1 = np.where((lon_grid == nearest_lons[i]) & (lat_grid == nearest_lats[i]))
                 idx.append(idx1)
-            idx =  np.where((np.isin(lon_grid, nearest_lons)) & (np.isin(lat_grid, nearest_lats)))
+            idx = np.where((np.isin(lon_grid, nearest_lons)) & (np.isin(lat_grid, nearest_lats)))
 
             da = da.isel({dim0: xarray.DataArray(idx[0], dims=ptdim), dim1: xarray.DataArray(idx[1], dims=ptdim)})
-            
+
             if add_distance is not None or tolerance is not None:
                 # Calculate the geodesic distance between grid points and the point of interest.
                 dists = distance(da, lon=lon, lat=lat, mask=mask)
         elif method == "distance":
-            dist = distance(da, lon=lon, lat=lat, mask=mask)               
+            dist = distance(da, lon=lon, lat=lat, mask=mask)
             args = None
             for site in dist[ptdim]:
                 # Find the indices for the closest point
@@ -1670,8 +1671,8 @@ def subset_gridpoint(
                 else:
                     # add to existing args
                     args = {k: [args.get(k), args1.get(k)] for k in args.keys() | args1.keys()}
-                #pts.append(da.isel(**args))
-                #dists.append(dist.isel(**args))
+                # pts.append(da.isel(**args))
+                # dists.append(dist.isel(**args))
             for k, v in args.items():
                 args[k] = xarray.DataArray([v], dims=ptdim) if np.isscalar(v) else xarray.DataArray(v, dims=ptdim)
 
@@ -1680,10 +1681,9 @@ def subset_gridpoint(
                 dists = dist.isel(**args)
         else:
             raise ValueError(f"Method {method} not recognized. Use 'geographic' or 'distance'.")
-            
+
         return da, dists
 
-    
     if lat is None or lon is None:
         raise ValueError("Insufficient coordinates provided to locate grid point(s).")
 
@@ -1694,7 +1694,6 @@ def subset_gridpoint(
 
     # make sure input data has 'lon' and 'lat'(dims, coordinates, or data_vars)
     if hasattr(da, lon_name) and hasattr(da, lat_name):
-            
         da, dist = _subset_gridpoint_mask(da=da, lat=lat, lon=lon, mask=mask, ptdim=ptdim)
 
     else:
@@ -1998,8 +1997,9 @@ def distance(
     lat : float, sequence of floats, or xarray.DataArray
         Latitude coordinate.
     mask : np.ndarray or xarray.DataArray, optional
-        2d boolean array with the same spatial dimensions as da, 
+        2d boolean array with the same spatial dimensions as da,
         where True values indicate valid grid points to be considered for distance calculation. Optional.
+
     Returns
     -------
     xarray.DataArray

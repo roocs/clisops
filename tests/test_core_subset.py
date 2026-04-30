@@ -157,8 +157,7 @@ class TestSubsetGridPoint:
     nc_tasmax_file = "NRCANdaily/nrcan_canada_daily_tasmax_1990.nc"
     nc_tasmin_file = "NRCANdaily/nrcan_canada_daily_tasmin_1990.nc"
     nc_2dlonlat = "CRCM5/tasmax_bby_198406_se.nc"
-    
-    
+
     @pytest.mark.parametrize("method", ["distance", "geographic"])
     def test_time_simple(self, method, nimbus):
         da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
@@ -174,11 +173,13 @@ class TestSubsetGridPoint:
         np.testing.assert_array_equal(len(np.unique(out.time.dt.year)), 10)
         np.testing.assert_array_equal(out.time.dt.year.max(), int(yr_ed))
         np.testing.assert_array_equal(out.time.dt.year.min(), int(yr_st))
+
     @pytest.mark.parametrize("method", ["distance", "geographic"])
     def test_dataset(self, method, nimbus):
         da = xr.open_mfdataset(
             [nimbus.fetch(self.nc_tasmax_file), nimbus.fetch(self.nc_tasmin_file)],
-            combine="by_coords", compat="no_conflicts"
+            combine="by_coords",
+            compat="no_conflicts",
         )
         lon = -72.4
         lat = 46.1
@@ -198,6 +199,7 @@ class TestSubsetGridPoint:
 
         assert ("site" in out.dims) ^ (len(lat) == 1)
         assert ("distance" in out.coords) ^ (not add_distance)
+
     @pytest.mark.parametrize("method", ["distance", "geographic"])
     def test_irregular(self, method, nimbus):
         da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat)).tasmax
@@ -283,14 +285,14 @@ class TestSubsetGridPoint:
         np.testing.assert_array_equal(gp.da.isel(_site=0), gp.da.isel(_site=1))
         assert len(gp._site) == 2 and len(gp.lon) == 2 and len(gp.lat) == 2
         assert len(np.unique(gp._site)) == 2 and len(np.unique(gp.lon)) == 1 and len(np.unique(gp.lat)) == 1
-    
+
     @pytest.mark.parametrize("method", ["distance", "geographic"])
     def test_masked(self, method, nimbus):
         da = xr.open_dataset(nimbus.fetch(self.nc_tasmax_file)).tasmax
         # mask where there is valid data
         mask = ~np.isnan(da.isel(time=0))
         # lat lon close to coastline where there are masked gridcells in the dataset
-        # Halifax harbor 
+        # Halifax harbor
         lon = -63.48131910815178
         lat = 44.56206467361616
         out = subset.subset_gridpoint(da, lon=lon, lat=lat, method=method)
@@ -304,12 +306,12 @@ class TestSubsetGridPoint:
         da = xr.open_dataset(nimbus.fetch(self.nc_2dlonlat)).tasmax
         regions = gpd.read_file(clisops_test_data["multi_regions_geojson"])
         reg_mask = subset.create_mask(x_dim=da.lon, y_dim=da.lat, poly=regions)
-        da = da.where(reg_mask==0) #Quebec only 
-        
+        da = da.where(reg_mask == 0)  # Quebec only
+
         # mask where there is valid data
         mask = ~np.isnan(da.isel(time=0))
         # lat lon close to coastline where there are masked gridcells in the dataset
-        # Halifax harbor 
+        # Halifax harbor
         lon = -63.009725545080705
         lat = 48.25160814508184
         out = subset.subset_gridpoint(da, lon=lon, lat=lat, method=method)
@@ -926,7 +928,12 @@ class TestDistance:
             warnings.simplefilter("always")
             d = subset.distance(da, lon=1, lat=1)
             # Check no DeprecationWarning about array to scalar conversion
-            deprecation_warnings = [warning for warning in w if issubclass(warning.category, DeprecationWarning) and "array with ndim > 0 to a scalar" in str(warning.message)]
+            deprecation_warnings = [
+                warning
+                for warning in w
+                if issubclass(warning.category, DeprecationWarning)
+                and "array with ndim > 0 to a scalar" in str(warning.message)
+            ]
             assert len(deprecation_warnings) == 0
 
 
