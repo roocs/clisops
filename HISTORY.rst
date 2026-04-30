@@ -7,6 +7,8 @@ v0.17.0 (2025-12-16)
 
 New Features
 ^^^^^^^^^^^^
+* Added support for a data mask in `subset_gridpoint` where the subsetted grid points but be within the mask (True) (#493).
+* Allows choice between using true world distance (`distance`) or nearest neighbour based on lat, lon (`geographic`) methods for subsetting both regular and irregular grids (#493). 
 * Added an `engine` argument to `Grid.ds.to_netcdf()` to allow users to specify the engine used for writing NetCDF files (#439).
 * Coding conventions have been updated to use Python 3.10+ features (#439).
 * `Weights` will now use `post_mask_source='domain_edge'` introduced in `xesmf` version 0.9 when remapping a regional grid via nearest-neighbour to avoid extrapolation beyond the source domain (#447).
@@ -25,6 +27,7 @@ Bug Fixes
 
 Breaking Changes
 ^^^^^^^^^^^^^^^^
+* Default method for `subset_gridpoint` using regular lat,lon grids is now `distance` instead of previously employing the equivalent of the new `geographic` method (#493).
 * Support for Python 3.10 has been dropped. `numpy >=1.26` is the new minimum supported version (#469).
 * `Grid.detect_extent()` now returns a tuple `(lon_extent, lat_extent)` instead of only `lon_extent` (#447).
 * `Grid.extent` now represents the combined lon/lat extent: `"global"` if both are global; otherwise `"regional"`. The new `Grid.extent_lon` and `Grid.extent_lat` attributes provide axis-specific extent information (#447).
