@@ -1516,6 +1516,7 @@ def subset_gridpoint(
     da: xarray.DataArray | xarray.Dataset,
     lon: float | Sequence[float] | xarray.DataArray | None = None,
     lat: float | Sequence[float] | xarray.DataArray | None = None,
+    method: str | None = "distance",
     start_date: str | None = None,
     end_date: str | None = None,
     first_level: float | int | None = None,
@@ -1540,6 +1541,9 @@ def subset_gridpoint(
         Longitude coordinate(s). Must be of the same length as lat.
     lat : float, Sequence[float], xarray.DataArray, optional
         Latitude coordinate(s). Must be of the same length as lon.
+    method : str, optional
+        Method to use for finding the nearest grid point. Options are "geographic" (default) and "distance"; 
+        "geographic" uses longitude and latitude coordinates directly while "distance" calculates distances on the Earth's surface.
     start_date : str, optional
         Start date of the subset.
         Date string format -- can be year ("%Y"), year-month ("%Y-%m") or year-month-day("%Y-%m-%d").
@@ -1584,38 +1588,101 @@ def subset_gridpoint(
         ds = xr.open_mfdataset([path_to_tasmax_file, path_to_tasmin_file])
         dsSub = subset_gridpoint(ds, lon=-75, lat=45)
     """
-    def _subset_gridpoint_mask(da, lat, lon, mask):
+    def _subset_gridpoint_mask(
+            da: xarray.DataArray | xarray.Dataset,
+            lon: float | Sequence[float] | xarray.DataArray | None = None,
+            lat: float | Sequence[float] | xarray.DataArray | None = None,
+            mask: np.ndarray | xarray.DataArray | None = None,
+            ptdim: str | None = None,
+        ) -> xarray.DataArray | xarray.Dataset: 
         
-        # 1. Apply mask and extract coordinates of valid points
-        # Create a 2D array of (lon, lat) pairs from the valid data
-        lon_grid, lat_grid = xarray.broadcast(da.lon, da.lat)
-        lon_grid = lon_grid.where(mask)
-        lat_grid = lat_grid.where(mask)
-        
-        # Flatten and remove NaNs (points that didn't pass the mask)
-        v_lons = lon_grid.values.ravel()
-        v_lats = lat_grid.values.ravel()
-        valid_idx = ~np.isnan(v_lons)
-        
-        coords_pool = np.column_stack((v_lons[valid_idx], v_lats[valid_idx]))
+        dims = list(da.dims)
+        dists = None
+        lon_name = lon.name or "lon"
+        lat_name = lat.name or "lat"
+        # if 'lon' and 'lat' are present as data dimensions use the .sel method.
+        dims_flag = lat_name in dims and lon_name in dims
+        if mask is None and method == "geographic" and dims_flag:
+            da = da.sel(lat=lat, lon=lon, method="nearest")
+            if add_distance or tolerance is not None:
+                dists = distance(da, lon=lon, lat=lat)
+        elif (mask is not None and method == "geographic") or (method == "geographic" and not dims_flag):
+            # 1. Apply mask and extract coordinates of valid points
+            # Create a 2D array of (lon, lat) pairs from the valid data
+            if len(da[lat_name].dims) == 1 and len(da[lon_name].dims) == 1:
+                lon_grid, lat_grid = xarray.broadcast(da[lon_name], da[lat_name])
+            elif len(da[lat_name].dims) == 2 and len(da[lon_name].dims) == 2:
+                lon_grid = da[lon_name]
+                lat_grid = da[lat_name]
+            else:
+                raise ValueError("Latitude and longitude coordinates must be either 1D or 2D arrays.")
+            
+            dim0, dim1 = lat_grid.dims
+            if mask is not None:
+                lon_grid = lon_grid.where(mask)
+                lat_grid = lat_grid.where(mask)
+            
+            # Flatten and remove NaNs (points that didn't pass the mask)
+            v_lons = lon_grid.values.ravel()
+            v_lats = lat_grid.values.ravel()
+            valid_idx = ~np.isnan(v_lons)
+            
+            coords_pool = np.column_stack((v_lons[valid_idx], v_lats[valid_idx]))
 
-        # 2. Build the KD Tree
-        tree = KDTree(coords_pool)
+            # 2. Build the KD Tree
+            tree = KDTree(coords_pool)
 
-        # 3. Batch Query for all sites
-        # target_lons/lats should be lists or 1D arrays of equal length
-        targets = np.column_stack((lon, lat))
-        distances, indices = tree.query(targets)
+            # 3. Batch Query for all sites
+            # target_lons/lats should be lists or 1D arrays of equal length
+            targets = np.column_stack((lon, lat))
+            distances, indices = tree.query(targets)
 
-        # 4. Extract the closest valid coordinates
-        nearest_coords = coords_pool[indices]
+            # 4. Extract the closest valid coordinates
+            nearest_coords = coords_pool[indices]
 
-        # 5. Convert result to DataArrays for xarray indexing
-        nearest_lons = nearest_coords[:, 0]
-        nearest_lats = nearest_coords[:, 1]
+            # 5. Convert result to DataArrays for xarray indexing
+            nearest_lons = nearest_coords[:, 0]
+            nearest_lats = nearest_coords[:, 1]
 
-        #6. subset ds
-        return da.sel(lon=nearest_lons, lat=nearest_lats)    
+            #6. subset ds
+            idx = []
+            for i in range(len(nearest_lons)):
+                idx1 = np.where((lon_grid == nearest_lons[i]) & (lat_grid == nearest_lats[i]))
+                idx.append(idx1)
+            idx =  np.where((np.isin(lon_grid, nearest_lons)) & (np.isin(lat_grid, nearest_lats)))
+
+            da = da.isel({dim0: xarray.DataArray(idx[0], dims=ptdim), dim1: xarray.DataArray(idx[1], dims=ptdim)})
+            
+            if add_distance is not None or tolerance is not None:
+                # Calculate the geodesic distance between grid points and the point of interest.
+                dists = distance(da, lon=lon, lat=lat, mask=mask)
+        elif method == "distance":
+            dist = distance(da, lon=lon, lat=lat, mask=mask)               
+            args = None
+            for site in dist[ptdim]:
+                # Find the indices for the closest point
+                distances = dist.sel({ptdim: site})
+                inds = np.unravel_index(np.nanargmin(distances), distances.shape)
+                args1 = {xydim: ind for xydim, ind in zip(dist.dims, inds, strict=False)}
+                # Select data from closest point
+                if args is None:
+                    args = args1
+                else:
+                    # add to existing args
+                    args = {k: [args.get(k), args1.get(k)] for k in args.keys() | args1.keys()}
+                #pts.append(da.isel(**args))
+                #dists.append(dist.isel(**args))
+            for k, v in args.items():
+                args[k] = xarray.DataArray([v], dims=ptdim) if np.isscalar(v) else xarray.DataArray(v, dims=ptdim)
+
+            da = da.isel(**args)
+            if add_distance or tolerance is not None:
+                dists = dist.isel(**args)
+        else:
+            raise ValueError(f"Method {method} not recognized. Use 'geographic' or 'distance'.")
+            
+        return da, dists
+
     
     if lat is None or lon is None:
         raise ValueError("Insufficient coordinates provided to locate grid point(s).")
@@ -1627,35 +1694,9 @@ def subset_gridpoint(
 
     # make sure input data has 'lon' and 'lat'(dims, coordinates, or data_vars)
     if hasattr(da, lon_name) and hasattr(da, lat_name):
-        dims = list(da.dims)
+            
+        da, dist = _subset_gridpoint_mask(da=da, lat=lat, lon=lon, mask=mask, ptdim=ptdim)
 
-        # if 'lon' and 'lat' are present as data dimensions use the .sel method.
-        if lat_name in dims and lon_name in dims:
-            if mask is None:
-                da = da.sel(lat=lat, lon=lon, method="nearest")
-
-            if tolerance is not None or add_distance:
-                # Calculate the geodesic distance between grid points and the point of interest.
-                dist = distance(da, lon=lon, lat=lat)
-            else:
-                dist = None
-
-        else:
-            # Calculate the geodesic distance between grid points and the point of interest.
-            dist = distance(da, lon=lon, lat=lat)
-            pts = []
-            dists = []
-            for site in dist[ptdim]:
-                # Find the indices for the closest point
-                distances = dist.sel({ptdim: site})
-                inds = np.unravel_index(np.nanargmin(distances), distances.shape)
-
-                # Select data from closest point
-                args = {xydim: ind for xydim, ind in zip(dist.dims, inds, strict=False)}
-                pts.append(da.isel(**args))
-                dists.append(dist.isel(**args))
-            da = xarray.concat(pts, dim=ptdim)
-            dist = xarray.concat(dists, dim=ptdim)
     else:
         raise (
             Exception(
@@ -1943,6 +1984,7 @@ def distance(
     *,
     lon: float | Sequence[float] | xarray.DataArray,
     lat: float | Sequence[float] | xarray.DataArray,
+    mask: np.ndarray | xarray.DataArray | None = None,
 ) -> xarray.DataArray | xarray.Dataset:
     """
     Return distance to a point in meters.
@@ -1955,7 +1997,9 @@ def distance(
         Longitude coordinate.
     lat : float, sequence of floats, or xarray.DataArray
         Latitude coordinate.
-
+    mask : np.ndarray or xarray.DataArray, optional
+        2d boolean array with the same spatial dimensions as da, 
+        where True values indicate valid grid points to be considered for distance calculation. Optional.
     Returns
     -------
     xarray.DataArray
@@ -1981,9 +2025,18 @@ def distance(
     def _func(lons, lats, lon, lat):
         return g.inv(lons, lats, lon, lat)[2]
 
+    if len(da.lon.dims) == 1 and len(da.lat.dims) == 1:
+        lon_grid, lat_grid = xarray.broadcast(da.lon, da.lat)
+    else:
+        lon_grid = da.lon
+        lat_grid = da.lat
+    if mask is not None:
+        lon_grid = lon_grid.where(mask)
+        lat_grid = lat_grid.where(mask)
+
     out = xarray.apply_ufunc(
         _func,
-        *xarray.broadcast(da.lon.load(), da.lat.load(), lon, lat),
+        *xarray.broadcast(lon_grid.load(), lat_grid.load(), lon, lat),
         input_core_dims=[[ptdim]] * 4,
         output_core_dims=[[ptdim]],
     )
