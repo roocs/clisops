@@ -926,7 +926,7 @@ class TestDistance:
         da = xr.DataArray(0, coords={"lon": [0], "lat": [0]}, dims=["lon", "lat"])
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
-            d = subset.distance(da, lon=1, lat=1)
+            subset.distance(da, lon=1, lat=1)
             # Check no DeprecationWarning about array to scalar conversion
             deprecation_warnings = [
                 warning
