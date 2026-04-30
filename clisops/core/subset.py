@@ -2023,7 +2023,16 @@ def distance(
     g = Geod(ellps="WGS84")  # WGS84 ellipsoid - decent globally
 
     def _func(lons, lats, lon, lat):
-        return g.inv(lons, lats, lon, lat)[2]
+        if hasattr(lons, "item"):
+            lons = lons.item()
+        if hasattr(lats, "item"):
+            lats = lats.item()
+        if hasattr(lon, "item"):
+            lon = lon.item()
+        if hasattr(lat, "item"):
+            lat = lat.item()
+        out = g.inv(lons, lats, lon, lat)[2]
+        return np.atleast_3d(out)
 
     if len(da.lon.dims) == 1 and len(da.lat.dims) == 1:
         lon_grid, lat_grid = xarray.broadcast(da.lon, da.lat)
