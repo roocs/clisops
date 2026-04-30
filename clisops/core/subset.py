@@ -1543,7 +1543,7 @@ def subset_gridpoint(
         Latitude coordinate(s). Must be of the same length as lon.
     method : str, optional
         Method to use for finding the nearest grid point. Options are "geographic" (default) and "distance";
-        "geographic" uses longitude and latitude coordinates directly while "distance" calculates distance 
+        "geographic" uses longitude and latitude coordinates directly while "distance" calculates distance
         on the Earth's surface.
     start_date : str, optional
         Start date of the subset.
@@ -1566,7 +1566,7 @@ def subset_gridpoint(
     add_distance : bool
         Whether to add a new coordinate "distance" to the output DataArray or Dataset.
     mask : bool
-        2d boolean array with the same spatial dimensions as da, where True values indicate valid 
+        2d boolean array with the same spatial dimensions as da, where True values indicate valid
         grid points to be considered for subsetting.
 
     Returns
