@@ -1605,7 +1605,7 @@ def subset_gridpoint(
         lat_name = lat.name or "lat"
         # if 'lon' and 'lat' are present as data dimensions use the .sel method.
         dims_flag = lat_name in dims and lon_name in dims
-        if mask is None and method == "geographic" and dims_flag:
+        if method == "geographic" and mask is None and dims_flag:
             da = da.sel(lat=lat, lon=lon, method="nearest")
             if add_distance or tolerance is not None:
                 dists = distance(da, lon=lon, lat=lat)
