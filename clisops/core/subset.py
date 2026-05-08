@@ -1609,7 +1609,7 @@ def subset_gridpoint(
             da = da.sel(lat=lat, lon=lon, method="nearest")
             if add_distance or tolerance is not None:
                 dists = distance(da, lon=lon, lat=lat)
-        elif (mask is not None and method == "geographic") or (method == "geographic" and not dims_flag):
+        elif method == "geographic" and (mask is not None or not dims_flag):
             # 1. Apply mask and extract coordinates of valid points
             # Create a 2D array of (lon, lat) pairs from the valid data
             if len(da[lat_name].dims) == 1 and len(da[lon_name].dims) == 1:
