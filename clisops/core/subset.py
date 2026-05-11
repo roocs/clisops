@@ -1648,10 +1648,6 @@ def subset_gridpoint(
             nearest_lats = nearest_coords[:, 1]
 
             # 6. subset ds
-            idx = []
-            for i in range(len(nearest_lons)):
-                idx1 = np.where((lon_grid == nearest_lons[i]) & (lat_grid == nearest_lats[i]))
-                idx.append(idx1)
             idx = np.where((np.isin(lon_grid, nearest_lons)) & (np.isin(lat_grid, nearest_lats)))
 
             da = da.isel({dim0: xarray.DataArray(idx[0], dims=ptdim), dim1: xarray.DataArray(idx[1], dims=ptdim)})
