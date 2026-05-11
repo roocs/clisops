@@ -1657,23 +1657,15 @@ def subset_gridpoint(
                 dists = distance(da, lon=lon, lat=lat, mask=mask)
         elif method == "distance":
             dist = distance(da, lon=lon, lat=lat, mask=mask)
-            args = None
+            args = {xydim: [] for xydim in dist.dims}
             for site in dist[ptdim]:
                 # Find the indices for the closest point
                 distances = dist.sel({ptdim: site})
                 inds = np.unravel_index(np.nanargmin(distances), distances.shape)
-                args1 = {xydim: ind for xydim, ind in zip(dist.dims, inds, strict=False)}
-                # Select data from closest point
-                if args is None:
-                    args = args1
-                else:
-                    # add to existing args
-                    args = {k: [args.get(k), args1.get(k)] for k in args.keys() | args1.keys()}
-                # pts.append(da.isel(**args))
-                # dists.append(dist.isel(**args))
-            for k, v in args.items():
-                args[k] = xarray.DataArray([v], dims=ptdim) if np.isscalar(v) else xarray.DataArray(v, dims=ptdim)
-
+                for xydim, ind in zip(dist.dims, inds, strict=False):
+                    args[xydim].append(ind)
+            for xydim in dist.dims:
+                args[k] = xarray.DataArray(v, dims=ptdim)
             da = da.isel(**args)
             if add_distance or tolerance is not None:
                 dists = dist.isel(**args)
@@ -1696,7 +1688,7 @@ def subset_gridpoint(
 
     else:
         raise (
-            Exception(
+            ValueError(
                 f'{subset_gridpoint.__name__} requires input data with "lon" and "lat" coordinates or data variables.'
             )
         )
