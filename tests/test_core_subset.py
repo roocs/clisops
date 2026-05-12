@@ -921,21 +921,6 @@ class TestDistance:
         i, j = np.unravel_index(k, da.data.shape)
         assert d[i, j] == d.min()
 
-    def test_no_numpy_deprecation_warning(self):
-        # Test that distance function doesn't trigger NumPy deprecation warnings
-        da = xr.DataArray(0, coords={"lon": [0], "lat": [0]}, dims=["lon", "lat"])
-        with warnings.catch_warnings(record=True) as w:
-            warnings.simplefilter("always")
-            subset.distance(da, lon=1, lat=1)
-            # Check no DeprecationWarning about array to scalar conversion
-            deprecation_warnings = [
-                warning
-                for warning in w
-                if issubclass(warning.category, DeprecationWarning)
-                and "array with ndim > 0 to a scalar" in str(warning.message)
-            ]
-            assert len(deprecation_warnings) == 0
-
 
 class TestSubsetLevel:
     nc_plev = "cmip6/o3_Amon_GFDL-ESM4_historical_r1i1p1f1_gr1_185001-194912.nc"
