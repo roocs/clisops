@@ -5,7 +5,7 @@ Welcome to clisops's documentation!
     :maxdepth: 2
     :caption: Contents:
 
-    ReadMe <readme>
+    readme
     installation
     usage
     api
