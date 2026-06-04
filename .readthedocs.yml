@@ -12,9 +12,9 @@ sphinx:
 
 # Build configuration
 build:
-  os: ubuntu-24.04
+  os: "ubuntu-26.04"
   tools:
-    python: "mambaforge-23.11"
+    python: "miniforge3-25.11"
   jobs:
     post_create_environment:
       - mamba install --quiet --name ${READTHEDOCS_VERSION} -c conda-forge "python>=3.12,<3.13" "psy-maps>=1.5.0"

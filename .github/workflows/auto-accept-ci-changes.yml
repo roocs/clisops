@@ -33,6 +33,8 @@ jobs:
         uses: dependabot/fetch-metadata@ffa630c65fa7e0ecfa0625b5ceda64399aea1b36 # v3.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          permission-contents: write
+          permission-pull-requests: write
 
       - name: Stop workflow if not minor update or patch update
         id: skip-condition
