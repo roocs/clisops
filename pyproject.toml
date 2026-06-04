@@ -56,7 +56,7 @@ dependencies = [
   "jinja2 >=2.11",
   "loguru >=0.5.3",
   "numcodecs <0.16.0", # FIXME: Pin required for zarr v2.x compatibility
-  "numpy >=1.26.0,<2.3.0",
+  "numpy >=1.26.0",
   "packaging >=23.2",
   "pandas >=2.2.0",
   "platformdirs >=4.0",
