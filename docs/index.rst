@@ -21,8 +21,15 @@ Welcome to clisops's documentation!
 
    apidoc/modules
 
-Indices and tables
-==================
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. toctree::
+   :caption: GitHub Repository
+
+   roocs/clisops <https://github.com/roocs/clisops>
+
+.. only:: html
+
+    Indices and tables
+    ==================
+    * :ref:`genindex`
+    * :ref:`modindex`
+    * :ref:`search`

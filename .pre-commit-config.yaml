@@ -10,17 +10,21 @@ repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
-      - id: end-of-file-fixer
-      - id: fix-byte-order-marker
       - id: check-merge-conflict
+      - id: check-json
       - id: check-toml
       - id: check-yaml
       - id: debug-statements
+      - id: end-of-file-fixer
+      - id: fix-byte-order-marker
       - id: mixed-line-ending
-      - id: no-commit-to-branch
-        args: [ '--branch', 'main' ]
       - id: name-tests-test
         args: [ '--pytest-test-first' ]
+      - id: no-commit-to-branch
+        args: [ '--branch', 'main' ]
+      - id: pretty-format-json
+        args: [ '--autofix', '--no-ensure-ascii', '--no-sort-keys' ]
+        exclude: .ipynb
       - id: trailing-whitespace
   - repo: https://github.com/pappasam/toml-sort
     rev: v0.24.4
@@ -32,7 +36,7 @@ repos:
       - id: yamllint
         args: [ '--config-file=.yamllint.yaml' ]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.15.9
+    rev: v0.15.15
     hooks:
       - id: ruff-check
         args: [ '--fix', '--show-fixes' ]
@@ -69,11 +73,11 @@ repos:
       - id: numpydoc-validation
         exclude: ^docs/|^tests/
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.30.0
+    rev: v8.30.1
     hooks:
       - id: gitleaks
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.37.1
+    rev: 0.37.2
     hooks:
       - id: check-github-workflows
       - id: check-readthedocs

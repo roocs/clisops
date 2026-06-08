@@ -86,34 +86,35 @@ Ready to contribute? Here's how to set up `clisops` for local development.
     Now you can make your changes locally!
 
 #.
-    When you are done making changes, check that you verify your changes with `flake8` and `black` and run the tests, including testing other Python versions with `tox`:
+    When you are done making changes, check that you verify your changes with `deptry`, `flake8`, and `ruff` and run the tests, including testing other Python versions with `tox`:
 
     .. code-block:: shell
 
         # For virtualenv environments:
-        $ pip install flake8 black pytest pytest-loguru tox
+        $ pip install flake8 ruff deptry pytest pytest-loguru tox
 
         # For Anaconda/Miniconda environments:
         $ conda install -c conda-forge flake8 black pytest pytest-loguru tox
 
-        $ flake8 clisops tests
-        $ black clisops tests
+        $ ruff check clisops tests
+	    $ flake8 --config=.flake8 clisops tests
+	    $ deptry .
         $ pytest
         $ tox
 
 #.
-    Before committing your changes, we ask that you install `pre-commit` in your virtualenv. `Pre-commit` runs git hooks that ensure that your code resembles that of the project and catches and corrects any small errors or inconsistencies when you `git commit`:
+    Before committing your changes, we ask that you install `prek` in your virtualenv. `prek` runs git hooks that ensure that your code resembles that of the project and catches and corrects any small errors or inconsistencies when you `git commit`:
 
     .. code-block:: shell
 
         # For virtualenv environments:
-        $ pip install pre-commit
+        $ pip install prek
 
         # For Anaconda/Miniconda environments:
-        $ conda install -c conda-forge pre-commit
+        $ conda install -c conda-forge prek
 
-        $ pre-commit install
-        $ pre-commit run --all-files
+        $ prek install
+        $ prek run --all-files
 
 #.
     Commit your changes and push your branch to GitHub:
