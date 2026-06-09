@@ -1,4 +1,5 @@
 import os
+from functools import partial
 from pathlib import Path
 
 import numpy as np
@@ -300,10 +301,9 @@ def gather_session_data(request, worker_id, stratus, nimbus):
 
     def remove_data_written_flag(cache):
         """Cleanup cache folders once we are finished."""
-        for cache in [testing.default_esgf_test_data_cache, testing.default_xclim_test_data_cache]:
-            flag = Path(cache).joinpath(".data_written")
-            if flag.exists():
-                flag.unlink()
+        flag = Path(cache).joinpath(".data_written")
+        if flag.exists():
+            flag.unlink()
 
     repositories = {
         "stratus": {
@@ -322,7 +322,7 @@ def gather_session_data(request, worker_id, stratus, nimbus):
 
     for repo in repositories.values():
         testing.gather_testing_data(worker_id=worker_id, **repo)
-        request.addfinalizer(remove_data_written_flag(repo["cache_dir"]))
+        request.addfinalizer(partial(remove_data_written_flag, repo["cache_dir"]))
 
 
 @pytest.fixture
