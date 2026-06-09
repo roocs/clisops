@@ -38,29 +38,35 @@ __all__ = [
 ]
 
 try:
-    default_esgf_test_data_cache = pooch.os_cache("mini-esgf-data")
-    default_xclim_test_data_cache = pooch.os_cache("xclim-testdata")
+    default_esgf_test_data_cache = str(pooch.os_cache("mini-esgf-data"))
+    """Default location for the mini-esgf testing data cache."""
+    default_xclim_test_data_cache = str(pooch.os_cache("xclim-testdata"))
+    """Default location for the xclim testing data cache."""
 except (AttributeError, TypeError):
     default_esgf_test_data_cache = None
     default_xclim_test_data_cache = None
 
-ESGF_TEST_DATA_REPO_URL = os.getenv("ESGF_TEST_DATA_REPO_UR", "https://raw.githubusercontent.com/roocs/mini-esgf-data")
+ESGF_TEST_DATA_REPO_URL = str(
+    os.getenv("ESGF_TEST_DATA_REPO_UR", "https://raw.githubusercontent.com/roocs/mini-esgf-data")
+)
 default_esgf_test_data_version = "v1"
-ESGF_TEST_DATA_VERSION = os.getenv("ESGF_TEST_DATA_VERSION", default_esgf_test_data_version)
-ESGF_TEST_DATA_CACHE_DIR = os.getenv("ESGF_TEST_DATA_CACHE_DIR", default_esgf_test_data_cache)
+ESGF_TEST_DATA_VERSION = str(os.getenv("ESGF_TEST_DATA_VERSION", default_esgf_test_data_version))
+ESGF_TEST_DATA_CACHE_DIR = str(os.getenv("ESGF_TEST_DATA_CACHE_DIR", default_esgf_test_data_cache))
 
-XCLIM_TEST_DATA_REPO_URL = os.getenv(
-    "XCLIM_TEST_DATA_REPO_URL",
-    "https://raw.githubusercontent.com/Ouranosinc/xclim-testdata",
+XCLIM_TEST_DATA_REPO_URL = str(
+    os.getenv(
+        "XCLIM_TEST_DATA_REPO_URL",
+        "https://raw.githubusercontent.com/Ouranosinc/xclim-testdata",
+    )
 )
 default_xclim_test_data_version = "v2024.8.23"
-XCLIM_TEST_DATA_VERSION = os.getenv("XCLIM_TEST_DATA_VERSION", default_xclim_test_data_version)
-XCLIM_TEST_DATA_CACHE_DIR = os.getenv("XCLIM_TEST_DATA_CACHE_DIR", default_xclim_test_data_cache)
+XCLIM_TEST_DATA_VERSION = str(os.getenv("XCLIM_TEST_DATA_VERSION", default_xclim_test_data_version))
+XCLIM_TEST_DATA_CACHE_DIR = str(os.getenv("XCLIM_TEST_DATA_CACHE_DIR", default_xclim_test_data_cache))
 
 
 def write_roocs_cfg(
     template: str | None = None,
-    cache_dir: str | Path = default_esgf_test_data_cache,
+    cache_dir: str | Path | None = default_esgf_test_data_cache,
 ) -> str:
     """
     Write a ROOCS configuration file for testing purposes.
@@ -105,6 +111,8 @@ def write_roocs_cfg(
         proj_test.my.second.test:second/test/data_*.txt
         proj_test.another.{variable}.test:good/test/{variable}.nc
     """
+    if cache_dir is None:
+        raise ValueError("cache_dir must be a valid location.")
 
     cfg_template = template or default_template
     roocs_config = Path(cache_dir, "roocs.ini")
@@ -126,7 +134,7 @@ def get_esgf_file_paths(esgf_cache_dir: str | os.PathLike[str]) -> dict[str, str
 
     Returns
     -------
-    dict[str, str]
+    dict
         A dictionary where keys are descriptive names of datasets and values are their corresponding file paths.
     """
     return {
@@ -708,10 +716,10 @@ def stratus(
 
     if repo.endswith("xclim-testdata"):
         _version = XCLIM_TEST_DATA_VERSION
-        _default_version = default_xclim_test_data_version
+        _default_testdata_version = default_xclim_test_data_version
     elif repo.endswith("mini-esgf-data"):
         _version = ESGF_TEST_DATA_VERSION
-        _default_version = default_esgf_test_data_version
+        _default_testdata_version = default_esgf_test_data_version
     else:
         raise ValueError(
             f"Repository URL {repo} not recognized. "
@@ -722,7 +730,7 @@ def stratus(
     return pooch.create(
         path=cache_dir,
         base_url=remote,
-        version=_default_version,
+        version=_default_testdata_version,
         version_dev=_version,
         allow_updates=data_updates,
         registry=load_registry(branch=branch, repo=repo),
@@ -732,7 +740,8 @@ def stratus(
 def populate_testing_data(
     repo: str,
     branch: str,
-    cache_dir: Path,
+    local_cache: Path,
+    temp_folder: Path | None = None,
 ):
     """
     Populate the local cache with the testing data.
@@ -743,12 +752,14 @@ def populate_testing_data(
         URL of the repository to use when fetching testing datasets.
     branch : str, optional
         Branch of repository to use when fetching testing datasets.
-    cache_dir : Path
+    local_cache : Path
         The path to the local cache. Defaults to the location set by the platformdirs library.
         The testing data will be downloaded to this local cache.
+    temp_folder : Path, optional
+        Path to a temporary folder to use as the local cache. If not provided, the default location will be used.
     """
     # Create the Pooch instance
-    n = stratus(cache_dir=cache_dir, repo=repo, branch=branch)
+    n = stratus(repo=repo, branch=branch, cache_dir=temp_folder or local_cache)
 
     # Download the files
     errored_files = []
@@ -811,7 +822,7 @@ def gather_testing_data(
         )
 
     if worker_id == "master":
-        populate_testing_data(branch=branch, repo=repo, cache_dir=cache_dir)
+        populate_testing_data(branch=branch, repo=repo, local_cache=cache_dir)
     else:
         if platform == "win32":
             if not cache_dir.joinpath(branch).exists():
@@ -825,7 +836,7 @@ def gather_testing_data(
             test_data_being_written = FileLock(lockfile)
             with test_data_being_written:
                 # This flag prevents multiple calls from re-attempting to download testing data in the same pytest run
-                populate_testing_data(branch=branch, repo=repo, cache_dir=cache_dir)
+                populate_testing_data(branch=branch, repo=repo, local_cache=cache_dir)
                 cache_dir.joinpath(".data_written").touch()
             with test_data_being_written.acquire():
                 if lockfile.exists():
