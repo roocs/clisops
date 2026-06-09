@@ -457,9 +457,12 @@ def test_determine_lon_lat_range_unstructured(mini_esgf_data):
 def test_determine_lon_lat_range_regular_lat_lon(mini_esgf_data):
     """Test the function determine_lon_lat_range for regular lat lon grids."""
     with xr.open_mfdataset(mini_esgf_data["CMIP5_TAS"], decode_times=xr.coders.CFDatetimeCoder(use_cftime=True)) as ds:
-        ds.lat.values[1] = -999.0
+        # Deal with immutable numpy arrays
+        lat = ds.lat.values.copy()
+        lat[1] = -999.0
+        ds_copy = ds.assign_coords(lat=lat)
         with pytest.warns(UserWarning, match="fix is not possible for regular"):
-            clidu.determine_lon_lat_range(ds, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=True)
+            clidu.determine_lon_lat_range(ds_copy, "lon", "lat", "lon_bnds", "lat_bnds", apply_fix=True)
 
 
 def test_crosses_0_meridian(mini_esgf_data):
@@ -1080,3 +1083,19 @@ def test_open_xr_dataset_kerchunk_compare_json_vs_zst(mini_esgf_data):
 
     diff = ds1.isel(time=slice(0, 2)) - ds2.isel(time=slice(0, 2))
     assert diff.max() == diff.min() == 0.0
+
+
+def test_determine_grid_orientation():
+    # Set up the longitude array
+    lon = np.arange(350, 355)
+    lat = np.arange(-5, 5)
+
+    # Test case 1: "nlat_nlon"
+    lon2D, lat2D = np.meshgrid(lon, lat)  # 1D -> 2D, default cartesian indexing
+    assert clidu._determine_grid_orientation(xr.DataArray(lon2D, dims=("nlat", "nlon"))) == "nlat_nlon"
+    assert lon2D.shape == (10, 5)
+
+    # Test case 2: "nlon_nlat"
+    lon2D_swapped, lat2D_swapped = np.meshgrid(lon, lat, indexing="ij")  # 1D -> 2D, matrix indexing
+    assert clidu._determine_grid_orientation(xr.DataArray(lon2D_swapped, dims=("nlon", "nlat"))) == "nlon_nlat"
+    assert lon2D_swapped.shape == (5, 10)

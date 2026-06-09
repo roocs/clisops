@@ -3,36 +3,40 @@ default_language_version:
 
 repos:
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.20.0
+    rev: v3.21.2
     hooks:
       - id: pyupgrade
         args: [ '--py310-plus' ]
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
-      - id: end-of-file-fixer
-      - id: fix-byte-order-marker
       - id: check-merge-conflict
+      - id: check-json
       - id: check-toml
       - id: check-yaml
       - id: debug-statements
+      - id: end-of-file-fixer
+      - id: fix-byte-order-marker
       - id: mixed-line-ending
-      - id: no-commit-to-branch
-        args: [ '--branch', 'main' ]
       - id: name-tests-test
         args: [ '--pytest-test-first' ]
+      - id: no-commit-to-branch
+        args: [ '--branch', 'main' ]
+      - id: pretty-format-json
+        args: [ '--autofix', '--no-ensure-ascii', '--no-sort-keys' ]
+        exclude: .ipynb
       - id: trailing-whitespace
   - repo: https://github.com/pappasam/toml-sort
-    rev: v0.24.3
+    rev: v0.24.4
     hooks:
       - id: toml-sort-fix
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: v1.37.1
+    rev: v1.38.0
     hooks:
       - id: yamllint
         args: [ '--config-file=.yamllint.yaml' ]
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.13.3
+    rev: v0.15.15
     hooks:
       - id: ruff-check
         args: [ '--fix', '--show-fixes' ]
@@ -43,7 +47,7 @@ repos:
       - id: flake8
         args: [ '--config=.flake8' ]
   - repo: https://github.com/kynan/nbstripout
-    rev: 0.8.1
+    rev: 0.9.1
     hooks:
       - id: nbstripout
         files: ".ipynb"
@@ -59,21 +63,21 @@ repos:
       - id: rst-inline-touching-normal
       - id: text-unicode-replacement-char
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.4.1
+    rev: v2.4.2
     hooks:
       - id: codespell
         additional_dependencies: [ 'tomli' ]
   - repo: https://github.com/numpy/numpydoc
-    rev: v1.9.0
+    rev: v1.10.0
     hooks:
       - id: numpydoc-validation
         exclude: ^docs/|^tests/
   - repo: https://github.com/gitleaks/gitleaks
-    rev: v8.28.0
+    rev: v8.30.1
     hooks:
       - id: gitleaks
   - repo: https://github.com/python-jsonschema/check-jsonschema
-    rev: 0.34.0
+    rev: 0.37.2
     hooks:
       - id: check-github-workflows
       - id: check-readthedocs

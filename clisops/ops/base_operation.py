@@ -9,7 +9,7 @@ from loguru import logger
 from clisops.utils.common import expand_wildcards
 from clisops.utils.dataset_utils import open_xr_dataset
 from clisops.utils.file_namers import get_file_namer
-from clisops.utils.output_utils import get_output, get_time_slices
+from clisops.utils.output_utils import fix_netcdf_attrs_encoding, get_output, get_time_slices
 
 
 class Operation:
@@ -110,6 +110,12 @@ class Operation:
                             del ds[var].encoding[en]
         return ds
 
+    def _fix_netcdf_attrs_encoding(self, ds):
+        """Executes output_utils.fix_netcdf_attrs_encoding for xarray.Datasets"""
+        if isinstance(ds, xr.Dataset):
+            ds = fix_netcdf_attrs_encoding(ds)
+        return ds
+
     def _cap_deflate_level(self, ds):
         """
         For CMOR3 / CMIP6 it was investigated which netCDF4 deflate_level should be set to optimize
@@ -183,6 +189,10 @@ class Operation:
         """
         Remove the coordinate attribute added by xarray.
 
+        See Also
+        --------
+        https://github.com/roocs/clisops/issues/224
+
         Examples
         --------
         If you have a dataset with a time_bnds variable that has a coordinate attribute:
@@ -196,11 +206,6 @@ class Operation:
         .. code-block:: shell
 
             Warning (cdf_set_var): Inconsistent variable definition for time_bnds!
-
-        See Also
-        --------
-        https://github.com/roocs/clisops/issues/224
-
         """
         if isinstance(ds, xr.Dataset):
             var_list = list(ds.coords) + list(ds.data_vars)
@@ -246,6 +251,8 @@ class Operation:
         processed_ds = self._remove_str_compression(processed_ds)
         # cap deflate level at 1
         processed_ds = self._cap_deflate_level(processed_ds)
+        # fix string encoding of xarray.Dataset.attrs (incl. variable attrs)
+        processed_ds = self._fix_netcdf_attrs_encoding(processed_ds)
 
         # Work out how many outputs should be created based on the size
         # of the array. Manage this as a list of time slices.

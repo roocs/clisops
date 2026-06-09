@@ -47,7 +47,7 @@ extensions = [
     "nbsphinx",
     # sphinx_autodoc_typehints must always be listed after sphinx.ext.napoleon
     "sphinx_autodoc_typehints",
-    # "sphinx_codeautolink",
+    "sphinx_codeautolink",
     "sphinx_copybutton",
     "IPython.sphinxext.ipython_console_highlighting",
 ]
@@ -87,7 +87,7 @@ author = "Eleanor Smith"
 # the built documents.
 #
 # The short X.Y version.
-version = "0.16.2"
+version = "0.18.0"
 # The full version, including alpha/beta/rc tags.
 release = version
 

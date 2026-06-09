@@ -27,7 +27,7 @@ jobs:
         python-version: [ "3.13" ]
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@fe104658747b27e96e4f7e80cd0a94068e53901d # v2.16.1
         with:
           disable-sudo: true
           egress-policy: block
@@ -35,24 +35,29 @@ jobs:
             files.pythonhosted.org:443
             github.com:443
             pypi.org:443
+
       - name: Checkout Repository
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+
       - name: Set up Python${{ matrix.python-version }}
-        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
           cache: pip
+
       - name: Install CI libraries
         run: |
           python -m pip install --require-hashes -r CI/requirements_ci.txt
+
       - name: Environment Caching
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         with:
           path: |
             .tox
           key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-lint-${{ env.ESGF_TEST_DATA_VERSION }}
+
       - name: Run linting suite
         run: |
           python -m tox -e lint
@@ -64,39 +69,43 @@ jobs:
     timeout-minutes: 20
     strategy:
       matrix:
-        python-version: [ "3.10", "3.13" ]
+        python-version: [ "3.11", "3.13" ]
         os: [ "macos-latest", "ubuntu-latest" ]
         positional_args: [ "" ]
         include:
-          - python-version: "3.11"
+          - python-version: "3.12"
             os: "windows-latest"
             positional_args: "--numprocesses=0"
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@fe104658747b27e96e4f7e80cd0a94068e53901d # v2.16.1
         with:
           disable-sudo: false
           egress-policy: audit
+
       - name: Checkout Repository
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+
       - name: Set up Python${{ matrix.python-version }}
-        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: ${{ matrix.python-version }}
           cache: "pip"
+
       - name: Install HDF5 (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
           sudo apt-get install -y libhdf5-dev
+
       - name: Install CI libraries
         run: |
           python -m pip install --require-hashes -r CI/requirements_ci.txt
 
-      - name: Environment Caching (Linux)
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+      - name: Environment Caching
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         if: matrix.os == 'ubuntu-latest'
         with:
           path: |
@@ -105,7 +114,7 @@ jobs:
             .tox
           key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-Python${{ matrix.python-version }}-${{ env.ESGF_TEST_DATA_VERSION }}
       - name: Environment Caching (macOS)
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         if: matrix.os == 'macos-latest'
         with:
           path: |
@@ -131,37 +140,39 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: [ "3.10", "3.13" ]
+        python-version: [ "3.11", "3.14" ]
         os: [ "macos-latest", "ubuntu-latest" ]
     defaults:
       run:
         shell: bash -l {0}
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@fe104658747b27e96e4f7e80cd0a94068e53901d # v2.16.1
         if: matrix.os == 'ubuntu-latest'
         with:
           disable-sudo: true
           egress-policy: audit
+
       - name: Checkout Repository
-        uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5.0.1
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
+
       - name: Setup Conda (Micromamba) with Python${{ matrix.python-version }}
-        uses: mamba-org/setup-micromamba@add3a49764cedee8ee24e82dfde87f5bc2914462 # v2.0.7
+        uses: mamba-org/setup-micromamba@d7c9bd84e824b79d2af72a2d4196c7f4300d3476 # v3.0.0
         with:
           cache-downloads: true
           cache-environment: true
           environment-file: environment.yml
           create-args: >-
             python=${{ matrix.python-version }}
-            pytest-timeout
+
       - name: Install CLISOPS
         run: |
           python -m pip install --no-user --no-deps --editable .
 
       - name: Test Data Caching (Linux)
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
+        uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
         if : matrix.os == 'ubuntu-latest'
         with:
           path: |
@@ -175,15 +186,17 @@ jobs:
           path: |
             ~/.cache/mini-esgf-data
             ~/.cache/xclim-testdata
-          key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-conda-${{ env.ESGF_TEST_DATA_VERSION }}
+          key: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-conda-Python${{ matrix.python-version }}-${{ env.ESGF_TEST_DATA_VERSION }}
 
       - name: Check versions
         run: |
           micromamba list
           python -m pip check || true
+
       - name: Test with conda
         run: |
-          python -m pytest -m "not slow" --timeout=300 --numprocesses=logical --durations=10 --cov=clisops --cov-report=lcov
+          python -m pytest -m "not slow" --numprocesses=logical --durations=10 --cov=clisops --cov-report=lcov
+
       - name: Report Coverage
         uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
         with:
@@ -198,10 +211,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Harden Runner
-        uses: step-security/harden-runner@95d9a5deda9de15063e7595e9719c11c38c90ae2 # v2.13.2
+        uses: step-security/harden-runner@fe104658747b27e96e4f7e80cd0a94068e53901d # v2.16.1
         with:
           disable-sudo: true
           egress-policy: audit
+
       - name: Coveralls Finished
         uses: coverallsapp/github-action@5cbfd81b66ca5d10c19b062c04de0199c215fb6e # v2.3.7
         with:

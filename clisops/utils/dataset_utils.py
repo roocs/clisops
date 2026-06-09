@@ -23,7 +23,11 @@ KERCHUNK_EXTS = [".json", ".zst", ".zstd", ".parquet"]
 
 
 def get_coord_by_type(
-    ds: xr.DataArray | xr.Dataset, coord_type: str, ignore_aux_coords: bool = True, return_further_matches: bool = False
+    ds: xr.DataArray | xr.Dataset,
+    coord_type: str,
+    ignore_aux_coords: bool = True,
+    return_further_matches: bool = False,
+    warn_if_no_main_variable: bool = True,
 ):
     """
     Return the name of the coordinate that matches the given type.
@@ -35,9 +39,11 @@ def get_coord_by_type(
     coord_type : str
         Type of coordinate, e.g. 'time', 'level', 'latitude', 'longitude', 'realization'.
     ignore_aux_coords : bool
-        Whether to ignore auxiliary coordinates.
+        Whether to ignore auxiliary coordinates. Default is True.
     return_further_matches : bool
-        Whether to return further matches.
+        Whether to return further matches. Default is False.
+    warn_if_no_main_variable : bool
+        Whether to warn if no main variable can be identified. Default is True.
 
     Returns
     -------
@@ -63,7 +69,8 @@ def get_coord_by_type(
     try:
         main_var = get_main_variable(ds)
     except ValueError:
-        warnings.warn(f"No main variable found for dataset '{ds}'.")
+        if warn_if_no_main_variable:
+            warnings.warn(f"No main variable found for dataset '{ds}'.")
         main_var = None
 
     # Loop through all (potential) coordinates to find all possible matches
@@ -1530,8 +1537,13 @@ def _lonbnds_mids_trans_check_sum(lon1, lon2):
 def _determine_grid_orientation(lon):
     """Determine grid orientation by checking the longitude range along each axis."""
     # Compute the range of longitude values along both axes
-    lon_range_axis_0 = abs(lon.max(axis=0) - lon.min(axis=0)).mean().item()
-    lon_range_axis_1 = abs(lon.max(axis=1) - lon.min(axis=1)).mean().item()
+    lra0 = abs(lon.max(axis=0) - lon.min(axis=0)).mean()
+    lra1 = abs(lon.max(axis=1) - lon.min(axis=1)).mean()
+
+    lra0_c, lra1_c = da.compute(lra0, lra1)
+
+    lon_range_axis_0 = lra0_c.item()
+    lon_range_axis_1 = lra1_c.item()
     # print(lon_range_axis_0, lon_range_axis_1)
 
     if lon_range_axis_1 > lon_range_axis_0:

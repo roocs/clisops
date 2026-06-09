@@ -78,14 +78,16 @@ coverage: ## check code coverage quickly with the default Python
 autodoc: clean-docs ## create sphinx-apidoc files:
 	env SPHINX_APIDOC_OPTIONS="members,undoc-members,show-inheritance,no-index" sphinx-apidoc -o docs/apidoc --private --module-first clisops
 
-docs: autodoc ## generate Sphinx HTML documentation, including API docs
+build-docs: autodoc ## generate Sphinx HTML documentation, including API docs
 	$(MAKE) -C docs html
+
+docs: build-docs ## open the built documentation in a web browser
 ifndef READTHEDOCS
 	$(BROWSER) docs/_build/html/index.html
 endif
 
-servedocs: docs ## compile the docs watching for changes
-	watchmedo shell-command -p '*.md' -c '$(MAKE) -C docs html' -R -D .
+servedocs: autodoc ## compile the docs watching for changes
+	$(MAKE) -C docs livehtml
 
 dist: clean ## builds source and wheel package
 	python -m flit build
@@ -95,10 +97,11 @@ release: dist ## package and upload a release
 	python -m flit publish dist/*
 
 install: clean ## install the package to the active Python's site-packages
-	python -m flit install
+	python -m pip install
 
 develop: clean ## install the package and development dependencies in editable mode to the active Python's site-packages
-	python -m flit install --no-user --symlink
+	python -m pip install --no-user --editable ".[dev]""
+	prek install
 
 upstream: develop ## install the GitHub-based development branches of dependencies in editable mode to the active Python's site-packages
 	python -m pip install --no-user --requirement requirements_upstream.txt
