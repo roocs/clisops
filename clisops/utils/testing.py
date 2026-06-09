@@ -2,10 +2,10 @@
 
 import importlib.resources as ilr
 import os
+import platform
 import warnings
 from pathlib import Path
 from shutil import copytree
-from sys import platform
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import urlretrieve
@@ -785,7 +785,7 @@ def gather_testing_data(
     worker_id: str,
     branch: str,
     repo: str,
-    cache_dir: str | os.PathLike[str] | Path,
+    _cache_dir: str | os.PathLike[str] | Path | None = None,
 ):
     """
     Gather testing data across workers.
@@ -800,7 +800,7 @@ def gather_testing_data(
         The branch of the repository to use when fetching testing datasets.
     repo : str
         The URL of the repository to use when fetching testing datasets.
-    cache_dir : str or Path
+    _cache_dir : str or Path
         The path to the local cache where the testing data is stored.
 
     Raises
@@ -810,7 +810,10 @@ def gather_testing_data(
     FileNotFoundError
         If the testing data is not found and UNIX-style file-locking is not supported on Windows.
     """
-    cache_dir = Path(cache_dir)
+    if _cache_dir is None:
+        raise ValueError("The cache directory must be set.")
+    cache_dir = Path(_cache_dir)
+
     if repo.endswith("xclim-testdata"):
         version = default_xclim_test_data_version
     elif repo.endswith("mini-esgf-data"):
@@ -824,7 +827,7 @@ def gather_testing_data(
     if worker_id == "master":
         populate_testing_data(branch=branch, repo=repo, local_cache=cache_dir)
     else:
-        if platform == "win32":
+        if platform.system() == "Windows":
             if not cache_dir.joinpath(branch).exists():
                 raise FileNotFoundError(
                     "Testing data not found and UNIX-style file-locking is not supported on Windows. "

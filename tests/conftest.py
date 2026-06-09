@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
+from loguru import logger
 
 from clisops.utils import testing
 from clisops.utils.testing import stratus as _stratus
@@ -303,26 +304,30 @@ def gather_session_data(request, worker_id, stratus, nimbus):
         """Cleanup cache folders once we are finished."""
         flag = Path(cache).joinpath(".data_written")
         if flag.exists():
-            flag.unlink()
+            try:
+                flag.unlink()
+            except FileNotFoundError:
+                logger.info("Teardown race condition occurred: .data_written flag already removed. Lucky!")
+                pass
 
     repositories = {
         "stratus": {
             "worker_cache_dir": stratus.path,
             "repo": testing.ESGF_TEST_DATA_REPO_URL,
             "branch": testing.ESGF_TEST_DATA_VERSION,
-            "cache_dir": testing.ESGF_TEST_DATA_CACHE_DIR,
+            "_cache_dir": testing.ESGF_TEST_DATA_CACHE_DIR,
         },
         "nimbus": {
             "worker_cache_dir": nimbus.path,
             "repo": testing.XCLIM_TEST_DATA_REPO_URL,
             "branch": testing.XCLIM_TEST_DATA_VERSION,
-            "cache_dir": testing.XCLIM_TEST_DATA_CACHE_DIR,
+            "_cache_dir": testing.XCLIM_TEST_DATA_CACHE_DIR,
         },
     }
 
     for repo in repositories.values():
         testing.gather_testing_data(worker_id=worker_id, **repo)
-        request.addfinalizer(partial(remove_data_written_flag, repo["cache_dir"]))
+        request.addfinalizer(partial(remove_data_written_flag, repo["_cache_dir"]))
 
 
 @pytest.fixture
