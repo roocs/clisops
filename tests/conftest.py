@@ -301,7 +301,7 @@ def gather_session_data(request, worker_id, stratus, nimbus):
     def remove_data_written_flag(cache):
         """Cleanup cache folders once we are finished."""
         for cache in [testing.default_esgf_test_data_cache, testing.default_xclim_test_data_cache]:
-            flag = cache.joinpath(".data_written")
+            flag = Path(cache).joinpath(".data_written")
             if flag.exists():
                 flag.unlink()
 
