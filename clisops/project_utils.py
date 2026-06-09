@@ -2,6 +2,7 @@
 
 import glob
 import os
+from pathlib import Path
 
 import xarray as xr
 from loguru import logger
@@ -62,14 +63,15 @@ class DatasetMapper:  # noqa: E501
     def _is_ds_id(dset):
         return dset.count(".") > 1
 
-    def _deduce_project(self, dset):
+    def _deduce_project(self, dset) -> str | None:
         if isinstance(dset, str):
-            if dset.startswith("/"):
+            if os.path.isabs(dset):
                 # by default this returns c3s-cmip6 not cmip6 (as they have the same base_dir)
                 base_dirs_dict = self._get_base_dirs_dict()
                 for project, base_dir in base_dirs_dict.items():
                     if dset.startswith(base_dir) and CONFIG[f"project:{project}"].get("is_default_for_path") is True:
                         return project
+                return None
 
             elif self._is_ds_id(dset):
                 return dset.split(".")[0].lower()
@@ -78,7 +80,8 @@ class DatasetMapper:  # noqa: E501
             elif dset.endswith(".nc") or os.path.isfile(dset):
                 dset = xr.open_dataset(dset, decode_times=xr.coders.CFDatetimeCoder(use_cftime=True))
                 return get_project_from_ds(dset)
-
+            else:
+                return None
         else:
             raise InvalidProject(f"The format of {dset} is not known and the project name could not be found.")
 
@@ -104,7 +107,7 @@ class DatasetMapper:  # noqa: E501
             self._base_dir = get_project_base_dir(self._project)
 
         # if a file, group of files or directory to files - find files
-        if dset.startswith("/") or dset.endswith(".nc"):
+        if Path(dset).is_absolute() or dset.endswith(".nc"):
             # if instance of FileMapper
             if isinstance(self.dset, FileMapper):
                 self._files = self.dset.file_paths
@@ -117,11 +120,12 @@ class DatasetMapper:  # noqa: E501
                     self._files.append(dset)
 
                 # remove file extension to create data_path
-                self._data_path = "/".join(dset.split("/")[:-1])
+                self._data_path = os.path.dirname(dset)
 
             # if base_dir identified, insert into data_path
             if self._base_dir:
-                self._ds_id = ".".join(self._data_path.replace(self._base_dir, self._project).strip("/").split("/"))
+                relative_path = os.path.relpath(self._data_path, self._base_dir)
+                self._ds_id = ".".join(relative_path.split(os.sep))
 
         # test if dataset id
         elif self._is_ds_id(dset):
@@ -129,7 +133,6 @@ class DatasetMapper:  # noqa: E501
 
             mappings = CONFIG.get(f"project:{self.project}", {}).get("fixed_path_mappings", {})
 
-            # If the dataset uses a fixed path mapping (from the config file) then use it
             if self._ds_id in mappings:
                 data_path = mappings[self._ds_id]
                 self._data_path = os.path.join(self._base_dir, data_path)
@@ -139,7 +142,7 @@ class DatasetMapper:  # noqa: E501
 
             # Default mapping is done by converting '.' characters to '/' separators in path
             else:
-                self._data_path = os.path.join(self._base_dir, "/".join(dset.split(".")[1:]))
+                self._data_path = os.path.join(self._base_dir, os.path.join(*dset.split(".")[1:]))
 
         # use to data_path to find files if not set already
         if len(self._files) < 1:

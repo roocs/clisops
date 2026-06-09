@@ -1,10 +1,12 @@
 import os
+from functools import partial
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 import xarray as xr
+from loguru import logger
 
 from clisops.utils import testing
 from clisops.utils.testing import stratus as _stratus
@@ -249,7 +251,7 @@ def ps_series():
 
 
 @pytest.fixture(scope="session", autouse=True)
-def threadsafe_data_dir(tmp_path_factory):
+def threadsafe_data_dir(tmp_path_factory) -> Path:
     return tmp_path_factory.getbasetemp().joinpath("data")
 
 
@@ -287,31 +289,45 @@ def check_output_nc():
     return _check_output_nc
 
 
-@pytest.fixture(scope="session", autouse=True)
-def load_test_data(worker_id, stratus, nimbus):
+@pytest.fixture(autouse=True, scope="session")
+def gather_session_data(request, worker_id, stratus, nimbus):
     """
-    Load the test data repository.
+    Gather testing data on pytest run.
 
-    This fixture ensures that the required test data repository
-    has been cloned to the cache directory within the home directory.
+    When running pytest with multiple workers, one worker will copy data remotely to default cache dir while
+    other workers wait using lockfile. Once the lock is released, all workers will then copy data to their local
+    threadsafe_data_dir. As this fixture is scoped to the session, it will only run once per pytest run.
+
     """
+
+    def remove_data_written_flag(cache):
+        """Cleanup cache folders once we are finished."""
+        flag = Path(cache).joinpath(".data_written")
+        if flag.exists():
+            try:
+                flag.unlink()
+            except FileNotFoundError:
+                logger.info("Teardown race condition occurred: .data_written flag already removed. Lucky!")
+                pass
+
     repositories = {
         "stratus": {
             "worker_cache_dir": stratus.path,
             "repo": testing.ESGF_TEST_DATA_REPO_URL,
             "branch": testing.ESGF_TEST_DATA_VERSION,
-            "cache_dir": testing.ESGF_TEST_DATA_CACHE_DIR,
+            "_cache_dir": testing.ESGF_TEST_DATA_CACHE_DIR,
         },
         "nimbus": {
             "worker_cache_dir": nimbus.path,
             "repo": testing.XCLIM_TEST_DATA_REPO_URL,
             "branch": testing.XCLIM_TEST_DATA_VERSION,
-            "cache_dir": testing.XCLIM_TEST_DATA_CACHE_DIR,
+            "_cache_dir": testing.XCLIM_TEST_DATA_CACHE_DIR,
         },
     }
 
     for repo in repositories.values():
         testing.gather_testing_data(worker_id=worker_id, **repo)
+        request.addfinalizer(partial(remove_data_written_flag, repo["_cache_dir"]))
 
 
 @pytest.fixture
