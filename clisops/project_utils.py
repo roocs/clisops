@@ -333,7 +333,7 @@ def switch_dset(dset: xr.Dataset | xr.DataArray | str | FileMapper) -> str:
     str
         The dataset path or dataset ID derived from the input dataset, switched from the input.
     """
-    if dset.startswith("/"):
+    if isinstance(dset, str) and (dset.startswith("/") or dset.startswith("\\")):
         return datapath_to_dsid(dset)
     else:
         return dsid_to_datapath(dset)
@@ -448,9 +448,10 @@ def get_project_base_dir(project: str) -> str:
     -------
     str
         The base directory of the specified project.
+        The URI uses platform-dependent path encoding.
     """
     try:
-        return CONFIG[f"project:{project}"]["base_dir"]
+        return str(Path(CONFIG[f"project:{project}"]["base_dir"]))
     except KeyError:
         raise InvalidProject("The project supplied is not known.")
 
@@ -494,12 +495,11 @@ def get_project_from_data_node_root(url: str) -> str:
     """
     data_node_dict = get_data_node_dirs_dict()
     project = None
-
     for proj, data_node_root in data_node_dict.items():
         if data_node_root in url:
             project = proj
 
-    if not project:
+    if project is None:
         raise InvalidProject(
             f"The project could not be identified from the URL {url} so it could not be mapped to a file path."
         )
@@ -522,8 +522,8 @@ def url_to_file_path(url: str) -> str:
     """
     project = get_project_from_data_node_root(url)
 
-    data_node_root = CONFIG.get(f"project:{project}", {}).get("data_node_root")
-    base_dir = CONFIG.get(f"project:{project}", {}).get("base_dir")
-    file_path = os.path.join(base_dir, url.partition(data_node_root)[2])
+    data_node_root = str(Path(CONFIG.get(f"project:{project}", {}).get("data_node_root")))
+    base_dir = str(Path(CONFIG.get(f"project:{project}", {}).get("base_dir")))
+    file_path = str(Path(base_dir).joinpath(str(Path(url.partition(data_node_root)[2]))))
 
     return file_path
