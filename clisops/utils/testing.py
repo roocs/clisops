@@ -4,15 +4,20 @@ import importlib.resources as ilr
 import os
 import platform
 import warnings
+from collections.abc import Callable
+from functools import wraps
 from pathlib import Path
 from shutil import copytree
+from typing import IO
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 from urllib.request import urlretrieve
 
 from filelock import FileLock
 from jinja2 import Template
 from loguru import logger
+
+from clisops import __version__ as __clisops_version__
 
 try:
     import pooch
@@ -47,7 +52,7 @@ except (AttributeError, TypeError):
     default_xclim_test_data_cache = None
 
 ESGF_TEST_DATA_REPO_URL = str(
-    os.getenv("ESGF_TEST_DATA_REPO_UR", "https://raw.githubusercontent.com/roocs/mini-esgf-data")
+    os.getenv("ESGF_TEST_DATA_REPO_URL", "https://raw.githubusercontent.com/roocs/mini-esgf-data/")
 )
 default_esgf_test_data_version = "v1"
 ESGF_TEST_DATA_VERSION = str(os.getenv("ESGF_TEST_DATA_VERSION", default_esgf_test_data_version))
@@ -56,7 +61,7 @@ ESGF_TEST_DATA_CACHE_DIR = str(os.getenv("ESGF_TEST_DATA_CACHE_DIR", default_esg
 XCLIM_TEST_DATA_REPO_URL = str(
     os.getenv(
         "XCLIM_TEST_DATA_REPO_URL",
-        "https://raw.githubusercontent.com/Ouranosinc/xclim-testdata",
+        "https://raw.githubusercontent.com/Ouranosinc/xclim-testdata/",
     )
 )
 default_xclim_test_data_version = "v2024.8.23"
@@ -636,11 +641,14 @@ def load_registry(branch: str, repo: str) -> dict[str, str]:
     dict
         Dictionary of filenames and hashes.
     """
-    if repo == ESGF_TEST_DATA_REPO_URL:
+    if not repo.endswith("/"):
+        repo = f"{repo}/"
+
+    if "mini-esgf-data" in repo:
         project = "mini-esgf-data"
         default_testdata_version = ESGF_TEST_DATA_VERSION
         default_testdata_repo_url = ESGF_TEST_DATA_REPO_URL
-    elif repo == XCLIM_TEST_DATA_REPO_URL:
+    elif "xclim-testdata" in repo:
         project = "xclim-testdata"
         default_testdata_version = XCLIM_TEST_DATA_VERSION
         default_testdata_repo_url = XCLIM_TEST_DATA_REPO_URL
@@ -650,17 +658,28 @@ def load_registry(branch: str, repo: str) -> dict[str, str]:
             f"Please use one of {ESGF_TEST_DATA_REPO_URL} or {XCLIM_TEST_DATA_REPO_URL}"
         )
 
-    remote_registry = audit_url(f"{repo}{branch}/data/{project}_registry.txt")
-    if branch != default_testdata_version:
-        custom_registry_folder = Path(str(ilr.files("clisops").joinpath(f"utils/registries/{branch}")))
-        custom_registry_folder.mkdir(parents=True, exist_ok=True)
-        registry_file = custom_registry_folder.joinpath(f"{project}_registry.txt")
-        urlretrieve(remote_registry, registry_file)  # noqa: S310
-    elif repo != default_testdata_repo_url:
-        registry_file = Path(str(ilr.files("clisops").joinpath(f"utils/{project}_registry.txt")))
-        urlretrieve(remote_registry, registry_file)  # noqa: S310
+    remote_registry = audit_url(
+        urljoin(
+            urljoin(repo, branch if branch.endswith("/") else f"{branch}/"),
+            "data/registry.txt",
+        )
+    )
 
-    registry_file = Path(str(ilr.files("clisops").joinpath(f"utils/{project}_registry.txt")))
+    if repo != default_testdata_repo_url:
+        external_repo_name = urlparse(repo).path.split("/")[-2]
+        external_branch_name = branch.split("/")[-1]
+        registry_file = Path(
+            str(ilr.files("clisops").joinpath(f"utils/registry.{external_repo_name}.{external_branch_name}.txt"))
+        )
+        urlretrieve(remote_registry, registry_file)  # noqa: S310
+    elif branch != default_testdata_version:
+        custom_registry_folder = Path(str(ilr.files("clisops").joinpath(f"utils/{branch}")))
+        custom_registry_folder.mkdir(parents=True, exist_ok=True)
+        registry_file = custom_registry_folder.joinpath("registry.txt")
+        urlretrieve(remote_registry, registry_file)  # noqa: S310
+    else:
+        registry_file = Path(str(ilr.files("clisops").joinpath(f"utils/{project}_registry.txt")))
+
     if not registry_file.exists():
         raise FileNotFoundError(f"Registry file not found: {registry_file}")
 
@@ -674,7 +693,7 @@ def stratus(
     repo: str,
     branch: str,
     cache_dir: str | Path,
-    data_updates: bool = True,
+    allow_updates: bool = True,
 ):
     """
     Pooch registry instance for xclim test data.
@@ -687,7 +706,7 @@ def stratus(
         Branch of repository to use when fetching testing datasets.
     cache_dir : str or Path
         The path to the directory where the data files are stored.
-    data_updates : bool
+    allow_updates : bool
         If True, allow updates to the data files. Default is True.
 
     Returns
@@ -714,10 +733,10 @@ def stratus(
             "You can install it with `pip install pooch` or `pip install roocs-utils[dev]`."
         )
 
-    if repo.endswith("xclim-testdata"):
+    if "xclim-testdata" in repo:
         _version = XCLIM_TEST_DATA_VERSION
         _default_testdata_version = default_xclim_test_data_version
-    elif repo.endswith("mini-esgf-data"):
+    elif "mini-esgf-data" in repo:
         _version = ESGF_TEST_DATA_VERSION
         _default_testdata_version = default_esgf_test_data_version
     else:
@@ -726,15 +745,44 @@ def stratus(
             f"Please use one of {ESGF_TEST_DATA_REPO_URL} or {XCLIM_TEST_DATA_REPO_URL}"
         )
 
-    remote = audit_url(f"{repo}/{branch}/data")
-    return pooch.create(
+    remote = audit_url(urljoin(urljoin(repo, branch if branch.endswith("/") else f"{branch}/"), "data"))
+
+    _stratus = pooch.create(
         path=cache_dir,
         base_url=remote,
         version=_default_testdata_version,
         version_dev=_version,
-        allow_updates=data_updates,
+        allow_updates=allow_updates,
         registry=load_registry(branch=branch, repo=repo),
     )
+
+    # Add a custom fetch method to the Pooch instance
+    # Needed to address: https://github.com/readthedocs/readthedocs.org/issues/11763
+    # Fix inspired by @bjlittle (https://github.com/bjlittle/geovista/pull/1202)
+    _stratus.fetch_diversion = _stratus.fetch
+
+    # Overload the fetch method to add user-agent headers
+    @wraps(_stratus.fetch_diversion)
+    def _fetch(*args, **kwargs: bool | Callable) -> str:  # numpydoc ignore=GL08  # *args: str
+        def _downloader(
+            url: str,
+            output_file: str | IO,
+            poocher: pooch.Pooch,
+            check_only: bool | None = False,
+        ) -> None:
+            """Download the file from the URL and save it to the save_path."""
+            headers = {"User-Agent": f"clisops ({__clisops_version__})"}
+            downloader = pooch.HTTPDownloader(headers=headers)
+            return downloader(url, output_file, poocher, check_only=check_only)
+
+        # default to our http/s downloader with user-agent headers
+        kwargs.setdefault("downloader", _downloader)
+        return _stratus.fetch_diversion(*args, **kwargs)
+
+    # Replace the fetch method with the custom fetch method
+    _stratus.fetch = _fetch
+
+    return _stratus
 
 
 def populate_testing_data(
@@ -814,9 +862,9 @@ def gather_testing_data(
         raise ValueError("The cache directory must be set.")
     cache_dir = Path(_cache_dir)
 
-    if repo.endswith("xclim-testdata"):
+    if "xclim-testdata" in repo:
         version = default_xclim_test_data_version
-    elif repo.endswith("mini-esgf-data"):
+    elif "mini-esgf-data" in repo:
         version = default_esgf_test_data_version
     else:
         raise ValueError(
