@@ -367,6 +367,8 @@ class TestSubsetBbox:
         da = xr.open_mfdataset(
             [nimbus.fetch(self.nc_tasmax_file), nimbus.fetch(self.nc_tasmin_file)],
             combine="by_coords",
+            compat="no_conflicts",
+            data_vars="all",
         )
         out = subset.subset_bbox(da, lon_bnds=self.lon, lat_bnds=self.lat)
         assert np.all(out.lon >= np.min(self.lon))

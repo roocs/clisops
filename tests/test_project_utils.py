@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import pytest
 import xarray as xr
@@ -26,6 +27,7 @@ class TestProjectUtils:
             mini_esgf_data["CMIP5_TAS"],
             decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
             combine="by_coords",
+            data_vars="all",
         ) as ds:
             project = project_utils.get_project_name(ds)
             assert project == "cmip5"
@@ -80,11 +82,11 @@ class TestProjectUtils:
         assert project in ["c3s-ipcc-ar6-atlas", "c3s-ipcc-atlas"]
 
     def test_get_project_base_dir(self):
-        cmip5_base_dir = project_utils.get_project_base_dir("cmip5")
-        assert cmip5_base_dir == "/mnt/lustre/work/kd0956/CMIP5/data/cmip5"
+        cmip5_base_dir = Path(project_utils.get_project_base_dir("cmip5"))
+        assert Path("/mnt/lustre/work/kd0956/CMIP5/data/cmip5").match(str(cmip5_base_dir))
 
-        c3s_cordex_base_dir = project_utils.get_project_base_dir("c3s-cordex")
-        assert c3s_cordex_base_dir == "/mnt/lustre/work/ik1017/C3SCORDEX/data/c3s-cordex"
+        c3s_cordex_base_dir = Path(project_utils.get_project_base_dir("c3s-cordex"))
+        assert Path("/mnt/lustre/work/ik1017/C3SCORDEX/data/c3s-cordex").match(str(c3s_cordex_base_dir))
 
         with pytest.raises(Exception) as exc:
             project_utils.get_project_base_dir("test")

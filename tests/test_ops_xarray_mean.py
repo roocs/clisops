@@ -103,6 +103,7 @@ def test_xarray_da_mean_keep_attrs_true(mini_esgf_data):
         mini_esgf_data["CMIP5_TAS"],
         combine="by_coords",
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        data_vars="all",
         drop_variables=["time_bnds"],
     )
     ds_tas_mean = ds.tas.mean(dim="lat", keep_attrs=True)
@@ -117,6 +118,7 @@ def test_xarray_da_mean_keep_attrs_false(mini_esgf_data):
         mini_esgf_data["CMIP5_TAS"],
         combine="by_coords",
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
+        data_vars="all",
     ).load()
     ds_tas_mean = ds.tas.mean(dim="time", keep_attrs=False)
     ds_mean = ds.mean(dim="time", keep_attrs=False)
