@@ -77,7 +77,7 @@ jobs:
             os: "windows-latest"
             positional_args: "--numprocesses=0"
     env:
-      CACHE_KEY: ${{ runner.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-Python${{ matrix.python-version }}-${{ env.ESGF_TEST_DATA_VERSION }}
+      CACHE_KEY: ${{ matrix.os }}-${{ hashFiles('pyproject.toml', 'tox.ini') }}-Python${{ matrix.python-version }}-${{ env.ESGF_TEST_DATA_VERSION }}
     steps:
       - name: Harden Runner
         uses: step-security/harden-runner@fe104658747b27e96e4f7e80cd0a94068e53901d # v2.16.1
