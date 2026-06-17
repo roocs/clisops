@@ -504,7 +504,7 @@ def test_aux_variables():
     Test auxiliary variables are remembered in output dataset
     Have to create a netcdf file with auxiliary variable
     """
-    ds = _load_ds("tests/data/test_file.nc")
+    ds = _load_ds(Path(__file__).parent.joinpath("data/test_file.nc"))
 
     assert "do_i_get_written" in ds.variables
 
