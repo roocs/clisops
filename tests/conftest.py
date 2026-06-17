@@ -349,20 +349,6 @@ def c3s_cmip5_tos():
     ).as_posix()
 
 
-@pytest.fixture
-def cmip5_archive_base():
-    if "CMIP5_ARCHIVE_BASE" in os.environ:
-        return os.environ["CMIP5_ARCHIVE_BASE"]
-    return Path(__file__).parent.absolute().joinpath("mini-esgf-data/test_data/badc/cmip5/data").as_posix()
-
-
-@pytest.fixture
-def cmip6_archive_base():
-    if "CMIP6_ARCHIVE_BASE" in os.environ:
-        return os.environ["CMIP6_ARCHIVE_BASE"]
-    return Path(__file__).parent.absolute().joinpath("mini-esgf-data/test_data/badc/cmip6/data").as_posix()
-
-
 @pytest.fixture(scope="session", autouse=True)
 def mini_esgf_data(stratus):
     return (

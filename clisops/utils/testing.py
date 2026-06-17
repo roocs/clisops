@@ -42,6 +42,19 @@ __all__ = [
     "write_roocs_cfg",
 ]
 
+
+default_esgf_test_data_version = "v1"
+"""Default version of the mini-esgf testing data to use when fetching datasets."""
+
+default_esgf_test_data_url = "https://raw.githubusercontent.com/roocs/mini-esgf-data/"
+"""Default URL of the mini-esgf testing data repository to use when fetching datasets."""
+
+default_xclim_test_data_version = "v2024.8.23"
+"""Default version of the xclim testing data to use when fetching datasets."""
+
+default_xclim_test_data_url = "https://raw.githubusercontent.com/Ouranosinc/xclim-testdata/"
+"""Default URL of the xclim testing data repository to use when fetching datasets."""
+
 try:
     default_esgf_test_data_cache = str(pooch.os_cache("mini-esgf-data"))
     """Default location for the mini-esgf testing data cache."""
@@ -51,20 +64,12 @@ except (AttributeError, TypeError):
     default_esgf_test_data_cache = None
     default_xclim_test_data_cache = None
 
-ESGF_TEST_DATA_REPO_URL = str(
-    os.getenv("ESGF_TEST_DATA_REPO_URL", "https://raw.githubusercontent.com/roocs/mini-esgf-data/")
-)
-default_esgf_test_data_version = "v1"
+
+ESGF_TEST_DATA_REPO_URL = str(os.getenv("ESGF_TEST_DATA_REPO_URL", default_esgf_test_data_url))
 ESGF_TEST_DATA_VERSION = str(os.getenv("ESGF_TEST_DATA_VERSION", default_esgf_test_data_version))
 ESGF_TEST_DATA_CACHE_DIR = str(os.getenv("ESGF_TEST_DATA_CACHE_DIR", default_esgf_test_data_cache))
 
-XCLIM_TEST_DATA_REPO_URL = str(
-    os.getenv(
-        "XCLIM_TEST_DATA_REPO_URL",
-        "https://raw.githubusercontent.com/Ouranosinc/xclim-testdata/",
-    )
-)
-default_xclim_test_data_version = "v2024.8.23"
+XCLIM_TEST_DATA_REPO_URL = str(os.getenv("XCLIM_TEST_DATA_REPO_URL", default_xclim_test_data_url))
 XCLIM_TEST_DATA_VERSION = str(os.getenv("XCLIM_TEST_DATA_VERSION", default_xclim_test_data_version))
 XCLIM_TEST_DATA_CACHE_DIR = str(os.getenv("XCLIM_TEST_DATA_CACHE_DIR", default_xclim_test_data_cache))
 
@@ -745,6 +750,8 @@ def stratus(
             f"Please use one of {ESGF_TEST_DATA_REPO_URL} or {XCLIM_TEST_DATA_REPO_URL}"
         )
 
+    if not repo.endswith("/"):
+        repo = f"{repo}/"
     remote = audit_url(urljoin(urljoin(repo, branch if branch.endswith("/") else f"{branch}/"), "data"))
 
     _stratus = pooch.create(
@@ -786,16 +793,19 @@ def stratus(
 
 
 def populate_testing_data(
+    temp_folder: Path | None = None,
+    *,
     repo: str,
     branch: str,
     local_cache: Path,
-    temp_folder: Path | None = None,
 ):
     """
     Populate the local cache with the testing data.
 
     Parameters
     ----------
+    temp_folder : Path, optional
+        Path to a temporary folder to use as the local cache. If not provided, the default location will be used.
     repo : str, optional
         URL of the repository to use when fetching testing datasets.
     branch : str, optional
@@ -803,8 +813,6 @@ def populate_testing_data(
     local_cache : Path
         The path to the local cache. Defaults to the location set by the platformdirs library.
         The testing data will be downloaded to this local cache.
-    temp_folder : Path, optional
-        Path to a temporary folder to use as the local cache. If not provided, the default location will be used.
     """
     # Create the Pooch instance
     n = stratus(repo=repo, branch=branch, cache_dir=temp_folder or local_cache)
