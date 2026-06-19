@@ -451,7 +451,7 @@ def get_project_base_dir(project: str) -> str:
         The URI uses platform-dependent path encoding.
     """
     try:
-        return str(Path(CONFIG[f"project:{project}"]["base_dir"]))
+        return CONFIG[f"project:{project}"]["base_dir"]
     except KeyError:
         raise InvalidProject("The project supplied is not known.")
 

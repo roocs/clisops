@@ -83,10 +83,10 @@ class TestProjectUtils:
 
     def test_get_project_base_dir(self):
         cmip5_base_dir = Path(project_utils.get_project_base_dir("cmip5"))
-        assert Path("/mnt/lustre/work/kd0956/CMIP5/data/cmip5").match(str(cmip5_base_dir))
+        assert Path(cmip5_base_dir).match("/mnt/lustre/work/kd0956/CMIP5/data/cmip5")
 
         c3s_cordex_base_dir = Path(project_utils.get_project_base_dir("c3s-cordex"))
-        assert Path("/mnt/lustre/work/ik1017/C3SCORDEX/data/c3s-cordex").match(str(c3s_cordex_base_dir))
+        assert Path(c3s_cordex_base_dir).match("/mnt/lustre/work/ik1017/C3SCORDEX/data/c3s-cordex")
 
         with pytest.raises(Exception) as exc:
             project_utils.get_project_base_dir("test")
@@ -103,9 +103,8 @@ class TestDatasetMapper:
         )
 
     def test_data_path(self):
-        assert (
-            project_utils.DatasetMapper(self.dset).data_path
-            == "/mnt/lustre/work/ik1017/CMIP6/data/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/SImon/siconc/gn/latest"
+        assert Path(str(project_utils.DatasetMapper(self.dset).data_path)) == Path(
+            "/mnt/lustre/work/ik1017/CMIP6/data/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/SImon/siconc/gn/latest"
         )
 
     def test_ds_id(self):
@@ -115,7 +114,9 @@ class TestDatasetMapper:
         )
 
     def test_base_dir(self):
-        assert project_utils.DatasetMapper(self.dset).base_dir == "/mnt/lustre/work/ik1017/CMIP6/data/CMIP6"
+        assert Path(str(project_utils.DatasetMapper(self.dset).base_dir)) == Path(
+            "/mnt/lustre/work/ik1017/CMIP6/data/CMIP6"
+        )
 
     @pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
     def test_files(self):
