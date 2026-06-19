@@ -113,8 +113,8 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         with:
           path: |
-            '~/.cache/mini-esgf-data'
-            '~/.cache/xclim-testdata'
+            ~/.cache/mini-esgf-data
+            ~/.cache/xclim-testdata
             .tox
           key: ${{ env.CACHE_KEY }}
       - name: Environment Caching (macOS)
@@ -122,8 +122,8 @@ jobs:
         if: matrix.os == 'macos-latest'
         with:
           path: |
-            '~/Library/Caches/mini-esgf-data'
-            '~/Library/Caches/xclim-testdata'
+            ~/Library/Caches/mini-esgf-data
+            ~/Library/Caches/xclim-testdata
             .tox
           key: ${{ env.CACHE_KEY }}
       - name: Environment Caching (Windows)
@@ -131,8 +131,8 @@ jobs:
         if: matrix.os == 'windows-latest'
         with:
           path: |
-            '~\AppData\Local\mini-esgf-data\mini-esgf-data\Cache'
-            '~\AppData\Local\xclim-testdata\xclim-testdata\Cache'
+            ~\AppData\Local\mini-esgf-data\mini-esgf-data\Cache
+            ~\AppData\Local\xclim-testdata\xclim-testdata\Cache
             .tox
           key: ${{ env.CACHE_KEY }}
 
@@ -186,7 +186,7 @@ jobs:
 
       - name: Test Data Caching (Linux)
         uses: actions/cache@668228422ae6a00e4ad889ee87cd7109ec5666a7 # v5.0.4
-        if : matrix.os == 'ubuntu-latest'
+        if: matrix.os == 'ubuntu-latest'
         with:
           path: |
             ~/.cache/mini-esgf-data

@@ -333,7 +333,7 @@ def switch_dset(dset: xr.Dataset | xr.DataArray | str | FileMapper) -> str:
     str
         The dataset path or dataset ID derived from the input dataset, switched from the input.
     """
-    if isinstance(dset, str) and (dset.startswith("/") or dset.startswith("\\")):
+    if isinstance(dset, str) and os.path.isabs(dset):
         return datapath_to_dsid(dset)
     else:
         return dsid_to_datapath(dset)
@@ -522,8 +522,8 @@ def url_to_file_path(url: str) -> str:
     """
     project = get_project_from_data_node_root(url)
 
-    data_node_root = str(Path(CONFIG.get(f"project:{project}", {}).get("data_node_root")))
-    base_dir = str(Path(CONFIG.get(f"project:{project}", {}).get("base_dir")))
-    file_path = str(Path(base_dir).joinpath(str(Path(url.partition(data_node_root)[2]))))
-
+    data_node_root = CONFIG.get(f"project:{project}", {}).get("data_node_root")
+    base_dir = Path(CONFIG.get(f"project:{project}", {}).get("base_dir", ""))
+    relative_path = url.partition(data_node_root)[2].lstrip("/")
+    file_path = str(base_dir.joinpath(Path(relative_path)))
     return file_path

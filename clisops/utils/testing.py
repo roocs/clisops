@@ -65,13 +65,13 @@ except (AttributeError, TypeError):
     default_xclim_test_data_cache = None
 
 
-ESGF_TEST_DATA_REPO_URL = str(os.getenv("ESGF_TEST_DATA_REPO_URL", default_esgf_test_data_url))
-ESGF_TEST_DATA_VERSION = str(os.getenv("ESGF_TEST_DATA_VERSION", default_esgf_test_data_version))
-ESGF_TEST_DATA_CACHE_DIR = str(os.getenv("ESGF_TEST_DATA_CACHE_DIR", default_esgf_test_data_cache))
+ESGF_TEST_DATA_REPO_URL = os.getenv("ESGF_TEST_DATA_REPO_URL", default_esgf_test_data_url)
+ESGF_TEST_DATA_VERSION = os.getenv("ESGF_TEST_DATA_VERSION", default_esgf_test_data_version)
+ESGF_TEST_DATA_CACHE_DIR = os.getenv("ESGF_TEST_DATA_CACHE_DIR") or default_esgf_test_data_cache
 
-XCLIM_TEST_DATA_REPO_URL = str(os.getenv("XCLIM_TEST_DATA_REPO_URL", default_xclim_test_data_url))
-XCLIM_TEST_DATA_VERSION = str(os.getenv("XCLIM_TEST_DATA_VERSION", default_xclim_test_data_version))
-XCLIM_TEST_DATA_CACHE_DIR = str(os.getenv("XCLIM_TEST_DATA_CACHE_DIR", default_xclim_test_data_cache))
+XCLIM_TEST_DATA_REPO_URL = os.getenv("XCLIM_TEST_DATA_REPO_URL", default_xclim_test_data_url)
+XCLIM_TEST_DATA_VERSION = os.getenv("XCLIM_TEST_DATA_VERSION", default_xclim_test_data_version)
+XCLIM_TEST_DATA_CACHE_DIR = os.getenv("XCLIM_TEST_DATA_CACHE_DIR") or default_xclim_test_data_cache
 
 
 def write_roocs_cfg(
