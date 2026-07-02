@@ -4,6 +4,8 @@ import geopandas as gpd
 import numpy as np
 import pytest
 import xarray as xr
+from numpy import __version__ as __np_version__
+from packaging.version import Version
 from pyproj.crs import CRS
 from pyproj.exceptions import CRSError
 from shapely.geometry import Point, Polygon
@@ -83,6 +85,11 @@ class TestSubsetTime:
 
             assert '"end_date" has been nudged to nearest valid time step in xarray object.' in caplog.text
 
+    @pytest.mark.xfail(
+        Version(__np_version__) >= Version("2.5.0"),
+        reason="Newer numpy raises many DeprecationWarning messages",
+        strict=False,
+    )
     def test_time_start_only(self, nimbus):
         da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         yr_st = "2050"
@@ -113,6 +120,11 @@ class TestSubsetTime:
         np.testing.assert_array_equal(out.time.dt.year.max(), da.time.dt.year.max())
         np.testing.assert_array_equal(out.time.max(), da.time.max())
 
+    @pytest.mark.xfail(
+        Version(__np_version__) >= Version("2.5.0"),
+        reason="Newer numpy raises many DeprecationWarning messages",
+        strict=False,
+    )
     def test_time_end_only(self, nimbus):
         da = xr.open_dataset(nimbus.fetch(self.nc_poslons)).tas
         yr_ed = "2059"
