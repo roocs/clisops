@@ -1,5 +1,10 @@
 Version History
 ===============
+v0.18.1 (unreleased)
+--------------------
+Bug Fixes
+^^^^^^^^^
+* fixed a regression in v 0.18.0 where `subset_gridpoint` could potentially try to apply a `squeeze` operation on a dimension not present in the data array.
 
 v0.18.0 (2026-06-08)
 --------------------
