@@ -1,10 +1,16 @@
 Version History
 ===============
-v0.18.1 (unreleased)
+
+v0.18.1 (2026-07-07)
 --------------------
+
 Bug Fixes
 ^^^^^^^^^
-* fixed a regression in v 0.18.0 where `subset_gridpoint` could potentially try to apply a `squeeze` operation on a dimension not present in the data array.
+* Fixed a regression in v0.18.0 where `subset_gridpoint` could potentially try to apply a `squeeze` operation on a dimension not present in the DataArray (#506).
+
+Internal Changes
+^^^^^^^^^^^^^^^^
+* Adjusted `pytest` to not fail tests emitting DeprecationWarnings from the latest version of `numpy` (#504).
 
 v0.18.0 (2026-06-08)
 --------------------
