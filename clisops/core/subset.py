@@ -1699,7 +1699,7 @@ def subset_gridpoint(
     if add_distance:
         da = da.assign_coords(distance=dist)
 
-    if len(lat) == 1:
+    if len(lat) == 1 and ptdim in da.dims:
         da = da.squeeze(ptdim)
 
     if start_date or end_date:
