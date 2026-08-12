@@ -75,6 +75,7 @@ def test_StandardFileNamer_cmip5(mini_esgf_data):
         mini_esgf_data["CMIP5_TAS"],
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
+        data_vars="all",
     )
 
     checks = [(_ds, "tas_mon_HadGEM2-ES_rcp85_r1i1p1_20051216-22991216.nc")]
@@ -91,6 +92,7 @@ def test_StandardFileNamer_cmip5_use_default_attr_names(mini_esgf_data):
         mini_esgf_data["CMIP5_TAS"],
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
+        data_vars="all",
     )
 
     checks = [(_ds, "tas_mon_no-model_rcp85_r1i1p1_20051216-22991216.nc")]
@@ -108,6 +110,7 @@ def test_StandardFileNamer_cmip6(mini_esgf_data):
         mini_esgf_data["CMIP6_SICONC"],
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
+        data_vars="all",
     )
 
     checks = [(_ds, "siconc_SImon_CanESM5_historical_r1i1p1f1_gn_18500116-20141216.nc")]
@@ -124,6 +127,7 @@ def test_StandardFileNamer_cmip6_use_default_attr_names(mini_esgf_data):
         mini_esgf_data["CMIP6_SICONC"],
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
+        data_vars="all",
     )
 
     checks = [(_ds, "siconc_SImon_no-model_historical_r1i1p1f1_no-grid_18500116-20141216.nc")]
@@ -146,6 +150,7 @@ def test_StandardFileNamer_c3s_cordex(mini_esgf_data):
         mini_esgf_data["C3S_CORDEX_NAM_PR"],
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
+        data_vars="all",
     )
 
     checks = [
@@ -171,6 +176,7 @@ def test_StandardFileNamer_c3s_cordex_use_default_attr_names(mini_esgf_data):
         mini_esgf_data["C3S_CORDEX_NAM_PR"],
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
+        data_vars="all",
     )
 
     checks = [
@@ -195,6 +201,7 @@ def test_StandardFileNamer_c3s_atlas_v0(mini_esgf_data):
         mini_esgf_data["ATLAS_v0_CORDEX_NAM"],
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
+        data_vars="all",
     )
 
     checks = [
@@ -217,6 +224,7 @@ def test_StandardFileNamer_c3s_atlas_v1(mini_esgf_data):
         mini_esgf_data["ATLAS_v1_ERA5"],
         decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
         combine="by_coords",
+        data_vars="all",
     )
 
     checks = [

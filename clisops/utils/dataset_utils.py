@@ -349,7 +349,7 @@ def get_coord_type(coord: xr.DataArray | xr.Dataset) -> str | None:
     return None
 
 
-def get_main_variable(ds, exclude_common_coords=True):
+def get_main_variable(ds: xr.Dataset, exclude_common_coords: bool = True):
     """
     Find the main variable of an xarray Dataset.
 
@@ -401,7 +401,7 @@ def get_main_variable(ds, exclude_common_coords=True):
         return result
 
 
-def open_xr_dataset(dset: str | pathlib.Path | list[str | pathlib.Path], **kwargs):
+def open_xr_dataset(dset: str | pathlib.Path | list[str | pathlib.Path], **kwargs) -> xr.Dataset:
     """
     Open an xarray dataset from a dataset input.
 
@@ -441,7 +441,7 @@ def open_xr_dataset(dset: str | pathlib.Path | list[str | pathlib.Path], **kwarg
 
     # If an empty sequence, then raise an Exception
     if not len(dset):
-        raise Exception("No files found to open with xarray.")
+        raise FileNotFoundError("No files found to open with xarray.")
 
     # if a list we want a multi-file dataset
     if len(dset) > 1:
@@ -481,7 +481,7 @@ def _get_kwargs_for_opener(otype, **kwargs):
         "remote_options",
         "target_options",
     ]
-    allowed_multi_args = ["combine"]
+    allowed_multi_args = ["combine", "data_vars"]
 
     args = {
         "decode_times": xr.coders.CFDatetimeCoder(use_cftime=True),
@@ -494,6 +494,7 @@ def _get_kwargs_for_opener(otype, **kwargs):
 
     if otype.lower() == "multi":
         args["combine"] = "by_coords"
+        args["data_vars"] = "all"
         allowed_args.extend(allowed_multi_args)
     elif otype.lower() == "zarr":
         allowed_args.extend(allowed_zarr_args)

@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import pytest
 import xarray as xr
@@ -24,7 +25,7 @@ def _check_output_nc(result, fname="output_001.nc"):
 
 
 def _load_ds(fpath):
-    return xr.open_mfdataset(fpath, decode_times=xr.coders.CFDatetimeCoder(use_cftime=True))
+    return xr.open_mfdataset(fpath, decode_times=xr.coders.CFDatetimeCoder(use_cftime=True), data_vars="all")
 
 
 def test_average_basic_data_array(nimbus):
@@ -209,25 +210,23 @@ def test_dim_not_found_ignore(mini_esgf_data):
     assert "height" in result[0]
 
 
-# FIXME: This kind of test is not desirable as it is testing the internal testing implementation
-# def test_aux_variables():
-#     """
-#     test auxiliary variables are remembered in output dataset
-#     Have to create a netcdf file with auxiliary variable
-#     """
-#
-#     ds = _load_ds("tests/data/test_file.nc")
-#
-#     assert "do_i_get_written" in ds.variables
-#
-#     result = average_over_dims(
-#         ds=ds,
-#         dims=["level", "time"],
-#         ignore_undetected_dims=True,
-#         output_type="xarray",
-#     )
-#
-#     assert "do_i_get_written" in result[0].variables
+def test_aux_variables():
+    """
+    Test auxiliary variables are remembered in output dataset
+    Have to create a netcdf file with auxiliary variable
+    """
+    ds = _load_ds(Path(__file__).parent.joinpath("data/test_file.nc"))
+
+    assert "do_i_get_written" in ds.variables
+
+    result = average_over_dims(
+        ds=ds,
+        dims=["level", "time"],
+        ignore_undetected_dims=True,
+        output_type="xarray",
+    )
+
+    assert "do_i_get_written" in result[0].variables
 
 
 @pytest.mark.skipif(xesmf is None, reason=XESMF_IMPORT_MESSAGE)

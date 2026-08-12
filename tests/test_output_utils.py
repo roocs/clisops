@@ -27,9 +27,7 @@ def _open(coll):
     if len(coll) > 1:
         # issues with dask and cftime
         ds = xr.open_mfdataset(
-            coll,
-            decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
-            combine="by_coords",
+            coll, decode_times=xr.coders.CFDatetimeCoder(use_cftime=True), combine="by_coords", data_vars="all"
         ).load()
     else:
         ds = xr.open_dataset(coll[0], decode_times=xr.coders.CFDatetimeCoder(use_cftime=True))

@@ -2,17 +2,22 @@
 
 import importlib.resources as ilr
 import os
+import platform
 import warnings
+from collections.abc import Callable
+from functools import wraps
 from pathlib import Path
 from shutil import copytree
-from sys import platform
+from typing import IO
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse
 from urllib.request import urlretrieve
 
 from filelock import FileLock
 from jinja2 import Template
 from loguru import logger
+
+from clisops import __version__ as __clisops_version__
 
 try:
     import pooch
@@ -37,30 +42,41 @@ __all__ = [
     "write_roocs_cfg",
 ]
 
+
+default_esgf_test_data_version = "v1"
+"""Default version of the mini-esgf testing data to use when fetching datasets."""
+
+default_esgf_test_data_url = "https://raw.githubusercontent.com/roocs/mini-esgf-data/"
+"""Default URL of the mini-esgf testing data repository to use when fetching datasets."""
+
+default_xclim_test_data_version = "v2024.8.23"
+"""Default version of the xclim testing data to use when fetching datasets."""
+
+default_xclim_test_data_url = "https://raw.githubusercontent.com/Ouranosinc/xclim-testdata/"
+"""Default URL of the xclim testing data repository to use when fetching datasets."""
+
 try:
-    default_esgf_test_data_cache = pooch.os_cache("mini-esgf-data")
-    default_xclim_test_data_cache = pooch.os_cache("xclim-testdata")
+    default_esgf_test_data_cache = str(pooch.os_cache("mini-esgf-data"))
+    """Default location for the mini-esgf testing data cache."""
+    default_xclim_test_data_cache = str(pooch.os_cache("xclim-testdata"))
+    """Default location for the xclim testing data cache."""
 except (AttributeError, TypeError):
     default_esgf_test_data_cache = None
     default_xclim_test_data_cache = None
 
-ESGF_TEST_DATA_REPO_URL = os.getenv("ESGF_TEST_DATA_REPO_UR", "https://raw.githubusercontent.com/roocs/mini-esgf-data")
-default_esgf_test_data_version = "v1"
-ESGF_TEST_DATA_VERSION = os.getenv("ESGF_TEST_DATA_VERSION", default_esgf_test_data_version)
-ESGF_TEST_DATA_CACHE_DIR = os.getenv("ESGF_TEST_DATA_CACHE_DIR", default_esgf_test_data_cache)
 
-XCLIM_TEST_DATA_REPO_URL = os.getenv(
-    "XCLIM_TEST_DATA_REPO_URL",
-    "https://raw.githubusercontent.com/Ouranosinc/xclim-testdata",
-)
-default_xclim_test_data_version = "v2024.8.23"
+ESGF_TEST_DATA_REPO_URL = os.getenv("ESGF_TEST_DATA_REPO_URL", default_esgf_test_data_url)
+ESGF_TEST_DATA_VERSION = os.getenv("ESGF_TEST_DATA_VERSION", default_esgf_test_data_version)
+ESGF_TEST_DATA_CACHE_DIR = os.getenv("ESGF_TEST_DATA_CACHE_DIR") or default_esgf_test_data_cache
+
+XCLIM_TEST_DATA_REPO_URL = os.getenv("XCLIM_TEST_DATA_REPO_URL", default_xclim_test_data_url)
 XCLIM_TEST_DATA_VERSION = os.getenv("XCLIM_TEST_DATA_VERSION", default_xclim_test_data_version)
-XCLIM_TEST_DATA_CACHE_DIR = os.getenv("XCLIM_TEST_DATA_CACHE_DIR", default_xclim_test_data_cache)
+XCLIM_TEST_DATA_CACHE_DIR = os.getenv("XCLIM_TEST_DATA_CACHE_DIR") or default_xclim_test_data_cache
 
 
 def write_roocs_cfg(
     template: str | None = None,
-    cache_dir: str | Path = default_esgf_test_data_cache,
+    cache_dir: str | Path | None = default_esgf_test_data_cache,
 ) -> str:
     """
     Write a ROOCS configuration file for testing purposes.
@@ -105,16 +121,16 @@ def write_roocs_cfg(
         proj_test.my.second.test:second/test/data_*.txt
         proj_test.another.{variable}.test:good/test/{variable}.nc
     """
+    if cache_dir is None:
+        raise ValueError("cache_dir must be a valid location.")
 
     cfg_template = template or default_template
     roocs_config = Path(cache_dir, "roocs.ini")
-    cfg = Template(cfg_template).render(
-        base_dir=Path(ESGF_TEST_DATA_CACHE_DIR).joinpath(ESGF_TEST_DATA_VERSION).as_posix()
-    )
+    cfg = Template(cfg_template).render(base_dir=Path(ESGF_TEST_DATA_CACHE_DIR).joinpath(ESGF_TEST_DATA_VERSION))
     with open(roocs_config, "w") as fp:
         fp.write(cfg)
 
-    return roocs_config.as_posix()
+    return str(roocs_config)
 
 
 def get_esgf_file_paths(esgf_cache_dir: str | os.PathLike[str]) -> dict[str, str]:
@@ -128,241 +144,351 @@ def get_esgf_file_paths(esgf_cache_dir: str | os.PathLike[str]) -> dict[str, str
 
     Returns
     -------
-    dict[str, str]
+    dict
         A dictionary where keys are descriptive names of datasets and values are their corresponding file paths.
     """
     return {
-        "CMIP5_ZOSTOGA": Path(
-            esgf_cache_dir,
-            "badc/cmip5/data/cmip5/output1/INM/inmcm4/rcp45/mon/ocean/Omon/r1i1p1/latest/zostoga/zostoga_Omon_inmcm4_rcp45_r1i1p1_200601-210012.nc",
-        ).as_posix(),
-        "CMIP6_RLDS": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc",
-        ).as_posix(),
-        "CMIP6_RLDS_ONE_TIME_STEP": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001.nc",
-        ).as_posix(),
-        "CMIP6_RLUS_ONE_TIME_STEP": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlus/gr/v20180803/rlus_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001.nc",
-        ).as_posix(),
-        "CMIP6_MRSOFC": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/ScenarioMIP/IPSL/IPSL-CM6A-LR/ssp119/r1i1p1f1/fx/mrsofc/gr/v20190410/mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc",
-        ).as_posix(),
-        "CMIP6_SICONC": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/CCCma/CanESM5/historical/r1i1p1f1/SImon/siconc/gn/latest/siconc_SImon_CanESM5_historical_r1i1p1f1_gn_185001-201412.nc",
-        ).as_posix(),
-        "CMIP6_SICONC_DAY": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/CCCma/CanESM5/historical/r1i1p1f1/SIday/siconc/gn/v20190429/siconc_SIday_CanESM5_historical_r1i1p1f1_gn_18500101-20141231.nc",
-        ).as_posix(),
-        "CMIP6_TA": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/Amon/ta/gn/files/d20190807/ta_Amon_MIROC6_ssp119_r1i1p1f1_gn_201501-202412.nc",
-        ).as_posix(),
-        "CMIP6_TASMIN": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Amon/tasmin/gn/v20190710/tasmin_Amon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_201001-201412.nc",
-        ).as_posix(),
-        "CMIP6_JULIAN": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/CCCR-IITM/IITM-ESM/1pctCO2/r1i1p1f1/Omon/tos/gn/v20191204/tos_Omon_IITM-ESM_1pctCO2_r1i1p1f1_gn_193001-193412.nc",
-        ).as_posix(),
-        "CMIP6_TOS": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tos/gn/v20190710/tos_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001-186912.nc",
-        ).as_posix(),
-        "CMIP6_AREACELLO": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/Ofx/areacello/gn/v20190726/areacello_Ofx_GFDL-ESM4_historical_r1i1p1f1_gn.nc",
-        ).as_posix(),
-        "CMIP6_TOS_CNRM": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/ScenarioMIP/CNRM-CERFACS/CNRM-CM6-1/ssp245/r1i1p1f2/Omon/tos/gn/v20190219/tos_Omon_CNRM-CM6-1_ssp245_r1i1p1f2_gn_201501.nc",
-        ).as_posix(),
-        "CMIP6_TAS_DAY": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/day/tas/gn/v20191016/tas_day_MIROC6_ssp119_r1i1p1f1_gn_20150101.nc",
-        ).as_posix(),
-        "CMIP6_SFTOF": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp126/r1i1p1f1/Ofx/sftof/gn/v20191108/sftof_Ofx_NorESM2-MM_ssp126_r1i1p1f1_gn.nc",
-        ).as_posix(),
-        "CMIP6_TAS_ONE_TIME_STEP": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/CAS/FGOALS-g3/historical/r1i1p1f1/Amon/tas/gn/v20190818/tas_Amon_FGOALS-g3_historical_r1i1p1f1_gn_185001.nc",
-        ).as_posix(),
-        "CMIP6_TOS_ONE_TIME_STEP": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Omon/tos/gn/v20190710/tos_Omon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_185001.nc",
-        ).as_posix(),
+        "CMIP5_ZOSTOGA": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip5/data/cmip5/output1/INM/inmcm4/rcp45/mon/ocean/Omon/r1i1p1/latest/zostoga/zostoga_Omon_inmcm4_rcp45_r1i1p1_200601-210012.nc",
+            )
+        ),
+        "CMIP6_RLDS": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001-201412.nc",
+            )
+        ),
+        "CMIP6_RLDS_ONE_TIME_STEP": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlds/gr/v20180803/rlds_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001.nc",
+            )
+        ),
+        "CMIP6_RLUS_ONE_TIME_STEP": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/IPSL/IPSL-CM6A-LR/historical/r1i1p1f1/Amon/rlus/gr/v20180803/rlus_Amon_IPSL-CM6A-LR_historical_r1i1p1f1_gr_185001.nc",
+            )
+        ),
+        "CMIP6_MRSOFC": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/ScenarioMIP/IPSL/IPSL-CM6A-LR/ssp119/r1i1p1f1/fx/mrsofc/gr/v20190410/mrsofc_fx_IPSL-CM6A-LR_ssp119_r1i1p1f1_gr.nc",
+            )
+        ),
+        "CMIP6_SICONC": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/CCCma/CanESM5/historical/r1i1p1f1/SImon/siconc/gn/latest/siconc_SImon_CanESM5_historical_r1i1p1f1_gn_185001-201412.nc",
+            )
+        ),
+        "CMIP6_SICONC_DAY": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/CCCma/CanESM5/historical/r1i1p1f1/SIday/siconc/gn/v20190429/siconc_SIday_CanESM5_historical_r1i1p1f1_gn_18500101-20141231.nc",
+            )
+        ),
+        "CMIP6_TA": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/Amon/ta/gn/files/d20190807/ta_Amon_MIROC6_ssp119_r1i1p1f1_gn_201501-202412.nc",
+            )
+        ),
+        "CMIP6_TASMIN": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Amon/tasmin/gn/v20190710/tasmin_Amon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_201001-201412.nc",
+            )
+        ),
+        "CMIP6_JULIAN": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/CCCR-IITM/IITM-ESM/1pctCO2/r1i1p1f1/Omon/tos/gn/v20191204/tos_Omon_IITM-ESM_1pctCO2_r1i1p1f1_gn_193001-193412.nc",
+            )
+        ),
+        "CMIP6_TOS": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tos/gn/v20190710/tos_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001-186912.nc",
+            )
+        ),
+        "CMIP6_AREACELLO": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/NOAA-GFDL/GFDL-ESM4/historical/r1i1p1f1/Ofx/areacello/gn/v20190726/areacello_Ofx_GFDL-ESM4_historical_r1i1p1f1_gn.nc",
+            )
+        ),
+        "CMIP6_TOS_CNRM": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/ScenarioMIP/CNRM-CERFACS/CNRM-CM6-1/ssp245/r1i1p1f2/Omon/tos/gn/v20190219/tos_Omon_CNRM-CM6-1_ssp245_r1i1p1f2_gn_201501.nc",
+            )
+        ),
+        "CMIP6_TAS_DAY": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/ScenarioMIP/MIROC/MIROC6/ssp119/r1i1p1f1/day/tas/gn/v20191016/tas_day_MIROC6_ssp119_r1i1p1f1_gn_20150101.nc",
+            )
+        ),
+        "CMIP6_SFTOF": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp126/r1i1p1f1/Ofx/sftof/gn/v20191108/sftof_Ofx_NorESM2-MM_ssp126_r1i1p1f1_gn.nc",
+            )
+        ),
+        "CMIP6_TAS_ONE_TIME_STEP": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/CAS/FGOALS-g3/historical/r1i1p1f1/Amon/tas/gn/v20190818/tas_Amon_FGOALS-g3_historical_r1i1p1f1_gn_185001.nc",
+            )
+        ),
+        "CMIP6_TOS_ONE_TIME_STEP": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Omon/tos/gn/v20190710/tos_Omon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_185001.nc",
+            )
+        ),
         # CMIP6 ocean with collapsing cells
-        "CMIP6_TOS_LR_DEGEN": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/ScenarioMIP/HAMMOZ-Consortium/MPI-ESM-1-2-HAM/ssp370/r1i1p1f1/Omon/tos/gn/v20190628/tos_Omon_MPI-ESM-1-2-HAM_ssp370_r1i1p1f1_gn_201501.nc",
-        ).as_posix(),
+        "CMIP6_TOS_LR_DEGEN": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/ScenarioMIP/HAMMOZ-Consortium/MPI-ESM-1-2-HAM/ssp370/r1i1p1f1/Omon/tos/gn/v20190628/tos_Omon_MPI-ESM-1-2-HAM_ssp370_r1i1p1f1_gn_201501.nc",
+            )
+        ),
         # 2nd dataset CMIP6 ocean with collapsing cells
-        "CMIP6_FX_DEGEN": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/ScenarioMIP/EC-Earth-Consortium/EC-Earth3-Veg/ssp245/r5i1p1f1/Ofx/deptho/gn/v20200312/deptho_Ofx_EC-Earth3-Veg_ssp245_r5i1p1f1_gn.nc",
-        ).as_posix(),
+        "CMIP6_FX_DEGEN": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/ScenarioMIP/EC-Earth-Consortium/EC-Earth3-Veg/ssp245/r5i1p1f1/Ofx/deptho/gn/v20200312/deptho_Ofx_EC-Earth3-Veg_ssp245_r5i1p1f1_gn.nc",
+            )
+        ),
         # CMIP6 ocean with collapsing cells, cells extending over 50 degrees, missing_values in lat/lon
-        "CMIP6_SIMASS_DEGEN": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp126/r1i1p1f1/SImon/simass/gn/v20191108/simass_SImon_NorESM2-MM_ssp126_r1i1p1f1_gn_201501.nc",
-        ).as_posix(),
+        "CMIP6_SIMASS_DEGEN": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/ScenarioMIP/NCC/NorESM2-MM/ssp126/r1i1p1f1/SImon/simass/gn/v20191108/simass_SImon_NorESM2-MM_ssp126_r1i1p1f1_gn_201501.nc",
+            )
+        ),
         # CMIP5 rlat,rlon uncompliant CF units
-        "CMIP5_WRONG_CF_UNITS": Path(
-            esgf_cache_dir,
-            "pool/data/C3SCMIP5/BCC/bcc-csm1-1/rcp85/mon/ocean/Omon/r1i1p1/zos/v20120705/zos_Omon_bcc-csm1-1_rcp85_r1i1p1_200601.nc",
-        ).as_posix(),
+        "CMIP5_WRONG_CF_UNITS": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/C3SCMIP5/BCC/bcc-csm1-1/rcp85/mon/ocean/Omon/r1i1p1/zos/v20120705/zos_Omon_bcc-csm1-1_rcp85_r1i1p1_200601.nc",
+            )
+        ),
         # CMIP6 rlat,rlon uncompliant CF units
-        "CMIP6_WRONG_CF_UNITS": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1p1f1/Omon/pbo/gn/v20190624/pbo_Omon_BCC-ESM1_ssp370_r1i1p1f1_gn_201501.nc",
-        ).as_posix(),
+        "CMIP6_WRONG_CF_UNITS": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/AerChemMIP/BCC/BCC-ESM1/ssp370/r1i1p1f1/Omon/pbo/gn/v20190624/pbo_Omon_BCC-ESM1_ssp370_r1i1p1f1_gn_201501.nc",
+            )
+        ),
         # CMIP6 lat, lon with uncompliant CF units and standard_name
-        "CMIP6_WRONG_CF_ATTRS": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/HighResMIP/BCC/BCC-CSM2-HR/hist-1950/r1i1p1f1/Omon/tos/gn/v20200922/tos_Omon_BCC-CSM2-HR_hist-1950_r1i1p1f1_gn_198001.nc",
-        ).as_posix(),
-        "CMIP5_MRSOS_ONE_TIME_STEP": Path(
-            esgf_cache_dir,
-            "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/day/land/day/r1i1p1/latest/mrsos/mrsos_day_HadGEM2-ES_rcp85_r1i1p1_20051201.nc",
-        ).as_posix(),
-        "CMIP6_GFDL_EXTENT": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/NOAA-GFDL/GFDL-CM4/historical/r1i1p1f1/Omon/sos/gn/v20180701/sos_Omon_GFDL-CM4_historical_r1i1p1f1_gn_185001.nc",
-        ).as_posix(),
-        "CMIP6_TAS_PRECISION_A": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/AWI/AWI-ESM-1-1-LR/1pctCO2/r1i1p1f1/Amon/tas/gn/v20200212/tas_Amon_AWI-ESM-1-1-LR_1pctCO2_r1i1p1f1_gn_185501.nc",
-        ).as_posix(),
-        "CMIP6_TAS_PRECISION_B": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/AWI/AWI-ESM-1-1-LR/1pctCO2/r1i1p1f1/Amon/tas/gn/v20200212/tas_Amon_AWI-ESM-1-1-LR_1pctCO2_r1i1p1f1_gn_209901.nc",
-        ).as_posix(),
-        "CMIP6_ATM_VERT_ONE_TIMESTEP": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/AERmon/o3/gn/v20190710/o3_AERmon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
-        ).as_posix(),
-        "CMIP6_ATM_VERT_ONE_TIMESTEP_ZONMEAN": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/AERmon/o3/gn/v20190710/o3_AERmon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001_zm.nc",
-        ).as_posix(),
-        "CMIP6_IITM_EXTENT": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/CCCR-IITM/IITM-ESM/1pctCO2/r1i1p1f1/Omon/tos/gn/v20191204/tos_Omon_IITM-ESM_1pctCO2_r1i1p1f1_gn_193001.nc",
-        ).as_posix(),
+        "CMIP6_WRONG_CF_ATTRS": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/HighResMIP/BCC/BCC-CSM2-HR/hist-1950/r1i1p1f1/Omon/tos/gn/v20200922/tos_Omon_BCC-CSM2-HR_hist-1950_r1i1p1f1_gn_198001.nc",
+            )
+        ),
+        "CMIP5_MRSOS_ONE_TIME_STEP": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/day/land/day/r1i1p1/latest/mrsos/mrsos_day_HadGEM2-ES_rcp85_r1i1p1_20051201.nc",
+            )
+        ),
+        "CMIP6_GFDL_EXTENT": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/NOAA-GFDL/GFDL-CM4/historical/r1i1p1f1/Omon/sos/gn/v20180701/sos_Omon_GFDL-CM4_historical_r1i1p1f1_gn_185001.nc",
+            )
+        ),
+        "CMIP6_TAS_PRECISION_A": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/AWI/AWI-ESM-1-1-LR/1pctCO2/r1i1p1f1/Amon/tas/gn/v20200212/tas_Amon_AWI-ESM-1-1-LR_1pctCO2_r1i1p1f1_gn_185501.nc",
+            )
+        ),
+        "CMIP6_TAS_PRECISION_B": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/AWI/AWI-ESM-1-1-LR/1pctCO2/r1i1p1f1/Amon/tas/gn/v20200212/tas_Amon_AWI-ESM-1-1-LR_1pctCO2_r1i1p1f1_gn_209901.nc",
+            )
+        ),
+        "CMIP6_ATM_VERT_ONE_TIMESTEP": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/AERmon/o3/gn/v20190710/o3_AERmon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
+            )
+        ),
+        "CMIP6_ATM_VERT_ONE_TIMESTEP_ZONMEAN": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/AERmon/o3/gn/v20190710/o3_AERmon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001_zm.nc",
+            )
+        ),
+        "CMIP6_IITM_EXTENT": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/CCCR-IITM/IITM-ESM/1pctCO2/r1i1p1f1/Omon/tos/gn/v20191204/tos_Omon_IITM-ESM_1pctCO2_r1i1p1f1_gn_193001.nc",
+            )
+        ),
         # CMIP6 dataset with weird range in its longitude coordinate (-300, 60)
         #   and unmasked missing values in the latitude and longitude coordinates
-        "CMIP6_EXTENT_UNMASKED": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/OMIP/NOAA-GFDL/GFDL-OM4p5B/omip1/r1i1p1f1/Omon/volcello/gn/v20180701/volcello_Omon_GFDL-OM4p5B_omip1_r1i1p1f1_gn_176801.nc",
-        ).as_posix(),
-        "CMIP6_OCE_HALO_CNRM": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/CNRM-CERFACS/CNRM-CM6-1-HR/historical/r1i1p1f2/Omon/tos/gn/v20191021/tos_Omon_CNRM-CM6-1-HR_historical_r1i1p1f2_gn_185001.nc",
-        ).as_posix(),
-        "CMIP6_UNSTR_FESOM_LR": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/AWI/AWI-ESM-1-1-LR/historical/r1i1p1f1/Omon/tos/gn/v20200212/tos_Omon_AWI-ESM-1-1-LR_historical_r1i1p1f1_gn_185001.nc",
-        ).as_posix(),
-        "CMIP6_UNSTR_ICON_A": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/MPI-M/ICON-ESM-LR/historical/r1i1p1f1/Amon/tas/gn/v20210215/tas_Amon_ICON-ESM-LR_historical_r1i1p1f1_gn_185001.nc",
-        ).as_posix(),
-        "CMIP6_UNSTR_VERT_ICON_O": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/MPI-M/ICON-ESM-LR/historical/r1i1p1f1/Omon/thetao/gn/v20210215/thetao_Omon_ICON-ESM-LR_historical_r1i1p1f1_gn_185001.nc",
-        ).as_posix(),
-        "CMIP6_UNTAGGED_MISSVALS": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2-FV2/historical/r1i1p1f1/Omon/tos/gn/v20191120/tos_Omon_CESM2-FV2_historical_r1i1p1f1_gn_200001.nc",
-        ).as_posix(),
-        "CMIP6_STAGGERED_UCOMP": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tauuo/gn/v20200909/tauuo_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
-        ).as_posix(),
-        "CMIP6_STAGGERED_VCOMP": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tauvo/gn/v20190710/tauvo_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
-        ).as_posix(),
-        "CMIP6_FILLVALUE": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2-WACCM/historical/r1i1p1f1/day/tas/gn/v20190227/tas_day_CESM2-WACCM_historical_r1i1p1f1_gn_20000101-20091231.nc",
-        ).as_posix(),
-        "CMIP6_ZONMEAN_A": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Omon/msftmz/gn/v20190710/msftmz_Omon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_191001.nc",
-        ).as_posix(),
-        "CMIP6_ZONMEAN_B": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/CMIP/NCC/NorCPM1/historical/r22i1p1f1/Omon/msftmz/grz/v20200724/msftmz_Omon_NorCPM1_historical_r22i1p1f1_grz_185001.nc",
-        ).as_posix(),
+        "CMIP6_EXTENT_UNMASKED": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/OMIP/NOAA-GFDL/GFDL-OM4p5B/omip1/r1i1p1f1/Omon/volcello/gn/v20180701/volcello_Omon_GFDL-OM4p5B_omip1_r1i1p1f1_gn_176801.nc",
+            )
+        ),
+        "CMIP6_OCE_HALO_CNRM": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/CNRM-CERFACS/CNRM-CM6-1-HR/historical/r1i1p1f2/Omon/tos/gn/v20191021/tos_Omon_CNRM-CM6-1-HR_historical_r1i1p1f2_gn_185001.nc",
+            )
+        ),
+        "CMIP6_UNSTR_FESOM_LR": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/AWI/AWI-ESM-1-1-LR/historical/r1i1p1f1/Omon/tos/gn/v20200212/tos_Omon_AWI-ESM-1-1-LR_historical_r1i1p1f1_gn_185001.nc",
+            )
+        ),
+        "CMIP6_UNSTR_ICON_A": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/MPI-M/ICON-ESM-LR/historical/r1i1p1f1/Amon/tas/gn/v20210215/tas_Amon_ICON-ESM-LR_historical_r1i1p1f1_gn_185001.nc",
+            )
+        ),
+        "CMIP6_UNSTR_VERT_ICON_O": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/MPI-M/ICON-ESM-LR/historical/r1i1p1f1/Omon/thetao/gn/v20210215/thetao_Omon_ICON-ESM-LR_historical_r1i1p1f1_gn_185001.nc",
+            )
+        ),
+        "CMIP6_UNTAGGED_MISSVALS": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2-FV2/historical/r1i1p1f1/Omon/tos/gn/v20191120/tos_Omon_CESM2-FV2_historical_r1i1p1f1_gn_200001.nc",
+            )
+        ),
+        "CMIP6_STAGGERED_UCOMP": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tauuo/gn/v20200909/tauuo_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
+            )
+        ),
+        "CMIP6_STAGGERED_VCOMP": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-LR/historical/r1i1p1f1/Omon/tauvo/gn/v20190710/tauvo_Omon_MPI-ESM1-2-LR_historical_r1i1p1f1_gn_185001.nc",
+            )
+        ),
+        "CMIP6_FILLVALUE": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/NCAR/CESM2-WACCM/historical/r1i1p1f1/day/tas/gn/v20190227/tas_day_CESM2-WACCM_historical_r1i1p1f1_gn_20000101-20091231.nc",
+            )
+        ),
+        "CMIP6_ZONMEAN_A": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/MPI-M/MPI-ESM1-2-HR/historical/r1i1p1f1/Omon/msftmz/gn/v20190710/msftmz_Omon_MPI-ESM1-2-HR_historical_r1i1p1f1_gn_191001.nc",
+            )
+        ),
+        "CMIP6_ZONMEAN_B": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/CMIP/NCC/NorCPM1/historical/r22i1p1f1/Omon/msftmz/grz/v20200724/msftmz_Omon_NorCPM1_historical_r22i1p1f1_grz_185001.nc",
+            )
+        ),
         # CMIP6 dataset without defined bounds on curvilinear grid
-        "CMIP6_NO_BOUNDS": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/ScenarioMIP/CAS/FGOALS-f3-L/ssp126/r1i1p1f1/Omon/tos/gn/v20191008/tos_Omon_FGOALS-f3-L_ssp126_r1i1p1f1_gn_201501.nc",
-        ).as_posix(),
+        "CMIP6_NO_BOUNDS": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/ScenarioMIP/CAS/FGOALS-f3-L/ssp126/r1i1p1f1/Omon/tos/gn/v20191008/tos_Omon_FGOALS-f3-L_ssp126_r1i1p1f1_gn_201501.nc",
+            )
+        ),
         # CMIP6 dataset with character dimension 'sector'
-        "CMIP6_CHAR_DIM": Path(
-            esgf_cache_dir,
-            "badc/cmip6/data/CMIP6/ScenarioMIP/IPSL/IPSL-CM6A-LR/ssp245/r1i1p1f1/Lmon/landCoverFrac/gr/v20190119/landCoverFrac_Lmon_IPSL-CM6A-LR_ssp245_r1i1p1f1_gr_201501.nc",
-        ).as_posix(),
+        "CMIP6_CHAR_DIM": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip6/data/CMIP6/ScenarioMIP/IPSL/IPSL-CM6A-LR/ssp245/r1i1p1f1/Lmon/landCoverFrac/gr/v20190119/landCoverFrac_Lmon_IPSL-CM6A-LR_ssp245_r1i1p1f1_gr_201501.nc",
+            )
+        ),
         # CORDEX dataset with maldefined bounds
-        "CORDEX_ERRONEOUS_BOUNDS": Path(
-            esgf_cache_dir,
-            "pool/data/C3SCORDEX/data/c3s-cordex/output/ARC-44/BCCR/ECMWF-ERAINT/evaluation/r1i1p1/BCCR-WRF331/v1/day/tas/v20200915/tas_ARC-44_ECMWF-ERAINT_evaluation_r1i1p1_BCCR-WRF331_v1_day_20010101.nc",
-        ).as_posix(),
-        "CORDEX_TAS_ONE_TIMESTEP": Path(
-            esgf_cache_dir,
-            "pool/data/CORDEX/data/cordex/output/EUR-22/GERICS/MPI-M-MPI-ESM-LR/rcp85/r1i1p1/GERICS-REMO2015/v1/mon/tas/v20191029/tas_EUR-22_MPI-M-MPI-ESM-LR_rcp85_r1i1p1_GERICS-REMO2015_v1_mon_202101.nc",
-        ).as_posix(),
-        "CORDEX_TAS_ONE_TIMESTEP_ANT": Path(
-            esgf_cache_dir,
-            "pool/data/CORDEX/data/cordex/output/ANT-44/KNMI/ECMWF-ERAINT/evaluation/r1i1p1/DMI-HIRHAM5/v1/day/tas/v20201001/tas_ANT-44_ECMWF-ERAINT_evaluation_r1i1p1_DMI-HIRHAM5_v1_day_20060101.nc",
-        ).as_posix(),
-        "CORDEX_TAS_NO_BOUNDS": Path(
-            esgf_cache_dir,
-            "pool/data/CORDEX/data/cordex/output/EUR-11/KNMI/MPI-M-MPI-ESM-LR/rcp85/r1i1p1/KNMI-RACMO22E/v1/mon/tas/v20190625/tas_EUR-11_MPI-M-MPI-ESM-LR_rcp85_r1i1p1_KNMI-RACMO22E_v1_mon_209101.nc",
-        ).as_posix(),
-        "ATLAS_v1_CMIP5": Path(
-            esgf_cache_dir,
-            "pool/data/c3s-cica-atlas/CMIP5/rcp26/pr_CMIP5_rcp26_mon_200601-210012.nc",
-        ).as_posix(),
-        "ATLAS_v1_EOBS": Path(
-            esgf_cache_dir,
-            "pool/data/c3s-cica-atlas/E-OBS/sfcwind_E-OBS_mon_195001-202112.nc",
-        ).as_posix(),
-        "ATLAS_v1_ERA5": Path(
-            esgf_cache_dir,
-            "pool/data/c3s-cica-atlas/ERA5/psl_ERA5_mon_194001-202212.nc",
-        ).as_posix(),
-        "ATLAS_v1_CORDEX": Path(
-            esgf_cache_dir,
-            "pool/data/c3s-cica-atlas/CORDEX-CORE/historical/huss_CORDEX-CORE_historical_mon_197001.nc",
-        ).as_posix(),
-        "ATLAS_v1_EOBS_GRID": Path(
-            esgf_cache_dir,
-            "pool/data/c3s-cica-atlas/E-OBS/t_E-OBS_mon_195001.nc",
-        ).as_posix(),
-        "ATLAS_v0_CORDEX_NAM": Path(
-            esgf_cache_dir,
-            "pool/data/c3s-ipcc-ar6-atlas/CORDEX-NAM/historical/rx1day_CORDEX-NAM_historical_mon_197001-200512.nc",
-        ).as_posix(),
-        "ATLAS_v0_CMIP6": Path(
-            esgf_cache_dir,
-            "pool/data/c3s-ipcc-ar6-atlas/CMIP6/ssp245/sst_CMIP6_ssp245_mon_201501-210012.nc",
-        ).as_posix(),
-        "ATLAS_v0_CORDEX_ANT": Path(
-            esgf_cache_dir,
-            "pool/data/c3s-ipcc-ar6-atlas/CORDEX-ANT/rcp45/tnn_CORDEX-ANT_rcp45_mon_200601.nc",
-        ).as_posix(),
+        "CORDEX_ERRONEOUS_BOUNDS": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/C3SCORDEX/data/c3s-cordex/output/ARC-44/BCCR/ECMWF-ERAINT/evaluation/r1i1p1/BCCR-WRF331/v1/day/tas/v20200915/tas_ARC-44_ECMWF-ERAINT_evaluation_r1i1p1_BCCR-WRF331_v1_day_20010101.nc",
+            )
+        ),
+        "CORDEX_TAS_ONE_TIMESTEP": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/CORDEX/data/cordex/output/EUR-22/GERICS/MPI-M-MPI-ESM-LR/rcp85/r1i1p1/GERICS-REMO2015/v1/mon/tas/v20191029/tas_EUR-22_MPI-M-MPI-ESM-LR_rcp85_r1i1p1_GERICS-REMO2015_v1_mon_202101.nc",
+            )
+        ),
+        "CORDEX_TAS_ONE_TIMESTEP_ANT": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/CORDEX/data/cordex/output/ANT-44/KNMI/ECMWF-ERAINT/evaluation/r1i1p1/DMI-HIRHAM5/v1/day/tas/v20201001/tas_ANT-44_ECMWF-ERAINT_evaluation_r1i1p1_DMI-HIRHAM5_v1_day_20060101.nc",
+            )
+        ),
+        "CORDEX_TAS_NO_BOUNDS": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/CORDEX/data/cordex/output/EUR-11/KNMI/MPI-M-MPI-ESM-LR/rcp85/r1i1p1/KNMI-RACMO22E/v1/mon/tas/v20190625/tas_EUR-11_MPI-M-MPI-ESM-LR_rcp85_r1i1p1_KNMI-RACMO22E_v1_mon_209101.nc",
+            )
+        ),
+        "ATLAS_v1_CMIP5": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/c3s-cica-atlas/CMIP5/rcp26/pr_CMIP5_rcp26_mon_200601-210012.nc",
+            )
+        ),
+        "ATLAS_v1_EOBS": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/c3s-cica-atlas/E-OBS/sfcwind_E-OBS_mon_195001-202112.nc",
+            )
+        ),
+        "ATLAS_v1_ERA5": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/c3s-cica-atlas/ERA5/psl_ERA5_mon_194001-202212.nc",
+            )
+        ),
+        "ATLAS_v1_CORDEX": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/c3s-cica-atlas/CORDEX-CORE/historical/huss_CORDEX-CORE_historical_mon_197001.nc",
+            )
+        ),
+        "ATLAS_v1_EOBS_GRID": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/c3s-cica-atlas/E-OBS/t_E-OBS_mon_195001.nc",
+            )
+        ),
+        "ATLAS_v0_CORDEX_NAM": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/c3s-ipcc-ar6-atlas/CORDEX-NAM/historical/rx1day_CORDEX-NAM_historical_mon_197001-200512.nc",
+            )
+        ),
+        "ATLAS_v0_CMIP6": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/c3s-ipcc-ar6-atlas/CMIP6/ssp245/sst_CMIP6_ssp245_mon_201501-210012.nc",
+            )
+        ),
+        "ATLAS_v0_CORDEX_ANT": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/c3s-ipcc-ar6-atlas/CORDEX-ANT/rcp45/tnn_CORDEX-ANT_rcp45_mon_200601.nc",
+            )
+        ),
     }
 
 
@@ -401,46 +527,66 @@ def get_esgf_glob_paths(esgf_cache_dir: str | os.PathLike[str]) -> dict[str, str
         A dictionary where keys are dataset identifiers and values are glob paths to the datasets.
     """
     return {
-        "CMIP5_TAS": Path(
-            esgf_cache_dir,
-            "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
-        ).as_posix(),
-        "CMIP5_TAS_EC_EARTH": Path(
-            esgf_cache_dir,
-            "badc/cmip5/data/cmip5/output1/ICHEC/EC-EARTH/historical/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
-        ).as_posix(),
-        "CMIP5_RH": Path(
-            esgf_cache_dir,
-            "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/historical/mon/land/Lmon/r1i1p1/latest/rh/*.nc",
-        ).as_posix(),
-        "C3S_CMIP5_TSICE": Path(
-            esgf_cache_dir,
-            "gws/nopw/j04/cp4cds1_vol1/data/c3s-cmip5/output1/NCC/NorESM1-ME/rcp60/mon/seaIce/OImon/r1i1p1/tsice/v20120614/*.nc",
-        ).as_posix(),
-        "C3S_CORDEX_AFR_TAS": Path(
-            esgf_cache_dir,
-            "pool/data/CORDEX/data/cordex/output/AFR-22/GERICS/MPI-M-MPI-ESM-LR/historical/r1i1p1/GERICS-REMO2015/v1/day/tas/v20201015/*.nc",
-        ).as_posix(),
-        "C3S_CORDEX_NAM_PR": Path(
-            esgf_cache_dir,
-            "pool/data/CORDEX/data/cordex/output/NAM-22/OURANOS/NOAA-GFDL-GFDL-ESM2M/rcp45/r1i1p1/OURANOS-CRCM5/v1/day/pr/v20200831/*.nc",
-        ).as_posix(),
-        "C3S_CORDEX_EUR_ZG500": Path(
-            esgf_cache_dir,
-            "pool/data/CORDEX/data/cordex/output/EUR-11/IPSL/IPSL-IPSL-CM5A-MR/rcp85/r1i1p1/IPSL-WRF381P/v1/day/zg500/v20190919/*.nc",
-        ).as_posix(),
-        "C3S_CORDEX_ANT_SFC_WIND": Path(
-            esgf_cache_dir,
-            "pool/data/CORDEX/data/cordex/output/ANT-44/KNMI/ECMWF-ERAINT/evaluation/r1i1p1/KNMI-RACMO21P/v1/day/sfcWind/v20201001/*.nc",
-        ).as_posix(),
-        "CMIP5_MRSOS_MULTIPLE_TIME_STEPS": Path(
-            esgf_cache_dir,
-            "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp45/day/land/day/r1i1p1/latest/mrsos/*.nc",
-        ).as_posix(),
-        "C3S_CMIP5_TAS": Path(
-            esgf_cache_dir,
-            "gws/nopw/j04/cp4cds1_vol1/data/c3s-cmip5/output1/ICHEC/EC-EARTH/historical/day/atmos/day/r1i1p1/tas/v20131231/*.nc",
-        ).as_posix(),
+        "CMIP5_TAS": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
+            )
+        ),
+        "CMIP5_TAS_EC_EARTH": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip5/data/cmip5/output1/ICHEC/EC-EARTH/historical/mon/atmos/Amon/r1i1p1/latest/tas/*.nc",
+            )
+        ),
+        "CMIP5_RH": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/historical/mon/land/Lmon/r1i1p1/latest/rh/*.nc",
+            )
+        ),
+        "C3S_CMIP5_TSICE": str(
+            Path(
+                esgf_cache_dir,
+                "gws/nopw/j04/cp4cds1_vol1/data/c3s-cmip5/output1/NCC/NorESM1-ME/rcp60/mon/seaIce/OImon/r1i1p1/tsice/v20120614/*.nc",
+            )
+        ),
+        "C3S_CORDEX_AFR_TAS": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/CORDEX/data/cordex/output/AFR-22/GERICS/MPI-M-MPI-ESM-LR/historical/r1i1p1/GERICS-REMO2015/v1/day/tas/v20201015/*.nc",
+            )
+        ),
+        "C3S_CORDEX_NAM_PR": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/CORDEX/data/cordex/output/NAM-22/OURANOS/NOAA-GFDL-GFDL-ESM2M/rcp45/r1i1p1/OURANOS-CRCM5/v1/day/pr/v20200831/*.nc",
+            )
+        ),
+        "C3S_CORDEX_EUR_ZG500": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/CORDEX/data/cordex/output/EUR-11/IPSL/IPSL-IPSL-CM5A-MR/rcp85/r1i1p1/IPSL-WRF381P/v1/day/zg500/v20190919/*.nc",
+            )
+        ),
+        "C3S_CORDEX_ANT_SFC_WIND": str(
+            Path(
+                esgf_cache_dir,
+                "pool/data/CORDEX/data/cordex/output/ANT-44/KNMI/ECMWF-ERAINT/evaluation/r1i1p1/KNMI-RACMO21P/v1/day/sfcWind/v20201001/*.nc",
+            )
+        ),
+        "CMIP5_MRSOS_MULTIPLE_TIME_STEPS": str(
+            Path(
+                esgf_cache_dir,
+                "badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp45/day/land/day/r1i1p1/latest/mrsos/*.nc",
+            )
+        ),
+        "C3S_CMIP5_TAS": str(
+            Path(
+                esgf_cache_dir,
+                "gws/nopw/j04/cp4cds1_vol1/data/c3s-cmip5/output1/ICHEC/EC-EARTH/historical/day/atmos/day/r1i1p1/tas/v20131231/*.nc",
+            )
+        ),
     }
 
 
@@ -500,11 +646,14 @@ def load_registry(branch: str, repo: str) -> dict[str, str]:
     dict
         Dictionary of filenames and hashes.
     """
-    if repo == ESGF_TEST_DATA_REPO_URL:
+    if not repo.endswith("/"):
+        repo = f"{repo}/"
+
+    if "mini-esgf-data" in repo:
         project = "mini-esgf-data"
         default_testdata_version = ESGF_TEST_DATA_VERSION
         default_testdata_repo_url = ESGF_TEST_DATA_REPO_URL
-    elif repo == XCLIM_TEST_DATA_REPO_URL:
+    elif "xclim-testdata" in repo:
         project = "xclim-testdata"
         default_testdata_version = XCLIM_TEST_DATA_VERSION
         default_testdata_repo_url = XCLIM_TEST_DATA_REPO_URL
@@ -514,17 +663,28 @@ def load_registry(branch: str, repo: str) -> dict[str, str]:
             f"Please use one of {ESGF_TEST_DATA_REPO_URL} or {XCLIM_TEST_DATA_REPO_URL}"
         )
 
-    remote_registry = audit_url(f"{repo}{branch}/data/{project}_registry.txt")
-    if branch != default_testdata_version:
-        custom_registry_folder = Path(str(ilr.files("clisops").joinpath(f"utils/registries/{branch}")))
-        custom_registry_folder.mkdir(parents=True, exist_ok=True)
-        registry_file = custom_registry_folder.joinpath(f"{project}_registry.txt")
-        urlretrieve(remote_registry, registry_file)  # noqa: S310
-    elif repo != default_testdata_repo_url:
-        registry_file = Path(str(ilr.files("clisops").joinpath(f"utils/{project}_registry.txt")))
-        urlretrieve(remote_registry, registry_file)  # noqa: S310
+    remote_registry = audit_url(
+        urljoin(
+            urljoin(repo, branch if branch.endswith("/") else f"{branch}/"),
+            "data/registry.txt",
+        )
+    )
 
-    registry_file = Path(str(ilr.files("clisops").joinpath(f"utils/{project}_registry.txt")))
+    if repo != default_testdata_repo_url:
+        external_repo_name = urlparse(repo).path.split("/")[-2]
+        external_branch_name = branch.split("/")[-1]
+        registry_file = Path(
+            str(ilr.files("clisops").joinpath(f"utils/registry.{external_repo_name}.{external_branch_name}.txt"))
+        )
+        urlretrieve(remote_registry, registry_file)  # noqa: S310
+    elif branch != default_testdata_version:
+        custom_registry_folder = Path(str(ilr.files("clisops").joinpath(f"utils/{branch}")))
+        custom_registry_folder.mkdir(parents=True, exist_ok=True)
+        registry_file = custom_registry_folder.joinpath("registry.txt")
+        urlretrieve(remote_registry, registry_file)  # noqa: S310
+    else:
+        registry_file = Path(str(ilr.files("clisops").joinpath(f"utils/{project}_registry.txt")))
+
     if not registry_file.exists():
         raise FileNotFoundError(f"Registry file not found: {registry_file}")
 
@@ -538,7 +698,7 @@ def stratus(
     repo: str,
     branch: str,
     cache_dir: str | Path,
-    data_updates: bool = True,
+    allow_updates: bool = True,
 ):
     """
     Pooch registry instance for xclim test data.
@@ -551,7 +711,7 @@ def stratus(
         Branch of repository to use when fetching testing datasets.
     cache_dir : str or Path
         The path to the directory where the data files are stored.
-    data_updates : bool
+    allow_updates : bool
         If True, allow updates to the data files. Default is True.
 
     Returns
@@ -578,49 +738,84 @@ def stratus(
             "You can install it with `pip install pooch` or `pip install roocs-utils[dev]`."
         )
 
-    if repo.endswith("xclim-testdata"):
+    if "xclim-testdata" in repo:
         _version = XCLIM_TEST_DATA_VERSION
-        _default_version = default_xclim_test_data_version
-    elif repo.endswith("mini-esgf-data"):
+        _default_testdata_version = default_xclim_test_data_version
+    elif "mini-esgf-data" in repo:
         _version = ESGF_TEST_DATA_VERSION
-        _default_version = default_esgf_test_data_version
+        _default_testdata_version = default_esgf_test_data_version
     else:
         raise ValueError(
             f"Repository URL {repo} not recognized. "
             f"Please use one of {ESGF_TEST_DATA_REPO_URL} or {XCLIM_TEST_DATA_REPO_URL}"
         )
 
-    remote = audit_url(f"{repo}/{branch}/data")
-    return pooch.create(
+    if not repo.endswith("/"):
+        repo = f"{repo}/"
+    remote = audit_url(urljoin(urljoin(repo, branch if branch.endswith("/") else f"{branch}/"), "data"))
+
+    _stratus = pooch.create(
         path=cache_dir,
         base_url=remote,
-        version=_default_version,
+        version=_default_testdata_version,
         version_dev=_version,
-        allow_updates=data_updates,
+        allow_updates=allow_updates,
         registry=load_registry(branch=branch, repo=repo),
     )
 
+    # Add a custom fetch method to the Pooch instance
+    # Needed to address: https://github.com/readthedocs/readthedocs.org/issues/11763
+    # Fix inspired by @bjlittle (https://github.com/bjlittle/geovista/pull/1202)
+    _stratus.fetch_diversion = _stratus.fetch
+
+    # Overload the fetch method to add user-agent headers
+    @wraps(_stratus.fetch_diversion)
+    def _fetch(*args, **kwargs: bool | Callable) -> str:  # numpydoc ignore=GL08  # *args: str
+        def _downloader(
+            url: str,
+            output_file: str | IO,
+            poocher: pooch.Pooch,
+            check_only: bool | None = False,
+        ) -> None:
+            """Download the file from the URL and save it to the save_path."""
+            headers = {"User-Agent": f"clisops ({__clisops_version__})"}
+            downloader = pooch.HTTPDownloader(headers=headers)
+            return downloader(url, output_file, poocher, check_only=check_only)
+
+        # default to our http/s downloader with user-agent headers
+        kwargs.setdefault("downloader", _downloader)
+        return _stratus.fetch_diversion(*args, **kwargs)
+
+    # Replace the fetch method with the custom fetch method
+    _stratus.fetch = _fetch
+
+    return _stratus
+
 
 def populate_testing_data(
+    temp_folder: Path | None = None,
+    *,
     repo: str,
     branch: str,
-    cache_dir: Path,
+    local_cache: Path,
 ):
     """
     Populate the local cache with the testing data.
 
     Parameters
     ----------
+    temp_folder : Path, optional
+        Path to a temporary folder to use as the local cache. If not provided, the default location will be used.
     repo : str, optional
         URL of the repository to use when fetching testing datasets.
     branch : str, optional
         Branch of repository to use when fetching testing datasets.
-    cache_dir : Path
+    local_cache : Path
         The path to the local cache. Defaults to the location set by the platformdirs library.
         The testing data will be downloaded to this local cache.
     """
     # Create the Pooch instance
-    n = stratus(cache_dir=cache_dir, repo=repo, branch=branch)
+    n = stratus(repo=repo, branch=branch, cache_dir=temp_folder or local_cache)
 
     # Download the files
     errored_files = []
@@ -646,7 +841,7 @@ def gather_testing_data(
     worker_id: str,
     branch: str,
     repo: str,
-    cache_dir: str | os.PathLike[str] | Path,
+    _cache_dir: str | os.PathLike[str] | Path | None = None,
 ):
     """
     Gather testing data across workers.
@@ -661,7 +856,7 @@ def gather_testing_data(
         The branch of the repository to use when fetching testing datasets.
     repo : str
         The URL of the repository to use when fetching testing datasets.
-    cache_dir : str or Path
+    _cache_dir : str or Path
         The path to the local cache where the testing data is stored.
 
     Raises
@@ -671,10 +866,13 @@ def gather_testing_data(
     FileNotFoundError
         If the testing data is not found and UNIX-style file-locking is not supported on Windows.
     """
-    cache_dir = Path(cache_dir)
-    if repo.endswith("xclim-testdata"):
+    if _cache_dir is None:
+        raise ValueError("The cache directory must be set.")
+    cache_dir = Path(_cache_dir)
+
+    if "xclim-testdata" in repo:
         version = default_xclim_test_data_version
-    elif repo.endswith("mini-esgf-data"):
+    elif "mini-esgf-data" in repo:
         version = default_esgf_test_data_version
     else:
         raise ValueError(
@@ -683,9 +881,9 @@ def gather_testing_data(
         )
 
     if worker_id == "master":
-        populate_testing_data(branch=branch, repo=repo, cache_dir=cache_dir)
+        populate_testing_data(branch=branch, repo=repo, local_cache=cache_dir)
     else:
-        if platform == "win32":
+        if platform.system() == "Windows":
             if not cache_dir.joinpath(branch).exists():
                 raise FileNotFoundError(
                     "Testing data not found and UNIX-style file-locking is not supported on Windows. "
@@ -697,7 +895,7 @@ def gather_testing_data(
             test_data_being_written = FileLock(lockfile)
             with test_data_being_written:
                 # This flag prevents multiple calls from re-attempting to download testing data in the same pytest run
-                populate_testing_data(branch=branch, repo=repo, cache_dir=cache_dir)
+                populate_testing_data(branch=branch, repo=repo, local_cache=cache_dir)
                 cache_dir.joinpath(".data_written").touch()
             with test_data_being_written.acquire():
                 if lockfile.exists():
