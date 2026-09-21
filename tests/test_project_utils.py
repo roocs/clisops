@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 import pytest
 import xarray as xr
@@ -18,7 +19,7 @@ class TestProjectUtils:
         project = project_utils.get_project_name(dset)
         assert project == "cmip5"
 
-        dset = "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc"
+        # dset = "/badc/cmip5/data/cmip5/output1/MOHC/HadGEM2-ES/rcp85/mon/atmos/Amon/r1i1p1/latest/tas/*.nc"
         # project = project_utils.get_project_name(dset)
         # assert project == "cmip5"
 
@@ -26,6 +27,7 @@ class TestProjectUtils:
             mini_esgf_data["CMIP5_TAS"],
             decode_times=xr.coders.CFDatetimeCoder(use_cftime=True),
             combine="by_coords",
+            data_vars="all",
         ) as ds:
             project = project_utils.get_project_name(ds)
             assert project == "cmip5"
@@ -44,7 +46,7 @@ class TestProjectUtils:
             assert project == "cmip6"
 
         # tests default for cmip6 path is c3s-cmip6
-        dset = "/badc/cmip6/data/CMIP6/CMIP/MIROC/MIROC6/historical/r1i1p1f1/SImon/siconc/gn/latest/*.nc"
+        # dset = "/badc/cmip6/data/CMIP6/CMIP/MIROC/MIROC6/historical/r1i1p1f1/SImon/siconc/gn/latest/*.nc"
         # project = project_utils.get_project_name(dset)
         # assert project == "c3s-cmip6"
 
@@ -65,7 +67,7 @@ class TestProjectUtils:
         assert project == "c3s-cica-atlas"
 
         # c3s-cica-atlas 2
-        dset = "/pool/data/c3s-cica-atlas/ERA5/psl_ERA5_mon_194001-202212.nc"
+        # dset = "/pool/data/c3s-cica-atlas/ERA5/psl_ERA5_mon_194001-202212.nc"
         # project = project_utils.get_project_name(dset)
         # assert project == "c3s-cica-atlas"
 
@@ -80,11 +82,11 @@ class TestProjectUtils:
         assert project in ["c3s-ipcc-ar6-atlas", "c3s-ipcc-atlas"]
 
     def test_get_project_base_dir(self):
-        cmip5_base_dir = project_utils.get_project_base_dir("cmip5")
-        assert cmip5_base_dir == "/mnt/lustre/work/kd0956/CMIP5/data/cmip5"
+        cmip5_base_dir = Path(project_utils.get_project_base_dir("cmip5"))
+        assert Path(cmip5_base_dir).match("/mnt/lustre/work/kd0956/CMIP5/data/cmip5")
 
-        c3s_cordex_base_dir = project_utils.get_project_base_dir("c3s-cordex")
-        assert c3s_cordex_base_dir == "/mnt/lustre/work/ik1017/C3SCORDEX/data/c3s-cordex"
+        c3s_cordex_base_dir = Path(project_utils.get_project_base_dir("c3s-cordex"))
+        assert Path(c3s_cordex_base_dir).match("/mnt/lustre/work/ik1017/C3SCORDEX/data/c3s-cordex")
 
         with pytest.raises(Exception) as exc:
             project_utils.get_project_base_dir("test")
@@ -101,9 +103,8 @@ class TestDatasetMapper:
         )
 
     def test_data_path(self):
-        assert (
-            project_utils.DatasetMapper(self.dset).data_path
-            == "/mnt/lustre/work/ik1017/CMIP6/data/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/SImon/siconc/gn/latest"
+        assert Path(str(project_utils.DatasetMapper(self.dset).data_path)) == Path(
+            "/mnt/lustre/work/ik1017/CMIP6/data/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/SImon/siconc/gn/latest"
         )
 
     def test_ds_id(self):
@@ -113,7 +114,9 @@ class TestDatasetMapper:
         )
 
     def test_base_dir(self):
-        assert project_utils.DatasetMapper(self.dset).base_dir == "/mnt/lustre/work/ik1017/CMIP6/data/CMIP6"
+        assert Path(str(project_utils.DatasetMapper(self.dset).base_dir)) == Path(
+            "/mnt/lustre/work/ik1017/CMIP6/data/CMIP6"
+        )
 
     @pytest.mark.skipif(os.path.isdir("/badc") is False, reason="data not available")
     def test_files(self):

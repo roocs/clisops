@@ -22,12 +22,12 @@ from clisops.utils.dataset_utils import determine_lon_lat_range
 from clisops.utils.output_utils import _format_time
 
 
-def _load_ds(fpath: str | Path):
+def _load_ds(fpath: str | Path | list[str | Path]):
     if isinstance(fpath, (str, Path)):
         if str(fpath).endswith("*.nc"):
-            return xr.open_mfdataset(fpath)
+            return xr.open_mfdataset(fpath, decode_times=xr.coders.CFDatetimeCoder(use_cftime=True))
         else:
-            return xr.open_dataset(fpath)
+            return xr.open_dataset(fpath, decode_times=xr.coders.CFDatetimeCoder(use_cftime=True))
     return xr.open_mfdataset(fpath)
 
 
@@ -370,7 +370,7 @@ def test_time_slices_in_subset_rh(mini_esgf_data):
     temp_max_file_size = "10KB"
     CONFIG["clisops:write"]["file_size_limit"] = temp_max_file_size
 
-    with xr.open_mfdataset(mini_esgf_data["CMIP5_RH"]) as ds:
+    with xr.open_mfdataset(mini_esgf_data["CMIP5_RH"], data_vars="all") as ds:
         outputs = subset(
             ds=ds,
             time=time_interval(start_time, end_time),
@@ -504,7 +504,7 @@ def test_aux_variables():
     Test auxiliary variables are remembered in output dataset
     Have to create a netcdf file with auxiliary variable
     """
-    ds = _load_ds("tests/data/test_file.nc")
+    ds = _load_ds(Path(__file__).parent.joinpath("data/test_file.nc"))
 
     assert "do_i_get_written" in ds.variables
 

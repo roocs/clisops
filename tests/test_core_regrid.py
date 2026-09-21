@@ -925,7 +925,7 @@ class TestDetect:
         g = Grid(ds=ds)
         assert g.extent_lon == "global"
 
-    def test_detect_collapsed_cells(self, mini_esgf_data, load_test_data):
+    def test_detect_collapsed_cells(self, mini_esgf_data):
         """Test that collapsed cells are properly identified."""
         dsA = xr.open_dataset(
             mini_esgf_data["CMIP6_OCE_HALO_CNRM"],
