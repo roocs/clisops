@@ -297,7 +297,7 @@ def check_lons(func: Callable) -> Callable:  # numpydoc ignore=GL08
         if isinstance(args[0], (xarray.DataArray, xarray.Dataset)):
             if kwargs[lon] is None:
                 kwargs[lon] = np.asarray(ds_lon.min(), ds_lon.max())
-            else:
+            elif isinstance(kwargs[lon], (tuple, list)):
                 kwargs[lon] = np.asarray(kwargs[lon])
             if np.all((ds_lon >= 0) | (np.isnan(ds_lon))) and np.all(kwargs[lon] < 0):
                 if isinstance(kwargs[lon], float):
@@ -419,14 +419,14 @@ def convert_lat_lon_to_da(func: Callable) -> Callable:  # numpydoc ignore=GL08
     @wraps(func)
     def func_checker(*args, **kwargs):
         """
-        Transform input lat, lon to DataArrays.
+        Transform input lat, lon to 1D DataArrays.
 
         Input can be int, float or any iterable.
         Expects a DataArray as first argument and checks is dim "site" already exists,
         uses "_site" in that case.
 
-        If the input are not already DataArrays, the new lon and lat objects are 1D DataArrays
-        with dimension "site".
+        If the input are not already DataArrays or are 0D DataArrays, the new lon and lat
+        objects are 1D DataArrays with dimension "site".
 
         Parameters
         ----------
@@ -442,7 +442,9 @@ def convert_lat_lon_to_da(func: Callable) -> Callable:  # numpydoc ignore=GL08
         """
         lat = kwargs.pop("lat", None)
         lon = kwargs.pop("lon", None)
-        if not isinstance(lat, (type(None), xarray.DataArray)) or not isinstance(lon, (type(None), xarray.DataArray)):
+        if (lat is not None and (not isinstance(lat, xarray.DataArray) or lat.ndim == 0)) or (
+            lon is not None and (not isinstance(lon, xarray.DataArray) or lon.ndim == 0)
+        ):
             try:
                 if len(lat) != len(lon):
                     raise ValueError("'lat' and 'lon' must have the same length.")

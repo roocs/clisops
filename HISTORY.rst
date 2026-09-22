@@ -1,6 +1,13 @@
 Version History
 ===============
 
+Unreleased
+----------
+
+Bug fixes
+^^^^^^^^^
+* Fixed ``check_lons`` decorator in the ``subset`` submodule so that ``DataArray`` longitudes are not downcasted to numpy arrays.
+
 v0.18.1 (2026-07-07)
 --------------------
 
