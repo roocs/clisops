@@ -9,6 +9,7 @@ from packaging.version import Version
 from pyproj.crs import CRS
 from pyproj.exceptions import CRSError
 from shapely.geometry import Point, Polygon
+from xarray import __version__ as __xr_version__
 
 from clisops.core import subset
 from clisops.utils.testing import ContextLogger
@@ -86,7 +87,7 @@ class TestSubsetTime:
             assert '"end_date" has been nudged to nearest valid time step in xarray object.' in caplog.text
 
     @pytest.mark.xfail(
-        Version(__np_version__) >= Version("2.5.0"),
+        (Version(__np_version__) >= Version("2.5.0")) & (Version(__xr_version__) <= Version("2025.11.0")),
         reason="Newer numpy raises many DeprecationWarning messages",
         strict=False,
     )
@@ -268,7 +269,7 @@ class TestSubsetGridPoint:
         np.testing.assert_almost_equal(out2.lat, lat, 1)
         np.testing.assert_array_equal(out, out2.tasmax.transpose(*out.dims))
 
-        # Dataset with lon and lat as 1D arrays
+        # Dataset with lon and lat as 1D array
         lon = -60
         lat = 45
         da = xr.DataArray(
@@ -287,6 +288,12 @@ class TestSubsetGridPoint:
         np.testing.assert_almost_equal(gp.lon, lon)
         np.testing.assert_almost_equal(gp.lat, lat)
         assert gp.site == 0
+
+        # gridpoints also as 1D array
+        lon = xr.DataArray([-60, -61], dims=("point",))
+        lat = xr.DataArray([45, 46], dims=("point",))
+        gp = subset.subset_gridpoint(ds, lon=lon, lat=lat)
+        assert "point" in gp.dims
 
         # extracting two points close together should give a duplicate point in the output
         # extract the same grid cell for two 'sites'
