@@ -5,16 +5,16 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "clisops"
 authors = [
-  {name = "Elle Smith", email = "eleanor.smith@stfc.ac.uk"},
-  {name = "Ag Stephens", email = "ag.stephens@stfc.ac.uk"},
-  {name = "Carsten Ehbrecht", email = "ehbrecht@dkrz.de"},
-  {name = "Trevor James Smith", email = "smith.trevorj@ouranos.ca"}
+  { name = "Elle Smith", email = "eleanor.smith@stfc.ac.uk" },
+  { name = "Ag Stephens", email = "ag.stephens@stfc.ac.uk" },
+  { name = "Carsten Ehbrecht", email = "ehbrecht@dkrz.de" },
+  { name = "Trevor James Smith", email = "smith.trevorj@ouranos.ca" }
 ]
 maintainers = [
-  {name = "Carsten Ehbrecht", email = "ehbrecht@dkrz.de"},
-  {name = "Trevor James Smith", email = "smith.trevorj@ouranos.ca"}
+  { name = "Carsten Ehbrecht", email = "ehbrecht@dkrz.de" },
+  { name = "Trevor James Smith", email = "smith.trevorj@ouranos.ca" }
 ]
-readme = {file = "README.rst", content-type = "text/x-rst"}
+readme = { file = "README.rst", content-type = "text/x-rst" }
 requires-python = ">=3.11.0"
 keywords = ["clisops", "xarray", "climate", "gis", "subsetting", "operations"]
 license = "BSD-3-Clause"
